@@ -1,5 +1,5 @@
-# FreakFortressBat
-## An unoffical edit of the offical Freak Fortress 2 plugin found here: https://github.com/50DKP/FF2-Official
+# Bat's Freak Fortress Edit
+## An unoffical edit of the Freak Fortress 2 plugin found here: https://github.com/50DKP/FF2-Official
 
 
 ### Installiton and Setup:
