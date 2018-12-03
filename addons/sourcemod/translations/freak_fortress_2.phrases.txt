@@ -1,0 +1,375 @@
+"Phrases"
+{
+	"needmoreplayers"
+	{
+		"en"	"The bot did not spawn, something went wrong."
+	}
+	"type_ff2_to_open_menu"
+	{
+		"en"	"Type {olive}/ff2{default} in chat to open the menu"
+	}
+	"nextmap_ff2"
+	{
+		"#format" "{1:s}"
+		"en"	"The gamemode will be {olive}Freak Fortress 2{default} on {olive}{1}{default}"
+	}
+	"wait_hp"
+	{
+		"#format" "{1:i},{2:s}"
+		"en"  "You cannot check the boss' hp right now. Wait {1} more second(s). Last known hp value was {2}"
+	}
+	"damage"
+	{
+		"#format" "{1:i}"
+		"en"	"Damage dealt by you - {1}"
+	}
+	"point_enable"
+	{
+		"#format" "{1:i}"
+		"en"  "Only {1} player(s) left, the control point has been unlocked!"
+	}
+	"top_3"
+	{
+		"en"	"Most damage dealt by"
+	}
+	"uber-charge"
+	{
+		"en"	"Ubercharge rate"
+	}
+	"Boss Lives Left"
+	{
+		"#format" "{1:i},{2:i}"
+		"en"	"{1} out of {2} lives left"
+	}
+	"do_rage"
+	{
+		"en"	"Call for medic to activate your \"RAGE\" ability!"
+	}
+	"rage_meter"
+	{
+		"#format" "{1:i}"
+		"en"	"Rage is {1} percent ready"
+	}
+	"super_duper_jump"
+	{
+		"en"	"Super DUPER Jump ready!"
+	}
+	"teleport_status"
+	{
+		"#format" "{1:i}"
+		"en"	"Teleport is ready. {1} percent charged."
+	}
+	"jump_status"
+	{
+		"#format" "{1:i}"
+		"en"	"Super Jump is ready. {1} percent charged."
+	}
+	"teleport_status_2"
+	{
+		"#format" "{1:i}"
+		"en"	"Teleport is not ready. {1} seconds remaining."
+	}
+	"jump_status_2"
+	{
+		"#format" "{1:i}"
+		"en"	"Super Jump is not ready. {1} seconds remaining."
+	}
+	"help_scout"
+	{
+		"en"	"Stock pistol always mini-crit.\nAll bleed damage is crit-boosted.\nCandy Cane drops a health pack on hit.\nFan O' War gives a slight speed boost, faster fire rate,\nbut lower damage and disables double jump."
+	}
+	"help_soldier"
+	{
+		"en"	"Battalion's Backup heavily reduces damage to nearby players while active.\nBoth boots reduce fall damage but mantreads create greater rocketjumps.\nPain Train acts like a Boston Basher."
+	}
+	"help_pyro"
+	{
+		"en"	"Airblasting causes the boss to build rage.\nThe Detonator has increased push force.\nGas Passer explodes the boss if ignited.\nHomewrecker and Maul gives applies knockback.\nThird Degree gives Uber on hit to the medic healing you.\nNeon Annihilator shortly slows on hit."
+	}
+	"help_demo"
+	{
+		"en"	"All shields block one hit from the Boss.\nChargin' Targe gives faster switch speed.\nEyelander and reskins gain heads on hit.\nUllapool Caber can explode five times.\nPain Train acts like a Boston Basher."
+	}
+	"help_heavy"
+	{
+		"en"	"Natascha gives faster movement speed while deployed.\nHuo-Long Heater fires flares instead of bullets.\nKilling Gloves of Boxing makes you a melee tank.\nGloves of Running Urently gives massive speed but decays health.\nEviction Notice gives a passive speed boost.\nHoliday Punch gives you faster weapon switch."
+	}
+	"help_eggineer"
+	{
+		"en"	"Frontier Justice gains crits while your sentry is attacking.\nStock pistol always crits.\nEureka Effect has bi-teleporters but can't self-teleport."
+	}
+	"help_medic"
+	{
+		"en"	"Medi Guns give Uber, Crits, and no knockback on use.\nCan overheal to twice the max HP.\nSyringe Gun and Crossbow give ubercharge on hit."
+	}
+	"help_sniper"
+	{
+		"en"	"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nDarwin's Danger Shield gives you +85 HP.\nCozy Camper gives you a modified SMG.\nRazorback gives 50%% melee resistance\nAll melees can wall climb at the cost of 15 HP."
+	}
+	"help_spie"
+	{
+		"en"	"All revolvers minicrit.\nAmbassador/Diamondback crits deal more damage.\nBackstabs does about 10%% of the boss's max health.\nYour Eternal Reward/Wanga Prick backstabs disguise you instantly.\nKunai backstabs will give you a health bonus.\nBig Earner gives you full cloak on backstab."
+	}
+	"help_melee"
+	{
+		"en"	"See the Steam group for more weapon stats.\nUse /ff2 menu to disable this notifications."
+	}
+	"thequeue"
+	{
+		"en"	"Boss Queue"
+	}
+	"menu_1"
+	{
+		"en"	"What's up?"
+	}
+	"menu_2"
+	{
+		"en"	"Investigate the boss's current health level (/ff2hp)"
+	}
+	"menu_3"
+	{
+		"en"	"Help about FF2 (/ff2help)."  //ff2help doesn't exist in the code, so...
+	}
+	"menu_4"
+	{
+		"en"	"What's new? (/ff2new)."
+	}
+	"menu_5"
+	{
+		"en"	"Queue points"
+	}
+	"menu_6"
+	{
+		"en"	"Exit"
+	}
+	"whatsnew"
+	{
+		"#format" "{1:s},{2:s}"
+		"en"	"What's new in v{1} from {2}"
+	}
+	"help_mode"
+	{
+		"en"	"===Freak Fortress 2===\nOne (or more) players become one of the Bosses.\nWhile the other players have to defeat them."
+	}
+	"older"
+	{
+		"en"	"Display older"
+	}
+	"noolder"
+	{
+		"en"	"No older versions available"
+	}
+	"newer"
+	{
+		"en"	"Display newer"
+	}
+	"nonewer"
+	{
+		"en"	"No newer versions available"
+	}
+	"menu_7"
+	{
+		"en"	"Changes to my class in FF2 (/ff2classinfo)"
+	}
+	"damage_fx"
+	{
+		"#format" "{1:i}"
+		"en"	"You dealt {1} damage in this round"
+	}
+	"scores"
+	{
+		"#format" "{1:i}"
+		"en"	"You earned {1} points in this round"
+	}
+	"boss_win"
+	{
+		"en"	"Congratulations!  You won!"
+	}
+	"boss_lose"
+	{
+		"en"	"Oh no, you lost!  Don't worry, there's always next time"
+	}
+	"ff2_start"
+	{
+		"#format" "{1:N},{2:s},{3:i},{4:s}"
+		"en"	"{1} became\n {2}\n with {3}{4} hp"
+	}
+	"ff2_hp"
+	{
+		"#format" "{1:s},{2:i},{3:i},{4:s}"
+		"en"	"{1}'s HP: {2} of {3}{4}"
+	}
+	"ff2_alive"
+	{
+		"#format" "{1:s},{2:N},{3:i},{4:i},{5:s}"
+		"en"	"{1} ({2}) won with {3} out of {4}{5} hp left."
+	}
+	"select_charset"
+	{
+		"en"    "Please vote for the boss pack for the next map."
+	}
+	"your_points"
+	{
+		"#format" "{1:i}"
+		"en"    "Your queue point(s) is {1}."
+	}
+	"add_points"
+	{
+		"#format" "{1:i}"
+		"en"    "You earned {1} queue point(s)."
+	}
+	"to0"
+	{
+		"en"	"set to 0"
+	}
+	"to0_title"
+	{
+		"en"	"Do you really want to set your queue points to 0?"
+	}
+	"to0_title_admin"
+	{
+		"#format" "{1:N}"
+		"en"	"Do you really want to set {1}'s queue points to 0?"
+	}
+	"to0_done"
+	{
+		"en"	"Your queue points have been reset to {olive}0{default}"
+	}
+	"to0_done_admin"
+	{
+		"#format" "{1:N}"
+		"en"	"{olive}{1}{default}'s queue points have been reset to {olive}0{default}"
+	}
+	"to0_done_by_admin"
+	{
+		"#format" "{1:N}"
+		"en"	"{olive}{1}{default} reset your queue points to {olive}0{default}"
+	}
+	"to0_near"
+	{
+		"en"	"You will become the boss soon. Type {olive}/ff2boss{default} to select a boss."
+	}
+	"arena_round"
+	{
+		"#format"	"{1:i}"
+		"en"		"Waiting for players to finish loading.  FF2 will start in {1} more round"
+	}
+	"used_weighdown"  //Deprecated-translation removed in default_abilities.sp
+	{
+		"en"	"You have used weighdown!"
+	}
+	"ff2_music"
+	{
+		"#format" "{1:s}"
+		"en"	"Freak Fortress 2 Boss's music is {1} now"
+	}
+	"ff2_voice"
+	{
+		"#format" "{1:s}"
+		"en"	"FF2 monologues: {1}."
+	}
+	"ff2_voice2"
+	{
+		"en"	""
+	}
+	"menu_8"
+	{
+		"en"	"Toggle music (/ff2music)"
+	}
+	"menu_9"
+	{
+		"en"	"Toggle monologues (/ff2voice)"
+	}
+	"menu_9a"
+	{
+		"en"	"Toggle info about changes of classes in FF2"
+	}
+	"ff2_classinfo"
+	{
+		"#format" "{1:s}"
+		"en"	"Info about changes of classes in FF2: {1}"
+	}
+	"ff2_last_update"
+	{
+		"#format" "{1:s},{2:s}"
+		"en"	"What's new in v{olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
+	}
+	"charge_status"
+	{
+		"#format" "{1:i}"
+		"en"	"Charge is ready. %.0f percent charged."
+	}
+	"nextmap_charset"
+	{
+		"#format" "{1:s},{2:s}"
+		"en"	"The character set for {1} will be {2}."
+	}
+	"ff2_buttons_reload"
+	{
+		"en"	"Press RELOAD button to use an ability!"
+	}
+	"ff2_buttons_rmb"
+	{
+		"en"	"Press right mouse button to use an ability!"
+	}
+	"ff2_lives_left"
+	{
+		"#format" "{1:s},{2:i}"
+		"en"	"{1} lost a life! There are {2} more!"
+	}
+	"ff2_life_left"
+	{
+		"#format" "{1:s}"
+		"en"	"{1} lost a life! There is 1 more!"
+	}
+	"Boss Suicide Denied"
+	{
+		"en"	"You are not allowed to suicide as the boss!"
+	}
+	"Boss Suicide Pre-round"
+	{
+		"en"	"You are not allowed to suicide before the round starts!"
+	}
+	"Boss Disconnected"
+	{
+		"#format" "{1:N},{2:N}"
+		"en"	"{1} has disconnected and now {2} is the new boss!"
+	}
+	"Replace Disconnected Boss"
+	{
+		"en"	"Surprise! You are now the boss!"
+	}
+	"Backstab"
+	{
+		"en"	"You just backstabbed the boss!"
+	}
+	"Backstabbed"
+	{
+		"en"	"You just got backstabbed!"
+	}
+	"Market Gardener"
+	{
+		"en"	"You just market-gardened the boss!"
+	}
+	"Market Gardened"
+	{
+		"en"	"You just got market-gardened!"
+	}
+	"Detonations Left"
+	{
+		"#format"	"{1:i}"
+		"en"		"You have {1} detonations left!"
+	}
+	"Caber"
+	{
+		"en"	"You just ullapool caber the boss!"
+	}
+	"Cabered"
+	{
+		"en"	"You just got ullapool cabered!"
+	}
+	"ServerAd"
+	{
+		"en"	"Gamers Freak Fortress group: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
+	}
+}
