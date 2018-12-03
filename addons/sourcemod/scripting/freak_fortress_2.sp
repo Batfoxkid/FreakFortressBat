@@ -72,8 +72,6 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 #define MONOCULUS "eyeball_boss"
 #define DISABLED_PERKS "toxic,noclip,uber,ammo,instant,jump,tinyplayer"
 
-#define DataPath "data/freak_fortress_2"
-
 #if defined _steamtools_included
 new bool:steamtools=false;
 #endif
@@ -6938,7 +6936,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker));
 					}
-					case 327:  //Claidheamh Mòr
+					case 327:  //Claidheamh MÃ²r
 					{
 						new Float:charge=GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter");
 						if(charge+25.0>=100.0)
