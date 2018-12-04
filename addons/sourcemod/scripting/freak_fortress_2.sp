@@ -3913,8 +3913,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		}
 		case 224:  //L'etranger
 		{
-			new Handle:itemOverride=PrepareItemHandle(item, _, _, "85 ; 1.5");
-				//85: +50% time needed to regen cloak
+			new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 7.5");
+				//166: +7.5% cloak on hit
 			if(itemOverride!=INVALID_HANDLE)
 			{
 				item=itemOverride;
