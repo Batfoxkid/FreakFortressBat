@@ -41,6 +41,11 @@
 		"#format" "{1:i},{2:i}"
 		"en"	"{1} out of {2} lives left"
 	}
+	"Boss Life"
+	{
+		"#format" "{1:i}"
+		"en"	"{1} Lives"
+	}
 	"do_rage"
 	{
 		"en"	"Call for medic to activate your \"RAGE\" ability!"
