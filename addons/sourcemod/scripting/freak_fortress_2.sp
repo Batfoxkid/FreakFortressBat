@@ -40,7 +40,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "14"
-#define FORK_STABLE_REVISION "4"
+#define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #if !defined FORK_SUB_REVISION
@@ -351,7 +351,8 @@ static const String:ff2versiontitles[][]=
 	"1.14.1",
 	"1.14.2",
 	"1.14.3",
-	"1.14.4"
+	"1.14.4",
+	"1.14.5"
 };
 
 static const String:ff2versiondates[][]=
@@ -463,13 +464,18 @@ static const String:ff2versiondates[][]=
 	"November 29, 2018",		//1.14.1
 	"November 30, 2018",		//1.14.2
 	"November 30, 2018",		//1.14.3
-	"December 2, 2018"		//1.14.4
+	"December 2, 2018",		//1.14.4
+	"DEVELOPMENT BUILD"		//1.14.5
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 108:  //1.14.5
+		{
+			DrawPanelText(panel, "DEV 1) Reworked L'etranger (Batfoxkid)");
+		}
 		case 107:  //1.14.4
 		{
 			DrawPanelText(panel, "1) Boss BGM can be adjusted by TF2's music slider (shadow93)");
