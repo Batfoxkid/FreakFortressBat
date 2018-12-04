@@ -2,7 +2,7 @@
 {
 	"needmoreplayers"
 	{
-		"en"	"The bot did not spawn, something went wrong."
+		"en"	"The server does not have bots spawning."
 	}
 	"type_ff2_to_open_menu"
 	{
@@ -76,19 +76,19 @@
 	}
 	"help_scout"
 	{
-		"en"	"Stock pistol always mini-crit.\nAll bleed damage is crit-boosted.\nCandy Cane drops a health pack on hit.\nFan O' War gives a slight speed boost, faster fire rate,\nbut lower damage and disables double jump."
+		"en"	"Baby Face's Blaster drains boost.\nStock pistol always mini-crit.\nAll bleed damage is crit-boosted.\nCandy Cane drops a health pack on hit.\nFan O' War gives a slight speed boost, faster fire rate,\nbut lower damage and disables double jump."
 	}
 	"help_soldier"
 	{
-		"en"	"Battalion's Backup heavily reduces damage to nearby players while active.\nBoth boots reduce fall damage but mantreads create greater rocketjumps.\nPain Train acts like a Boston Basher."
+		"en"	"Airstrike gains a head on hit.\nBattalion's Backup heavily reduces damage to nearby players while active.\nBoth boots reduce fall damage but mantreads create greater rocketjumps.\nPain Train acts like a Boston Basher."
 	}
 	"help_pyro"
 	{
-		"en"	"Airblasting causes the boss to build rage.\nThe Detonator has increased push force.\nGas Passer explodes the boss if ignited.\nHomewrecker and Maul gives applies knockback.\nThird Degree gives Uber on hit to the medic healing you.\nNeon Annihilator shortly slows on hit."
+		"en"	"Airblasting causes the boss to build rage.\nThe Detonator has increased push force.\nGas Passer explodes the boss if hit.\nHomewrecker and Maul applies more knockback.\nThird Degree gives Uber on hit to the medic healing you.\nNeon Annihilator slows shortly on hit.\nSharpened Volcano Fragment removes your flamethrower."
 	}
 	"help_demo"
 	{
-		"en"	"All shields block one hit from the Boss.\nChargin' Targe gives faster switch speed.\nEyelander and reskins gain heads on hit.\nUllapool Caber can explode five times.\nPain Train acts like a Boston Basher."
+		"en"	"All shields block one hit from the Boss.\nChargin' Targe gives faster melee swing.\nEyelander and reskins gain heads on hit.\nUllapool Caber explosion has increased damage.\nPain Train acts like a Boston Basher."
 	}
 	"help_heavy"
 	{
@@ -96,7 +96,7 @@
 	}
 	"help_eggineer"
 	{
-		"en"	"Frontier Justice gains crits while your sentry is attacking.\nStock pistol always crits.\nEureka Effect has bi-teleporters but can't self-teleport."
+		"en"	"Frontier Justice gains crits while your sentry is attacking.\nWrangler slows you down while deployed.\nPomson 6000 and Short Circuit slows on hit.\nEureka Effect has bi-teleporters but can't self-teleport."
 	}
 	"help_medic"
 	{
@@ -104,15 +104,17 @@
 	}
 	"help_sniper"
 	{
-		"en"	"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nDarwin's Danger Shield gives you +85 HP.\nCozy Camper gives you a modified SMG.\nRazorback gives 50%% melee resistance\nAll melees can wall climb at the cost of 15 HP."
+		"en"	"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nDarwin's Danger Shield and Razorback gives you +85 HP.\nCozy Camper gives you a modified SMG.\nAll melees can wall climb at the cost of 15 HP."
+		// Remove wall climb if you don't have that plugin
 	}
 	"help_spie"
 	{
-		"en"	"All revolvers minicrit.\nAmbassador/Diamondback crits deal more damage.\nBackstabs does about 10%% of the boss's max health.\nYour Eternal Reward/Wanga Prick backstabs disguise you instantly.\nKunai backstabs will give you a health bonus.\nBig Earner gives you full cloak on backstab."
+		"en"	"All revolvers minicrit while not disguised.\nBut Enforcer deals crits while disguised.\nEnfocer, Ambassador, and Diamondback crits deal more damage.\nBackstabs does about 10%% of the boss's max health.\nYour Eternal Reward/Wanga Prick backstabs disguise you instantly and silently.\nKunai backstabs will give you a health bonus.\nBig Earner gives you full cloak and speed on backstab."
 	}
 	"help_melee"
 	{
-		"en"	"See the Steam group for more weapon stats.\nUse /ff2 menu to disable this notifications."
+		"en"	"See the GFF Steam group for more weapon stats.\nUse /ff2 menu to disable this notifications."
+		// Edit this too, hopefully weapon by config soon
 	}
 	"thequeue"
 	{
@@ -371,5 +373,6 @@
 	"ServerAd"
 	{
 		"en"	"Gamers Freak Fortress group: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
+		// And here (yes there's color)
 	}
 }
