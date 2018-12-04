@@ -162,6 +162,8 @@ new Handle:cvarDmg2KStreak;
 new Handle:cvarSniperDamage;
 new Handle:cvarSniperMiniDamage;
 new Handle:cvarBowDamage;
+new Handle:cvarSniperClimbDamage
+new Handle:cvarSniperClimbDelay;
 
 new Handle:FF2Cookies;
 
@@ -194,6 +196,8 @@ new Float:reboundPower=300.0;
 new Float:SniperDamage=2.0;
 new Float:SniperMiniDamage=2.0;
 new Float:BowDamage=1.0;
+new Float:SniperClimbDamage=15.0;
+new Float:SniperClimbDelay=1.56;
 //new bool:canBossRTD;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
@@ -475,6 +479,8 @@ stock FindVersionData(Handle:panel, versionIndex)
 		case 108:  //1.14.5
 		{
 			DrawPanelText(panel, "DEV 1) Reworked L'etranger (Batfoxkid)");
+			DrawPanelText(panel, "DEV 2) Sniper can wall climb within FF2 (shadow93)");
+			DrawPanelText(panel, "DEV 3) Cvars for Sniper wall climbing (Batfoxkid)");
 		}
 		case 107:  //1.14.4
 		{
@@ -1414,6 +1420,8 @@ public OnPluginStart()
 	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier");
 	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier");
 	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier");
+	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb");
+	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs");
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1741,6 +1749,8 @@ public EnableFF2()
 	SniperDamage=GetConVarFloat(cvarSniperDamage);
 	SniperMiniDamage=GetConVarFloat(cvarSniperMiniDamage);
 	BowDamage=GetConVarFloat(cvarBowDamage);
+	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
+	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
 	//canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
 	BossCrits=GetConVarBool(cvarCrits);
@@ -2341,6 +2351,14 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarBowDamage)
 	{
 		BowDamage=StringToFloat(newValue);
+	}
+	else if(convar==cvarSniperClimbDamage)
+	{
+		SniperClimbDamage=StringToFloat(newValue);
+	}
+	else if(convar==cvarSniperClimbDelay)
+	{
+		SniperClimbDelay=StringToFloat(newValue);
 	}
 	/*else if(convar==cvarBossRTD)
 	{
@@ -7611,7 +7629,81 @@ public Action:TF2_CalcIsAttackCritical(client, weapon, String:weaponname[], &boo
 		result=false;
 		return Plugin_Changed;
 	}
+	else if (Enabled && !IsBoss(client) && CheckRoundState()==1 && IsValidEntity(weapon) && SniperClimbDelay!=0)
+	{
+		if (!StrContains(weaponname, "tf_weapon_club"))
+		{
+			SickleClimbWalls(client, weapon);
+		}
+	}
 	return Plugin_Continue;
+}
+
+public SickleClimbWalls(client, weapon)	 //Credit to Mecha the Slag
+{
+	if (!IsValidClient(client) || (GetClientHealth(client)<=SniperClimbDamage) )return;
+
+	new String:classname[64];
+	new Float:vecClientEyePos[3];
+	new Float:vecClientEyeAng[3];
+	GetClientEyePosition(client, vecClientEyePos);   // Get the position of the player's eyes
+	GetClientEyeAngles(client, vecClientEyeAng);	   // Get the angle the player is looking
+
+	//Check for colliding entities
+	TR_TraceRayFilter(vecClientEyePos, vecClientEyeAng, MASK_PLAYERSOLID, RayType_Infinite, TraceRayDontHitSelf, client);
+
+	if (!TR_DidHit(INVALID_HANDLE)) return;
+
+	new TRIndex = TR_GetEntityIndex(INVALID_HANDLE);
+	GetEdictClassname(TRIndex, classname, sizeof(classname));
+	if (!StrEqual(classname, "worldspawn")) return;
+
+	new Float:fNormal[3];
+	TR_GetPlaneNormal(INVALID_HANDLE, fNormal);
+	GetVectorAngles(fNormal, fNormal);
+
+	if (fNormal[0] >= 30.0 && fNormal[0] <= 330.0) return;
+	if (fNormal[0] <= -30.0) return;
+
+	new Float:pos[3];
+	TR_GetEndPosition(pos);
+	new Float:distance = GetVectorDistance(vecClientEyePos, pos);
+
+	if (distance >= 100.0) return;
+
+	new Float:fVelocity[3];
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+
+	fVelocity[2] = 600.0;
+
+	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fVelocity);
+
+	SDKHooks_TakeDamage(client, client, client, SniperClimbDamage, DMG_CLUB, GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
+
+	if (!IsBoss(client)) ClientCommand(client, "playgamesound \"%s\"", "player\\taunt_clip_spin.wav");
+
+	RequestFrame(Timer_NoAttacking, EntIndexToEntRef(weapon));
+	// CreateTimer(0.0, Timer_NoAttacking, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+stock SetNextAttack(weapon, Float:duration = 0.0)
+{
+	if (weapon <= MaxClients) return;
+	if (!IsValidEntity(weapon)) return;
+	new Float:next = GetGameTime() + duration;
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", next);
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", next);
+}
+
+public bool:TraceRayDontHitSelf(entity, mask, any:data)
+{
+	return (entity != data);
+}
+
+public Timer_NoAttacking(any:ref) // Action: Handle:timer, 
+{
+	new weapon = EntRefToEntIndex(ref);
+	SetNextAttack(weapon, SniperClimbDelay);
 }
 
 stock GetClientWithMostQueuePoints(bool:omit[])
