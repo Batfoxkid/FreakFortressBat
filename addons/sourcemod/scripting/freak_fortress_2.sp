@@ -173,6 +173,7 @@ new Handle:livesHUD;
 new Handle:timeleftHUD;
 new Handle:abilitiesHUD;
 new Handle:infoHUD;
+new Handle:lifeHUD;
 
 new bool:Enabled=true;
 new bool:Enabled2=true;
@@ -1473,6 +1474,8 @@ public OnPluginStart()
 	HookConVarChange(cvarSniperDamage, CvarChange);
 	HookConVarChange(cvarSniperMiniDamage, CvarChange);
 	HookConVarChange(cvarBowDamage, CvarChange);
+	HookConVarChange(cvarSniperClimbDamage CvarChange);
+	HookConVarChange(cvarSniperClimbDelay, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -1541,6 +1544,7 @@ public OnPluginStart()
 	abilitiesHUD=CreateHudSynchronizer();
 	timeleftHUD=CreateHudSynchronizer();
 	infoHUD=CreateHudSynchronizer();
+	lifeHUD=CreateHudSynchronizer();
 
 	decl String:oldVersion[64];
 	GetConVarString(cvarVersion, oldVersion, sizeof(oldVersion));
@@ -5563,6 +5567,12 @@ public Action:ClientTimer(Handle:timer)
 			else if(RedAlivePlayers==2 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 			{
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
+			}
+
+			if(RedAlivePlayers!=1 && BossLives[boss]>1 && GetConVarBool(cvarHealthBar))
+			{
+				SetHudTextParams(-1.0, 0.23, 0.15, 255, 255, 255, 255);
+				FF2_ShowSyncHudText(client, lifeHUD, "%t", "Boss Life", BossLives[boss]);
 			}
 
 			if(bMedieval)
