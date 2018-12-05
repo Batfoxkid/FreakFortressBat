@@ -40,7 +40,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "14"
-#define FORK_STABLE_REVISION "4"
+#define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #if !defined FORK_SUB_REVISION
@@ -162,6 +162,8 @@ new Handle:cvarDmg2KStreak;
 new Handle:cvarSniperDamage;
 new Handle:cvarSniperMiniDamage;
 new Handle:cvarBowDamage;
+new Handle:cvarSniperClimbDamage;
+new Handle:cvarSniperClimbDelay;
 
 new Handle:FF2Cookies;
 
@@ -171,6 +173,7 @@ new Handle:livesHUD;
 new Handle:timeleftHUD;
 new Handle:abilitiesHUD;
 new Handle:infoHUD;
+//new Handle:lifeHUD;
 
 new bool:Enabled=true;
 new bool:Enabled2=true;
@@ -194,6 +197,8 @@ new Float:reboundPower=300.0;
 new Float:SniperDamage=2.0;
 new Float:SniperMiniDamage=2.0;
 new Float:BowDamage=1.0;
+new Float:SniperClimbDamage=15.0;
+new Float:SniperClimbDelay=1.56;
 //new bool:canBossRTD;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
@@ -351,7 +356,8 @@ static const String:ff2versiontitles[][]=
 	"1.14.1",
 	"1.14.2",
 	"1.14.3",
-	"1.14.4"
+	"1.14.4",
+	"1.14.5"
 };
 
 static const String:ff2versiondates[][]=
@@ -463,13 +469,20 @@ static const String:ff2versiondates[][]=
 	"November 29, 2018",		//1.14.1
 	"November 30, 2018",		//1.14.2
 	"November 30, 2018",		//1.14.3
-	"December 2, 2018"		//1.14.4
+	"December 2, 2018",		//1.14.4
+	"December 4, 2018"		//1.14.5
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 108:  //1.14.5
+		{
+			DrawPanelText(panel, "1) Nerfed L'etranger (Batfoxkid)");
+			DrawPanelText(panel, "2) Sniper can wall climb within FF2 (shadow93)");
+			DrawPanelText(panel, "3) Cvars for Sniper wall climbing (Batfoxkid)");
+		}
 		case 107:  //1.14.4
 		{
 			DrawPanelText(panel, "1) Boss BGM can be adjusted by TF2's music slider (shadow93)");
@@ -1408,6 +1421,8 @@ public OnPluginStart()
 	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier");
 	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier");
 	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier");
+	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb");
+	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs");
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1459,6 +1474,8 @@ public OnPluginStart()
 	HookConVarChange(cvarSniperDamage, CvarChange);
 	HookConVarChange(cvarSniperMiniDamage, CvarChange);
 	HookConVarChange(cvarBowDamage, CvarChange);
+	HookConVarChange(cvarSniperClimbDamage, CvarChange);
+	HookConVarChange(cvarSniperClimbDelay, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -1527,6 +1544,7 @@ public OnPluginStart()
 	abilitiesHUD=CreateHudSynchronizer();
 	timeleftHUD=CreateHudSynchronizer();
 	infoHUD=CreateHudSynchronizer();
+	//lifeHUD=CreateHudSynchronizer();
 
 	decl String:oldVersion[64];
 	GetConVarString(cvarVersion, oldVersion, sizeof(oldVersion));
@@ -1735,6 +1753,8 @@ public EnableFF2()
 	SniperDamage=GetConVarFloat(cvarSniperDamage);
 	SniperMiniDamage=GetConVarFloat(cvarSniperMiniDamage);
 	BowDamage=GetConVarFloat(cvarBowDamage);
+	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
+	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
 	//canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
 	BossCrits=GetConVarBool(cvarCrits);
@@ -2336,6 +2356,14 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	{
 		BowDamage=StringToFloat(newValue);
 	}
+	else if(convar==cvarSniperClimbDamage)
+	{
+		SniperClimbDamage=StringToFloat(newValue);
+	}
+	else if(convar==cvarSniperClimbDelay)
+	{
+		SniperClimbDelay=StringToFloat(newValue);
+	}
 	/*else if(convar==cvarBossRTD)
 	{
 		canBossRTD=bool:StringToInt(newValue);
@@ -2382,7 +2410,7 @@ public Action:Timer_Announce(Handle:timer)
 		{
 			case 0:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %s", "ServerAd");
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ServerAd");
 			}
 			case 1:
 			{
@@ -3913,8 +3941,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		}
 		case 224:  //L'etranger
 		{
-			new Handle:itemOverride=PrepareItemHandle(item, _, _, "85 ; 1.5");
-				//85: +50% time needed to regen cloak
+			new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
+				//166: +7.5% cloak on hit
 			if(itemOverride!=INVALID_HANDLE)
 			{
 				item=itemOverride;
@@ -5540,6 +5568,12 @@ public Action:ClientTimer(Handle:timer)
 			{
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
 			}
+
+			//if(RedAlivePlayers!=1 && BossLives[boss]>1 && GetConVarBool(cvarHealthBar))
+			//{
+				//SetHudTextParams(-1.0, 0.23, 0.15, 255, 255, 255, 255);
+				//FF2_ShowSyncHudText(client, lifeHUD, "%t", "Boss Life", BossLives[boss]);
+			//}
 
 			if(bMedieval)
 			{
@@ -7605,7 +7639,81 @@ public Action:TF2_CalcIsAttackCritical(client, weapon, String:weaponname[], &boo
 		result=false;
 		return Plugin_Changed;
 	}
+	else if (Enabled && !IsBoss(client) && CheckRoundState()==1 && IsValidEntity(weapon) && SniperClimbDelay!=0)
+	{
+		if (!StrContains(weaponname, "tf_weapon_club"))
+		{
+			SickleClimbWalls(client, weapon);
+		}
+	}
 	return Plugin_Continue;
+}
+
+public SickleClimbWalls(client, weapon)	 //Credit to Mecha the Slag
+{
+	if (!IsValidClient(client) || (GetClientHealth(client)<=SniperClimbDamage) )return;
+
+	new String:classname[64];
+	new Float:vecClientEyePos[3];
+	new Float:vecClientEyeAng[3];
+	GetClientEyePosition(client, vecClientEyePos);   // Get the position of the player's eyes
+	GetClientEyeAngles(client, vecClientEyeAng);	   // Get the angle the player is looking
+
+	//Check for colliding entities
+	TR_TraceRayFilter(vecClientEyePos, vecClientEyeAng, MASK_PLAYERSOLID, RayType_Infinite, TraceRayDontHitSelf, client);
+
+	if (!TR_DidHit(INVALID_HANDLE)) return;
+
+	new TRIndex = TR_GetEntityIndex(INVALID_HANDLE);
+	GetEdictClassname(TRIndex, classname, sizeof(classname));
+	if (!StrEqual(classname, "worldspawn")) return;
+
+	new Float:fNormal[3];
+	TR_GetPlaneNormal(INVALID_HANDLE, fNormal);
+	GetVectorAngles(fNormal, fNormal);
+
+	if (fNormal[0] >= 30.0 && fNormal[0] <= 330.0) return;
+	if (fNormal[0] <= -30.0) return;
+
+	new Float:pos[3];
+	TR_GetEndPosition(pos);
+	new Float:distance = GetVectorDistance(vecClientEyePos, pos);
+
+	if (distance >= 100.0) return;
+
+	new Float:fVelocity[3];
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+
+	fVelocity[2] = 600.0;
+
+	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fVelocity);
+
+	SDKHooks_TakeDamage(client, client, client, SniperClimbDamage, DMG_CLUB, GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
+
+	if (!IsBoss(client)) ClientCommand(client, "playgamesound \"%s\"", "player\\taunt_clip_spin.wav");
+
+	RequestFrame(Timer_NoAttacking, EntIndexToEntRef(weapon));
+	// CreateTimer(0.0, Timer_NoAttacking, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+stock SetNextAttack(weapon, Float:duration = 0.0)
+{
+	if (weapon <= MaxClients) return;
+	if (!IsValidEntity(weapon)) return;
+	new Float:next = GetGameTime() + duration;
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", next);
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", next);
+}
+
+public bool:TraceRayDontHitSelf(entity, mask, any:data)
+{
+	return (entity != data);
+}
+
+public Timer_NoAttacking(any:ref) // Action: Handle:timer, 
+{
+	new weapon = EntRefToEntIndex(ref);
+	SetNextAttack(weapon, SniperClimbDelay);
 }
 
 stock GetClientWithMostQueuePoints(bool:omit[])
