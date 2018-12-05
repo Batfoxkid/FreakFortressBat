@@ -362,7 +362,8 @@ static const String:ff2versiontitles[][]=
 	"1.14.2",
 	"1.14.3",
 	"1.14.4",
-	"1.14.5"
+	"1.14.5",
+	"1.14.6"
 };
 
 static const String:ff2versiondates[][]=
@@ -475,13 +476,18 @@ static const String:ff2versiondates[][]=
 	"November 30, 2018",		//1.14.2
 	"November 30, 2018",		//1.14.3
 	"December 2, 2018",		//1.14.4
-	"December 4, 2018"		//1.14.5
+	"December 4, 2018",		//1.14.5
+	"DEVELOPMENT BUILD"		//1.14.6
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 109:  //1.14.6
+		{
+			DrawPanelText(panel, "DEV 1) Re-added RTD support (Batfoxkid)");
+		}
 		case 108:  //1.14.5
 		{
 			DrawPanelText(panel, "1) Nerfed L'etranger (Batfoxkid)");
