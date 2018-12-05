@@ -479,9 +479,9 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 108:  //1.14.5
 		{
-			DrawPanelText(panel, "DEV 1) Reworked L'etranger (Batfoxkid)");
-			DrawPanelText(panel, "DEV 2) Sniper can wall climb within FF2 (shadow93)");
-			DrawPanelText(panel, "DEV 3) Cvars for Sniper wall climbing (Batfoxkid)");
+			DrawPanelText(panel, "1) Nerfed L'etranger (Batfoxkid)");
+			DrawPanelText(panel, "2) Sniper can wall climb within FF2 (shadow93)");
+			DrawPanelText(panel, "3) Cvars for Sniper wall climbing (Batfoxkid)");
 		}
 		case 107:  //1.14.4
 		{
@@ -2410,7 +2410,7 @@ public Action:Timer_Announce(Handle:timer)
 		{
 			case 0:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %s", "ServerAd");
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ServerAd");
 			}
 			case 1:
 			{
@@ -3941,7 +3941,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		}
 		case 224:  //L'etranger
 		{
-			new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 7.5");
+			new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
 				//166: +7.5% cloak on hit
 			if(itemOverride!=INVALID_HANDLE)
 			{
