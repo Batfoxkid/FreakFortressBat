@@ -248,7 +248,7 @@ new g_Monoculus=-1;
 static bool:executed=false;
 static bool:executed2=false;
 static bool:ReloadFF2=false;
-static bool:ReloadWeapons=false;
+//static bool:ReloadWeapons=false;
 static bool:ReloadConfigs=false;
 new bool:LoadCharset=false;
 
@@ -1796,7 +1796,7 @@ public EnableFF2()
 	BowDamage=GetConVarFloat(cvarBowDamage);
 	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
 	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
-	QualityWep=GetConVarFloat(cvarQualityWep);
+	QualityWep=GetConVarInt(cvarQualityWep);
 	canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
 	BossCrits=GetConVarBool(cvarCrits);
@@ -2434,7 +2434,7 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	}
 	else if(convar==cvarQualityWep)
 	{
-		canQualityWep=bool:StringToInt(newValue);
+		QualityWep=StringToInt(newValue);
 	}
 	else if(convar==cvarBossRTD)
 	{
@@ -2975,7 +2975,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	{
 		//CacheWeapons();
 		CheckToChangeMapDoors();
-		CheckToTeleportToSpawn();
 		FindCharacters();
 		ReloadConfigs=false;
 	}
@@ -5426,7 +5425,7 @@ public Action:Command_LoadCharset(client, args)
 		{
 			FF2CharSet=i;
 			LoadCharset=true;
-			if(CheckRoundState()==FF2RoundState_Setup || CheckRoundState()==FF2RoundState_RoundRunning)
+			if(CheckRoundState()!=-1)
 			{
 				CReplyToCommand(client, "{olive}[FF2]{default} The current character set is set to be switched to %s!", config);
 				return Plugin_Handled;
@@ -5452,17 +5451,14 @@ public Action:Command_LoadCharset(client, args)
 public Action Command_ReloadFF2(client, args)
 {
 	ReloadFF2 = true;
-	switch (CheckRoundState())
+	if(CheckRoundState()!=-1)
 	{
-		case FF2RoundState_Loading, FF2RoundState_RoundEnd:
- 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} The plugin has been reloaded.");
-			ServerCommand("sm plugins reload freak_fortress_2");
-		}
-		default:
-		{
-			CReplyToCommand(client, "{olive}[FF2]{default} The plugin is set to reload.");
-		}
+		CReplyToCommand(client, "{olive}[FF2]{default} The plugin has been reloaded.");
+		ServerCommand("sm plugins reload freak_fortress_2");
+	}
+	else
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} The plugin is set to reload.");
 	}
 	return Plugin_Handled;
 }
@@ -5470,7 +5466,7 @@ public Action Command_ReloadFF2(client, args)
 public Action:Command_ReloadCharset(client, args)
 {
 	LoadCharset = true;
-	if(CheckRoundState()==FF2RoundState_Setup || CheckRoundState()==FF2RoundState_RoundRunning)
+	if(CheckRoundState()!=-1)
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} Current character set is set to reload!");
 		return Plugin_Handled;
@@ -5484,7 +5480,7 @@ public Action:Command_ReloadCharset(client, args)
 public Action:Command_ReloadFF2Weapons(client, args)
 {
 	ReloadWeapons = true;
-	if(CheckRoundState()==FF2RoundState_Setup || CheckRoundState()==FF2RoundState_RoundRunning)
+	if(CheckRoundState()!=-1)
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} %s is set to reload!", WeaponCFG);
 		return Plugin_Handled;
@@ -5498,14 +5494,14 @@ public Action:Command_ReloadFF2Weapons(client, args)
 public Action:Command_ReloadFF2Configs(client, args)
 {
 	ReloadConfigs = true;
-	if(CheckRoundState()==FF2RoundState_Setup || CheckRoundState()==FF2RoundState_RoundRunning)
+	if(CheckRoundState()!=-1)
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} All configs are set to be reloaded!");
 		return Plugin_Handled;
 	}
 	//CacheWeapons();
 	CheckToChangeMapDoors();
-	CheckToTeleportToSpawn();
+	//CheckToTeleportToSpawn();
 	FindCharacters();
 	ReloadConfigs = false;
 	return Plugin_Handled;
