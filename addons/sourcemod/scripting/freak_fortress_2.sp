@@ -40,7 +40,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "14"
-#define FORK_STABLE_REVISION "5"
+#define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #if !defined FORK_SUB_REVISION
@@ -164,6 +164,9 @@ new Handle:cvarSniperMiniDamage;
 new Handle:cvarBowDamage;
 new Handle:cvarSniperClimbDamage;
 new Handle:cvarSniperClimbDelay;
+new Handle:cvarStrangeWep;
+new Handle:cvarQualityWep;
+new Handle:cvarTripleWep;
 
 new Handle:FF2Cookies;
 
@@ -194,11 +197,12 @@ new shieldCrits;
 //new allowedDetonations;
 new Float:GoombaDamage=0.05;
 new Float:reboundPower=300.0;
-new Float:SniperDamage=2.0;
-new Float:SniperMiniDamage=2.0;
-new Float:BowDamage=1.0;
+new Float:SniperDamage=2.5;
+new Float:SniperMiniDamage=2.1;
+new Float:BowDamage=1.25;
 new Float:SniperClimbDamage=15.0;
 new Float:SniperClimbDelay=1.56;
+new QualityWep=5;
 //new bool:canBossRTD;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
@@ -1418,11 +1422,14 @@ public OnPluginStart()
 	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
 	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "195", "Minimum damage to increase killstreak count", _, true, 0.0);
-	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier");
-	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier");
-	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier");
-	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb");
-	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs");
+	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
+	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
+	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier", _, true, 0.0);
+	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb", _, true, 0.0);
+	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs", _, true, 0.0);
+	cvarStrangeWep=CreateConVar("ff2_strangewep", "1", "0-Disable Boss Weapon Stranges, 1-Enable Boss Weapon Stranges", _, true, 0.0, true, 1.0);
+	cvarQualityWep=CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
+	cvarTripleWep=CreateConVar("ff2_triplewep", "0", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1476,6 +1483,9 @@ public OnPluginStart()
 	HookConVarChange(cvarBowDamage, CvarChange);
 	HookConVarChange(cvarSniperClimbDamage, CvarChange);
 	HookConVarChange(cvarSniperClimbDelay, CvarChange);
+	HookConVarChange(cvarStrangeWep, CvarChange);
+	HookConVarChange(cvarQualityWep, CvarChange);
+	HookConVarChange(cvarTripleWep, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -1755,6 +1765,7 @@ public EnableFF2()
 	BowDamage=GetConVarFloat(cvarBowDamage);
 	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
 	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
+	QualityWep=GetConVarFloat(cvarQualityWep);
 	//canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
 	BossCrits=GetConVarBool(cvarCrits);
@@ -2363,6 +2374,10 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarSniperClimbDelay)
 	{
 		SniperClimbDelay=StringToFloat(newValue);
+	}
+	else if(convar==cvarQualityWep)
+	{
+		canQualityWep=bool:StringToInt(newValue);
 	}
 	/*else if(convar==cvarBossRTD)
 	{
@@ -3591,7 +3606,7 @@ EquipBoss(boss)
 			new weaponlevel=KvGetNum(BossKV[Special[boss]], "level", 102);
 			new index=KvGetNum(BossKV[Special[boss]], "index");
 			new strangekills=-1;
-			if(strangerank == 21 && weaponlevel == 102)
+			if(strangerank == 21 && weaponlevel == 102 && GetConVarBool(cvarStrangeWep))
 			{
 				if(attributes[0]!='\0')
 				{
@@ -3602,7 +3617,7 @@ EquipBoss(boss)
 					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, GetRandomInt(0, 9999));
 				}
 			}
-			else if(strangerank == 21 && weaponlevel != 102)
+			else if((strangerank == 21 && weaponlevel != 102) || !GetConVarBool(cvarStrangeWep))
 			{
 				if(attributes[0]!='\0')
 				{
@@ -3745,7 +3760,7 @@ EquipBoss(boss)
 				}
 			}
 
-			new weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", 5), attributes);
+			new weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -6778,11 +6793,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				return Plugin_Handled;
 			}
 
-			//if(damage<=160.0)  //TODO: Wat
-			//{
-				//damage*=3;
-				//return Plugin_Changed;
-			//}
+			if(damage<=160.0 && GetConVarBool(cvarTripleWep))
+			{
+				damage*=3;
+				return Plugin_Changed;
+			}
 		}
 	}
 	else
