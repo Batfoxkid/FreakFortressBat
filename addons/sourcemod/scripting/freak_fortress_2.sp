@@ -162,7 +162,7 @@ new Handle:cvarDmg2KStreak;
 new Handle:cvarSniperDamage;
 new Handle:cvarSniperMiniDamage;
 new Handle:cvarBowDamage;
-new Handle:cvarSniperClimbDamage
+new Handle:cvarSniperClimbDamage;
 new Handle:cvarSniperClimbDelay;
 
 new Handle:FF2Cookies;
@@ -173,7 +173,7 @@ new Handle:livesHUD;
 new Handle:timeleftHUD;
 new Handle:abilitiesHUD;
 new Handle:infoHUD;
-new Handle:lifeHUD;
+//new Handle:lifeHUD;
 
 new bool:Enabled=true;
 new bool:Enabled2=true;
@@ -470,7 +470,7 @@ static const String:ff2versiondates[][]=
 	"November 30, 2018",		//1.14.2
 	"November 30, 2018",		//1.14.3
 	"December 2, 2018",		//1.14.4
-	"DEVELOPMENT BUILD"		//1.14.5
+	"December 4, 2018"		//1.14.5
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -1474,7 +1474,7 @@ public OnPluginStart()
 	HookConVarChange(cvarSniperDamage, CvarChange);
 	HookConVarChange(cvarSniperMiniDamage, CvarChange);
 	HookConVarChange(cvarBowDamage, CvarChange);
-	HookConVarChange(cvarSniperClimbDamage CvarChange);
+	HookConVarChange(cvarSniperClimbDamage, CvarChange);
 	HookConVarChange(cvarSniperClimbDelay, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
@@ -1544,7 +1544,7 @@ public OnPluginStart()
 	abilitiesHUD=CreateHudSynchronizer();
 	timeleftHUD=CreateHudSynchronizer();
 	infoHUD=CreateHudSynchronizer();
-	lifeHUD=CreateHudSynchronizer();
+	//lifeHUD=CreateHudSynchronizer();
 
 	decl String:oldVersion[64];
 	GetConVarString(cvarVersion, oldVersion, sizeof(oldVersion));
@@ -5569,11 +5569,11 @@ public Action:ClientTimer(Handle:timer)
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
 			}
 
-			if(RedAlivePlayers!=1 && BossLives[boss]>1 && GetConVarBool(cvarHealthBar))
-			{
-				SetHudTextParams(-1.0, 0.23, 0.15, 255, 255, 255, 255);
-				FF2_ShowSyncHudText(client, lifeHUD, "%t", "Boss Life", BossLives[boss]);
-			}
+			//if(RedAlivePlayers!=1 && BossLives[boss]>1 && GetConVarBool(cvarHealthBar))
+			//{
+				//SetHudTextParams(-1.0, 0.23, 0.15, 255, 255, 255, 255);
+				//FF2_ShowSyncHudText(client, lifeHUD, "%t", "Boss Life", BossLives[boss]);
+			//}
 
 			if(bMedieval)
 			{
