@@ -29,7 +29,8 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 #undef REQUIRE_PLUGIN
 //#tryinclude <smac>
 #tryinclude <goomba>
-//#tryinclude <rtd>
+#tryinclude <rtd>
+#tryinclude <rtd2>
 #tryinclude <tf2attributes>
 #tryinclude <updater>
 #define REQUIRE_PLUGIN
@@ -154,7 +155,7 @@ new Handle:cvarShieldCrits;
 //new Handle:cvarCaberDetonations;
 new Handle:cvarGoombaDamage;
 new Handle:cvarGoombaRebound;
-//new Handle:cvarBossRTD;
+new Handle:cvarBossRTD;
 new Handle:cvarUpdater;
 new Handle:cvarDebug;
 new Handle:cvarPreroundBossDisconnect;
@@ -203,7 +204,7 @@ new Float:BowDamage=1.25;
 new Float:SniperClimbDamage=15.0;
 new Float:SniperClimbDelay=1.56;
 new QualityWep=5;
-//new bool:canBossRTD;
+new bool:canBossRTD;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
 new Handle:BossInfoTimer[MAXPLAYERS+1][2];
@@ -1418,7 +1419,7 @@ public OnPluginStart()
 	cvarShieldCrits=CreateConVar("ff2_shield_crits", "0", "0 to disable grenade launcher crits when equipping a shield, 1 for minicrits, 2 for crits", _, true, 0.0, true, 2.0);
 	cvarGoombaDamage=CreateConVar("ff2_goomba_damage", "0.05", "How much the Goomba damage should be multipled by when goomba stomping the boss (requires Goomba Stomp)", _, true, 0.01, true, 1.0);
 	cvarGoombaRebound=CreateConVar("ff2_goomba_jump", "300.0", "How high players should rebound after goomba stomping the boss (requires Goomba Stomp)", _, true, 0.0);
-	//cvarBossRTD=CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
+	cvarBossRTD=CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
 	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
 	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "195", "Minimum damage to increase killstreak count", _, true, 0.0);
@@ -1474,7 +1475,7 @@ public OnPluginStart()
 	//HookConVarChange(cvarCaberDetonations, CvarChange);
 	HookConVarChange(cvarGoombaDamage, CvarChange);
 	HookConVarChange(cvarGoombaRebound, CvarChange);
-	//HookConVarChange(cvarBossRTD, CvarChange);
+	HookConVarChange(cvarBossRTD, CvarChange);
 	HookConVarChange(cvarUpdater, CvarChange);
 	HookConVarChange(cvarNextmap=FindConVar("sm_nextmap"), CvarChangeNextmap);
 	HookConVarChange(cvarDmg2KStreak, CvarChange);
@@ -1766,7 +1767,7 @@ public EnableFF2()
 	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
 	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
 	QualityWep=GetConVarFloat(cvarQualityWep);
-	//canBossRTD=GetConVarBool(cvarBossRTD);
+	canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
 	BossCrits=GetConVarBool(cvarCrits);
 	if(GetConVarInt(cvarFirstRound)!=-1)
@@ -2379,10 +2380,10 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	{
 		canQualityWep=bool:StringToInt(newValue);
 	}
-	/*else if(convar==cvarBossRTD)
+	else if(convar==cvarBossRTD)
 	{
 		canBossRTD=bool:StringToInt(newValue);
-	}*/
+	}
 	else if(convar==cvarUpdater)
 	{
 		#if defined _updater_included && !defined DEV_REVISION
@@ -7450,14 +7451,23 @@ public OnStompPost(attacker, victim, Float:damageMultiplier, Float:damageBonus, 
 	}
 }
 
-/*public Action:RTD_CanRollDice(client)
+public Action:RTD_CanRollDice(client)
 {
 	if(Enabled && IsBoss(client) && !canBossRTD)
 	{
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
-}*/
+}
+
+public Action RTD2_CanRollDice(int client)
+{
+	if(Enabled && IsBoss(client) && !canBossRTD)
+	{
+		return Plugin_Handled;
+	}
+	return Plugin_Continue;
+}
 
 public Action:OnGetMaxHealth(client, &maxHealth)
 {
