@@ -29,8 +29,8 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 #undef REQUIRE_PLUGIN
 //#tryinclude <smac>
 #tryinclude <goomba>
-#tryinclude <rtd>
-#tryinclude <rtd2>
+//#tryinclude <rtd>
+//#tryinclude <rtd2>
 #tryinclude <tf2attributes>
 #tryinclude <updater>
 #define REQUIRE_PLUGIN
@@ -489,7 +489,7 @@ static const String:ff2versiondates[][]=
 	"November 30, 2018",		//1.14.3
 	"December 2, 2018",		//1.14.4
 	"December 4, 2018",		//1.14.5
-	"DEVELOPMENT BUILD"		//1.15.0
+	"December 5, 2018"		//1.15.0
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -498,9 +498,9 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 109:  //1.15.0
 		{
-			DrawPanelText(panel, "DEV 1) Re-added RTD support (Batfoxkid)");
-			DrawPanelText(panel, "DEV 2) Non-character configs use data filepath (shadow93)");
-			DrawPanelText(panel, "DEV 3) Added several admin commands for FF2 (shadow93)");
+			DrawPanelText(panel, "1) Non-character configs use data filepath (shadow93)");
+			DrawPanelText(panel, "2) Added several admin commands for FF2 (shadow93)");
+			DrawPanelText(panel, "3) Sandman is no longer normally crit-boosted (Batfoxkid)");
 		}
 		case 108:  //1.14.5
 		{
@@ -5846,6 +5846,10 @@ public Action:ClientTimer(Handle:timer)
 				if(index==416)  //Market Gardener
 				{
 					addthecrit=FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
+				}
+				else if(index==44)  //Sandman
+				{
+					addthecrit=false;
 				}
 			}
 			else if((!StrContains(classname, "tf_weapon_smg") && index!=751) ||  //Cleaner's Carbine
