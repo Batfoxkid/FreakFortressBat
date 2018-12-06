@@ -4140,9 +4140,9 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 					return Plugin_Changed;
 				}
 			}
-			case 128, 775:  //Equalizer, Escape Plan
+			case 128:  //Equalizer
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "206 ; 2");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "69 ; 0 ; 239 ; 0.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4542,6 +4542,15 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			{
 				new Handle:itemOverride=PrepareItemHandle(item, _, _, "532 ; 1.25");
 					//532: Hype decays
+				if(itemOverride!=INVALID_HANDLE)
+				{
+					item=itemOverride;
+					return Plugin_Changed;
+				}
+			}
+			case 775:  //Escape Plan
+			{
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "69 ; 0 ; 206 ; 2 ; 239 ; 0.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
