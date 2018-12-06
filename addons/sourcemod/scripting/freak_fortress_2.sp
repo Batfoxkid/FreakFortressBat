@@ -247,6 +247,7 @@ new g_Monoculus=-1;
 
 static bool:executed=false;
 static bool:executed2=false;
+static bool:ReloadFF2=false;
 //static bool:ReloadWeapons=false;
 static bool:ReloadConfigs=false;
 new bool:LoadCharset=false;
@@ -1543,11 +1544,13 @@ public OnPluginStart()
 	RegConsoleCmd("say", Command_Say);
 	RegConsoleCmd("say_team", Command_Say);
 
+	ReloadFF2 = false;
 	//ReloadWeapons = false;
 	ReloadConfigs = false;
 	
 	RegAdminCmd("ff2_loadcharset", Command_LoadCharset, ADMFLAG_RCON, "Usage: ff2_loadcharset <charset>.  Forces FF2 to switch to a given character set without changing maps");
 	RegAdminCmd("ff2_reloadcharset", Command_ReloadCharset, ADMFLAG_RCON, "Usage:  ff2_reloadcharset.  Forces FF2 to reload the current character set");
+	RegAdminCmd("ff2_reload", Command_ReloadFF2, ADMFLAG_ROOT, "Reloads FF2 safely and quietly?");
 	//RegAdminCmd("ff2_reloadweapons", Command_ReloadFF2Weapons, ADMFLAG_RCON, "Reloads FF2 weapon configuration safely and quietly");
 	RegAdminCmd("ff2_reloadconfigs", Command_ReloadFF2Configs, ADMFLAG_RCON, "Reloads ALL FF2 configs safely and quietly");
 
@@ -2949,20 +2952,25 @@ public CheckArena()
 public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	RoundCount++;
-	
+
+	if(ReloadFF2)
+	{
+		ServerCommand("sm plugins reload freak_fortress_2");
+	}
+
 	if(LoadCharset)
 	{
 		LoadCharset=false;
 		FindCharacters();
 		strcopy(FF2CharSetString, 2, "");		
 	}
-	
+
 	//if(ReloadWeapons)
 	//{
 		//CacheWeapons();
 		//ReloadWeapons=false;
 	//}
-	
+
 	if(ReloadConfigs)
 	{
 		//CacheWeapons();
@@ -5437,6 +5445,20 @@ public Action:Command_LoadCharset(client, args)
 		}
 	}
 	CloseHandle(Kv);
+	return Plugin_Handled;
+}
+
+public Action Command_ReloadFF2(client, args)
+{
+	ReloadFF2 = true;
+	if(CheckRoundState()==-1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} The plugin is set to reload.");
+		return Plugin_Handled;
+	}
+	CReplyToCommand(client, "{olive}[FF2]{default} The plugin has been reloaded.");
+	ReloadFF2 = false;
+	ServerCommand("sm plugins reload freak_fortress_2");
 	return Plugin_Handled;
 }
 
