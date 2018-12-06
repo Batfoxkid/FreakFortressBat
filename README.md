@@ -7,6 +7,7 @@ The download does not include boss configs or models. It is recommended that you
 replacing some parts with this edit. This edit also generates some new cvars so save a backup of cfg/FreakFortress2.cfg
 and delete it, this edit will generate a new one. After running, you can freely readd the cvars you had previously, some
 may not be their like RTD and Caber detentions. (See the Wiki)
+### ALL NON-BOSS CONFIGS (eg. characters.cfg, doors.cfg, and maps.cfg) NEED TO GO IN data/freak_fortress_2/
 
 ### Edit Changes:
 Visit the Wiki tab (https://github.com/Batfoxkid/FreakFortressBat/wiki) to see a list of changes.

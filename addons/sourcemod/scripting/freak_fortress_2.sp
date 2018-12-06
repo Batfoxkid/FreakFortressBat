@@ -30,6 +30,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 //#tryinclude <smac>
 #tryinclude <goomba>
 //#tryinclude <rtd>
+//#tryinclude <rtd2>
 #tryinclude <tf2attributes>
 #tryinclude <updater>
 #define REQUIRE_PLUGIN
@@ -39,8 +40,8 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
     as opposed to the public FF2 versioning system
 */
 #define FORK_MAJOR_REVISION "1"
-#define FORK_MINOR_REVISION "14"
-#define FORK_STABLE_REVISION "5"
+#define FORK_MINOR_REVISION "15"
+#define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #if !defined FORK_SUB_REVISION
@@ -71,6 +72,14 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 #define HEALTHBAR_MAX 255
 #define MONOCULUS "eyeball_boss"
 #define DISABLED_PERKS "toxic,noclip,uber,ammo,instant,jump,tinyplayer"
+
+// Config file paths
+#define ConfigPath "configs/freak_fortress_2"
+#define DataPath "data/freak_fortress_2"
+#define CharsetCFG "characters.cfg"
+#define DoorCFG "doors.cfg"
+#define MapCFG "maps.cfg"
+//#define WeaponCFG "weapons.cfg"
 
 #if defined _steamtools_included
 new bool:steamtools=false;
@@ -154,7 +163,7 @@ new Handle:cvarShieldCrits;
 //new Handle:cvarCaberDetonations;
 new Handle:cvarGoombaDamage;
 new Handle:cvarGoombaRebound;
-//new Handle:cvarBossRTD;
+new Handle:cvarBossRTD;
 new Handle:cvarUpdater;
 new Handle:cvarDebug;
 new Handle:cvarPreroundBossDisconnect;
@@ -164,6 +173,9 @@ new Handle:cvarSniperMiniDamage;
 new Handle:cvarBowDamage;
 new Handle:cvarSniperClimbDamage;
 new Handle:cvarSniperClimbDelay;
+new Handle:cvarStrangeWep;
+new Handle:cvarQualityWep;
+new Handle:cvarTripleWep;
 
 new Handle:FF2Cookies;
 
@@ -194,12 +206,13 @@ new shieldCrits;
 //new allowedDetonations;
 new Float:GoombaDamage=0.05;
 new Float:reboundPower=300.0;
-new Float:SniperDamage=2.0;
-new Float:SniperMiniDamage=2.0;
-new Float:BowDamage=1.0;
+new Float:SniperDamage=2.5;
+new Float:SniperMiniDamage=2.1;
+new Float:BowDamage=1.25;
 new Float:SniperClimbDamage=15.0;
 new Float:SniperClimbDelay=1.56;
-//new bool:canBossRTD;
+new QualityWep=5;
+new bool:canBossRTD;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
 new Handle:BossInfoTimer[MAXPLAYERS+1][2];
@@ -234,6 +247,10 @@ new g_Monoculus=-1;
 
 static bool:executed=false;
 static bool:executed2=false;
+static bool:ReloadFF2=false;
+//static bool:ReloadWeapons=false;
+static bool:ReloadConfigs=false;
+new bool:LoadCharset=false;
 
 new changeGamemode;
 
@@ -357,7 +374,8 @@ static const String:ff2versiontitles[][]=
 	"1.14.2",
 	"1.14.3",
 	"1.14.4",
-	"1.14.5"
+	"1.14.5",
+	"1.15.0"
 };
 
 static const String:ff2versiondates[][]=
@@ -470,13 +488,20 @@ static const String:ff2versiondates[][]=
 	"November 30, 2018",		//1.14.2
 	"November 30, 2018",		//1.14.3
 	"December 2, 2018",		//1.14.4
-	"December 4, 2018"		//1.14.5
+	"December 4, 2018",		//1.14.5
+	"December 5, 2018"		//1.15.0
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 109:  //1.15.0
+		{
+			DrawPanelText(panel, "1) Non-character configs use data filepath (shadow93)");
+			DrawPanelText(panel, "2) Added several admin commands for FF2 (shadow93)");
+			DrawPanelText(panel, "3) Sandman is no longer normally crit-boosted (Batfoxkid)");
+		}
 		case 108:  //1.14.5
 		{
 			DrawPanelText(panel, "1) Nerfed L'etranger (Batfoxkid)");
@@ -1414,15 +1439,18 @@ public OnPluginStart()
 	cvarShieldCrits=CreateConVar("ff2_shield_crits", "0", "0 to disable grenade launcher crits when equipping a shield, 1 for minicrits, 2 for crits", _, true, 0.0, true, 2.0);
 	cvarGoombaDamage=CreateConVar("ff2_goomba_damage", "0.05", "How much the Goomba damage should be multipled by when goomba stomping the boss (requires Goomba Stomp)", _, true, 0.01, true, 1.0);
 	cvarGoombaRebound=CreateConVar("ff2_goomba_jump", "300.0", "How high players should rebound after goomba stomping the boss (requires Goomba Stomp)", _, true, 0.0);
-	//cvarBossRTD=CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
+	cvarBossRTD=CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
 	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
 	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "195", "Minimum damage to increase killstreak count", _, true, 0.0);
-	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier");
-	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier");
-	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier");
-	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb");
-	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs");
+	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
+	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
+	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier", _, true, 0.0);
+	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb", _, true, 0.0);
+	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs", _, true, 0.0);
+	cvarStrangeWep=CreateConVar("ff2_strangewep", "1", "0-Disable Boss Weapon Stranges, 1-Enable Boss Weapon Stranges", _, true, 0.0, true, 1.0);
+	cvarQualityWep=CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
+	cvarTripleWep=CreateConVar("ff2_triplewep", "0", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1467,7 +1495,7 @@ public OnPluginStart()
 	//HookConVarChange(cvarCaberDetonations, CvarChange);
 	HookConVarChange(cvarGoombaDamage, CvarChange);
 	HookConVarChange(cvarGoombaRebound, CvarChange);
-	//HookConVarChange(cvarBossRTD, CvarChange);
+	HookConVarChange(cvarBossRTD, CvarChange);
 	HookConVarChange(cvarUpdater, CvarChange);
 	HookConVarChange(cvarNextmap=FindConVar("sm_nextmap"), CvarChangeNextmap);
 	HookConVarChange(cvarDmg2KStreak, CvarChange);
@@ -1476,6 +1504,9 @@ public OnPluginStart()
 	HookConVarChange(cvarBowDamage, CvarChange);
 	HookConVarChange(cvarSniperClimbDamage, CvarChange);
 	HookConVarChange(cvarSniperClimbDelay, CvarChange);
+	HookConVarChange(cvarStrangeWep, CvarChange);
+	HookConVarChange(cvarQualityWep, CvarChange);
+	HookConVarChange(cvarTripleWep, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -1512,6 +1543,16 @@ public OnPluginStart()
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
 	RegConsoleCmd("say_team", Command_Say);
+
+	ReloadFF2 = false;
+	//ReloadWeapons = false;
+	ReloadConfigs = false;
+	
+	RegAdminCmd("ff2_loadcharset", Command_LoadCharset, ADMFLAG_RCON, "Usage: ff2_loadcharset <charset>.  Forces FF2 to switch to a given character set without changing maps");
+	RegAdminCmd("ff2_reloadcharset", Command_ReloadCharset, ADMFLAG_RCON, "Usage:  ff2_reloadcharset.  Forces FF2 to reload the current character set");
+	RegAdminCmd("ff2_reload", Command_ReloadFF2, ADMFLAG_ROOT, "Reloads FF2 safely and quietly");
+	//RegAdminCmd("ff2_reloadweapons", Command_ReloadFF2Weapons, ADMFLAG_RCON, "Reloads FF2 weapon configuration safely and quietly");
+	RegAdminCmd("ff2_reloadconfigs", Command_ReloadFF2Configs, ADMFLAG_RCON, "Reloads ALL FF2 configs safely and quietly");
 
 	RegAdminCmd("ff2_special", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  ff2_special <boss>.  Forces next round to use that boss");
 	RegAdminCmd("ff2_addpoints", Command_Points, ADMFLAG_CHEATS, "Usage:  ff2_addpoints <target> <points>.  Adds queue points to any player");
@@ -1755,7 +1796,8 @@ public EnableFF2()
 	BowDamage=GetConVarFloat(cvarBowDamage);
 	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
 	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
-	//canBossRTD=GetConVarBool(cvarBossRTD);
+	QualityWep=GetConVarInt(cvarQualityWep);
+	canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
 	BossCrits=GetConVarBool(cvarCrits);
 	if(GetConVarInt(cvarFirstRound)!=-1)
@@ -1866,16 +1908,41 @@ public DisableFF2()
 
 	changeGamemode=0;
 }
-
+/*
+public CacheWeapons()
+{
+	decl String:config[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, WeaponCFG);
+	
+	if(!FileExists(config))
+	{
+		LogError("[FF2] Freak Fortress 2 disabled-can not find '%s'!", WeaponCFG);
+		Enabled2=false;
+		return;
+	}
+	
+	kvWeaponMods = CreateKeyValues("Weapons");
+	if(!FileToKeyValues(kvWeaponMods, config))
+	{
+		LogError("[FF2] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
+		Enabled2=false;
+		return;
+	}
+}
+*/
 public FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextKey
 {
-	decl String:config[PLATFORM_MAX_PATH], String:key[4], String:charset[42];
+	new String:config[PLATFORM_MAX_PATH], String:key[4], String:charset[42];
 	Specials=0;
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "configs/freak_fortress_2/characters.cfg");
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
 	if(!FileExists(config))
 	{
-		LogError("[FF2] Freak Fortress 2 disabled-can not find characters.cfg!");
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, CharsetCFG);
+		if(FileExists(config))
+			LogError("[FF2] Freak Fortress 2 disabled-please move '%s' from '%s' to '%s'!", CharsetCFG, ConfigPath, DataPath);
+		else
+			LogError("[FF2] Freak Fortress 2 disabled-can not find '%s!", CharsetCFG);
 		Enabled2=false;
 		return;
 	}
@@ -2061,7 +2128,8 @@ public LoadCharacter(const String:character[])
 	new String:extensions[][]={".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd"};
 	decl String:config[PLATFORM_MAX_PATH];
 
-	BuildPath(Path_SM, config, sizeof(config), "configs/freak_fortress_2/%s.cfg", character);
+	//BuildPath(Path_SM, config, sizeof(config), "configs/freak_fortress_2/%s.cfg", character);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s.cfg", ConfigPath, character);
 	if(!FileExists(config))
 	{
 		LogError("[FF2 Bosses] Character %s does not exist!", character);
@@ -2364,10 +2432,14 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	{
 		SniperClimbDelay=StringToFloat(newValue);
 	}
-	/*else if(convar==cvarBossRTD)
+	else if(convar==cvarQualityWep)
+	{
+		QualityWep=StringToInt(newValue);
+	}
+	else if(convar==cvarBossRTD)
 	{
 		canBossRTD=bool:StringToInt(newValue);
-	}*/
+	}
 	else if(convar==cvarUpdater)
 	{
 		#if defined _updater_included && !defined DEV_REVISION
@@ -2442,11 +2514,14 @@ stock bool:IsFF2Map()
 	{
 		return true;
 	}
-
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "configs/freak_fortress_2/maps.cfg");
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, MapCFG);
 	if(!FileExists(config))
 	{
-		LogError("[FF2] Unable to find %s, disabling plugin.", config);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, MapCFG);
+		if(FileExists(config))
+			LogError("[FF2] Please move '%s' from '%s' to '%s'! Disabling Plugin!", MapCFG, ConfigPath, DataPath);
+		else
+			LogError("[FF2] Unable to find %s, disabling plugin.", config);
 		return false;
 	}
 
@@ -2519,9 +2594,12 @@ stock bool:CheckToChangeMapDoors()
 
 	decl String:config[PLATFORM_MAX_PATH];
 	checkDoors=false;
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "configs/freak_fortress_2/doors.cfg");
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, DoorCFG);
 	if(!FileExists(config))
 	{
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, DoorCFG);
+		if(FileExists(config))
+			LogError("[FF2] Please move '%s' from '%s' to '%s'!", DoorCFG, ConfigPath, DataPath);
 		if(!strncmp(currentmap, "vsh_lolcano_pb1", 15, false))
 		{
 			checkDoors=true;
@@ -2547,14 +2625,14 @@ stock bool:CheckToChangeMapDoors()
 			continue;
 		}
 
-		if(StrContains(currentmap, config, false)!=-1 || !StrContains(config, "all", false))
+		if(StrContains(currentmap, config, false)!=0 || !StrContains(config, "all", false))
 		{
-			CloseHandle(file);
+			delete file;
 			checkDoors=true;
 			return;
 		}
 	}
-	CloseHandle(file);
+	delete file;
 }
 
 public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
@@ -2874,6 +2952,32 @@ public CheckArena()
 public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	RoundCount++;
+
+	if(ReloadFF2)
+	{
+		ServerCommand("sm plugins reload freak_fortress_2");
+	}
+	
+	if(LoadCharset)
+	{
+		LoadCharset=false;
+		FindCharacters();
+		strcopy(FF2CharSetString, 2, "");		
+	}
+	
+	//if(ReloadWeapons)
+	//{
+		//CacheWeapons();
+		//ReloadWeapons=false;
+	//}
+	
+	if(ReloadConfigs)
+	{
+		//CacheWeapons();
+		CheckToChangeMapDoors();
+		FindCharacters();
+		ReloadConfigs=false;
+	}
 
 	if(!Enabled)
 	{
@@ -3591,7 +3695,7 @@ EquipBoss(boss)
 			new weaponlevel=KvGetNum(BossKV[Special[boss]], "level", 102);
 			new index=KvGetNum(BossKV[Special[boss]], "index");
 			new strangekills=-1;
-			if(strangerank == 21 && weaponlevel == 102)
+			if(strangerank == 21 && weaponlevel == 102 && GetConVarBool(cvarStrangeWep))
 			{
 				if(attributes[0]!='\0')
 				{
@@ -3602,7 +3706,7 @@ EquipBoss(boss)
 					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, GetRandomInt(0, 9999));
 				}
 			}
-			else if(strangerank == 21 && weaponlevel != 102)
+			else if((strangerank == 21 && weaponlevel != 102) || !GetConVarBool(cvarStrangeWep))
 			{
 				if(attributes[0]!='\0')
 				{
@@ -3745,7 +3849,7 @@ EquipBoss(boss)
 				}
 			}
 
-			new weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", 5), attributes);
+			new weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -5265,7 +5369,8 @@ public Action:Command_Charset(client, args)
 	ImplodeStrings(rawText, amount, " ", charset, sizeof(charset));
 
 	decl String:config[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "configs/freak_fortress_2/characters.cfg");
+	//BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "configs/freak_fortress_2/characters.cfg");
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
 	new Handle:Kv=CreateKeyValues("");
 	FileToKeyValues(Kv, config);
@@ -5290,14 +5395,151 @@ public Action:Command_Charset(client, args)
 	return Plugin_Handled;
 }
 
+public Action:Command_LoadCharset(client, args)
+{
+	if(!args)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_loadcharset <charset>");
+		return Plugin_Handled;
+	}
+	
+	
+	new String:charset[32], String:rawText[16][16];
+	GetCmdArgString(charset, sizeof(charset));
+	new amount=ExplodeString(charset, " ", rawText, 16, 16);
+	for(new i; i<amount; i++)
+	{
+		StripQuotes(rawText[i]);
+	}
+	ImplodeStrings(rawText, amount, " ", charset, sizeof(charset));
+
+	new String:config[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
+
+	new Handle:Kv=CreateKeyValues("");
+	FileToKeyValues(Kv, config);
+	for(new i; ; i++)
+	{
+		KvGetSectionName(Kv, config, sizeof(config));
+		if(StrContains(config, charset, false)>=0)
+		{
+			FF2CharSet=i;
+			LoadCharset=true;
+			if(CheckRoundState()!=-1)
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} The current character set is set to be switched to %s!", config);
+				return Plugin_Handled;
+			}
+			
+			CReplyToCommand(client, "{olive}[FF2]{default} Character set has been switched to %s", config);
+			FindCharacters();
+			strcopy(FF2CharSetString, 2, "");
+			LoadCharset=false;
+			break;
+		}
+
+		if(!KvGotoNextKey(Kv))
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Charset not found");
+			break;
+		}
+	}
+	CloseHandle(Kv);
+	return Plugin_Handled;
+}
+
+public Action Command_ReloadFF2(client, args)
+{
+	ReloadFF2 = true;
+	if(CheckRoundState()!=-1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} The plugin has been reloaded.");
+		ServerCommand("sm plugins reload freak_fortress_2");
+	}
+	else
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} The plugin is set to reload.");
+	}
+	return Plugin_Handled;
+}
+
+public Action:Command_ReloadCharset(client, args)
+{
+	LoadCharset = true;
+	if(CheckRoundState()!=-1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} Current character set is set to reload!");
+		return Plugin_Handled;
+	}
+	CReplyToCommand(client, "{olive}[FF2]{default} Current character set has been reloaded!");
+	FindCharacters();
+	LoadCharset=false;
+	return Plugin_Handled;
+}
+/*
+public Action:Command_ReloadFF2Weapons(client, args)
+{
+	ReloadWeapons = true;
+	if(CheckRoundState()!=-1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %s is set to reload!", WeaponCFG);
+		return Plugin_Handled;
+	}
+	CReplyToCommand(client, "{olive}[FF2]{default} %s has been reloaded!", WeaponCFG);
+	CacheWeapons();
+	ReloadWeapons=false;
+	return Plugin_Handled;
+}
+*/
+public Action:Command_ReloadFF2Configs(client, args)
+{
+	ReloadConfigs = true;
+	if(CheckRoundState()!=-1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} All configs are set to be reloaded!");
+		return Plugin_Handled;
+	}
+	//CacheWeapons();
+	CheckToChangeMapDoors();
+	//CheckToTeleportToSpawn();
+	FindCharacters();
+	ReloadConfigs = false;
+	return Plugin_Handled;
+}
 public Action:Command_ReloadSubPlugins(client, args)
 {
 	if(Enabled)
 	{
-		DisableSubPlugins(true);
-		EnableSubPlugins(true);
+		switch(args)
+		{
+			case 0: // Reload ALL subplugins
+			{
+				DisableSubPlugins(true);
+				EnableSubPlugins(true);
+				CReplyToCommand(client, "{olive}[FF2]{default} Reloaded subplugins!");
+			}
+			case 1: // Reload a specific subplugin
+			{
+				new String:pluginName[PLATFORM_MAX_PATH];
+				GetCmdArg(1, pluginName, sizeof(pluginName));
+				BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/freaks/%s.ff2", pluginName);
+				if(!FileExists(pluginName))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} Subplugin %s does not exist!", pluginName);
+					return Plugin_Handled;
+				}	
+				ReplaceString(pluginName, sizeof(pluginName), "addons/sourcemod/plugins/freaks/", "freaks/", false);
+				ServerCommand("sm plugins unload %s", pluginName);
+				ServerCommand("sm plugins load %s", pluginName);
+				ReplaceString(pluginName, sizeof(pluginName), "freaks/", " ", false);
+				CReplyToCommand(client, "{olive}[FF2]{default} Reloaded subplugin %s!", pluginName);		
+			}
+			default:
+			{
+				ReplyToCommand(client, "[SM] Usage: ff2_reload_subplugins <plugin name> (omit <plugin name> to reload ALL subplugins)");	
+			}
+		}
 	}
-	CReplyToCommand(client, "{olive}[FF2]{default} Reloaded subplugins!");
 	return Plugin_Handled;
 }
 
@@ -5604,6 +5846,10 @@ public Action:ClientTimer(Handle:timer)
 				if(index==416)  //Market Gardener
 				{
 					addthecrit=FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
+				}
+				else if(index==44)  //Sandman
+				{
+					addthecrit=false;
 				}
 			}
 			else if((!StrContains(classname, "tf_weapon_smg") && index!=751) ||  //Cleaner's Carbine
@@ -6778,11 +7024,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				return Plugin_Handled;
 			}
 
-			//if(damage<=160.0)  //TODO: Wat
-			//{
-				//damage*=3;
-				//return Plugin_Changed;
-			//}
+			if(damage<=160.0 && GetConVarBool(cvarTripleWep))
+			{
+				damage*=3;
+				return Plugin_Changed;
+			}
 		}
 	}
 	else
@@ -7435,14 +7681,23 @@ public OnStompPost(attacker, victim, Float:damageMultiplier, Float:damageBonus, 
 	}
 }
 
-/*public Action:RTD_CanRollDice(client)
+public Action:RTD_CanRollDice(client)
 {
 	if(Enabled && IsBoss(client) && !canBossRTD)
 	{
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
-}*/
+}
+
+public Action RTD2_CanRollDice(int client)
+{
+	if(Enabled && IsBoss(client) && !canBossRTD)
+	{
+		return Plugin_Handled;
+	}
+	return Plugin_Continue;
+}
 
 public Action:OnGetMaxHealth(client, &maxHealth)
 {
@@ -9189,12 +9444,13 @@ public Action:Timer_DisplayCharsetVote(Handle:timer)
 	//SetVoteResultCallback(menu, Handler_VoteCharset);
 
 	decl String:config[PLATFORM_MAX_PATH], String:charset[64];
-	BuildPath(Path_SM, config, sizeof(config), "configs/freak_fortress_2/characters.cfg");
+	//BuildPath(Path_SM, config, sizeof(config), "configs/freak_fortress_2/characters.cfg");
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
 	new Handle:Kv=CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	new total, charsets;
-	if(charsets!=2)  //Why random if theres 2?
+	if(charsets!=2)  //TODO: Block random if only 2 packs
 	{
 		//AddMenuItem(menu, "0 Random", "Random");
 		AddMenuItem(menu, "Random", "Random");
