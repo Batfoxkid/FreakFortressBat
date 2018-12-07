@@ -4268,9 +4268,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 305, 1079:  //Crusader's Crossbow, Festive Crusader's Crossbow
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "2 ; 1.2 ; 17 ; 0.15");
-					//2: +20% damage
-					//17: +15% uber on hit
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.2");
+					//17: +20% uber on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4347,7 +4346,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 349:  //Sun-on-a-Stick
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.75 ; 795 ; 2", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "795 ; 2");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4485,11 +4484,14 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 589:  //Eureka Effect
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "93 ; 0.25 ; 276 ; 1 ; 790 ; 0.5 ; 732 ; 0.9", true);
-				if(itemOverride!=INVALID_HANDLE)
+				if(!GetConVarBool(cvarEnableEurekaEffect))  //Disabled
 				{
-					item=itemOverride;
-					return Plugin_Changed;
+					new Handle:itemOverride=PrepareItemHandle(item, _, _, "93 ; 0.25 ; 276 ; 1 ; 790 ; 0.5 ; 732 ; 0.9", true);
+					if(itemOverride!=INVALID_HANDLE)
+					{
+						item=itemOverride;
+						return Plugin_Changed;
+					}
 				}
 			}
 			case 593:  //Third Degree
@@ -4967,7 +4969,14 @@ public Action:CheckItems(Handle:timer, any:userid)
 	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60)  //Cloak and Dagger
 	{
 		TF2_RemoveWeaponSlot(client, 4);
-		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
+		if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+		{
+			SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
+		}
+		else
+		{
+			SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "");
+		}
 	}
 
 	if(bMedieval)
@@ -4976,7 +4985,7 @@ public Action:CheckItems(Handle:timer, any:userid)
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
-	if(IsValidEntity(weapon))
+	if(IsValidEntity(weapon) && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))
 	{
 		index=GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 		switch(index)
@@ -5018,7 +5027,7 @@ public Action:CheckItems(Handle:timer, any:userid)
 	}
 
 	#if defined _tf2attributes_included
-	if(tf2attributes)
+	if(tf2attributes && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))
 	{
 		if(IsValidEntity(FindPlayerBack(client, 444)))  //Mantreads
 		{
@@ -5049,14 +5058,6 @@ public Action:CheckItems(Handle:timer, any:userid)
 			case 357:  //Half-Zatoichi
 			{
 				CreateTimer(1.0, Timer_NoHonorBound, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-			}
-			case 589:  //Eureka Effect
-			{
-				if(!GetConVarBool(cvarEnableEurekaEffect))
-				{
-					TF2_RemoveWeaponSlot(client, TFWeaponSlot_Melee);
-					SpawnWeapon(client, "tf_weapon_wrench", 7, 1, 0, "");
-				}
 			}
 		}
 	}
