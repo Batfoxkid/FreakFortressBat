@@ -4038,7 +4038,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 351:  //Detonator
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "25 ; 0.5 ; 58 ; 3.2 ; 144 ; 1.0 ; 207 ; 1.33", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "25 ; 0.5 ; 58 ; 3.2 ; 79 ; 0.75 ; 144 ; 1.0 ; 207 ; 1.33", true);
 					//25: -50% ammo
 					//58: 220% self damage force
 					//144: NOPE
@@ -4058,10 +4058,19 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 					return Plugin_Changed;
 				}
 			}
+			case 60:  //Cloak and Dagger
+			{
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
+				if(itemOverride!=INVALID_HANDLE)
+				{
+					item=itemOverride;
+					return Plugin_Changed;
+				}
+			}
 			case 224:  //L'etranger
 			{
 				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
-					//166: +7.5% cloak on hit
+					//166: +5% cloak on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4441,7 +4450,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 444:  //Mantreads
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.5");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.25");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4451,7 +4460,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				#if defined _tf2attributes_included
 				if(tf2attributes)
 				{
-					TF2Attrib_SetByDefIndex(client, 58, 1.5);
+					TF2Attrib_SetByDefIndex(client, 58, 1.25);
 				}
 				#endif
 			}
@@ -4534,6 +4543,15 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			case 730:  //Beggar's Bazooka
 			{
 				new Handle:itemOverride=PrepareItemHandle(item, _, _, "76 ; 1.5");
+				if(itemOverride!=INVALID_HANDLE)
+				{
+					item=itemOverride;
+					return Plugin_Changed;
+				}
+			}
+			case 740:  //Scorch Shot
+			{
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "79 ; 0.75");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4964,38 +4982,16 @@ public Action:CheckItems(Handle:timer, any:userid)
 	new index=-1;
 	new civilianCheck[MaxClients+1];
 
-	//Cloak and Dagger is NEVER allowed, even in Medieval mode
-	new weapon=GetPlayerWeaponSlot(client, 4);
-	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60)  //Cloak and Dagger
-	{
-		TF2_RemoveWeaponSlot(client, 4);
-		if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
-		{
-			SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
-		}
-		else
-		{
-			SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "");
-		}
-	}
-
 	if(bMedieval)
 	{
 		return Plugin_Continue;
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
-	if(IsValidEntity(weapon) && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))
+	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))
 	{
-		index=GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-		switch(index)
-		{
-			case 402:  //Bazaar Bargain
-			{
-				TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
-				SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
-			}
-		}
+		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
+		SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
 	}
 	else
 	{
@@ -5031,7 +5027,7 @@ public Action:CheckItems(Handle:timer, any:userid)
 	{
 		if(IsValidEntity(FindPlayerBack(client, 444)))  //Mantreads
 		{
-			TF2Attrib_SetByDefIndex(client, 58, 1.5);  //+50% increased push force
+			TF2Attrib_SetByDefIndex(client, 58, 1.25);  //+25% increased push force
 		}
 		else
 		{
@@ -7244,19 +7240,25 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				{
 					case 43:  //Killing Gloves of Boxing
 					{
-						new health=GetClientHealth(attacker);
-						new newhealth=health+40;
-						if(newhealth<=GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							SetEntityHealth(attacker, newhealth);
+							new health=GetClientHealth(attacker);
+							new newhealth=health+40;
+							if(newhealth<=GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
+							{
+								SetEntityHealth(attacker, newhealth);
+							}
 						}
 					}
 					case 61, 1006:  //Ambassador, Festive Ambassador
 					{
-						if(damagecustom==TF_CUSTOM_HEADSHOT)
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							damage=85.0;  //Final damage 255
-							return Plugin_Changed;
+							if(damagecustom==TF_CUSTOM_HEADSHOT)
+							{
+								damage=85.0;  //Final damage 255
+								return Plugin_Changed;
+							}
 						}
 					}
 					case 132, 266, 482, 1082:  //Eyelander, HHHH, Nessie's Nine Iron, Festive Eyelander
@@ -7265,11 +7267,14 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 214:  //Powerjack
 					{
-						new health=GetClientHealth(attacker);
-						new newhealth=health+25;
-						if(newhealth<=GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							SetEntityHealth(attacker, newhealth);
+							new health=GetClientHealth(attacker);
+							new newhealth=health+25;
+							if(newhealth<=GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
+							{
+								SetEntityHealth(attacker, newhealth);
+							}
 						}
 					}
 					case 307:  //Ullapool Caber
@@ -7304,11 +7309,14 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 310:  //Warrior's Spirit
 					{
-						new health=GetClientHealth(attacker);
-						new newhealth=health+50;
-						if(newhealth<=GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							SetEntityHealth(attacker, newhealth);
+							new health=GetClientHealth(attacker);
+							new newhealth=health+50;
+							if(newhealth<=GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
+							{
+								SetEntityHealth(attacker, newhealth);
+							}
 						}
 					}
 					case 317:  //Candycane
@@ -7317,28 +7325,34 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 327:  //Claidheamh Mòr
 					{
-						new Float:charge=GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter");
-						if(charge+25.0>=100.0)
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							SetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter", 100.0);
-						}
-						else
-						{
-							SetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter", charge+25.0);
+							new Float:charge=GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter");
+							if(charge+25.0>=100.0)
+							{
+								SetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter", 100.0);
+							}
+							else
+							{
+								SetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter", charge+25.0);
+							}
 						}
 					}
 					case 348:  //Sharpened Volcano Fragment
 					{
-						new health=GetClientHealth(attacker);
-						new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
-						new newhealth=health+5;
-						if(health<max+30)
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							if(newhealth>max+30)
+							new health=GetClientHealth(attacker);
+							new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
+							new newhealth=health+5;
+							if(health<max+30)
 							{
-								newhealth=max+30;
+								if(newhealth>max+30)
+								{
+									newhealth=max+30;
+								}
+								SetEntityHealth(attacker, newhealth);
 							}
-							SetEntityHealth(attacker, newhealth);
 						}
 					}
 					case 357:  //Half-Zatoichi
@@ -7397,21 +7411,15 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							return Plugin_Changed;
 						}
 					}
-					case 460:  //Enforcer
-					{
-						if(TF2_IsPlayerInCondition(attacker, TFCond_Disguised))
-						{
-							damage=70.0;
-							damagetype|=DMG_CRIT;
-							return Plugin_Changed;
-						}
-					}
 					case 525, 595:  //Diamondback, Manmelter
 					{
-						if(GetEntProp(attacker, Prop_Send, "m_iRevengeCrits"))  //If a revenge crit was used, give a damage bonus
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							damage=85.0;  //255 final damage
-							return Plugin_Changed;
+							if(GetEntProp(attacker, Prop_Send, "m_iRevengeCrits"))  //If a revenge crit was used, give a damage bonus
+							{
+								damage=85.0;  //255 final damage
+								return Plugin_Changed;
+							}
 						}
 					}
 					case 528:  //Short Circuit
@@ -7460,10 +7468,13 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 594:  //Phlogistinator
 					{
-						if(!TF2_IsPlayerInCondition(attacker, TFCond_CritMmmph))
+						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
-							damage/=2.0;
-							return Plugin_Changed;
+							if(!TF2_IsPlayerInCondition(attacker, TFCond_CritMmmph))
+							{
+								damage/=2.0;
+								return Plugin_Changed;
+							}
 						}
 					}
 					/*case 1104:  //Air Strike-moved to OnPlayerHurt for now since OTD doesn't display the actual damage :/
