@@ -29,8 +29,8 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 #undef REQUIRE_PLUGIN
 //#tryinclude <smac>
 #tryinclude <goomba>
-//#tryinclude <rtd>
-//#tryinclude <rtd2>
+#tryinclude <rtd>
+#tryinclude <rtd2>
 #tryinclude <tf2attributes>
 #tryinclude <updater>
 #define REQUIRE_PLUGIN
@@ -2832,6 +2832,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		{
 			CreateTimer(0.3, MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 			BossInfoTimer[boss][0]=CreateTimer(30.2, BossInfoTimer_Begin, boss, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(9.3, MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 
