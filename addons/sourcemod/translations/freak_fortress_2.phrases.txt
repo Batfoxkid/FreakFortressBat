@@ -109,8 +109,8 @@
 	}
 	"help_sniper"
 	{
-		"en"	"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nDarwin's Danger Shield and Razorback gives you +85 HP.\nCozy Camper gives you a modified SMG.\nAll melees can wall climb at the cost of 15 HP."
-		// Remove wall climb if you don't have that plugin
+		"en"	"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nRazorback blocks a hit from the boss.\nDarwin's Danger Shield gives you +85 HP.\nCozy Camper gives you a modified SMG.\nAll melees can wall climb at the cost of 15 HP."
+		// Remove wall climb if your not using it
 	}
 	"help_spie"
 	{
@@ -118,8 +118,8 @@
 	}
 	"help_melee"
 	{
-		"en"	"See the GFF Steam group for more weapon stats.\nUse /ff2 menu to disable this notifications."
-		// Edit this too, hopefully weapon by config soon
+		"en"	"See the Steam group for more weapon stats.\nUse /ff2 menu to disable this notifications."
+		// Edit this too to whereever you have yours
 	}
 	"thequeue"
 	{
