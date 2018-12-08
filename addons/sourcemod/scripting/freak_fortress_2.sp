@@ -493,7 +493,7 @@ static const String:ff2versiondates[][]=
 	"December 2, 2018",		//1.14.4
 	"December 4, 2018",		//1.14.5
 	"December 5, 2018",		//1.15.0
-	"DEVELOPMENT BUILD"		//1.15.1
+	"December 7, 2018"		//1.15.1
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -505,6 +505,8 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "1) Weapons by config (SHADoW)");
 			DrawPanelText(panel, "2) Fixed Razorback (naydef)");
 			DrawPanelText(panel, "3) cvar to use hard-coded weapons (Batfoxkid)");
+			DrawPanelText(panel, "4) Updated weapons stats (Batfoxkid)");
+			DrawPanelText(panel, "5) Readded RTD support (for the last time) (Batfoxkid)");
 		}
 		case 109:  //1.15.0
 		{
@@ -3708,8 +3710,9 @@ EquipBoss(boss)
 			new strangerank=KvGetNum(BossKV[Special[boss]], "rank", 21);
 			new weaponlevel=KvGetNum(BossKV[Special[boss]], "level", 102);
 			new index=KvGetNum(BossKV[Special[boss]], "index");
-			new strangekills=-1;
-			if(strangerank == 21 && weaponlevel == 102 && GetConVarBool(cvarStrangeWep))
+			//new strangekills=-1;
+			//if(strangerank == 21 && weaponlevel == 102 && GetConVarBool(cvarStrangeWep))
+			if(strangerank != 21 || GetConVarBool(cvarStrangeWep))
 			{
 				if(attributes[0]!='\0')
 				{
@@ -3720,7 +3723,8 @@ EquipBoss(boss)
 					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, GetRandomInt(0, 9999));
 				}
 			}
-			else if((strangerank == 21 && weaponlevel != 102) || !GetConVarBool(cvarStrangeWep))
+			//else if((strangerank == 21 && weaponlevel != 102) || !GetConVarBool(cvarStrangeWep))
+			else
 			{
 				if(attributes[0]!='\0')
 				{
@@ -3730,7 +3734,7 @@ EquipBoss(boss)
 				{
 					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
 				}
-			}
+			}/*
 			else
 			{
 				if(strangerank == 1)
@@ -3861,7 +3865,7 @@ EquipBoss(boss)
 				{
 					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
 				}
-			}
+			}*/
 
 			new weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
@@ -4059,15 +4063,6 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 					return Plugin_Changed;
 				}
 			}
-			case 60:  //Cloak and Dagger
-			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
-				if(itemOverride!=INVALID_HANDLE)
-				{
-					item=itemOverride;
-					return Plugin_Changed;
-				}
-			}
 			case 224:  //L'etranger
 			{
 				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
@@ -4219,7 +4214,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
-						return Plugin_Changed;
+					return Plugin_Changed;
 				}
 			}
 			case 173:  //Vita-Saw
@@ -4982,6 +4977,14 @@ public Action:CheckItems(Handle:timer, any:userid)
 	shield[client]=0;
 	new index=-1;
 	new civilianCheck[MaxClients+1];
+
+	// Why you no compile without this?
+	new weapon=GetPlayerWeaponSlot(client, 4);
+	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60  && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))  //Cloak and Dagger
+	{
+		TF2_RemoveWeaponSlot(client, 4);
+		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
+	}
 
 	if(bMedieval)
 	{
