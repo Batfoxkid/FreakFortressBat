@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "15"
-#define FORK_STABLE_REVISION "1"
+#define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #if !defined FORK_SUB_REVISION
@@ -378,7 +378,8 @@ static const String:ff2versiontitles[][]=
 	"1.14.4",
 	"1.14.5",
 	"1.15.0",
-	"1.15.1"
+	"1.15.1",
+	"1.15.2"
 };
 
 static const String:ff2versiondates[][]=
@@ -493,13 +494,18 @@ static const String:ff2versiondates[][]=
 	"December 2, 2018",		//1.14.4
 	"December 4, 2018",		//1.14.5
 	"December 5, 2018",		//1.15.0
-	"December 7, 2018"		//1.15.1
+	"December 7, 2018",		//1.15.1
+	"December 8, 2018"		//1.15.2
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 111:  //1.15.2
+		{
+			DrawPanelText(panel, "1) Fixed boss health being short by one (Batfoxkid)");
+		}
 		case 110:  //1.15.1
 		{
 			DrawPanelText(panel, "1) Weapons by config (SHADoW)");
@@ -507,6 +513,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "3) cvar to use hard-coded weapons (Batfoxkid)");
 			DrawPanelText(panel, "4) Updated weapons stats (Batfoxkid)");
 			DrawPanelText(panel, "5) Readded RTD support (for the last time) (Batfoxkid)");
+			DrawPanelText(panel, "6) Boss health is reset on round start (Batfoxkid)");
 		}
 		case 109:  //1.15.0
 		{
@@ -3948,8 +3955,8 @@ public Action:MakeBoss(Handle:timer, any:boss)
 		PrintToServer("[FF2 Bosses] Warning: Boss %s has an invalid amount of lives, setting to 1", bossName);
 		BossLivesMax[boss]=1;
 	}
-
-	BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing))*(float(playing)-1.0), 1.0341)+2046.0));
+	new playing2 = playing + 1;
+	BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing2))*(float(playing2)-1.0), 1.0341)+2046.0));
 	BossLives[boss]=BossLivesMax[boss];
 	BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss]=BossHealth[boss];
@@ -8183,6 +8190,7 @@ stock ParseFormula(boss, const String:key[], const String:defaultFormula[], defa
 	KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
+	new playing2 = playing + 1;
 	new size=1;
 	new matchingBrackets;
 	for(new i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
@@ -8256,7 +8264,7 @@ stock ParseFormula(boss, const String:key[], const String:defaultFormula[], defa
 			}
 			case 'n', 'x':  //n and x denote player variables
 			{
-				Operate(sumArray, bracket, float(playing), _operator);
+				Operate(sumArray, bracket, float(playing2), _operator);
 			}
 			case '+', '-', '*', '/', '^':
 			{
