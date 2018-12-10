@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "15"
-#define FORK_STABLE_REVISION "2"
+#define FORK_STABLE_REVISION "3"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #if !defined FORK_SUB_REVISION
@@ -177,6 +177,7 @@ new Handle:cvarStrangeWep;
 new Handle:cvarQualityWep;
 new Handle:cvarTripleWep;
 new Handle:cvarHardcodeWep;
+new Handle:cvarSelfKnockback;
 
 new Handle:FF2Cookies;
 
@@ -379,7 +380,8 @@ static const String:ff2versiontitles[][]=
 	"1.14.5",
 	"1.15.0",
 	"1.15.1",
-	"1.15.2"
+	"1.15.2",
+	"1.15.3"
 };
 
 static const String:ff2versiondates[][]=
@@ -495,13 +497,18 @@ static const String:ff2versiondates[][]=
 	"December 4, 2018",		//1.14.5
 	"December 5, 2018",		//1.15.0
 	"December 7, 2018",		//1.15.1
-	"December 8, 2018"		//1.15.2
+	"December 8, 2018",		//1.15.2
+	"December 9, 2018"		//1.15.3
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 112:  //1.15.3
+		{
+			DrawPanelText(panel, "1) Bosses can take self-knockback (Bacon Plague/M76030)");
+		}
 		case 111:  //1.15.2
 		{
 			DrawPanelText(panel, "1) Fixed boss health being short by one (Batfoxkid)");
@@ -1471,6 +1478,7 @@ public OnPluginStart()
 	cvarQualityWep=CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
 	cvarTripleWep=CreateConVar("ff2_triplewep", "0", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
 	cvarHardcodeWep=CreateConVar("ff2_hardcodewep", "0", "0-Only Use Config, 1-Use Alongside Hardcoded", _, true, 0.0, true, 1.0);
+	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "0-Disable, 1-Bosses can rocket jump but take fall damage too", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1528,6 +1536,7 @@ public OnPluginStart()
 	HookConVarChange(cvarQualityWep, CvarChange);
 	HookConVarChange(cvarTripleWep, CvarChange);
 	HookConVarChange(cvarHardcodeWep, CvarChange);
+	HookConVarChange(cvarSelfKnockback, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -7060,12 +7069,12 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 // True if the condition was removed.
 stock bool:RemoveCond(iClient, TFCond:iCond)
 {
-    if (TF2_IsPlayerInCondition(iClient, iCond))
-    {
-        TF2_RemoveCondition(iClient, iCond);
-        return true;
-    }
-    return false;
+	if (TF2_IsPlayerInCondition(iClient, iCond))
+	{
+		TF2_RemoveCondition(iClient, iCond);
+		return true;
+	}
+	return false;
 }
 
 public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
@@ -7082,21 +7091,17 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 		foundDmgCustom=true;
 	}
 
-	if((attacker<=0 || client==attacker) && IsBoss(client))
+	//ABILITY TO ROCKET JUMP PT1
+	if((attacker<=0 || client==attacker) && IsBoss(client) && damagetype & DMG_FALL && GetConVarBool(cvarSelfKnockback))
 	{
-		return Plugin_Handled;
+		damage*=1.0;
+		return Plugin_Changed;
 	}
-
-	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
+	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged) && GetConVarBool(cvarSelfKnockback))
 	{
 		return Plugin_Continue;
 	}
-
-	if(!CheckRoundState() && IsBoss(client))
-	{
-		damage*=0.0;
-		return Plugin_Changed;
-	}
+	//END OF PART 1
 
 	new Float:position[3];
 	GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
@@ -7142,6 +7147,13 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 		new boss=GetBossIndex(client);
 		if(boss!=-1)
 		{
+			//ABILITY TO ROCKETJUMP PART2
+			if(damagetype & DMG_FALL && GetConVarBool(cvarSelfKnockback))
+			{
+				damage=1.0;
+				return Plugin_Changed;
+			}
+			//END OF PART 2
 			if(attacker<=MaxClients)
 			{
 				new bool:bIsTelefrag, bool:bIsBackstab;
