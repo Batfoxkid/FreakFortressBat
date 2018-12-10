@@ -5568,7 +5568,7 @@ public Action:Command_LoadCharset(client, args)
 public Action Command_ReloadFF2(client, args)
 {
 	ReloadFF2 = true;
-	if(CheckRoundState()==-1)
+	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} The plugin is set to reload.");
 		return Plugin_Handled;
@@ -5582,7 +5582,7 @@ public Action Command_ReloadFF2(client, args)
 public Action:Command_ReloadCharset(client, args)
 {
 	LoadCharset = true;
-	if(CheckRoundState()==-1)
+	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} Current character set is set to reload!");
 		return Plugin_Handled;
@@ -5596,7 +5596,7 @@ public Action:Command_ReloadCharset(client, args)
 public Action:Command_ReloadFF2Weapons(client, args)
 {
 	ReloadWeapons = true;
-	if(CheckRoundState()==-1)
+	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} %s is set to reload!", WeaponCFG);
 		return Plugin_Handled;
@@ -5610,7 +5610,7 @@ public Action:Command_ReloadFF2Weapons(client, args)
 public Action:Command_ReloadFF2Configs(client, args)
 {
 	ReloadConfigs = true;
-	if(CheckRoundState()==-1)
+	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} All configs are set to be reloaded!");
 		return Plugin_Handled;
