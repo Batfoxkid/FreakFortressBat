@@ -9323,11 +9323,7 @@ public Action:HelpPanelClass(client)
 		}
 	}
 
-	if(class!=TFClass_Sniper)
-	{
-		Format(text, sizeof(text), "%t\n%s", "help_melee", text);
-	}
-
+	Format(text, sizeof(text), "%t\n%s", "help_melee", text);
 	new Handle:panel=CreatePanel();
 	SetPanelTitle(panel, text);
 	DrawPanelItem(panel, "Exit");
