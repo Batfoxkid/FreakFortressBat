@@ -2517,15 +2517,15 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 1:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} Freak Fortress 2 v%s developed by {blue}Batfoxkid{default} and {olive}Noobis{default}", PLUGIN_VERSION);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
 			}
 			case 2:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} Freak Fortress 2 is based on VS Saxton Hale Mode by {olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, and {blue}Chdata{default}");
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ClassicAd");
 			}
 			case 3:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
 			}
 			default:
 			{
