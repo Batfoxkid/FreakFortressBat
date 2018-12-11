@@ -40,12 +40,13 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
     as opposed to the public FF2 versioning system
 */
 #define FORK_MAJOR_REVISION "1"
-#define FORK_MINOR_REVISION "15"
-#define FORK_STABLE_REVISION "3"
+#define FORK_MINOR_REVISION "16"
+#define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Bat's Edit"
+#define FORK_BRANCH_REVISION "Experimental"
 
-#if !defined FORK_SUB_REVISION
-    #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
+#if !defined FORK_BRANCH_REVISION
+    #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..." "...FORK_BRANCH_REVISION..." "...FORK_SUB_REVISION
 #else
     #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
 #endif
@@ -381,7 +382,8 @@ static const String:ff2versiontitles[][]=
 	"1.15.0",
 	"1.15.1",
 	"1.15.2",
-	"1.15.3"
+	"1.15.3",
+	"1.16.0"
 };
 
 static const String:ff2versiondates[][]=
@@ -498,13 +500,18 @@ static const String:ff2versiondates[][]=
 	"December 5, 2018",		//1.15.0
 	"December 7, 2018",		//1.15.1
 	"December 8, 2018",		//1.15.2
-	"December 9, 2018"		//1.15.3
+	"December 9, 2018",		//1.15.3
+	"EXPERIMENTAL"		//1.16.0
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 113:  //1.16.0
+		{
+			DrawPanelText(panel, "1) Bosses can take self-knockback (Bacon Plague/M76030)");
+		}
 		case 112:  //1.15.3
 		{
 			DrawPanelText(panel, "1) Bosses can take self-knockback (Bacon Plague/M76030)");
@@ -1435,6 +1442,27 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	return APLRes_Success;
 }
 
+// Boss Selection
+new String:xIncoming[MAXPLAYERS+1][700];
+
+new g_NextHale = -1;
+new Handle:g_NextHaleTimer = INVALID_HANDLE;
+
+// Boss Toggle
+#define TOGGLE_UNDEF -1
+#define TOGGLE_ON  1
+#define TOGGLE_OFF 2
+
+new Handle:BossCookie=INVALID_HANDLE;
+new Handle:CompanionCookie=INVALID_HANDLE;
+
+new ClientCookie[MAXPLAYERS+1];
+new ClientCookie2[MAXPLAYERS+1];
+new ClientPoint[MAXPLAYERS+1];
+new ClientID[MAXPLAYERS+1];
+new ClientQueue[MAXPLAYERS+1][2];
+new Handle:cvarFF2TogglePrefDelay = INVALID_HANDLE;
+
 public OnPluginStart()
 {
 	LogMessage("===Freak Fortress 2 Initializing-v%s===", PLUGIN_VERSION);
@@ -1553,6 +1581,9 @@ public OnPluginStart()
 	//RegConsoleCmd("ff2_voice", VoiceTogglePanelCmd);
 	RegConsoleCmd("ff2_resetpoints", ResetQueuePointsCmd);
 	RegConsoleCmd("ff2resetpoints", ResetQueuePointsCmd);
+	RegConsoleCmd("ff2_boss", Command_SetMyBoss);
+	RegConsoleCmd("ff2boss", Command_SetMyBoss);
+	RegConsoleCmd("setboss", Command_SetMyBoss);
 
 	RegConsoleCmd("hale", FF2Panel);
 	RegConsoleCmd("hale_hp", Command_GetHPCmd);
@@ -1569,6 +1600,22 @@ public OnPluginStart()
 	//RegConsoleCmd("hale_voice", VoiceTogglePanelCmd);
 	RegConsoleCmd("hale_resetpoints", ResetQueuePointsCmd);
 	RegConsoleCmd("haleresetpoints", ResetQueuePointsCmd);
+	RegConsoleCmd("hale_boss", Command_SetMyBoss);
+	RegConsoleCmd("haleboss", Command_SetMyBoss);
+
+	cvarFF2TogglePrefDelay = CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");	
+	AutoExecConfig(true, "plugin.ff2_boss_toggle");
+
+	BossCookie = RegClientCookie("ff2_boss_toggle", "Players FF2 Boss Toggle", CookieAccess_Public);	
+	CompanionCookie = RegClientCookie("ff2_companion_toggle", "Players FF2 Companion Boss Toggle", CookieAccess_Public);		
+	
+	RegConsoleCmd("ff2toggle", BossMenu);
+	RegConsoleCmd("ff2companion", CompanionMenu);
+	for(new i = 0; i < MAXPLAYERS; i++)
+	{
+		ClientCookie[i] = TOGGLE_UNDEF;
+		ClientCookie2[i] = TOGGLE_UNDEF;
+	}
 
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
@@ -1936,6 +1983,13 @@ public DisableFF2()
 		ServerCommand("smac_addcvar sv_cheats replicated ban 0 0");
 		ServerCommand("smac_addcvar host_timescale replicated ban 1.0 1.0");
 	}
+
+	#if defined _steamtools_included
+	if(steamtools)
+	{
+		Steam_SetGameDescription("Team Fortress");
+	}
+	#endif
 
 	changeGamemode=0;
 }
