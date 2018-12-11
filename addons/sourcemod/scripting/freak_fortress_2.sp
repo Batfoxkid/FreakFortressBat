@@ -258,6 +258,12 @@ new bool:LoadCharset=false;
 new changeGamemode;
 new Handle:kvWeaponMods=INVALID_HANDLE;
 
+new String: hName[512];
+new Handle:sName;
+
+new bool:IsBossSelected[MAXPLAYERS+1];
+new bool:dmgTriple[MAXPLAYERS+1];
+
 enum Operators
 {
 	Operator_None=0,
@@ -510,7 +516,9 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 113:  //1.16.0
 		{
-			DrawPanelText(panel, "1) Bosses can take self-knockback (Bacon Plague/M76030)");
+			DrawPanelText(panel, "DEV 1) Boss selection and toggle (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "DEV 2) Added owner settings for bosses (Batfoxkid)");
+			DrawPanelText(panel, "DEV 3) Added triple settings for bosses (Batfoxkid/SHADoW)");
 		}
 		case 112:  //1.15.3
 		{
@@ -2931,6 +2939,66 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
+	for(new client=1;client<=MaxClients;client++)
+	{
+		if(!IsValidClient(client))
+		{
+			continue;
+		}
+	
+		ClientQueue[client][0] = client;
+		ClientQueue[client][1] = GetClientQueuePoints(client);
+	}
+	
+	SortCustom2D(ClientQueue, sizeof(ClientQueue), SortQueueDesc);
+	
+	for(new client=1;client<=MaxClients;client++)
+	{
+		if(!IsValidClient(client))
+		{
+			continue;
+		}
+
+		ClientID[client] = ClientQueue[client][0];
+		ClientPoint[client] = ClientQueue[client][1];
+		
+		if (ClientCookie[client] == TOGGLE_ON)
+		{
+			new index = -1;
+			for(new i = 1; i < MAXPLAYERS+1; i++)
+			{
+				if (ClientID[i] == client)
+				{
+					index = i;
+					break;
+				}
+			}
+			if (index > 0)
+			{
+				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Queue Notification", index, ClientPoint[index]);
+			}
+			else
+			{
+				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
+   			}
+		}
+		else if (ClientCookie[client] == TOGGLE_OFF)
+		{
+			SetClientQueuePoints(client, -10);
+			decl String:nick[64];
+			GetClientName(client, nick, sizeof(nick));
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+		}
+		else if (ClientCookie[client] == TOGGLE_UNDEF || !ClientCookie[client])
+		{
+			decl String:nick[64];
+			GetClientName(client, nick, sizeof(nick));
+			new Handle:clientPack = CreateDataPack();
+			WritePackCell(clientPack, client);
+			CreateTimer(GetConVarFloat(cvarFF2TogglePrefDelay), BossMenuTimer, clientPack);
+		}
+	}
+
 	healthcheckused=0;
 	firstBlood=true;
 	return Plugin_Continue;
@@ -3226,18 +3294,158 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
+
+	for(new client=0;client<=MaxClients;client++)
+	{	if (client>0 && IsValidEntity(client) && IsClientConnected(client))
+		{
+			 if (ClientCookie[client] == TOGGLE_OFF)
+			{
+				FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-10);
+    				decl String:nick[64]; 
+    				GetClientName(client, nick, sizeof(nick));
+			}
+		}
+	}
 	return Plugin_Continue;
+}
+
+public Action:BossMenuTimer(Handle:timer, any:clientpack)
+{
+	decl clientId;
+	ResetPack(clientpack);
+	clientId = ReadPackCell(clientpack);
+	CloseHandle(clientpack);
+	if (ClientCookie[clientId] == TOGGLE_UNDEF)
+	{
+		BossMenu(clientId, 0);
+	}
+}
+
+// Companion Menu
+public Action:CompanionMenu(client, args)
+{
+	if (IsValidClient(client))
+	{
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Companion Toggle Menu Title", ClientCookie2[client]);
+
+		decl String:sEnabled[2];
+		GetClientCookie(client, CompanionCookie, sEnabled, sizeof(sEnabled));
+		ClientCookie2[client] = StringToInt(sEnabled);	
+
+		new Handle:menu = CreateMenu(MenuHandlerCompanion);
+		SetMenuTitle(menu, "%t", "FF2 Companion Toggle Menu Title", ClientCookie2[client]);
+
+		new String:menuoption[128];
+		Format(menuoption,sizeof(menuoption),"%t","Enable Companion Selection");
+		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
+		Format(menuoption,sizeof(menuoption),"%t","Disable Companion Selection");
+		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
+
+		SetMenuExitButton(menu, true);
+
+		DisplayMenu(menu, client, 20);
+	}
+	return Plugin_Handled;
+}
+
+public MenuHandlerCompanion(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_Select)
+	{
+		decl String:sEnabled[2];
+		new choice = param2 + 1;
+
+		ClientCookie2[param1] = choice;
+		IntToString(choice, sEnabled, sizeof(sEnabled));
+
+		SetClientCookie(param1, CompanionCookie, sEnabled);
+
+		if(1 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Enabled");
+		}
+		else if(2 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled");
+		}
+	}
+	else if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+// Boss menu
+public Action:BossMenu(client, args)
+{
+	if (IsValidClient(client))
+	{
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Menu Title", ClientCookie[client]);
+		decl String:sEnabled[2];
+		GetClientCookie(client, BossCookie, sEnabled, sizeof(sEnabled));
+		ClientCookie[client] = StringToInt(sEnabled);
+
+		new Handle:menu = CreateMenu(MenuHandlerBoss);
+		SetMenuTitle(menu, "%t", "FF2 Toggle Menu Title", ClientCookie[client]);
+
+		new String:menuoption[128];
+		Format(menuoption,sizeof(menuoption),"%t","Enable Queue Points");
+		AddMenuItem(menu, "Boss Toggle", menuoption);
+		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points");
+		AddMenuItem(menu, "Boss Toggle", menuoption);
+
+		SetMenuExitButton(menu, true);
+
+		DisplayMenu(menu, client, 20);
+	}
+	return Plugin_Handled;
+}
+
+public MenuHandlerBoss(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_Select)
+	{
+		decl String:sEnabled[2];
+		new choice = param2 + 1;
+
+		ClientCookie[param1] = choice;
+		IntToString(choice, sEnabled, sizeof(sEnabled));
+
+		SetClientCookie(param1, BossCookie, sEnabled);
+		
+		if(1 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
+		}
+		else if(2 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+		}
+	} 
+	else if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+public SortQueueDesc(x[], y[], array[][], Handle:data)
+{
+	if (x[1] > y[1])
+		return -1;
+	else if (x[1] < y[1])
+		return 1;
+	return 0;
 }
 
 public Action:OnBroadcast(Handle:event, const String:name[], bool:dontBroadcast)
 {
-    decl String:sound[PLATFORM_MAX_PATH];
-    GetEventString(event, "sound", sound, sizeof(sound));
-    if(!StrContains(sound, "Game.Your", false) || StrEqual(sound, "Game.Stalemate", false))
-    {
-        return Plugin_Handled;
-    }
-    return Plugin_Continue;
+	decl String:sound[PLATFORM_MAX_PATH];
+	GetEventString(event, "sound", sound, sizeof(sound));
+	if(!StrContains(sound, "Game.Your", false) || StrEqual(sound, "Game.Stalemate", false))
+	{
+		return Plugin_Handled;
+	}
+	return Plugin_Continue;
 }
 
 public Action:Timer_NineThousand(Handle:timer)
@@ -3648,6 +3856,203 @@ SetClientSoundOptions(client, soundException, bool:enable)
 	SetClientCookie(client, FF2Cookies, cookies);
 }
 
+public Action:Command_YouAreNext(client, args)
+{
+	if(!Enabled || !IsValidClient(client))
+	{
+		return Plugin_Handled;
+	}
+	
+	if(IsVoteInProgress())
+	{
+		CreateTimer(5.0, Timer_RetryBossNotify, client);
+		return Plugin_Handled;
+	}
+	
+	if (client == 0)
+	{
+		ReplyToCommand(client, "%t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	decl String:texts[256];
+	new Handle:panel = CreatePanel();
+
+	Format(texts, sizeof(texts), "%t\n%t", "to0_next", "to0_near");
+	CRemoveTags(texts, sizeof(texts));
+
+	ReplaceString(texts, sizeof(texts), "{olive}", "");
+	ReplaceString(texts, sizeof(texts), "{default}", "");
+	
+	SetPanelTitle(panel, texts);
+	
+	Format(texts, sizeof(texts), "%t", "to0_to0_next");
+	DrawPanelItem(panel, texts);
+	
+	SendPanelToClient(panel, client, SkipBossPanelH, 30);
+
+	CloseHandle(panel);
+
+	return Plugin_Handled;
+}
+
+public Action:Timer_RetryBossNotify(Handle:timer, any:client)
+{
+	Command_YouAreNext(client, 0);
+}
+
+public SkipBossPanelH(Handle:menu, MenuAction:action, param1, param2)
+{
+	switch(action)
+	{
+		case MenuAction_End: CloseHandle(menu);
+		case MenuAction_Select:
+		{
+			Command_SetMyBoss(param1, 0);
+		}
+	}
+	return;
+}
+
+
+public Action:Command_SetMyBoss(client, args)
+{
+	if (!client)
+	{
+		ReplyToCommand(client, "%t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+	
+	if (!CheckCommandAccess(client, "ff2_boss", 0, true))
+	{
+		ReplyToCommand(client, "%t", "No Access");
+		return Plugin_Handled;
+	}
+
+	if(args)
+	{
+		decl String:name[64], String:boss[64];
+		GetCmdArgString(name, sizeof(name));
+
+		for(new config; config<Specials; config++)
+		{
+			KvRewind(BossKV[config]);
+			KvGetString(BossKV[config], "name", boss, sizeof(boss));
+			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
+			if(KvGetNum(BossKV[config], "hidden", 0)) continue;
+			if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", 0, true)) continue;
+			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", 0, true)) continue;
+			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", 0, true)) continue;
+			if(StrContains(boss, name, false)!=-1)
+			{
+				IsBossSelected[client]=true;
+				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
+				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
+				return Plugin_Handled;
+			}
+
+			KvGetString(BossKV[config], "filename", boss, sizeof(boss));
+			if(StrContains(boss, name, false)!=-1)
+			{
+				IsBossSelected[client]=true;
+				KvGetString(BossKV[config], "name", boss, sizeof(boss));
+				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
+				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
+				return Plugin_Handled;
+			}
+		}
+		CReplyToCommand(client, "{olive}[FF2]{default} Boss could not be found!");
+		return Plugin_Handled;
+	}
+
+	decl String:boss[64];
+	new Handle:dMenu = CreateMenu(Command_SetMyBossH);
+
+	SetMenuTitle(dMenu, "%t","ff2_boss_selection", xIncoming[client]);
+	
+	Format(boss, sizeof(boss), "%t", "to0_random");
+	AddMenuItem(dMenu, boss, boss);
+	
+	Format(boss, sizeof(boss), "%t", "thequeue");
+	AddMenuItem(dMenu, boss, boss);
+	
+	Format(boss, sizeof(boss), "%t", "to0_resetpts");
+	AddMenuItem(dMenu, boss, boss);
+	
+	Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_OFF ? "to0_enablepts" : "to0_disablepts");
+	AddMenuItem(dMenu, boss, boss);
+	
+	for(new config; config<Specials; config++)
+	{	
+		KvRewind(BossKV[config]);
+		if(KvGetNum(BossKV[config], "blocked", 0)) continue;
+		if(KvGetNum(BossKV[config], "hidden", 0)) continue;
+		if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", 0, true)) continue;
+		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", 0, true)) continue;
+		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", 0, true)) continue;
+		
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		AddMenuItem(dMenu, boss, boss);
+	}
+
+	SetMenuExitButton(dMenu, true);
+	DisplayMenu(dMenu, client, 20);
+	return Plugin_Handled;
+}
+
+public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		
+		case MenuAction_Select:
+		{
+			switch(param2)
+			{
+				case 0: 
+				{
+					IsBossSelected[param1]=true;
+					xIncoming[param1] = "";
+					CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+					return;
+				}
+				case 1: QueuePanelCmd(param1, 0);
+				case 2: TurnToZeroPanel(param1, param1);
+				case 3: BossMenu(param1, 0);
+				default:
+				{
+					IsBossSelected[param1]=true;
+					GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+					CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+				}
+			}
+		}
+	}
+	return;
+}
+
+public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], bool:preset)
+{
+	if(preset)
+	{
+		return Plugin_Continue;
+	}
+	
+	new client=GetClientOfUserId(FF2_GetBossUserId(boss));
+	if (!boss && !StrEqual(xIncoming[client], ""))
+	{
+	
+		strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
+		xIncoming[client] = "";
+		return Plugin_Changed;
+	}
+	return Plugin_Continue;
+}
+
 public Action:Timer_Move(Handle:timer)
 {
 	for(new client=1; client<=MaxClients; client++)
@@ -4024,7 +4429,9 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss]=BossHealth[boss];
 
+	dmgTriple[client]=true;
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
+	KvRewind(BossKV[Special[boss]]);
 	TF2_RemovePlayerDisguise(client);
 	TF2_SetPlayerClass(client, TFClassType:KvGetNum(BossKV[Special[boss]], "class", 1), _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 	SDKHook(client, SDKHook_GetMaxHealth, OnGetMaxHealth);  //Temporary:  Used to prevent boss overheal
@@ -4043,6 +4450,11 @@ public Action:MakeBoss(Handle:timer, any:boss)
 		{
 			FF2flags[client]|=FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
 		}
+	}
+
+	if(KvGetNum(BossKV[Special[boss]], "triple", GetConVarBool(cvarTripleWep)))
+	{
+		dmgTriple[client]=false;
 	}
 
 	CreateTimer(0.2, MakeModelTimer, boss, TIMER_FLAG_NO_MAPCHANGE);
@@ -7189,7 +7601,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				return Plugin_Handled;
 			}
 
-			if(damage<=160.0 && GetConVarBool(cvarTripleWep))
+			if(damage<=160.0 && dmgTriple[attacker])
 			{
 				damage*=3;
 				return Plugin_Changed;
