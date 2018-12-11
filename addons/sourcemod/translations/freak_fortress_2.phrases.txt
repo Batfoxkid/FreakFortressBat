@@ -388,4 +388,73 @@
 		"#format" "{1:s}"
 		"en"	"v{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
 	}
+	"FF2 Toggle Enabled Notification"	// Chat
+	{
+		"en"	"You are currently in the Boss queue. Want to disable queue points? Do {olive}/ff2toggle{default}"
+	}
+	"FF2 Toggle Queue Notification"	// Chat
+	{
+		"#format"	"{1:i},{2:i}"
+		"en"	"You are #{1} in the Boss queue with {2} points."
+	}
+	"FF2 Toggle Disabled Notification"	// Chat
+	{
+		"en"	"You are currently NOT in the Boss queue. Want to enable queue points? Do {olive}/ff2toggle{default}"
+	}
+	"FF2 Boss Toggle Notify"	//
+	{
+		"en"	"Please set your Boss queue preferences."
+	}
+	"FF2 Toggle Command"	// Chat
+	{
+		"en"	"Use {olive}/ff2toggle{default} to toggle queue points on/off"
+	}
+	"FF2 Toggle Menu Title"	// Chat, Menu
+	{
+		"en"	"Boss queue points preferences:"
+	}
+	"Enable Queue Points"	// Menu
+	{
+		"en"	"Enable queue points"
+	}
+	"Disable Queue Points"	// Menu
+	{
+		"en"	"Disable queue points"
+	}
+	"FF2 Companion Toggle Notify"	// 
+	{
+		"en"	"Please set your companion selection preferences."
+	}
+	"FF2 Companion Command"	// Chat
+	{
+		"en"	"Use {olive}/ff2companion{default} to toggle being selected as a companion for companion bosses"
+	}
+	"FF2 Companion Toggle Menu Title"	// Chat, Menu
+	{
+		"en"	"Companion Boss preferences:"
+	}
+	"Enable Companion Selection"	// Menu
+	{
+		"en"	"Allow being selected as a companion of a boss"
+	}
+	"Disable Companion Selection"	// Menu
+	{
+		"en"	"Disallow being selected as a companion for a boss"
+	}
+	"FF2 Companion Enabled"	// Chat
+	{
+		"en"	"You will be picked as a companion of a boss. Don't want to be picked as a companion? Do {olive}/ff2companion{default}"
+	}
+	"FF2 Companion Disabled"	// Chat
+	{
+		"en"	"You will not be picked as a companion of a boss. Want to be picked as a companion? Do {olive}/ff2companion{default}"
+	}
+	"FF2 Companion Toggle Command"	// Chat
+	{
+		"en"	"Use {olive}/ff2companion{default} to toggle being selected as a companion of a boss on/off"
+	}
+	"FF2 Boss Selection Command"	// Chat
+	{
+		"en"	"To select a boss, type {olive}/ff2boss{default} to open boss selection menu, or {olive}/ff2boss <boss name>{default} to select a boss."
+	}
 }
