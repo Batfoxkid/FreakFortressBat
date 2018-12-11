@@ -2587,7 +2587,15 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 3:
 			{
+				CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Companion Command");
+			}
+			case 4:
+			{
 				CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
+			}
+			case 5:
+			{
+				CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Toggle Command");
 			}
 			default:
 			{
@@ -6204,6 +6212,41 @@ public OnClientPostAdminCheck(client)
 	}
 }
 
+public OnClientCookiesCached(client)
+{
+	decl String:sEnabled[2];
+	GetClientCookie(client, BossCookie, sEnabled, sizeof(sEnabled));
+
+	new enabled = StringToInt(sEnabled);
+
+	if( 1 > enabled || 2 < enabled)
+	{
+		ClientCookie[client] = TOGGLE_UNDEF;
+		new Handle:clientPack = CreateDataPack();
+		WritePackCell(clientPack, client);
+		CreateTimer(GetConVarFloat(cvarFF2TogglePrefDelay), BossMenuTimer, clientPack);
+	}
+	else
+	{
+		ClientCookie[client] = enabled;
+	}
+
+	GetClientCookie(client, CompanionCookie, sEnabled, sizeof(sEnabled));
+
+	enabled = StringToInt(sEnabled);
+
+	if( 1 > enabled || 2 < enabled)
+	{
+		ClientCookie2[client] = TOGGLE_UNDEF;
+		new Handle:clientPack = CreateDataPack();
+		WritePackCell(clientPack, client);
+	}
+	else
+	{
+		ClientCookie2[client] = enabled;
+	}
+}
+
 public OnClientDisconnect(client)
 {
 	if(Enabled)
@@ -8584,6 +8627,39 @@ stock GetClientWithMostQueuePoints(bool:omit[])
 		}
 	}
 	return winner;
+}
+
+stock GetRandomValidClient(bool:omit[])
+{
+	new companion;
+	for(new client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client) && !omit[client])
+		{
+			if(ClientCookie2[client]==TOGGLE_OFF) // Skip clients who have disabled being able to be selected as a companion
+				continue;
+		
+			if(GetClientTeam(client)>_:TFTeam_Spectator)
+			{
+				companion=client;
+			}
+		}
+	}
+	
+	if(!companion)
+	{
+		for(new client=1; client<MaxClients; client++)
+		{
+			if(IsValidClient(client) && !omit[client])
+			{
+				if(GetClientTeam(client)>_:TFTeam_Spectator) // Ignore the companion toggle pref if we can't find available clients
+				{
+					companion=client;
+				}
+			}		
+		}
+	}
+	return companion;
 }
 
 stock LastBossIndex()
