@@ -43,13 +43,8 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 #define FORK_MINOR_REVISION "16"
 #define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Bat's Edit"
-#define FORK_BRANCH_REVISION "Experimental"
 
-#if !defined FORK_BRANCH_REVISION
-    #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..." "...FORK_BRANCH_REVISION..." "...FORK_SUB_REVISION
-#else
-    #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
-#endif
+#define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
 
 /*
     And now, let's report its version as the latest public FF2 version
@@ -257,9 +252,6 @@ new bool:LoadCharset=false;
 
 new changeGamemode;
 new Handle:kvWeaponMods=INVALID_HANDLE;
-
-new String: hName[512];
-new Handle:sName;
 
 new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
@@ -507,7 +499,7 @@ static const String:ff2versiondates[][]=
 	"December 7, 2018",		//1.15.1
 	"December 8, 2018",		//1.15.2
 	"December 9, 2018",		//1.15.3
-	"EXPERIMENTAL"		//1.16.0
+	"December 11, 2018"		//1.16.0
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -516,9 +508,9 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 113:  //1.16.0
 		{
-			DrawPanelText(panel, "DEV 1) Boss selection and toggle (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "DEV 2) Added owner settings for bosses (Batfoxkid)");
-			DrawPanelText(panel, "DEV 3) Added triple settings for bosses (Batfoxkid/SHADoW)");
+			DrawPanelText(panel, "1) Boss selection and toggle (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "2) Added owner settings for bosses (Batfoxkid)");
+			DrawPanelText(panel, "3) Added triple settings for bosses (Batfoxkid/SHADoW)");
 		}
 		case 112:  //1.15.3
 		{
@@ -1453,9 +1445,6 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 // Boss Selection
 new String:xIncoming[MAXPLAYERS+1][700];
 
-new g_NextHale = -1;
-new Handle:g_NextHaleTimer = INVALID_HANDLE;
-
 // Boss Toggle
 #define TOGGLE_UNDEF -1
 #define TOGGLE_ON  1
@@ -1680,6 +1669,7 @@ public OnPluginStart()
 	}
 
 	LoadTranslations("freak_fortress_2.phrases");
+	LoadTranslations("freak_fortress_2_prefs.phrases");
 	LoadTranslations("common.phrases");
 
 	AddNormalSoundHook(HookSound);
@@ -3981,13 +3971,10 @@ public Action:Command_SetMyBoss(client, args)
 	Format(boss, sizeof(boss), "%t", "to0_random");
 	AddMenuItem(dMenu, boss, boss);
 	
-	Format(boss, sizeof(boss), "%t", "thequeue");
-	AddMenuItem(dMenu, boss, boss);
-	
-	Format(boss, sizeof(boss), "%t", "to0_resetpts");
-	AddMenuItem(dMenu, boss, boss);
-	
 	Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_OFF ? "to0_enablepts" : "to0_disablepts");
+	AddMenuItem(dMenu, boss, boss);
+	
+	Format(boss, sizeof(boss), "%t", ClientCookie2[client] == TOGGLE_OFF ? "to0_enableduo" : "to0_disableduo");
 	AddMenuItem(dMenu, boss, boss);
 	
 	for(new config; config<Specials; config++)
@@ -4028,9 +4015,8 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					CReplyToCommand(param1, "%t", "to0_comfirmrandom");
 					return;
 				}
-				case 1: QueuePanelCmd(param1, 0);
-				case 2: TurnToZeroPanel(param1, param1);
-				case 3: BossMenu(param1, 0);
+				case 1: BossMenu(param1, 0);
+				case 2: CompanionMenu(param1, 0);
 				default:
 				{
 					IsBossSelected[param1]=true;
@@ -4437,7 +4423,18 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss]=BossHealth[boss];
 
-	dmgTriple[client]=true;
+	if(KvGetNum(BossKV[Special[boss]], "triple", 2) == 0)
+	{
+		dmgTriple[client]=false;
+	}
+	else if(KvGetNum(BossKV[Special[boss]], "triple", 2) == 1)
+	{
+		dmgTriple[client]=true;
+	}
+	else
+	{
+		dmgTriple[client]=GetConVarBool(cvarTripleWep);
+	}
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
 	TF2_RemovePlayerDisguise(client);
@@ -4458,11 +4455,6 @@ public Action:MakeBoss(Handle:timer, any:boss)
 		{
 			FF2flags[client]|=FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
 		}
-	}
-
-	if(KvGetNum(BossKV[Special[boss]], "triple", GetConVarBool(cvarTripleWep)))
-	{
-		dmgTriple[client]=false;
 	}
 
 	CreateTimer(0.2, MakeModelTimer, boss, TIMER_FLAG_NO_MAPCHANGE);
