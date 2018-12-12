@@ -1,0 +1,308 @@
+"Phrases"
+{
+	"rps_lost"
+	{	
+		"#format" "{1:i},{2:N}"
+		"en"	"You lost {1} queue points to {2}!"
+	}
+	"rps_won"
+	{	
+		"#format" "{1:i},{2:N}"
+		"en"	"You won {1} queue points from {2}!"
+	}
+	"ff2boss_enabled"
+	{
+		"en"	"Bosses: Enabled"
+	}
+	"ff2boss_disabled"
+	{
+		"en"	"Bosses: Disabled"
+	}
+	"ff2comp_enabled"
+	{
+		"en"	"Companion bosses: Enabled"
+	}
+	"ff2comp_disabled"
+	{
+		"en"	"Companion bosses: Disabled"
+	}
+	"ff2_boss_selection"
+	{
+		"#format"	"{1:s}"
+		"en"	"Freak Fortress 2 Boss Selection:\n Set your preferences here\n \nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent selection: {1}"
+	}
+	"boss_selection_overridden"
+	{
+		"en"	"An admin overrode your boss selection!"
+	}
+	"to0_random"
+	{
+		"en"	"Random Boss"
+	}
+	"to0_resetpts"
+	{
+		"en"	"Skip a turn"
+	}
+	"to0_disablepts"
+	{
+		"en"	"Disable FF2 Bosses"
+	}
+	"to0_enablepts"
+	{
+		"en"	"Enable FF2 Bosses"
+	}
+	"to0_disableduo"
+	{
+		"en"	"Disable being a Companion"
+	}
+	"to0_enableduo"
+	{
+		"en"	"Enable being a Companion"
+	}
+	"to0_difficulty"
+	{
+		"en"	"Change Difficulty"
+	}
+	"to0_comfirmrandom"
+	{
+		"en"	"{olive}[FF2]{default} You will become a random boss. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to select a boss."
+	}
+	"to0_boss_selected"
+	{
+		"#format" "{1:s}"
+		"en"	"{olive}[FF2]{default} You have selected {1}. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to change your boss."
+	}
+	"ff2_changedifficulty_denied"
+	{
+		"en"	"You cannot change your difficulty right now! Wait until the round ends and try again!"
+	}
+	"FF2 Toggle Enabled Notification"
+	{
+		"en"			"You are currently in the Boss queue. Want to disable queue points? do !ff2toggle."
+	}
+	"FF2 Toggle Queue Notification"
+	{
+		"#format" 		"{1:i},{2:i}"
+		"en"			"You are #{1} in the Boss queue with {2} points."
+	}
+	"FF2 Toggle Disabled Notification"
+	{
+		"en"			"You are currently NOT in the Boss queue. Want to enable queue points? do !ff2toggle."
+	}
+	"FF2 Toggle Disabled Notification For Map"
+	{
+		"en"			"You are currently NOT in the Boss queue for the current map. Want to enable queue points? do !ff2toggle."
+	}
+	"FF2 Boss Toggle Notify"
+	{
+		"en"			"Please set your Boss queue preferences."
+	}
+	"FF2 Toggle Command"
+	{
+		"en"			"Use {olive}/ff2toggle{default} to toggle queue points on/off"
+	}
+	"FF2 Toggle Menu Title"
+	{
+		"en"			"Boss queue points preferences:"
+	}
+	"Enable Queue Points"
+	{
+		"en"			"Enable queue points"
+	}
+	"Disable Queue Points"
+	{
+		"en"			"Disable queue points"
+	}
+	"Disable Queue Points For This Map"
+	{
+		"en"			"Disable queue points for this map only"
+	}
+	"FF2 Companion Toggle Notify"
+	{
+		"en"			"Please set your companion selection preferences."
+	}
+	"FF2 Companion Command"
+	{
+		"en"			"Use {olive}/ff2companion{default} to toggle being selected as a companion for companion bosses"
+	}
+	"FF2 Companion Toggle Menu Title"
+	{
+		"en"			"Companion Boss preferences:"
+	}
+	"Enable Companion Selection"
+	{
+		"en"			"Allow being selected as a companion of a boss"
+	}
+	"Disable Companion Selection"
+	{
+		"en"			"Disallow being selected as a companion for a boss"
+	}
+	"Disable Companion Selection For Map"
+	{
+		"en"			"Disallow being selected as a companion for a boss for this map only"
+	}
+	"FF2 Companion Enabled"
+	{
+		"en"			"You will be picked as a companion of a boss. Don't want to be picked as a companion? do {olive}!ff2companion{default}"
+	}
+	"FF2 Companion Disabled"
+	{
+		"en"			"You will not be picked as a companion of a boss. Want to be picked as a companion? do {olive}!ff2companion{default}"
+	}
+	"FF2 Companion Disabled For Map"
+	{
+		"en"			"You will not be picked as a companion of a boss for this map only. Want to be picked as a companion? do {olive}!ff2companion{default}"
+	}
+	"FF2 Companion Toggle Command"
+	{
+		"en"			"Use {olive}/ff2companion{default} to toggle being selected as a companion of a boss on/off"
+	}
+	"FF2 Difficulty Command"
+	{
+		"en"			"Use {olive}/ff2difficulty{default} to change your boss difficulty!"	
+	}
+	"FF2 Boss Selection Command"
+	{
+		"en"			"To select a boss, type {olive}/ff2boss{default} to open boss selection menu, or {olive}/ff2boss <boss name>{default} to select a boss."
+	}
+	"ff2_compensation"
+	{
+		"#format"	"{1:i}"
+		"en"		"Your health was increased by {1} percent due to missing companions!"
+	}
+	"ff2_difficulty_mod"
+	{
+		"#format"	"{1:i}"
+		"en"		"You have spawned with only {1} percent health!"
+	}
+	"FF2 Setup"
+	{
+		"en"	"Please configure the following:"
+	}
+	"Configure Boss Toggle"
+	{
+		"en"	"Configure boss preferences"
+	}
+	"Configure Companion Toggle"
+	{
+		"en"	"Configure companion preferences"
+	}
+	"Configure Difficulty Setting"
+	{
+		"en"			"Configure boss difficulty"
+	}
+	"FF2 Difficulty Settings Menu Title"
+	{
+		"en"			"Up for a challenge? You can change your difficulty level! This will modify your selected boss's total health!"
+	}
+	"ff2difficulty_undefined"
+	{
+		"#format"		"{1:i}"
+		"en"			"No difficulty selected. You will have {1} pct HP!"
+	}
+	"ff2difficulty_normal"
+	{
+		"#format"		"{1:i}"
+		"en"			"Difficulty: Normal ({1} pct HP)"
+	}
+	"ff2difficulty_hard"
+	{
+		"#format"		"{1:i}"
+		"en"			"Difficulty: Hard ({1} pct HP, RAGE fewer times)"
+	}
+	"ff2difficulty_lunatic"
+	{
+		"#format"		"{1:i}"
+		"en"			"Difficulty: Lunatic ({1} pct HP, No RAGE)"
+	}
+	"ff2difficulty_insane"
+	{
+		"#format"		"{1:i}"
+		"en"			"Difficulty: Insane ({1} pct HP, No RAGE)"
+	}
+	"FF2 Normal Difficulty"
+	{
+		"#format"		"{1:i}"
+		"en"			"Normal: {1} percent total HP"
+	}
+	"FF2 Hard Difficulty"
+	{
+		"#format"		"{1:i}"
+		"en"			"Hard: {1} percent HP, RAGE fewer times"
+	}
+	"FF2 Lunatic Difficulty"
+	{
+		"#format"		"{1:i}"
+		"en"			"Lunatic: {1} percent HP, RAGE (including death effects) disabled!"
+	}
+	"FF2 Insane Difficulty"
+	{
+		"#format"		"{1:i}"
+		"en"			"Insane: {1} percent HP, RAGE (including death effects) disabled!"
+	}
+	"FF2 New Difficulty"
+	{
+		"#format"		"{1:i}"
+		"en"			"You will now spawn with {1} percent total HP the next time you are the boss"
+	}
+	"ff2_please wait"
+	{
+		"en"	"Please wait until a round has started!"
+	}
+	"track_skipped"
+	{
+		"en"	"Current track skipped! Playing next track..."
+	}
+	"track_shuffle"
+	{
+		"en"	"Current track skipped! Playing random track..."
+	}
+	"track_select"
+	{
+		"en"	"Select a boss theme!"
+	}
+	"themes_enable"
+	{
+		"en"	"Enable boss music"
+	}
+	"themes_disable"
+	{
+		"en"	"Disable boss music"
+	}
+	"themes_already_enabled"
+	{
+		"en"	"Boss music are already enabled.."
+	}
+	"theme_skip"
+	{
+		"en"	"Skip"
+	}
+	"theme_shuffle"
+	{
+		"en"	"Shuffle"	
+	}
+	"theme_select"
+	{
+		"en"	"Track selection"		
+	}
+	"theme_menu"
+	{
+		"en"	"Music Settings"		
+	}
+	"ff2_music_disabled"
+	{
+		"en"	"Boss themes are currently DISABLED. Please enable them!"
+	}
+	"ff2_no_music"
+	{
+		"en"	"Could not find any themes for this boss! If you are a developer, please check your config!"
+	}
+	"unknown_song"
+	{
+		"en"	"Unknown Song"
+	}
+	"unknown_artist"
+	{
+		"en"	"Unknown Artist"
+	}
+}
