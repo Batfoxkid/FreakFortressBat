@@ -14,3 +14,13 @@ Visit the Wiki tab (https://github.com/Batfoxkid/FreakFortressBat/wiki) to see a
 
 ### Reporting Issues:
 Visit the Issues tab (https://github.com/Batfoxkid/FreakFortressBat/issues) to report any bugs, enhancements, or questions you may have.
+
+### Credits
+SHADoW NiNE TR3S for his fork public realse (and I rip off of rip)
+https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
+
+Bacon Plague and M76030 for their boss self-knockback code
+*Remind to link their Steam profiles, they don't have gits
+
+Deathreus for the current boss in server name
+https://github.com/Deathreus | https://github.com/Deathreus/FF2-Official
