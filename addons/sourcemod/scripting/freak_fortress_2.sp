@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "1"
+#define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -174,6 +174,7 @@ new Handle:cvarQualityWep;
 new Handle:cvarTripleWep;
 new Handle:cvarHardcodeWep;
 new Handle:cvarSelfKnockback;
+new Handle:cvarNameChange;
 
 new Handle:FF2Cookies;
 
@@ -250,6 +251,8 @@ static bool:ReloadWeapons=false;
 static bool:ReloadConfigs=false;
 new bool:LoadCharset=false;
 
+new Handle:hostName;
+new String:oldName[256];
 new changeGamemode;
 new Handle:kvWeaponMods=INVALID_HANDLE;
 
@@ -382,7 +385,8 @@ static const String:ff2versiontitles[][]=
 	"1.15.2",
 	"1.15.3",
 	"1.16.0",
-	"1.16.1"
+	"1.16.1",
+	"1.16.2"
 };
 
 static const String:ff2versiondates[][]=
@@ -501,13 +505,18 @@ static const String:ff2versiondates[][]=
 	"December 8, 2018",		//1.15.2
 	"December 9, 2018",		//1.15.3
 	"December 11, 2018",		//1.16.0
-	"December 12, 2018"		//1.16.1
+	"December 12, 2018",		//1.16.1
+	"December 13, 2018"		//1.16.2
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 115:  //1.16.2
+		{
+			DrawPanelText(panel, "1) Server name has the current boss name (Deathreus)");
+		}
 		case 114:  //1.16.1
 		{
 			DrawPanelText(panel, "1) Details and more commands (Batfoxkid)");
@@ -1512,6 +1521,7 @@ public OnPluginStart()
 	cvarHardcodeWep=CreateConVar("ff2_hardcodewep", "0", "0-Only Use Config, 1-Use Alongside Hardcoded", _, true, 0.0, true, 1.0);
 	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "0-Disable, 1-Bosses can rocket jump but take fall damage too", _, true, 0.0, true, 1.0);
 	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
+	cvarNameChange=CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1809,6 +1819,7 @@ public OnConfigsExecuted()
 	tf_dropped_weapon_lifetime=bool:GetConVarInt(FindConVar("tf_dropped_weapon_lifetime"));
 	tf_feign_death_activate_damage_scale=GetConVarFloat(FindConVar("tf_feign_death_activate_damage_scale"));
 	tf_feign_death_damage_scale=GetConVarFloat(FindConVar("tf_feign_death_damage_scale"));
+	GetConVarString(hostName=FindConVar("hostname"), oldName, sizeof(oldName));
 
 	if(IsFF2Map() && GetConVarBool(cvarEnabled))
 	{
@@ -3008,6 +3019,15 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 			WritePackCell(clientPack, client);
 			CreateTimer(GetConVarFloat(cvarFF2TogglePrefDelay), BossMenuTimer, clientPack);
 		}
+	}
+
+	if(GetConVarBool(cvarNameChange))
+	{
+		decl String:newName[256], String:bossName[64];
+		SetConVarString(hostName, oldName);
+		KvGetString(BossKV[Special[0]], "name", bossName, sizeof(bossName));
+		Format(newName, sizeof(newName), "%s | %s", oldName, bossName);
+		SetConVarString(hostName, newName);
 	}
 
 	healthcheckused=0;
