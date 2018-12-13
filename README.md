@@ -15,7 +15,7 @@ Visit the Wiki tab (https://github.com/Batfoxkid/FreakFortressBat/wiki) to see a
 Visit the Issues tab (https://github.com/Batfoxkid/FreakFortressBat/issues) to report any bugs, enhancements, or questions you may have.
 
 ### Credits
-SHADoW NiNE TR3S for his fork public realse (and I rip off of)                                                
+SHADoW NiNE TR3S for his fork public release (and I rip off of)                                                
 https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
 
 Bacon Plague and M76030 for their boss self-knockback code                                                    
