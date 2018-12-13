@@ -45,19 +45,19 @@
 	}
 	"to0_disablepts"
 	{
-		"en"	"Disable FF2 Bosses"
+		"en"	"Disable Bosses"
 	}
 	"to0_enablepts"
 	{
-		"en"	"Enable FF2 Bosses"
+		"en"	"Enable Bosses"
 	}
 	"to0_disableduo"
 	{
-		"en"	"Disable being a Companion"
+		"en"	"Disable Companions"
 	}
 	"to0_enableduo"
 	{
-		"en"	"Enable being a Companion"
+		"en"	"Enable Companions"
 	}
 	"to0_difficulty"
 	{
