@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "0"
+#define FORK_STABLE_REVISION "1"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -381,7 +381,8 @@ static const String:ff2versiontitles[][]=
 	"1.15.1",
 	"1.15.2",
 	"1.15.3",
-	"1.16.0"
+	"1.16.0",
+	"1.16.1"
 };
 
 static const String:ff2versiondates[][]=
@@ -499,13 +500,19 @@ static const String:ff2versiondates[][]=
 	"December 7, 2018",		//1.15.1
 	"December 8, 2018",		//1.15.2
 	"December 9, 2018",		//1.15.3
-	"December 11, 2018"		//1.16.0
+	"December 11, 2018",		//1.16.0
+	"December 12, 2018"		//1.16.1
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 114:  //1.16.1
+		{
+			DrawPanelText(panel, "1) Details and more commands (Batfoxkid)");
+			DrawPanelText(panel, "2) Fixed companion toggle (Batfoxkid)");
+		}
 		case 113:  //1.16.0
 		{
 			DrawPanelText(panel, "1) Boss selection and toggle (Batfoxkid from SHADoW)");
@@ -1504,6 +1511,7 @@ public OnPluginStart()
 	cvarTripleWep=CreateConVar("ff2_triplewep", "0", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
 	cvarHardcodeWep=CreateConVar("ff2_hardcodewep", "0", "0-Only Use Config, 1-Use Alongside Hardcoded", _, true, 0.0, true, 1.0);
 	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "0-Disable, 1-Bosses can rocket jump but take fall damage too", _, true, 0.0, true, 1.0);
+	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1517,6 +1525,7 @@ public OnPluginStart()
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	HookEvent("player_chargedeployed", OnUberDeployed);
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
+	HookEvent("player_ignited", OnPlayerIgnited, EventHookMode_Pre);
 	HookEvent("object_destroyed", OnObjectDestroyed, EventHookMode_Pre);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Pre);
 	HookEvent("deploy_buff_banner", OnDeployBackup);
@@ -1562,6 +1571,7 @@ public OnPluginStart()
 	HookConVarChange(cvarTripleWep, CvarChange);
 	HookConVarChange(cvarHardcodeWep, CvarChange);
 	HookConVarChange(cvarSelfKnockback, CvarChange);
+	HookConVarChange(cvarFF2TogglePrefDelay, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -1600,14 +1610,17 @@ public OnPluginStart()
 	RegConsoleCmd("hale_boss", Command_SetMyBoss);
 	RegConsoleCmd("haleboss", Command_SetMyBoss);
 
-	cvarFF2TogglePrefDelay = CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");	
-	AutoExecConfig(true, "plugin.ff2_boss_toggle");
-
 	BossCookie = RegClientCookie("ff2_boss_toggle", "Players FF2 Boss Toggle", CookieAccess_Public);	
 	CompanionCookie = RegClientCookie("ff2_companion_toggle", "Players FF2 Companion Boss Toggle", CookieAccess_Public);		
 	
 	RegConsoleCmd("ff2toggle", BossMenu);
+	RegConsoleCmd("ff2_toggle", BossMenu);
 	RegConsoleCmd("ff2companion", CompanionMenu);
+	RegConsoleCmd("ff2_companion", CompanionMenu);
+	RegConsoleCmd("haletoggle", BossMenu);
+	RegConsoleCmd("hale_toggle", BossMenu);
+	RegConsoleCmd("halecompanion", CompanionMenu);
+	RegConsoleCmd("hale_companion", CompanionMenu);
 	for(new i = 0; i < MAXPLAYERS; i++)
 	{
 		ClientCookie[i] = TOGGLE_UNDEF;
@@ -7185,6 +7198,35 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 	return Plugin_Continue;
 }
 
+public Action:OnPlayerIgnited(Handle:event, const String:eventName[], bool:dontBroadcast)
+{
+	if(!Enabled || CheckRoundState()!=1)
+	{
+		return Plugin_Continue;
+	}
+
+	new client=GetClientOfUserId(GetEventInt(event, "userid")), attacker=GetClientOfUserId(GetEventInt(event, "attacker"));
+	DoOverlay(client, "");
+	if(IsBoss(client))
+	{
+		new boss=GetBossIndex(client);
+		if(BossHealth[boss] >= 600)
+		{
+			return Plugin_Continue;
+		}
+
+		new Float:position[3];
+		GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
+		decl String:sound[PLATFORM_MAX_PATH];
+		if(RandomSound("sound_ignited", sound, sizeof(sound), boss))
+		{
+			EmitSoundToClient(client, sound, _, _, _, _, 0.7, _, _, position, _, false);
+			EmitSoundToClient(attacker, sound, _, _, _, _, 0.7, _, _, position, _, false);
+		}
+	}
+	return Plugin_Continue;
+}
+
 public Action:Timer_Damage(Handle:timer, any:userid)
 {
 	new client=GetClientOfUserId(userid);
@@ -7601,6 +7643,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged) && GetConVarBool(cvarSelfKnockback))
 	{
 		return Plugin_Continue;
+	}
+	if(!CheckRoundState() && IsBoss(client) && !GetConVarBool(cvarSelfKnockback))
+	{
+		damage*=0.0;
+		return Plugin_Changed;
 	}
 	//END OF PART 1
 
@@ -9259,19 +9306,27 @@ FindCompanion(boss, players, bool:omit[])
 	KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
 	if(playersNeeded<players && strlen(companionName))  //Only continue if we have enough players and if the boss has a companion
 	{
-		new companion=GetClientWithMostQueuePoints(omit);
+		new companion=GetRandomValidClient(omit);
 		Boss[companion]=companion;  //Woo boss indexes!
 		omit[companion]=true;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
+			BossRageDamage[companion]=KvGetNum(BossKV[Special[companion]], "ragedamage", 1900);
+			if(BossRageDamage[companion]<=0)
+			{
+				new String:bossName[64];
+				KvGetString(BossKV[Special[companion]], "name", bossName, sizeof(bossName));
+				LogError("[FF2 Bosses] Warning: Boss %s's rage damage is below 0, setting to 1900", bossName);
+				BossRageDamage[companion]=1900;
+			}
+			BossLivesMax[companion]=KvGetNum(BossKV[Special[companion]], "lives", 1);
+			if(BossLivesMax[companion]<=0)
+			{
+				LogError("[FF2 Bosses] Warning: Boss %s has an invalid amount of lives, setting to 1", companionName);
+				BossLivesMax[companion]=1;
+			}
 			playersNeeded++;
 			FindCompanion(companion, players, omit);  //Make sure this companion doesn't have a companion of their own
-		}
-		else  //Can't find the companion's character, so just play without the companion
-		{
-			LogError("[FF2 Bosses] Could not find boss %s!", companionName);
-			Boss[companion]=0;
-			omit[companion]=false;
 		}
 	}
 	playersNeeded=3;  //Reset the amount of players needed back to 3 after we're done
