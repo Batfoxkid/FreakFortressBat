@@ -4743,7 +4743,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 220:  //Shortstop
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "869 ; 1");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "868 ; 1");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
