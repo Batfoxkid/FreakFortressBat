@@ -1,6 +1,5 @@
 # Bat's Freak Fortress Edit
-## An unoffical edit of the Freak Fortress 2 plugin found here: https://github.com/50DKP/FF2-Official
-
+## A mixture of various popular plugins for FF2 and extra setting to give the best out of bosses and small community servers
 
 ### Installiton and Setup:
 The download does not include boss configs, models, or sub-plugins. It is recommended that you install the offical Freak Fortress
@@ -14,3 +13,16 @@ Visit the Wiki tab (https://github.com/Batfoxkid/FreakFortressBat/wiki) to see a
 
 ### Reporting Issues:
 Visit the Issues tab (https://github.com/Batfoxkid/FreakFortressBat/issues) to report any bugs, enhancements, or questions you may have.
+
+### Credits
+SHADoW NiNE TR3S for his fork public release (and I rip off of)                                                
+https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
+
+Bacon Plague and M76030 for their boss self-knockback code                                                    
+*Remind to link their Steam profiles, they don't have gits*
+
+Deathreus for the current boss in server name                                                                 
+https://github.com/Deathreus | https://github.com/Deathreus/FF2-Official
+
+And the FF2 team (that I would like to see work on the offical more)                                          
+https://github.com/50DKP/FF2-Official
