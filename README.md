@@ -19,7 +19,7 @@ SHADoW NiNE TR3S for his fork public release (and I rip off of)
 https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
 
 Bacon Plague and M76030 for their boss self-knockback code                                                    
-*Remind to link their Steam profiles, they don't have gits*
+https://steamcommunity.com/profiles/76561198049884052/ | https://steamcommunity.com/profiles/76561198046651252
 
 Deathreus for the current boss in server name                                                                 
 https://github.com/Deathreus | https://github.com/Deathreus/FF2-Official

@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "2"
+#define FORK_STABLE_REVISION "3"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -386,7 +386,8 @@ static const String:ff2versiontitles[][]=
 	"1.15.3",
 	"1.16.0",
 	"1.16.1",
-	"1.16.2"
+	"1.16.2",
+	"1.16.3"
 };
 
 static const String:ff2versiondates[][]=
@@ -506,13 +507,18 @@ static const String:ff2versiondates[][]=
 	"December 9, 2018",		//1.15.3
 	"December 11, 2018",		//1.16.0
 	"December 12, 2018",		//1.16.1
-	"December 13, 2018"		//1.16.2
+	"December 13, 2018",		//1.16.2
+	"December 16, 2018"		//1.16.3
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 116:  //1.16.3
+		{
+			DrawPanelText(panel, "1) Fixed owner marked bosses choosen by random (Batfoxkid)");
+		}
 		case 115:  //1.16.2
 		{
 			DrawPanelText(panel, "1) Server name has the current boss name (Deathreus)");
@@ -9210,7 +9216,7 @@ public bool:PickCharacter(boss, companion)
 			}
 
 			KvRewind(BossKV[Special[boss]]);
-			if(KvGetNum(BossKV[Special[boss]], "blocked") || KvGetNum(BossKV[Special[boss]], "donator") || KvGetNum(BossKV[Special[boss]], "admin"))
+			if(KvGetNum(BossKV[Special[boss]], "blocked") || KvGetNum(BossKV[Special[boss]], "donator") || KvGetNum(BossKV[Special[boss]], "admin") || KvGetNum(BossKV[Special[boss]], "owner"))
 			{
 				Special[boss]=-1;
 				continue;
