@@ -4595,8 +4595,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 224:  //L'etranger
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
-					//166: +5% cloak on hit
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 7.5");
+					//166: +7.5% cloak on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4803,7 +4803,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 305, 1079:  //Crusader's Crossbow, Festive Crusader's Crossbow
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.2");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.15");
 					//17: +20% uber on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
@@ -4976,7 +4976,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 444:  //Mantreads
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.25");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4986,7 +4986,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				#if defined _tf2attributes_included
 				if(tf2attributes)
 				{
-					TF2Attrib_SetByDefIndex(client, 58, 1.25);
+					TF2Attrib_SetByDefIndex(client, 58, 1.5);
 				}
 				#endif
 			}
@@ -5561,7 +5561,7 @@ public Action:CheckItems(Handle:timer, any:userid)
 	{
 		if(IsValidEntity(FindPlayerBack(client, 444)))  //Mantreads
 		{
-			TF2Attrib_SetByDefIndex(client, 58, 1.25);  //+25% increased push force
+			TF2Attrib_SetByDefIndex(client, 58, 1.5);  //+50% increased push force
 		}
 		else
 		{
