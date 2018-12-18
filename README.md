@@ -2,10 +2,11 @@
 ## A mixture of various popular plugins for FF2 and extra setting to give the best out of bosses and small community servers
 
 ### Installiton and Setup:
-The download does not include boss configs, models, or sub-plugins. It is recommended that you install the offical Freak Fortress
-1.10.14 (https://github.com/50DKP/FF2-Official/releases/tag/1.10.14) before installing this edit on it. This edit also generates some
-new cvars so save a backup of cfg/sourcemod/FreakFortress2.cfg and delete it, this edit will generate a new one. After running, you can
-freely readd the cvars you had previously, some may not be their like Ullapool Caber detentions. (See the Wiki)
+The download does not include boss configs, models, or sub-plugins. It is recommended that you install the offical Freak Fortress 1.10.14
+(https://github.com/50DKP/FF2-Official/releases/tag/1.10.14) before installing this edit on it. **To install this edit, download both
+the Source code and smx files in releases.** This edit also generates some new cvars so save a backup of cfg/sourcemod/FreakFortress2.cfg
+and delete it, this edit will generate a new one. After running, you can freely readd the cvars you had previously, some may not be
+there like Ullapool Caber detentions. (See the Wiki)
 **All non-boss config (eg. characters.cfg, doors.cfg, and maps.cfg) need to go in addons/sourcemod/data/freak_fortress_2/**
 
 ### Edit Changes:
