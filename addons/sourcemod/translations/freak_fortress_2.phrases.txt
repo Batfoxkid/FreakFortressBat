@@ -375,6 +375,18 @@
 	{
 		"en"	"You just got ullapool cabered!"
 	}
+	"Dead Ringer Ready" // HUD
+	{
+		"en"        "Status: Feign Death Ready"
+	}
+	"Dead Ringer Inactive" // HUD
+	{
+		"en"        "Status: Inactive"
+	}
+	"Dead Ringer Active" // HUD
+	{
+		"en"        "Status: Active"
+	}
 	"ServerAd"	// Chat
 	{
 		"en"	"Gamers Freak Fortress group: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"

@@ -32,7 +32,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 #tryinclude <rtd>
 #tryinclude <rtd2>
 #tryinclude <tf2attributes>
-#tryinclude <updater>
+//#tryinclude <updater>
 #define REQUIRE_PLUGIN
 
 /*
@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "3"
+#define FORK_STABLE_REVISION "4"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -160,6 +160,7 @@ new Handle:cvarShieldCrits;
 new Handle:cvarGoombaDamage;
 new Handle:cvarGoombaRebound;
 new Handle:cvarBossRTD;
+new Handle:cvarDeadRingerHud;
 new Handle:cvarUpdater;
 new Handle:cvarDebug;
 new Handle:cvarPreroundBossDisconnect;
@@ -205,13 +206,13 @@ new shieldCrits;
 //new allowedDetonations;
 new Float:GoombaDamage=0.05;
 new Float:reboundPower=300.0;
+new bool:canBossRTD;
 new Float:SniperDamage=2.5;
 new Float:SniperMiniDamage=2.1;
 new Float:BowDamage=1.25;
 new Float:SniperClimbDamage=15.0;
 new Float:SniperClimbDelay=1.56;
 new QualityWep=5;
-new bool:canBossRTD;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
 new Handle:BossInfoTimer[MAXPLAYERS+1][2];
@@ -387,7 +388,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.0",
 	"1.16.1",
 	"1.16.2",
-	"1.16.3"
+	"1.16.3",
+	"1.16.4"
 };
 
 static const String:ff2versiondates[][]=
@@ -508,13 +510,18 @@ static const String:ff2versiondates[][]=
 	"December 11, 2018",		//1.16.0
 	"December 12, 2018",		//1.16.1
 	"December 13, 2018",		//1.16.2
-	"December 16, 2018"		//1.16.3
+	"December 16, 2018",		//1.16.3
+	"December 18, 2018"		//1.16.4
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 117:  //1.16.4
+		{
+			DrawPanelText(panel, "1) Dead Ringer HUD (Chdata/naydef)");
+		}
 		case 116:  //1.16.3
 		{
 			DrawPanelText(panel, "1) Fixed owner marked bosses choosen by random (Batfoxkid)");
@@ -1513,6 +1520,7 @@ public OnPluginStart()
 	cvarGoombaDamage=CreateConVar("ff2_goomba_damage", "0.05", "How much the Goomba damage should be multipled by when goomba stomping the boss (requires Goomba Stomp)", _, true, 0.01, true, 1.0);
 	cvarGoombaRebound=CreateConVar("ff2_goomba_jump", "300.0", "How high players should rebound after goomba stomping the boss (requires Goomba Stomp)", _, true, 0.0);
 	cvarBossRTD=CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
+	cvarDeadRingerHud=CreateConVar("ff2_deadringer_hud", "1", "Dead Ringer indicator? 0 to disable, 1 to enable", _, true, 0.0, true, 1.0);
 	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
 	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "195", "Minimum damage to increase killstreak count", _, true, 0.0);
@@ -1523,9 +1531,9 @@ public OnPluginStart()
 	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs", _, true, 0.0);
 	cvarStrangeWep=CreateConVar("ff2_strangewep", "1", "0-Disable Boss Weapon Stranges, 1-Enable Boss Weapon Stranges", _, true, 0.0, true, 1.0);
 	cvarQualityWep=CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
-	cvarTripleWep=CreateConVar("ff2_triplewep", "0", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
+	cvarTripleWep=CreateConVar("ff2_triplewep", "1", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
 	cvarHardcodeWep=CreateConVar("ff2_hardcodewep", "0", "0-Only Use Config, 1-Use Alongside Hardcoded", _, true, 0.0, true, 1.0);
-	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "0-Disable, 1-Bosses can rocket jump but take fall damage too", _, true, 0.0, true, 1.0);
+	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
 	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
 	cvarNameChange=CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
 
@@ -1575,6 +1583,7 @@ public OnPluginStart()
 	HookConVarChange(cvarGoombaRebound, CvarChange);
 	HookConVarChange(cvarBossRTD, CvarChange);
 	HookConVarChange(cvarUpdater, CvarChange);
+	HookConVarChange(cvarDeadRingerHud, CvarChange);
 	HookConVarChange(cvarNextmap=FindConVar("sm_nextmap"), CvarChangeNextmap);
 	HookConVarChange(cvarDmg2KStreak, CvarChange);
 	HookConVarChange(cvarSniperDamage, CvarChange);
@@ -4586,8 +4595,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 224:  //L'etranger
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
-					//166: +5% cloak on hit
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 7.5");
+					//166: +7.5% cloak on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4794,7 +4803,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 305, 1079:  //Crusader's Crossbow, Festive Crusader's Crossbow
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.2");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.15");
 					//17: +20% uber on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
@@ -4967,7 +4976,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 444:  //Mantreads
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.25");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -4977,7 +4986,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				#if defined _tf2attributes_included
 				if(tf2attributes)
 				{
-					TF2Attrib_SetByDefIndex(client, 58, 1.25);
+					TF2Attrib_SetByDefIndex(client, 58, 1.5);
 				}
 				#endif
 			}
@@ -5552,7 +5561,7 @@ public Action:CheckItems(Handle:timer, any:userid)
 	{
 		if(IsValidEntity(FindPlayerBack(client, 444)))  //Mantreads
 		{
-			TF2Attrib_SetByDefIndex(client, 58, 1.25);  //+25% increased push force
+			TF2Attrib_SetByDefIndex(client, 58, 1.5);  //+50% increased push force
 		}
 		else
 		{
@@ -6437,6 +6446,40 @@ public Action:ClientTimer(Handle:timer)
 						//TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.3);
 					//}
 				//}
+			}
+			// Chdata's Deadringer Notifier
+			else if(GetConVarBool(cvarDeadRingerHud) && TF2_GetPlayerClass(client)==TFClass_Spy)
+			{
+				if(GetClientCloakIndex(client)==59)
+				{
+					new drstatus=TF2_IsPlayerInCondition(client, TFCond_Cloaked) ? 2 : GetEntProp(client, Prop_Send, "m_bFeignDeathReady") ? 1 : 0;
+
+					decl String:s[64];
+
+					switch (drstatus)
+					{
+						case 1:
+						{
+							SetHudTextParams(-1.0, 0.83, 0.35, 90, 255, 90, 255, 0, 0.0, 0.0, 0.0);
+							Format(s, sizeof(s), "%T", "Dead Ringer Ready", client);
+						}
+						case 2:
+						{
+							SetHudTextParams(-1.0, 0.83, 0.35, 255, 64, 64, 255, 0, 0.0, 0.0, 0.0);
+							Format(s, sizeof(s), "%T", "Dead Ringer Active", client);
+						}
+						default:
+						{
+							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.0, 0.0, 0.0);
+							Format(s, sizeof(s), "%T", "Dead Ringer Inactive", client);
+						}
+					}
+
+					if(!(GetClientButtons(client) & IN_SCORE))
+					{
+						ShowSyncHudText(client, jumpHUD, "%s", s);
+					}
+				}
 			}
 			else if(class==TFClass_Soldier)
 			{
