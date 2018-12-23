@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "4"
+#define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -259,6 +259,7 @@ new Handle:kvWeaponMods=INVALID_HANDLE;
 
 new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
+new bool:selfKnockback[MAXPLAYERS+1];
 
 enum Operators
 {
@@ -389,7 +390,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.1",
 	"1.16.2",
 	"1.16.3",
-	"1.16.4"
+	"1.16.4",
+	"1.16.5"
 };
 
 static const String:ff2versiondates[][]=
@@ -511,13 +513,18 @@ static const String:ff2versiondates[][]=
 	"December 12, 2018",		//1.16.1
 	"December 13, 2018",		//1.16.2
 	"December 16, 2018",		//1.16.3
-	"December 18, 2018"		//1.16.4
+	"December 18, 2018",		//1.16.4
+	"December 23, 2018"		//1.16.5
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 118:  //1.16.5
+		{
+			DrawPanelText(panel, "1) Added self-knockback setting for bosses (Batfoxkid)");
+		}
 		case 117:  //1.16.4
 		{
 			DrawPanelText(panel, "1) Dead Ringer HUD (Chdata/naydef)");
@@ -1549,7 +1556,7 @@ public OnPluginStart()
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	HookEvent("player_chargedeployed", OnUberDeployed);
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
-	HookEvent("player_ignited", OnPlayerIgnited, EventHookMode_Pre);
+	//HookEvent("player_ignited", OnPlayerIgnited, EventHookMode_Pre);
 	HookEvent("object_destroyed", OnObjectDestroyed, EventHookMode_Pre);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Pre);
 	HookEvent("deploy_buff_banner", OnDeployBackup);
@@ -4483,6 +4490,18 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	{
 		dmgTriple[client]=GetConVarBool(cvarTripleWep);
 	}
+	if(KvGetNum(BossKV[Special[boss]], "knockback", 2) == 0)
+	{
+		selfKnockback[client]=false;
+	}
+	else if(KvGetNum(BossKV[Special[boss]], "knockback", 2) == 1)
+	{
+		selfKnockback[client]=true;
+	}
+	else
+	{
+		selfKnockback[client]=GetConVarBool(cvarSelfKnockback);
+	}
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
 	TF2_RemovePlayerDisguise(client);
@@ -7267,7 +7286,7 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 	return Plugin_Continue;
 }
 
-public Action:OnPlayerIgnited(Handle:event, const String:eventName[], bool:dontBroadcast)
+/*public Action:OnPlayerIgnited(Handle:event, const String:eventName[], bool:dontBroadcast)
 {
 	if(!Enabled || CheckRoundState()!=1)
 	{
@@ -7294,7 +7313,7 @@ public Action:OnPlayerIgnited(Handle:event, const String:eventName[], bool:dontB
 		}
 	}
 	return Plugin_Continue;
-}
+}*/
 
 public Action:Timer_Damage(Handle:timer, any:userid)
 {
@@ -7704,16 +7723,20 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	}
 
 	//ABILITY TO ROCKET JUMP PT1
-	if((attacker<=0 || client==attacker) && IsBoss(client) && damagetype & DMG_FALL && GetConVarBool(cvarSelfKnockback))
+	if((attacker<=0 || client==attacker) && IsBoss(client) && damagetype & DMG_FALL && selfKnockback[attacker])
 	{
 		damage*=1.0;
 		return Plugin_Changed;
 	}
-	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged) && GetConVarBool(cvarSelfKnockback))
+	else if((attacker<=0 || client==attacker) && IsBoss(client) && !selfKnockback[attacker])
+	{
+		return Plugin_Handled;
+	}
+	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 	{
 		return Plugin_Continue;
 	}
-	if(!CheckRoundState() && IsBoss(client) && !GetConVarBool(cvarSelfKnockback))
+	if(!CheckRoundState() && IsBoss(client) && !selfKnockback[attacker])
 	{
 		damage*=0.0;
 		return Plugin_Changed;
@@ -7765,7 +7788,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 		if(boss!=-1)
 		{
 			//ABILITY TO ROCKETJUMP PART2
-			if(damagetype & DMG_FALL && GetConVarBool(cvarSelfKnockback))
+			if(damagetype & DMG_FALL && selfKnockback[attacker])
 			{
 				damage=1.0;
 				return Plugin_Changed;
