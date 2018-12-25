@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "6"
+#define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -392,7 +392,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.3",
 	"1.16.4",
 	"1.16.5",
-	"1.16.6"
+	"1.16.6",
+	"1.16.7"
 };
 
 static const String:ff2versiondates[][]=
@@ -516,13 +517,18 @@ static const String:ff2versiondates[][]=
 	"December 16, 2018",		//1.16.3
 	"December 18, 2018",		//1.16.4
 	"December 23, 2018",		//1.16.5
-	"December 24, 2018"		//1.16.5
+	"December 24, 2018",		//1.16.6
+	"December 25, 2018"		//1.16.7
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 120:  //1.16.7
+		{
+			DrawPanelText(panel, "1) Only block join team commands during a FF2 round (naydef)");
+		}
 		case 119:  //1.16.6
 		{
 			DrawPanelText(panel, "1) Added set rage command and infinite rage command (SHADoW93 from Chdata)");
@@ -7267,7 +7273,8 @@ public Action:OnChangeClass(client, const String:command[], args)
 
 public Action:OnJoinTeam(client, const String:command[], args)
 {
-	if(!Enabled || RoundCount<arenaRounds)
+	// Only block the commands when FF2 is actively running
+	if(!Enabled || RoundCount<arenaRounds || CheckRoundState()==-1)
 	{
 		return Plugin_Continue;
 	}
@@ -8173,7 +8180,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker));
 					}
-					case 327:  //Claidheamh Mòr
+					case 327:  //Claidheamh MÃ²r
 					{
 						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
