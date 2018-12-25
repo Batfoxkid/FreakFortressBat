@@ -7267,7 +7267,8 @@ public Action:OnChangeClass(client, const String:command[], args)
 
 public Action:OnJoinTeam(client, const String:command[], args)
 {
-	if(!Enabled || RoundCount<arenaRounds)
+	// Only block the commands when FF2 is actively running
+	if(!Enabled || RoundCount<arenaRounds || CheckRoundState()==-1)
 	{
 		return Plugin_Continue;
 	}
@@ -8173,7 +8174,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker));
 					}
-					case 327:  //Claidheamh Mòr
+					case 327:  //Claidheamh MÃ²r
 					{
 						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
