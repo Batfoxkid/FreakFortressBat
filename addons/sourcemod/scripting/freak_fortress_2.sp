@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "5"
+#define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -391,7 +391,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.2",
 	"1.16.3",
 	"1.16.4",
-	"1.16.5"
+	"1.16.5",
+	"1.16.6"
 };
 
 static const String:ff2versiondates[][]=
@@ -514,13 +515,18 @@ static const String:ff2versiondates[][]=
 	"December 13, 2018",		//1.16.2
 	"December 16, 2018",		//1.16.3
 	"December 18, 2018",		//1.16.4
-	"December 23, 2018"		//1.16.5
+	"December 23, 2018",		//1.16.5
+	"December 24, 2018"		//1.16.5
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 119:  //1.16.6
+		{
+			DrawPanelText(panel, "1) Added set rage command and infinite rage command (SHADoW93 from Chdata)");
+		}
 		case 118:  //1.16.5
 		{
 			DrawPanelText(panel, "1) Added self-knockback setting for bosses (Batfoxkid)");
@@ -1495,6 +1501,7 @@ new ClientPoint[MAXPLAYERS+1];
 new ClientID[MAXPLAYERS+1];
 new ClientQueue[MAXPLAYERS+1][2];
 new Handle:cvarFF2TogglePrefDelay = INVALID_HANDLE;
+new bool:InfiniteRageActive[MAXPLAYERS+1]=false;
 
 public OnPluginStart()
 {
@@ -1683,6 +1690,8 @@ public OnPluginStart()
 	RegAdminCmd("ff2_resetq", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
 	RegAdminCmd("ff2_charset", Command_Charset, ADMFLAG_CHEATS, "Usage:  ff2_charset <charset>.  Forces FF2 to use a given character set");
 	RegAdminCmd("ff2_reload_subplugins", Command_ReloadSubPlugins, ADMFLAG_RCON, "Reload FF2's subplugins.");
+	RegAdminCmd("ff2_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: ff2_giverage <target> <percent>. Gives RAGE to a boss player");
+	RegAdminCmd("ff2_setinfiniterage", Command_SetInfiniteRage, ADMFLAG_CHEATS, "Usage: ff2_infiniterage <target>. Gives infinite RAGE to a boss player");
 
 	RegAdminCmd("hale_select", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  hale_select <boss>.  Forces next round to use that boss");
 	RegAdminCmd("hale_special", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  hale_select <boss>.  Forces next round to use that boss");
@@ -1693,6 +1702,8 @@ public OnPluginStart()
 	RegAdminCmd("hale_stop_music", Command_StopMusic, ADMFLAG_CHEATS, "Stop any currently playing Boss music");
 	RegAdminCmd("hale_resetqueuepoints", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
 	RegAdminCmd("hale_resetq", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
+	RegAdminCmd("hale_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: hale_giverage <target> <percent>. Gives RAGE to a boss player");
+	RegAdminCmd("hale_setinfiniterage", Command_SetInfiniteRage, ADMFLAG_CHEATS, "Usage: hale_infiniterage <target>. Gives infinite RAGE to a boss player");
 
 	AutoExecConfig(true, "FreakFortress2");
 
@@ -1735,6 +1746,173 @@ public OnPluginStart()
 	#if defined _tf2attributes_included
 	tf2attributes=LibraryExists("tf2attributes");
 	#endif
+}
+
+public Action:Command_SetRage(client, args)
+{
+	if(args!=2)
+	{
+		if(args!=1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_setrage or hale_setrage <target> <percent>");
+		}
+		else 
+		{
+			if(!IsValidClient(client))
+			{
+				ReplyToCommand(client, "[FF2] Command can only be used in-game!");
+				return Plugin_Handled;
+			}
+			
+			if(!IsBoss(client) || GetBossIndex(client)==-1 || !IsPlayerAlive(client) || CheckRoundState()!=1)
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to give yourself RAGE!");
+				return Plugin_Handled;
+			}
+			
+			new String:ragePCT[80];
+			GetCmdArg(1, ragePCT, sizeof(ragePCT));
+			new Float:rageMeter=StringToFloat(ragePCT);
+			
+			BossCharge[Boss[client]][0]+=rageMeter;
+			CReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
+			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
+		}
+		return Plugin_Handled;
+	}
+	
+	new String:ragePCT[80];
+	new String:targetName[PLATFORM_MAX_PATH];
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, ragePCT, sizeof(ragePCT));
+	new Float:rageMeter=StringToFloat(ragePCT);
+
+	new String:target_name[MAX_TARGET_LENGTH];
+	new target_list[MAXPLAYERS], target_count;
+	new bool:tn_is_ml;
+	
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml))<=0)
+	{
+		ReplyToTargetError(client, target_count);
+		return Plugin_Handled;
+	}
+
+	for(new target; target<target_count; target++)
+	{
+		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
+		{
+			continue;
+		}
+		
+		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to add RAGE!", target_name);
+			return Plugin_Handled;
+		}
+
+		BossCharge[Boss[target_list[target]]][0]+=rageMeter;
+		LogAction(client, target_list[target], "\"%L\" added %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
+		CReplyToCommand(client, "{olive}[FF2]{default} Added %d rage to %s", RoundFloat(rageMeter), target_name);
+	}
+	return Plugin_Handled;
+}
+
+public Action:Command_SetInfiniteRage(client, args)
+{
+	if(args!=1)
+	{
+		if(args>1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_setinfiniterage or hale_setinfiniterage <target>");
+		}
+		else 
+		{
+			if(!IsValidClient(client))
+			{
+				ReplyToCommand(client, "[FF2] Command can only be used in-game!");
+				return Plugin_Handled;
+			}
+			
+			if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || CheckRoundState()!=1)
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to enable/disable infinite RAGE!");
+				return Plugin_Handled;
+			}
+			if(!InfiniteRageActive[client])
+			{
+				InfiniteRageActive[client]=true;
+				BossCharge[Boss[client]][0]=100.0;
+				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated");
+				LogAction(client, client, "\"%L\" activated infiite RAGE on themselves", client);
+				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+			}
+			else
+			{
+				InfiniteRageActive[client]=false;
+				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE deactivated");
+				LogAction(client, client, "\"%L\" deactivated infiite RAGE on themselves", client);
+			}
+		}
+		return Plugin_Handled;
+	}
+
+	new String:targetName[PLATFORM_MAX_PATH];
+	GetCmdArg(1, targetName, sizeof(targetName));
+
+	new String:target_name[MAX_TARGET_LENGTH];
+	new target_list[MAXPLAYERS], target_count;
+	new bool:tn_is_ml;
+	
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml))<=0)
+	{
+		ReplyToTargetError(client, target_count);
+		return Plugin_Handled;
+	}
+
+	for(new target; target<target_count; target++)
+	{
+		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
+		{
+			continue;
+		}
+		
+		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to enable/disable infinite RAGE!", target_name);
+			return Plugin_Handled;
+		}
+
+		if(!InfiniteRageActive[target_list[target]])
+		{
+			InfiniteRageActive[target_list[target]]=true;
+			BossCharge[Boss[target_list[target]]][0]=100.0;
+			CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated for %s", target_name);
+			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
+			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+		}
+		else
+		{
+			InfiniteRageActive[target_list[target]]=false;	
+			CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE deactivated for %s", target_name);
+			LogAction(client, target_list[target], "\"%L\" deactivated infinite RAGE on \"%L\"", client, target_list[target]);
+		}
+	}
+	return Plugin_Handled;
+}
+
+public Action:Timer_InfiniteRage(Handle:timer, any:client)
+{
+	if(InfiniteRageActive[client] && CheckRoundState()!=1)
+	{
+		InfiniteRageActive[client]=false;
+	}
+	
+	if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || !InfiniteRageActive[client] || CheckRoundState()!=1)
+	{
+		return Plugin_Stop;
+	}
+	BossCharge[Boss[client]][0]=100.0;
+	return Plugin_Continue;
 }
 
 public bool:BossTargetFilter(const String:pattern[], Handle:clients)
@@ -4577,7 +4755,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		return Plugin_Continue;
 	}
 
-	if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+	if(GetConVarBool(cvarHardcodeWep))
 	{
 		switch(iItemDefinitionIndex)
 		{
@@ -4669,6 +4847,15 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				// 442: +35% speed
 				// 443: +10% jump
 				// 800: -100% max overheal
+				if(itemOverride!=INVALID_HANDLE)
+				{
+					item=itemOverride;
+					return Plugin_Changed;
+				}
+			}
+			case 44:  //Sandman
+			{
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "773 ; 1.15");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -5541,7 +5728,7 @@ public Action:CheckItems(Handle:timer, any:userid)
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
-	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))
+	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && (GetConVarBool(cvarHardcodeWep)))
 	{
 		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
 		SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
@@ -5576,7 +5763,7 @@ public Action:CheckItems(Handle:timer, any:userid)
 	}
 
 	#if defined _tf2attributes_included
-	if(tf2attributes && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))
+	if(tf2attributes && (GetConVarBool(cvarHardcodeWep)))
 	{
 		if(IsValidEntity(FindPlayerBack(client, 444)))  //Mantreads
 		{
@@ -7986,7 +8173,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker));
 					}
-					case 327:  //Claidheamh MÃ²r
+					case 327:  //Claidheamh Mòr
 					{
 						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
