@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "7"
+#define FORK_STABLE_REVISION "8a"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -393,7 +393,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.4",
 	"1.16.5",
 	"1.16.6",
-	"1.16.7"
+	"1.16.7",
+	"1.16.8"
 };
 
 static const String:ff2versiondates[][]=
@@ -518,13 +519,18 @@ static const String:ff2versiondates[][]=
 	"December 18, 2018",		//1.16.4
 	"December 23, 2018",		//1.16.5
 	"December 24, 2018",		//1.16.6
-	"December 25, 2018"		//1.16.7
+	"December 25, 2018",		//1.16.7
+	"January 2, 2019"		//1.16.8
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 121:  //1.16.8
+		{
+			DrawPanelText(panel, "1) Medi-Gun skins and festives are now shown (Batfoxkid)");
+		}
 		case 120:  //1.16.7
 		{
 			DrawPanelText(panel, "1) Only block join team commands during a FF2 round (naydef)");
@@ -661,7 +667,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 		}
 		case 94:  //1.13.0
 		{
-			DrawPanelText(panel, "1) Kritzkreig gives only crits on Uber but faster Uber rate (Batfoxkid)");
+			DrawPanelText(panel, "1) Kritzkrieg gives only crits on Uber but faster Uber rate (Batfoxkid)");
 			DrawPanelText(panel, "2) Quick-Fix gives no invulnerably but immunity to knockback with Uber (Batfoxkid)");
 			DrawPanelText(panel, "3) Vaccinator gives a projectile sheild but weak Uber rate (Batfoxkid)");
 			DrawPanelText(panel, "4) Nerfed Vita-Saw (Batfoxkid)");
@@ -5418,21 +5424,12 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				return Plugin_Changed;
 			}
 		}
-		else if(TF2_GetPlayerClass(client)==TFClass_Engineer && !StrContains(classname, "tf_weapon_pistol"))  //Pistols
-		{
-			new Handle:itemOverride=PrepareItemHandle(item, _, _, "2 ; 1.35 ; 869 ; 1");
-			if(itemOverride!=INVALID_HANDLE)
-			{
-				item=itemOverride;
-				return Plugin_Changed;
-			}
-		}
 		else if(TF2_GetPlayerClass(client)==TFClass_Medic && !StrContains(classname, "tf_weapon_medigun"))  //Medi Gun
 		{
 			new Handle:itemOverride;
 			if(iItemDefinitionIndex==35)  //Kritzkrieg
 			{
-				itemOverride=PrepareItemHandle(item, _, _, "10 ; 2.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 547 ; 0.75", true);
+				itemOverride=PrepareItemHandle(item, _, _, "10 ; 1.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 547 ; 0.75");
 				//10: +125% faster charge rate
 				//11: +50% overheal bonus
 				//18: Kritzkrieg uber
@@ -5441,9 +5438,10 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			else if(iItemDefinitionIndex==411)  //Quick-Fix
 			{
-				itemOverride=PrepareItemHandle(item, _, _, "8 ; 1.12 ; 10 ; 2 ; 144 ; 2 ; 199 ; 0.75 ; 231 ; 2 ; 493 ; 1 ; 547 ; 0.75", true);
+				itemOverride=PrepareItemHandle(item, _, _, "8 ; 1.12 ; 10 ; 2 ; 105 ; 1 ; 144 ; 2 ; 199 ; 0.75 ; 231 ; 2 ; 493 ; 1 ; 547 ; 0.75");
 				//8: +12% heal rate
 				//10: +100% faster charge rate
+				//105: Default Medi-Gun overheal
 				//144: Quick-fix speed/jump effects
 				//199: Deploys 25% faster
 				//231: Quick-fix no-knockback uber
@@ -5464,7 +5462,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			else
 			{
-				itemOverride=PrepareItemHandle(item, _, _, "10 ; 1.75 ; 11 ; 1.5 ; 144 ; 2.0 ; 199 ; 0.75 ; 547 ; 0.75", true);
+				itemOverride=PrepareItemHandle(item, _, _, "10 ; 1.75 ; 11 ; 1.5 ; 144 ; 2.0 ; 199 ; 0.75 ; 547 ; 0.75");
 				//10: +75% faster charge rate
 				//11: +50% overheal bonus
 				//144: Quick-fix speed/jump effects
@@ -8180,7 +8178,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker));
 					}
-					case 327:  //Claidheamh MÃ²r
+					case 327:  //Claidheamh Mòr
 					{
 						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
@@ -9476,7 +9474,10 @@ public bool:PickCharacter(boss, companion)
 			}
 
 			KvRewind(BossKV[Special[boss]]);
-			if(KvGetNum(BossKV[Special[boss]], "blocked") || KvGetNum(BossKV[Special[boss]], "donator") || KvGetNum(BossKV[Special[boss]], "admin") || KvGetNum(BossKV[Special[boss]], "owner"))
+			if(KvGetNum(BossKV[Special[boss]], "blocked") ||
+			   KvGetNum(BossKV[Special[boss]], "donator") ||
+			   KvGetNum(BossKV[Special[boss]], "admin") ||
+			   KvGetNum(BossKV[Special[boss]], "owner"))
 			{
 				Special[boss]=-1;
 				continue;
