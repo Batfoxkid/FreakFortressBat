@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "8a"
+#define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -193,7 +193,6 @@ new PointDelay=6;
 new Float:Announce=120.0;
 new AliveToEnable=5;
 new PointType;
-new bool:BossCrits=true;
 new arenaRounds;
 new Float:circuitStun;
 new countdownPlayers=1;
@@ -260,6 +259,7 @@ new Handle:kvWeaponMods=INVALID_HANDLE;
 new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
 new bool:selfKnockback[MAXPLAYERS+1];
+new bool:randomCrits[MAXPLAYERS+1];
 
 enum Operators
 {
@@ -520,7 +520,7 @@ static const String:ff2versiondates[][]=
 	"December 23, 2018",		//1.16.5
 	"December 24, 2018",		//1.16.6
 	"December 25, 2018",		//1.16.7
-	"January 2, 2019"		//1.16.8
+	"January 3, 2019"		//1.16.8
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -530,6 +530,8 @@ stock FindVersionData(Handle:panel, versionIndex)
 		case 121:  //1.16.8
 		{
 			DrawPanelText(panel, "1) Medi-Gun skins and festives are now shown (Batfoxkid)");
+			DrawPanelText(panel, "2) Added crit setting for bosses (Batfoxkid)");
+			DrawPanelText(panel, "3) 'Set rage' command sets rage and added 'add rage' command (Batfoxkid)");
 		}
 		case 120:  //1.16.7
 		{
@@ -1702,7 +1704,8 @@ public OnPluginStart()
 	RegAdminCmd("ff2_resetq", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
 	RegAdminCmd("ff2_charset", Command_Charset, ADMFLAG_CHEATS, "Usage:  ff2_charset <charset>.  Forces FF2 to use a given character set");
 	RegAdminCmd("ff2_reload_subplugins", Command_ReloadSubPlugins, ADMFLAG_RCON, "Reload FF2's subplugins.");
-	RegAdminCmd("ff2_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: ff2_giverage <target> <percent>. Gives RAGE to a boss player");
+	RegAdminCmd("ff2_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: ff2_setrage <target> <percent>. Sets the RAGE to a boss player");
+	RegAdminCmd("ff2_addrage", Command_AddRage, ADMFLAG_CHEATS, "Usage: ff2_addrage <target> <percent>. Gives RAGE to a boss player");
 	RegAdminCmd("ff2_setinfiniterage", Command_SetInfiniteRage, ADMFLAG_CHEATS, "Usage: ff2_infiniterage <target>. Gives infinite RAGE to a boss player");
 
 	RegAdminCmd("hale_select", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  hale_select <boss>.  Forces next round to use that boss");
@@ -1714,7 +1717,8 @@ public OnPluginStart()
 	RegAdminCmd("hale_stop_music", Command_StopMusic, ADMFLAG_CHEATS, "Stop any currently playing Boss music");
 	RegAdminCmd("hale_resetqueuepoints", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
 	RegAdminCmd("hale_resetq", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
-	RegAdminCmd("hale_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: hale_giverage <target> <percent>. Gives RAGE to a boss player");
+	RegAdminCmd("hale_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: hale_setrage <target> <percent>. Sets the RAGE to a boss player");
+	RegAdminCmd("hale_addrage", Command_AddRage, ADMFLAG_CHEATS, "Usage: hale_addrage <target> <percent>. Gives RAGE to a boss player");
 	RegAdminCmd("hale_setinfiniterage", Command_SetInfiniteRage, ADMFLAG_CHEATS, "Usage: hale_infiniterage <target>. Gives infinite RAGE to a boss player");
 
 	AutoExecConfig(true, "FreakFortress2");
@@ -1767,6 +1771,75 @@ public Action:Command_SetRage(client, args)
 		if(args!=1)
 		{
 			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_setrage or hale_setrage <target> <percent>");
+		}
+		else 
+		{
+			if(!IsValidClient(client))
+			{
+				ReplyToCommand(client, "[FF2] Command can only be used in-game!");
+				return Plugin_Handled;
+			}
+			
+			if(!IsBoss(client) || GetBossIndex(client)==-1 || !IsPlayerAlive(client) || CheckRoundState()!=1)
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to set your RAGE!");
+				return Plugin_Handled;
+			}
+			
+			new String:ragePCT[80];
+			GetCmdArg(1, ragePCT, sizeof(ragePCT));
+			new Float:rageMeter=StringToFloat(ragePCT);
+			
+			BossCharge[Boss[client]][0]==rageMeter;
+			CReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
+			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
+		}
+		return Plugin_Handled;
+	}
+	
+	new String:ragePCT[80];
+	new String:targetName[PLATFORM_MAX_PATH];
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, ragePCT, sizeof(ragePCT));
+	new Float:rageMeter=StringToFloat(ragePCT);
+
+	new String:target_name[MAX_TARGET_LENGTH];
+	new target_list[MAXPLAYERS], target_count;
+	new bool:tn_is_ml;
+	
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml))<=0)
+	{
+		ReplyToTargetError(client, target_count);
+		return Plugin_Handled;
+	}
+
+	for(new target; target<target_count; target++)
+	{
+		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
+		{
+			continue;
+		}
+		
+		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to set RAGE!", target_name);
+			return Plugin_Handled;
+		}
+
+		BossCharge[Boss[target_list[target]]][0]==rageMeter;
+		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
+		CReplyToCommand(client, "{olive}[FF2]{default} Set %d rage to %s", RoundFloat(rageMeter), target_name);
+	}
+	return Plugin_Handled;
+}
+
+public Action:Command_AddRage(client, args)
+{
+	if(args!=2)
+	{
+		if(args!=1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_addrage or hale_addrage <target> <percent>");
 		}
 		else 
 		{
@@ -2110,7 +2183,6 @@ public EnableFF2()
 	QualityWep=GetConVarInt(cvarQualityWep);
 	canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
-	BossCrits=GetConVarBool(cvarCrits);
 	if(GetConVarInt(cvarFirstRound)!=-1)
 	{
 		arenaRounds=GetConVarInt(cvarFirstRound) ? 0 : 1;
@@ -2671,10 +2743,6 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarAliveToEnable)
 	{
 		AliveToEnable=StringToInt(newValue);
-	}
-	else if(convar==cvarCrits)
-	{
-		BossCrits=bool:StringToInt(newValue);
 	}
 	else if(convar==cvarFirstRound)  //DEPRECATED
 	{
@@ -4691,6 +4759,18 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	else
 	{
 		selfKnockback[client]=GetConVarBool(cvarSelfKnockback);
+	}
+	if(KvGetNum(BossKV[Special[boss]], "crits", 2) == 0)
+	{
+		randomCrits[client]=false;
+	}
+	else if(KvGetNum(BossKV[Special[boss]], "crits", 2) == 1)
+	{
+		randomCrits[client]=true;
+	}
+	else
+	{
+		randomCrits[client]=GetConVarBool(cvarCrits);
 	}
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
@@ -8178,7 +8258,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker));
 					}
-					case 327:  //Claidheamh Mòr
+					case 327:  //Claidheamh MÃ²r
 					{
 						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
 						{
@@ -8854,7 +8934,7 @@ stock RandomlyDisguise(client)	//Original code was mecha's, but the original cod
 
 public Action:TF2_CalcIsAttackCritical(client, weapon, String:weaponname[], &bool:result)
 {
-	if(Enabled && IsBoss(client) && CheckRoundState()==1 && !TF2_IsPlayerCritBuffed(client) && !BossCrits)
+	if(Enabled && IsBoss(client) && CheckRoundState()==1 && !TF2_IsPlayerCritBuffed(client) && !randomCrits[client])
 	{
 		result=false;
 		return Plugin_Changed;
