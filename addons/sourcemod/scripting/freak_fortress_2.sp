@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "8"
+#define FORK_STABLE_REVISION "9"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -176,6 +176,7 @@ new Handle:cvarTripleWep;
 new Handle:cvarHardcodeWep;
 new Handle:cvarSelfKnockback;
 new Handle:cvarNameChange;
+new Handle:cvarKeepBoss;
 
 new Handle:FF2Cookies;
 
@@ -394,7 +395,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.5",
 	"1.16.6",
 	"1.16.7",
-	"1.16.8"
+	"1.16.8",
+	"1.16.9"
 };
 
 static const String:ff2versiondates[][]=
@@ -520,13 +522,20 @@ static const String:ff2versiondates[][]=
 	"December 23, 2018",		//1.16.5
 	"December 24, 2018",		//1.16.6
 	"December 25, 2018",		//1.16.7
-	"January 3, 2019"		//1.16.8
+	"January 3, 2019",		//1.16.8
+	"January 5, 2019"		//1.16.9
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 122:  //1.16.9
+		{
+			DrawPanelText(panel, "1) Added nofirst setting for bosses with a first-round glitch (Batfoxkid)");
+			DrawPanelText(panel, "2) Allowed to keep the boss players selected until another selection (Batfoxkid)");
+			DrawPanelText(panel, "3) Removed 'No Random Critical Hits'' when attributes is undefined (Batfoxkid)");
+		}
 		case 121:  //1.16.8
 		{
 			DrawPanelText(panel, "1) Medi-Gun skins and festives are now shown (Batfoxkid)");
@@ -1542,7 +1551,7 @@ public OnPluginStart()
 	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "0-Don't outline the last player, 1-Outline the last player alive", _, true, 0.0, true, 1.0);
 	cvarBossTeleporter=CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
 	cvarBossSuicide=CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
-	cvarPreroundBossDisconnect=CreateConVar("ff2_replace_disconnected_boss", "1", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
+	cvarPreroundBossDisconnect=CreateConVar("ff2_replace_disconnected_boss", "0", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
 	//cvarCaberDetonations=CreateConVar("ff2_caber_detonations", "1", "Amount of times somebody can detonate the Ullapool Caber");
 	cvarShieldCrits=CreateConVar("ff2_shield_crits", "0", "0 to disable grenade launcher crits when equipping a shield, 1 for minicrits, 2 for crits", _, true, 0.0, true, 2.0);
 	cvarGoombaDamage=CreateConVar("ff2_goomba_damage", "0.05", "How much the Goomba damage should be multipled by when goomba stomping the boss (requires Goomba Stomp)", _, true, 0.01, true, 1.0);
@@ -1564,6 +1573,7 @@ public OnPluginStart()
 	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
 	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
 	cvarNameChange=CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
+	cvarKeepBoss=CreateConVar("ff2_boss_keep", "0", "0-Disable, 1-Player keep their current boss selection", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1625,6 +1635,7 @@ public OnPluginStart()
 	HookConVarChange(cvarHardcodeWep, CvarChange);
 	HookConVarChange(cvarSelfKnockback, CvarChange);
 	HookConVarChange(cvarFF2TogglePrefDelay, CvarChange);
+	HookConVarChange(cvarKeepBoss, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -3286,7 +3297,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		}
 		else if (ClientCookie[client] == TOGGLE_OFF)
 		{
-			SetClientQueuePoints(client, -10);
+			SetClientQueuePoints(client, -15);
 			decl String:nick[64];
 			GetClientName(client, nick, sizeof(nick));
 			CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
@@ -3607,11 +3618,12 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	UpdateHealthBar();
 
 	for(new client=0;client<=MaxClients;client++)
-	{	if (client>0 && IsValidEntity(client) && IsClientConnected(client))
+	{
+		if (client>0 && IsValidEntity(client) && IsClientConnected(client))
 		{
 			 if (ClientCookie[client] == TOGGLE_OFF)
 			{
-				FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-10);
+				FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
     				decl String:nick[64]; 
     				GetClientName(client, nick, sizeof(nick));
 			}
@@ -4254,6 +4266,7 @@ public Action:Command_SetMyBoss(client, args)
 			if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", 0, true)) continue;
 			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", 0, true)) continue;
 			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", 0, true)) continue;
+			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
 			if(StrContains(boss, name, false)!=-1)
 			{
 				IsBossSelected[client]=true;
@@ -4298,6 +4311,7 @@ public Action:Command_SetMyBoss(client, args)
 		if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", 0, true)) continue;
 		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", 0, true)) continue;
 		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", 0, true)) continue;
+		if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
 		
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		AddMenuItem(dMenu, boss, boss);
@@ -4352,9 +4366,11 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 	new client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	if (!boss && !StrEqual(xIncoming[client], ""))
 	{
-	
 		strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
-		xIncoming[client] = "";
+		if(!GetConVarBool(cvarKeepBoss))
+		{
+			xIncoming[client] = "";
+		}
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -4502,7 +4518,7 @@ EquipBoss(boss)
 				}
 				else
 				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, GetRandomInt(0, 9999));
+					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, GetRandomInt(0, 9999));
 				}
 			}
 			//else if((strangerank == 21 && weaponlevel != 102) || !GetConVarBool(cvarStrangeWep))
@@ -4514,7 +4530,7 @@ EquipBoss(boss)
 				}
 				else
 				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
+					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
 				}
 			}/*
 			else
@@ -4645,7 +4661,7 @@ EquipBoss(boss)
 				}
 				else
 				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 15 ; 0 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
+					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
 				}
 			}*/
 
@@ -9557,7 +9573,8 @@ public bool:PickCharacter(boss, companion)
 			if(KvGetNum(BossKV[Special[boss]], "blocked") ||
 			   KvGetNum(BossKV[Special[boss]], "donator") ||
 			   KvGetNum(BossKV[Special[boss]], "admin") ||
-			   KvGetNum(BossKV[Special[boss]], "owner"))
+			   KvGetNum(BossKV[Special[boss]], "owner") ||
+			   KvGetNum(BossKV[Special[boss]], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 			{
 				Special[boss]=-1;
 				continue;
