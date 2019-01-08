@@ -1,17 +1,47 @@
 /*
-===Freak Fortress 2===
+            《 Ｆｒｅａｋ　Ｆｏｒｔｒｅｓｓ 》
 
-By Rainbolt Dash: programmer, modeller, mapper, painter.
-Author of Demoman The Pirate: http://www.randomfortress.ru/thepirate/
-And one of two creators of Floral Defence: http://www.polycount.com/forum/showthread.php?t=73688
-And author of VS Saxton Hale Mode
-And notoriously famous for creating plugins with terrible code and then abandoning them.
+     Original Author of VSH and FF2, Rainbolt Dash
+        Programmer, modeller, mapper, painter
+             Author of Demoman The Pirate
+         One of two creators of Floral Defence
+	      
+      And notoriously famous for creating plugins
+      with terrible code and then abandoning them.
 
-Plugin thread on AlliedMods: http://forums.alliedmods.net/showthread.php?t=182108
+      Updated by Otokiru, Powerlord, and RavensBro
+       after Rainbolt Dash got sucked into DOTA2
 
-Updated by Otokiru, Powerlord, and RavensBro after Rainbolt Dash got sucked into DOTA2
+     Updated again by Wliu, Chris, Lawd, and Carge
+              after Powerlord quit FF2
 
-Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
+           Old Versus Saxton Hale Thread:
+  http://forums.alliedmods.net/showthread.php?t=146884
+             Old Freak Fortress Thread:
+  http://forums.alliedmods.net/showthread.php?t=182108
+           New Versus Saxton Hale Thread:
+  http://forums.alliedmods.net/showthread.php?t=244209
+             New Freak Fortress Thread:
+  http://forums.alliedmods.net/showthread.php?t=229013
+
+    Freak Fortress and Versus Saxton Hale Subforum:
+  http://forums.alliedmods.net/forumdisplay.php?f=154
+
+
+
+ 
+ I'm not sure how long FF2 (or TF2 in general) is going to
+last, but I would hate to see this plugin go, it's one of
+my all time favorite gamemodes. I just love the concept of
+one vs all gameplay. Sure it may have balance issues and
+other broken things, but I'll still love this gamemode
+either way. So I'm giving it one hella of a booster, one
+last time or to encourage others to do the same.
+
+					-Batfoxkid
+
+          Unofficial Freak Fortress Thread:
+  http://forums.alliedmods.net/showthread.php?t=313008
 */
 #pragma semicolon 1
 
