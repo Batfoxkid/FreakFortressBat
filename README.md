@@ -8,6 +8,7 @@ the Source code and smx files in releases.** This edit also generates some new c
 and delete it, this edit will generate a new one. After running, you can freely readd the cvars you had previously, some may not be
 there like Ullapool Caber detentions. (See the Wiki)
 **All non-boss config (eg. characters.cfg, doors.cfg, and maps.cfg) need to go in addons/sourcemod/data/freak_fortress_2/**
+**This has it's own boss selection and toggle menu, if you wish to disable these see cfg/sourcemod/FreakFortress2.cfg**
 
 ### Edit Changes:
 Visit the Wiki tab (https://github.com/Batfoxkid/FreakFortressBat/wiki) to see a full list of changes.
