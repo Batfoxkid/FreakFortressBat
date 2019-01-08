@@ -41,7 +41,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "9"
+#define FORK_STABLE_REVISION "10"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -177,6 +177,9 @@ new Handle:cvarHardcodeWep;
 new Handle:cvarSelfKnockback;
 new Handle:cvarNameChange;
 new Handle:cvarKeepBoss;
+new Handle:cvarSelectBoss;
+new Handle:cvarToggleBoss;
+new Handle:cvarDuoBoss;
 
 new Handle:FF2Cookies;
 
@@ -396,7 +399,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.6",
 	"1.16.7",
 	"1.16.8",
-	"1.16.9"
+	"1.16.9",
+	"1.16.10"
 };
 
 static const String:ff2versiondates[][]=
@@ -523,13 +527,18 @@ static const String:ff2versiondates[][]=
 	"December 24, 2018",		//1.16.6
 	"December 25, 2018",		//1.16.7
 	"January 3, 2019",		//1.16.8
-	"January 5, 2019"		//1.16.9
+	"January 5, 2019",		//1.16.9
+	"January 7, 2019"		//1.16.10
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 123:  //1.16.10
+		{
+			DrawPanelText(panel, "1) Cvar to disable ff2boss, ff2toggle, and/or ff2companion commands (Batfoxkid)");
+		}
 		case 122:  //1.16.9
 		{
 			DrawPanelText(panel, "1) Added nofirst setting for bosses with a first-round glitch (Batfoxkid)");
@@ -1573,7 +1582,10 @@ public OnPluginStart()
 	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
 	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
 	cvarNameChange=CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
-	cvarKeepBoss=CreateConVar("ff2_boss_keep", "0", "0-Disable, 1-Player keep their current boss selection", _, true, 0.0, true, 1.0);
+	cvarKeepBoss=CreateConVar("ff2_boss_keep", "0", "0-Disable, 1-Players keep their current boss selection", _, true, 0.0, true, 1.0);
+	cvarSelectBoss=CreateConVar("ff2_boss_select", "1", "0-Disable, 1-Players can select bosses", _, true, 0.0, true, 1.0);
+	cvarToggleBoss=CreateConVar("ff2_boss_toggle", "1", "0-Disable, 1-Players can toggle being the boss", _, true, 0.0, true, 1.0);
+	cvarDuoBoss=CreateConVar("ff2_boss_companion", "1", "0-Disable, 1-Players can toggle being a companion", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2892,7 +2904,15 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 3:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Companion Command");
+				if (GetConVarBool(cvarToggleBoss))	// Toggle Command?
+				{
+					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Toggle Command");
+				}
+				else					// Guess not, play the 4th thing and next is 5
+				{
+					announcecount=5;
+					CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
+				}
 			}
 			case 4:
 			{
@@ -2900,7 +2920,15 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 5:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Toggle Command");
+				if (GetConVarBool(cvarDuoBoss))		// Companion Toggle?
+				{
+					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Companion Command");
+				}
+				else					// Guess not either, play the last thing and next is 0
+				{
+					announcecount=0;
+					CPrintToChatAll("{olive}[FF2]{default} %t", "type_ff2_to_open_menu");
+				}
 			}
 			default:
 			{
@@ -3252,63 +3280,66 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
-	for(new client=1;client<=MaxClients;client++)
+	if (GetConVarBool(cvarToggleBoss))
 	{
-		if(!IsValidClient(client))
+		for(new client=1;client<=MaxClients;client++)
 		{
-			continue;
-		}
-	
-		ClientQueue[client][0] = client;
-		ClientQueue[client][1] = GetClientQueuePoints(client);
-	}
-	
-	SortCustom2D(ClientQueue, sizeof(ClientQueue), SortQueueDesc);
-	
-	for(new client=1;client<=MaxClients;client++)
-	{
-		if(!IsValidClient(client))
-		{
-			continue;
-		}
-
-		ClientID[client] = ClientQueue[client][0];
-		ClientPoint[client] = ClientQueue[client][1];
+			if(!IsValidClient(client))
+			{
+				continue;
+			}
 		
-		if (ClientCookie[client] == TOGGLE_ON)
+			ClientQueue[client][0] = client;
+			ClientQueue[client][1] = GetClientQueuePoints(client);
+		}
+		
+		SortCustom2D(ClientQueue, sizeof(ClientQueue), SortQueueDesc);
+		
+		for(new client=1;client<=MaxClients;client++)
 		{
-			new index = -1;
-			for(new i = 1; i < MAXPLAYERS+1; i++)
+			if(!IsValidClient(client))
 			{
-				if (ClientID[i] == client)
+				continue;
+			}
+
+			ClientID[client] = ClientQueue[client][0];
+			ClientPoint[client] = ClientQueue[client][1];
+			
+			if (ClientCookie[client] == TOGGLE_ON)
+			{
+				new index = -1;
+				for(new i = 1; i < MAXPLAYERS+1; i++)
 				{
-					index = i;
-					break;
+					if (ClientID[i] == client)
+					{
+						index = i;
+						break;
+					}
 				}
+				if (index > 0)
+				{
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Queue Notification", index, ClientPoint[index]);
+				}
+				else
+				{
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
+   				}
 			}
-			if (index > 0)
+			else if (ClientCookie[client] == TOGGLE_OFF)
 			{
-				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Queue Notification", index, ClientPoint[index]);
+				SetClientQueuePoints(client, -15);
+				decl String:nick[64];
+				GetClientName(client, nick, sizeof(nick));
+				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
 			}
-			else
+			else if (ClientCookie[client] == TOGGLE_UNDEF || !ClientCookie[client])
 			{
-				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
-   			}
-		}
-		else if (ClientCookie[client] == TOGGLE_OFF)
-		{
-			SetClientQueuePoints(client, -15);
-			decl String:nick[64];
-			GetClientName(client, nick, sizeof(nick));
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
-		}
-		else if (ClientCookie[client] == TOGGLE_UNDEF || !ClientCookie[client])
-		{
-			decl String:nick[64];
-			GetClientName(client, nick, sizeof(nick));
-			new Handle:clientPack = CreateDataPack();
-			WritePackCell(clientPack, client);
-			CreateTimer(GetConVarFloat(cvarFF2TogglePrefDelay), BossMenuTimer, clientPack);
+				decl String:nick[64];
+				GetClientName(client, nick, sizeof(nick));
+				new Handle:clientPack = CreateDataPack();
+				WritePackCell(clientPack, client);
+				CreateTimer(GetConVarFloat(cvarFF2TogglePrefDelay), BossMenuTimer, clientPack);
+			}
 		}
 	}
 
@@ -3621,7 +3652,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	{
 		if (client>0 && IsValidEntity(client) && IsClientConnected(client))
 		{
-			 if (ClientCookie[client] == TOGGLE_OFF)
+			if (ClientCookie[client] == TOGGLE_OFF && GetConVarBool(cvarToggleBoss))
 			{
 				FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
     				decl String:nick[64]; 
@@ -3647,7 +3678,7 @@ public Action:BossMenuTimer(Handle:timer, any:clientpack)
 // Companion Menu
 public Action:CompanionMenu(client, args)
 {
-	if (IsValidClient(client))
+	if (IsValidClient(client) && GetConVarBool(cvarDuoBoss))
 	{
 		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Companion Toggle Menu Title", ClientCookie2[client]);
 
@@ -3701,7 +3732,7 @@ public MenuHandlerCompanion(Handle:menu, MenuAction:action, param1, param2)
 // Boss menu
 public Action:BossMenu(client, args)
 {
-	if (IsValidClient(client))
+	if (IsValidClient(client) && GetConVarBool(cvarToggleBoss))
 	{
 		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Menu Title", ClientCookie[client]);
 		decl String:sEnabled[2];
@@ -4246,6 +4277,12 @@ public Action:Command_SetMyBoss(client, args)
 		return Plugin_Handled;
 	}
 	
+	if (!GetConVarBool(cvarSelectBoss))
+	{
+		// No reply because, disabled msg and another plugin's menu shows?
+		return Plugin_Handled;
+	}
+	
 	if (!CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
 		ReplyToCommand(client, "%t", "No Access");
@@ -4297,11 +4334,17 @@ public Action:Command_SetMyBoss(client, args)
 	Format(boss, sizeof(boss), "%t", "to0_random");
 	AddMenuItem(dMenu, boss, boss);
 	
-	Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_OFF ? "to0_enablepts" : "to0_disablepts");
-	AddMenuItem(dMenu, boss, boss);
+	if (GetConVarBool(cvarToggleBoss))
+	{
+		Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_OFF ? "to0_enablepts" : "to0_disablepts");
+		AddMenuItem(dMenu, boss, boss);
+	}
 	
-	Format(boss, sizeof(boss), "%t", ClientCookie2[client] == TOGGLE_OFF ? "to0_enableduo" : "to0_disableduo");
-	AddMenuItem(dMenu, boss, boss);
+	if (GetConVarBool(cvarDuoBoss))
+	{
+		Format(boss, sizeof(boss), "%t", ClientCookie2[client] == TOGGLE_OFF ? "to0_enableduo" : "to0_disableduo");
+		AddMenuItem(dMenu, boss, boss);
+	}
 	
 	for(new config; config<Specials; config++)
 	{	
@@ -4324,31 +4367,126 @@ public Action:Command_SetMyBoss(client, args)
 
 public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 {
-	switch(action)
+	if (!GetConVarBool(cvarToggleBoss) && !GetConVarBool(cvarDuoBoss))	// ''Very Efficient''
 	{
-		case MenuAction_End:
+		switch(action)
 		{
-			CloseHandle(menu);
-		}
-		
-		case MenuAction_Select:
-		{
-			switch(param2)
+			case MenuAction_End:
 			{
-				case 0: 
+				CloseHandle(menu);
+			}
+			
+			case MenuAction_Select:
+			{
+				switch(param2)
 				{
-					IsBossSelected[param1]=true;
-					xIncoming[param1] = "";
-					CReplyToCommand(param1, "%t", "to0_comfirmrandom");
-					return;
+					case 0: 
+					{
+						IsBossSelected[param1]=true;
+						xIncoming[param1] = "";
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+						return;
+					}
+					default:
+					{
+						IsBossSelected[param1]=true;
+						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+					}
 				}
-				case 1: BossMenu(param1, 0);
-				case 2: CompanionMenu(param1, 0);
-				default:
+			}
+		}
+	}
+	else if (!GetConVarBool(cvarToggleBoss))
+	{
+		switch(action)
+		{
+			case MenuAction_End:
+			{
+				CloseHandle(menu);
+			}
+			
+			case MenuAction_Select:
+			{
+				switch(param2)
 				{
-					IsBossSelected[param1]=true;
-					GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-					CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+					case 0: 
+					{
+						IsBossSelected[param1]=true;
+						xIncoming[param1] = "";
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+						return;
+					}
+					case 1: CompanionMenu(param1, 0);
+					default:
+					{
+						IsBossSelected[param1]=true;
+						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+					}
+				}
+			}
+		}
+	}
+	else if (!GetConVarBool(cvarDuoBoss))
+	{
+		switch(action)
+		{
+			case MenuAction_End:
+			{
+				CloseHandle(menu);
+			}
+			
+			case MenuAction_Select:
+			{
+				switch(param2)
+				{
+					case 0: 
+					{
+						IsBossSelected[param1]=true;
+						xIncoming[param1] = "";
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+						return;
+					}
+					case 1: BossMenu(param1, 0);
+					default:
+					{
+						IsBossSelected[param1]=true;
+						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		switch(action)
+		{
+			case MenuAction_End:
+			{
+				CloseHandle(menu);
+			}
+			
+			case MenuAction_Select:
+			{
+				switch(param2)
+				{
+					case 0: 
+					{
+						IsBossSelected[param1]=true;
+						xIncoming[param1] = "";
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+						return;
+					}
+					case 1: BossMenu(param1, 0);
+					case 2: CompanionMenu(param1, 0);
+					default:
+					{
+						IsBossSelected[param1]=true;
+						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+					}
 				}
 			}
 		}
@@ -4367,7 +4505,7 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 	if (!boss && !StrEqual(xIncoming[client], ""))
 	{
 		strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
-		if(!GetConVarBool(cvarKeepBoss))
+		if(!GetConVarBool(cvarKeepBoss) || !GetConVarBool(cvarSelectBoss))
 		{
 			xIncoming[client] = "";
 		}
@@ -9055,7 +9193,7 @@ stock GetRandomValidClient(bool:omit[])
 	{
 		if(IsValidClient(client) && !omit[client])
 		{
-			if(ClientCookie2[client]==TOGGLE_OFF) // Skip clients who have disabled being able to be selected as a companion
+			if(ClientCookie2[client]==TOGGLE_OFF && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
 				continue;
 		
 			if(GetClientTeam(client)>_:TFTeam_Spectator)
