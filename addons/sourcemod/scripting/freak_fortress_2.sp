@@ -1,5 +1,5 @@
 /*
-            《 Ｆｒｅａｋ　Ｆｏｒｔｒｅｓｓ 》
+               << Freak Fortress 2 >>
 
      Original Author of VSH and FF2, Rainbolt Dash
         Programmer, modeller, mapper, painter
@@ -3879,6 +3879,7 @@ public Action:Timer_NineThousand(Handle:timer)
 public Action:Timer_CalcQueuePoints(Handle:timer)
 {
 	new damage;
+	new damage2;
 	botqueuepoints+=5;
 	new add_points[MaxClients+1];
 	new add_points2[MaxClients+1];
