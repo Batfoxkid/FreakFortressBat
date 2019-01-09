@@ -1,4 +1,4 @@
-# Bat's Freak Fortress Edit
+# Ｂａｔ'ｓ　Ｆｒｅａｋ　Ｆｏｒｔｒｅｓｓ
 ## A mixture of various popular plugins for FF2 and extra setting to give the best out of bosses and small community servers
 
 ### Installiton and Setup:

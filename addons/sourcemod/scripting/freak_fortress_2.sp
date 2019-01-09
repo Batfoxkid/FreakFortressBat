@@ -1,17 +1,47 @@
 /*
-===Freak Fortress 2===
+               << Freak Fortress 2 >>
 
-By Rainbolt Dash: programmer, modeller, mapper, painter.
-Author of Demoman The Pirate: http://www.randomfortress.ru/thepirate/
-And one of two creators of Floral Defence: http://www.polycount.com/forum/showthread.php?t=73688
-And author of VS Saxton Hale Mode
-And notoriously famous for creating plugins with terrible code and then abandoning them.
+     Original Author of VSH and FF2, Rainbolt Dash
+        Programmer, modeller, mapper, painter
+             Author of Demoman The Pirate
+         One of two creators of Floral Defence
+	      
+      And notoriously famous for creating plugins
+      with terrible code and then abandoning them.
 
-Plugin thread on AlliedMods: http://forums.alliedmods.net/showthread.php?t=182108
+      Updated by Otokiru, Powerlord, and RavensBro
+       after Rainbolt Dash got sucked into DOTA2
 
-Updated by Otokiru, Powerlord, and RavensBro after Rainbolt Dash got sucked into DOTA2
+     Updated again by Wliu, Chris, Lawd, and Carge
+              after Powerlord quit FF2
 
-Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
+           Old Versus Saxton Hale Thread:
+  http://forums.alliedmods.net/showthread.php?t=146884
+             Old Freak Fortress Thread:
+  http://forums.alliedmods.net/showthread.php?t=182108
+           New Versus Saxton Hale Thread:
+  http://forums.alliedmods.net/showthread.php?t=244209
+             New Freak Fortress Thread:
+  http://forums.alliedmods.net/showthread.php?t=229013
+
+    Freak Fortress and Versus Saxton Hale Subforum:
+  http://forums.alliedmods.net/forumdisplay.php?f=154
+
+
+
+ 
+ I'm not sure how long FF2 (or TF2 in general) is going to
+last, but I would hate to see this plugin go, it's one of
+my all time favorite gamemodes. I just love the concept of
+one vs all gameplay. Sure it may have balance issues and
+other broken things, but I'll still love this gamemode
+either way. So I'm giving it one hella of a booster, one
+last time or to encourage others to do the same.
+
+					-Batfoxkid
+
+          Unofficial Freak Fortress Thread:
+  http://forums.alliedmods.net/showthread.php?t=313008
 */
 #pragma semicolon 1
 
@@ -41,7 +71,7 @@ Updated by Wliu, Chris, Lawd, and Carge after Powerlord quit FF2
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "10"
+#define FORK_STABLE_REVISION "11"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -180,6 +210,10 @@ new Handle:cvarKeepBoss;
 new Handle:cvarSelectBoss;
 new Handle:cvarToggleBoss;
 new Handle:cvarDuoBoss;
+new Handle:cvarPointsInterval;
+new Handle:cvarPointsMin;
+new Handle:cvarPointsDamage;
+new Handle:cvarPointsExtra;
 
 new Handle:FF2Cookies;
 
@@ -216,6 +250,9 @@ new Float:BowDamage=1.25;
 new Float:SniperClimbDamage=15.0;
 new Float:SniperClimbDelay=1.56;
 new QualityWep=5;
+new PointsInterval=600;
+new PointsMin=10;
+new PointsDamage=0;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
 new Handle:BossInfoTimer[MAXPLAYERS+1][2];
@@ -400,7 +437,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.7",
 	"1.16.8",
 	"1.16.9",
-	"1.16.10"
+	"1.16.10",
+	"1.16.11"
 };
 
 static const String:ff2versiondates[][]=
@@ -528,16 +566,21 @@ static const String:ff2versiondates[][]=
 	"December 25, 2018",		//1.16.7
 	"January 3, 2019",		//1.16.8
 	"January 5, 2019",		//1.16.9
-	"January 7, 2019"		//1.16.10
+	"January 7, 2019",		//1.16.10
+	"January 8, 2019"		//1.16.11
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 124:  //1.16.11
+		{
+			DrawPanelText(panel, "1) Cvars to adjust how queue points are handled (Batfoxkid from SHADoW)");
+		}
 		case 123:  //1.16.10
 		{
-			DrawPanelText(panel, "1) Cvar to disable ff2boss, ff2toggle, and/or ff2companion commands (Batfoxkid)");
+			DrawPanelText(panel, "1) Cvars to disable ff2boss, ff2toggle, and/or ff2companion commands (Batfoxkid)");
 		}
 		case 122:  //1.16.9
 		{
@@ -557,7 +600,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 		}
 		case 119:  //1.16.6
 		{
-			DrawPanelText(panel, "1) Added set rage command and infinite rage command (SHADoW93 from Chdata)");
+			DrawPanelText(panel, "1) Added set rage command and infinite rage command (SHADoW from Chdata)");
 		}
 		case 118:  //1.16.5
 		{
@@ -1586,6 +1629,10 @@ public OnPluginStart()
 	cvarSelectBoss=CreateConVar("ff2_boss_select", "1", "0-Disable, 1-Players can select bosses", _, true, 0.0, true, 1.0);
 	cvarToggleBoss=CreateConVar("ff2_boss_toggle", "1", "0-Disable, 1-Players can toggle being the boss", _, true, 0.0, true, 1.0);
 	cvarDuoBoss=CreateConVar("ff2_boss_companion", "1", "0-Disable, 1-Players can toggle being a companion", _, true, 0.0, true, 1.0);
+	cvarPointsInterval=CreateConVar("ff2_points_interval", "600", "Every this damage gives a point", _, true, 1.0);
+	cvarPointsDamage=CreateConVar("ff2_points_damage", "0", "Damage required to earn queue points", _, true, 0.0);
+	cvarPointsMin=CreateConVar("ff2_points_queue", "10", "Minimum queue points earned", _, true, 0.0);
+	cvarPointsExtra=CreateConVar("ff2_points_bonus", "0", "0-Points interval only counts towards score, 1-Points interval also counts towards queue points", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1648,6 +1695,10 @@ public OnPluginStart()
 	HookConVarChange(cvarSelfKnockback, CvarChange);
 	HookConVarChange(cvarFF2TogglePrefDelay, CvarChange);
 	HookConVarChange(cvarKeepBoss, CvarChange);
+	HookConVarChange(cvarPointsInterval, CvarChange);
+	HookConVarChange(cvarPointsDamage, CvarChange);
+	HookConVarChange(cvarPointsMin, CvarChange);
+	HookConVarChange(cvarPointsExtra, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -2206,6 +2257,9 @@ public EnableFF2()
 	QualityWep=GetConVarInt(cvarQualityWep);
 	canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
+	PointsInterval=GetConVarInt(cvarPointsInterval);
+	PointsDamage=GetConVarInt(cvarPointsDamage);
+	PointsMin=GetConVarInt(cvarPointsMin);
 	if(GetConVarInt(cvarFirstRound)!=-1)
 	{
 		arenaRounds=GetConVarInt(cvarFirstRound) ? 0 : 1;
@@ -2849,6 +2903,18 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarBossRTD)
 	{
 		canBossRTD=bool:StringToInt(newValue);
+	}
+	else if(convar==cvarPointsInterval)
+	{
+		PointsInterval=StringToInt(newValue);
+	}
+	else if(convar==cvarPointsDamage)
+	{
+		PointsDamage=StringToInt(newValue);
+	}
+	else if(convar==cvarPointsMin)
+	{
+		PointsMin=StringToInt(newValue);
 	}
 	else if(convar==cvarUpdater)
 	{
@@ -3813,6 +3879,7 @@ public Action:Timer_NineThousand(Handle:timer)
 public Action:Timer_CalcQueuePoints(Handle:timer)
 {
 	new damage;
+	new damage2;
 	botqueuepoints+=5;
 	new add_points[MaxClients+1];
 	new add_points2[MaxClients+1];
@@ -3821,13 +3888,14 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 		if(IsValidClient(client))
 		{
 			damage=Damage[client];
+			damage2=Damage[client];
 			new Handle:event=CreateEvent("player_escort_score", true);
 			SetEventInt(event, "player", client);
 
 			new points;
-			while(damage-600>0)
+			while(damage-PointsInterval>0)
 			{
-				damage-=600;
+				damage-=PointsInterval;
 				points++;
 			}
 			SetEventInt(event, "points", points);
@@ -3847,8 +3915,19 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 			}
 			else if(!IsFakeClient(client) && (GetClientTeam(client)>_:TFTeam_Spectator || SpecForceBoss))
 			{
-				add_points[client]=10;
-				add_points2[client]=10;
+				if(damage2>=PointsDamage)
+				{
+					if(GetConVarBool(cvarPointsExtra))
+					{
+						add_points[client]=PointsMin+points;
+						add_points2[client]=PointsMin+points;
+					}	
+					else
+					{
+						add_points[client]=PointsMin;
+						add_points2[client]=PointsMin;					
+					}
+				}
 			}
 		}
 	}
