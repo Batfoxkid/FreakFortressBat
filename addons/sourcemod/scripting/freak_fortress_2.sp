@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "11"
+#define FORK_STABLE_REVISION "12"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -251,8 +251,10 @@ new Float:SniperClimbDamage=15.0;
 new Float:SniperClimbDelay=1.56;
 new QualityWep=5;
 new PointsInterval=600;
+new Float:PointsInterval2=600.0;
 new PointsMin=10;
 new PointsDamage=0;
+new PointsExtra=10;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
 new Handle:BossInfoTimer[MAXPLAYERS+1][2];
@@ -438,7 +440,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.8",
 	"1.16.9",
 	"1.16.10",
-	"1.16.11"
+	"1.16.11",
+	"1.16.12"
 };
 
 static const String:ff2versiondates[][]=
@@ -567,13 +570,18 @@ static const String:ff2versiondates[][]=
 	"January 3, 2019",		//1.16.8
 	"January 5, 2019",		//1.16.9
 	"January 7, 2019",		//1.16.10
-	"January 8, 2019"		//1.16.11
+	"January 8, 2019",		//1.16.11
+	"January 9, 2019"		//1.16.12
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 125:  //1.16.12
+		{
+			DrawPanelText(panel, "1) Points extra cvar defines max queue points instead (Batfoxkid)");
+		}
 		case 124:  //1.16.11
 		{
 			DrawPanelText(panel, "1) Cvars to adjust how queue points are handled (Batfoxkid from SHADoW)");
@@ -1632,7 +1640,7 @@ public OnPluginStart()
 	cvarPointsInterval=CreateConVar("ff2_points_interval", "600", "Every this damage gives a point", _, true, 1.0);
 	cvarPointsDamage=CreateConVar("ff2_points_damage", "0", "Damage required to earn queue points", _, true, 0.0);
 	cvarPointsMin=CreateConVar("ff2_points_queue", "10", "Minimum queue points earned", _, true, 0.0);
-	cvarPointsExtra=CreateConVar("ff2_points_bonus", "0", "0-Points interval only counts towards score, 1-Points interval also counts towards queue points", _, true, 0.0, true, 1.0);
+	cvarPointsExtra=CreateConVar("ff2_points_bonus", "10", "Maximum queue points earned", _, true, 0.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2258,8 +2266,10 @@ public EnableFF2()
 	canBossRTD=GetConVarBool(cvarBossRTD);
 	AliveToEnable=GetConVarInt(cvarAliveToEnable);
 	PointsInterval=GetConVarInt(cvarPointsInterval);
+	PointsInterval2=GetConVarFloat(cvarPointsInterval);
 	PointsDamage=GetConVarInt(cvarPointsDamage);
 	PointsMin=GetConVarInt(cvarPointsMin);
+	PointsExtra=GetConVarInt(cvarPointsExtra);
 	if(GetConVarInt(cvarFirstRound)!=-1)
 	{
 		arenaRounds=GetConVarInt(cvarFirstRound) ? 0 : 1;
@@ -2907,6 +2917,7 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarPointsInterval)
 	{
 		PointsInterval=StringToInt(newValue);
+		PointsInterval2=StringToFloat(newValue);
 	}
 	else if(convar==cvarPointsDamage)
 	{
@@ -2915,6 +2926,10 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarPointsMin)
 	{
 		PointsMin=StringToInt(newValue);
+	}
+	else if(convar==cvarPointsExtra)
+	{
+		PointsExtra=StringToInt(newValue);
 	}
 	else if(convar==cvarUpdater)
 	{
@@ -3706,7 +3721,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/600.0));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
 	}
@@ -3917,15 +3932,23 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 			{
 				if(damage2>=PointsDamage)
 				{
-					if(GetConVarBool(cvarPointsExtra))
+					if(PointsExtra>PointsMin)
 					{
-						add_points[client]=PointsMin+points;
-						add_points2[client]=PointsMin+points;
-					}	
+						if(points>(PointsExtra-PointsMin))
+						{
+							add_points[client]=PointsExtra;
+							add_points2[client]=PointsExtra;
+						}
+						else
+						{
+							add_points[client]=PointsMin+points;
+							add_points2[client]=PointsMin+points;
+						}
+					}
 					else
 					{
 						add_points[client]=PointsMin;
-						add_points2[client]=PointsMin;					
+						add_points2[client]=PointsMin;
 					}
 				}
 			}
@@ -4379,9 +4402,9 @@ public Action:Command_SetMyBoss(client, args)
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 			if(KvGetNum(BossKV[config], "hidden", 0)) continue;
-			if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", 0, true)) continue;
-			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", 0, true)) continue;
-			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", 0, true)) continue;
+			if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) continue;
+			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
+			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
 			if(StrContains(boss, name, false)!=-1)
 			{
@@ -4430,9 +4453,9 @@ public Action:Command_SetMyBoss(client, args)
 		KvRewind(BossKV[config]);
 		if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 		if(KvGetNum(BossKV[config], "hidden", 0)) continue;
-		if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", 0, true)) continue;
-		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", 0, true)) continue;
-		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", 0, true)) continue;
+		if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) continue;
+		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
+		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 		if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
 		
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
@@ -7825,7 +7848,7 @@ public Action:Timer_Damage(Handle:timer, any:userid)
 	new client=GetClientOfUserId(userid);
 	if(IsValidClient(client, false))
 	{
-		CPrintToChat(client, "{olive}[FF2] %t. %t{default}", "damage", Damage[client], "scores", RoundFloat(Damage[client]/600.0));
+		CPrintToChat(client, "{olive}[FF2] %t. %t{default}", "damage", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 	}
 	return Plugin_Continue;
 }
