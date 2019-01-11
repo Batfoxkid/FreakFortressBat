@@ -215,7 +215,7 @@ new Handle:cvarPointsInterval;
 new Handle:cvarPointsMin;
 new Handle:cvarPointsDamage;
 new Handle:cvarPointsExtra;
-//new Handle:cvarAdvancedMusic;
+new Handle:cvarAdvancedMusic;
 
 new Handle:FF2Cookies;
 
@@ -1496,9 +1496,10 @@ new chancesIndex;
 public Plugin:myinfo=
 {
 	name="Freak Fortress 2",
-	author="Rainbolt Dash, FlaminSarge, Powerlord, the 50DKP team",
+	author="Many many people",
 	description="RUUUUNN!! COWAAAARRDSS!",
 	version=PLUGIN_VERSION,
+	url="https://forums.alliedmods.net/forumdisplay.php?f=154",
 };
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
@@ -1649,8 +1650,7 @@ public OnPluginStart()
 	cvarPointsDamage=CreateConVar("ff2_points_damage", "0", "Damage required to earn queue points", _, true, 0.0);
 	cvarPointsMin=CreateConVar("ff2_points_queue", "10", "Minimum queue points earned", _, true, 0.0);
 	cvarPointsExtra=CreateConVar("ff2_points_bonus", "10", "Maximum queue points earned", _, true, 0.0);
-	//cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
-	// Maybe I can have a cvar to toggle advanced or simple. Mainly lack of "title" and "author" stuff on public bosses
+	cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1717,7 +1717,7 @@ public OnPluginStart()
 	HookConVarChange(cvarPointsDamage, CvarChange);
 	HookConVarChange(cvarPointsMin, CvarChange);
 	HookConVarChange(cvarPointsExtra, CvarChange);
-	//HookConVarChange(cvarAdvancedMusic, CvarChange);
+	HookConVarChange(cvarAdvancedMusic, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -10669,7 +10669,7 @@ public Action:MusicTogglePanel(client)
 		return Plugin_Continue;
 	}
 
-	if(!AdvancedMusic)
+	if(!GetConVarBool(cvarAdvancedMusic))
 	{
 		new Handle:panel=CreatePanel();
 		SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
@@ -10705,7 +10705,7 @@ public MusicTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 {
 	if(IsValidClient(client) && action==MenuAction_Select)
 	{
-		if(!AdvancedMusic)
+		if(!GetConVarBool(cvarAdvancedMusic))
 		{
 			if(selection==2)  //Off
 			{
@@ -10774,6 +10774,11 @@ public Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
+	if(if(!GetConVarBool(cvarAdvancedMusic))
+	{
+		return Plugin_Handled;
+	}
+
 	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_shuffle");
 	StartMusic(client);
 	return Plugin_Handled;
@@ -10796,6 +10801,11 @@ public Action Command_Tracklist(int client, int args)
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		return Plugin_Handled;
+	}
+
+	if(if(!GetConVarBool(cvarAdvancedMusic))
+	{
 		return Plugin_Handled;
 	}
 
