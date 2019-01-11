@@ -2239,6 +2239,12 @@ public OnMapEnd()
 public OnPluginEnd()
 {
 	OnMapEnd();
+	SetConVarString(hostName, oldName);
+	if (!ReloadFF2 && CheckRoundState() == 1)
+	{
+		ForceTeamWin(0);
+		CPrintToChatAll("{olive}[FF2]{default} The plugin has been unexpectedly unloaded!");
+	}
 }
 
 public EnableFF2()
@@ -3230,6 +3236,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
 	{
 		CPrintToChatAll("{olive}[FF2]{default} %t", "needmoreplayers");
+		SetConVarString(hostName, oldName);
 		Enabled=false;
 		DisableSubPlugins();
 		SetControlPoint(true);
