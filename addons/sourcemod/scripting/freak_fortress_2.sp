@@ -97,7 +97,7 @@ last time or to encourage others to do the same.
 #define HEALTHBAR_PROPERTY "m_iBossHealthPercentageByte"
 #define HEALTHBAR_MAX 255
 #define MONOCULUS "eyeball_boss"
-#define DISABLED_PERKS "toxic,noclip,uber,ammo,instant,jump,tinyplayer"
+//#define DISABLED_PERKS "toxic,noclip,uber,ammo,instant,jump,tinyplayer"
 
 // Config file paths
 #define ConfigPath "configs/freak_fortress_2"
@@ -1773,14 +1773,14 @@ public OnPluginStart()
 		ClientCookie2[i] = TOGGLE_UNDEF;
 	}
 
-	RegConsoleCmd("ff2_skipsong", Command_SkipSong);
-	RegConsoleCmd("ff2skipsong", Command_SkipSong);
+	RegConsoleCmd("ff2_skipsong", Command_ShuffleSong);
+	RegConsoleCmd("ff2skipsong", Command_ShuffleSong);
 	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong);
 	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong);
 	RegConsoleCmd("ff2_tracklist", Command_Tracklist);
 	RegConsoleCmd("ff2tracklist", Command_Tracklist);
-	RegConsoleCmd("hale_skipsong", Command_SkipSong);
-	RegConsoleCmd("haleskipsong", Command_SkipSong);
+	RegConsoleCmd("hale_skipsong", Command_ShuffleSong);
+	RegConsoleCmd("haleskipsong", Command_ShuffleSong);
 	RegConsoleCmd("hale_shufflesong", Command_ShuffleSong);
 	RegConsoleCmd("haleshufflesong", Command_ShuffleSong);
 	RegConsoleCmd("hale_tracklist", Command_Tracklist);
@@ -10637,6 +10637,27 @@ public Action:MusicTogglePanelCmd(client, args)
 		return Plugin_Continue;
 	}
 
+	if(args)
+	{
+		decl String:cmd[64];
+		GetCmdArgString(cmd, sizeof(cmd));
+		if(StrContains(cmd, "off", false)!=-1 || StrContains(cmd, "disable", false)!=-1 || StrContains(cmd, "0", false)!=-1)
+		{
+			ToggleBGM(client, false);
+		}
+		else if(StrContains(cmd, "on", false)!=-1 || StrContains(cmd, "enable", false)!=-1 || StrContains(cmd, "1", false)!=-1)
+		{
+			if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} You already have boss themes enabled...");
+				return Plugin_Handled;
+			}
+			ToggleBGM(client, true);
+		}
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
+		return Plugin_Handled;
+	}
+
 	MusicTogglePanel(client);
 	return Plugin_Handled;
 }
@@ -10648,12 +10669,35 @@ public Action:MusicTogglePanel(client)
 		return Plugin_Continue;
 	}
 
-	new Handle:panel=CreatePanel();
-	SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
-	DrawPanelItem(panel, "Play");
-	DrawPanelItem(panel, "Stop");
-	SendPanelToClient(panel, client, MusicTogglePanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	if(!AdvancedMusic)
+	{
+		new Handle:panel=CreatePanel();
+		SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
+		DrawPanelItem(panel, "On");
+		DrawPanelItem(panel, "Off");
+		SendPanelToClient(panel, client, MusicTogglePanelH, MENU_TIME_FOREVER);
+		CloseHandle(panel);
+	}
+	else
+	{
+		char title[128];
+		new Handle:togglemusic = CreateMenu(MusicTogglePanelH);
+		Format(title,sizeof(title), "%t", "theme_menu");
+		SetMenuTitle(togglemusic, title, title);
+		Format(title, sizeof(title), "%t", CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "themes_disable" : "themes_enable");
+		AddMenuItem(togglemusic, title, title);
+		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+		{
+			Format(title, sizeof(title), "%t", "theme_skip");
+			AddMenuItem(togglemusic, title, title);
+			//Format(title, sizeof(title), "%t", "theme_shuffle");
+			//AddMenuItem(togglemusic, title, title);
+			Format(title, sizeof(title), "%t", "theme_select");
+			AddMenuItem(togglemusic, title, title);
+		}
+		SetMenuExitButton(togglemusic, true);
+		DisplayMenu(togglemusic, client, MENU_TIME_FOREVER);
+	}
 	return Plugin_Continue;
 }
 
@@ -10661,23 +10705,256 @@ public MusicTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 {
 	if(IsValidClient(client) && action==MenuAction_Select)
 	{
-		if(selection==2)  //Off
+		if(!AdvancedMusic)
 		{
-			SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, false);
-			StopMusic(client, true);
-		}
-		else  //On
-		{
-			//If they already have music enabled don't do anything
-			if(!CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+			if(selection==2)  //Off
 			{
-				SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, true);
+				SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, false);
 				StopMusic(client, true);
-				StartMusic(client);
+			}
+			else  //On
+			{
+				//If they already have music enabled don't do anything
+				if(!CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+				{
+					SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, true);
+					StartMusic(client);
+				}
+			}
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", selection==2 ? "off" : "on");
+		}
+		else
+		{
+			switch(selection)
+			{
+				case 0:
+				{
+					ToggleBGM(client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? false : true);               
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
+				}
+				//case 1: Command_SkipSong(client, 0);
+				case 1: Command_ShuffleSong(client, 0);
+				case 2: Command_Tracklist(client, 0);
 			}
 		}
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", selection==2 ? "off" : "on");
 	}
+}
+
+ToggleBGM(client, bool:enable)
+{
+	if(enable)
+	{
+		SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, true);
+		StartMusic(client);
+	}
+	else
+	{
+		SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, false);
+		StopMusic(client, true);    
+	}
+}
+
+public Action Command_ShuffleSong(int client, int args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "%t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!Enabled || CheckRoundState()!=1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		return Plugin_Handled;
+	}
+
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true)|| !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		return Plugin_Handled;
+	}
+
+	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_shuffle");
+	StartMusic(client);
+	return Plugin_Handled;
+}
+
+public Action Command_Tracklist(int client, int args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "%t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!Enabled || CheckRoundState()!=1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		return Plugin_Handled;
+	}
+
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		return Plugin_Handled;
+	}
+
+	char id3[6][256];
+	new Handle:trackList = CreateMenu(Command_TrackListH);
+	SetMenuTitle(trackList, "%t", "track_select");
+	KvRewind(BossKV[Special[0]]);
+	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+	{
+		decl String:music[PLATFORM_MAX_PATH];
+		new index;
+		do
+		{
+			index++;
+			Format(music, 10, "time%i", index);
+		}
+		while(KvGetFloat(BossKV[Special[0]], music)>1);
+
+		if(!index)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");		
+			return Plugin_Handled;		
+		}
+
+		for(new trackIdx=1;trackIdx<=index-1;trackIdx++)
+		{
+			Format(id3[0], sizeof(id3[]), "name%i", trackIdx);
+			KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+			Format(id3[1], sizeof(id3[]), "artist%i", trackIdx);
+			KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+			GetSongTime(trackIdx, id3[5], sizeof(id3[]));
+			if(!id3[3])
+			{
+				Format(id3[3], sizeof(id3[]), "%t", "unknown_artist");
+			}
+			if(!id3[2])
+			{
+				Format(id3[2], sizeof(id3[]), "%t", "unknown_song");
+			}
+			Format(id3[4], sizeof(id3[]), "%s - %s (%s)", id3[3], id3[2], id3[5]);
+			CRemoveTags(id3[4], sizeof(id3[]));
+			AddMenuItem(trackList, id3[4], id3[4]);
+		}
+	}  
+
+	SetMenuExitButton(trackList, true);
+	DisplayMenu(trackList, client, MENU_TIME_FOREVER);
+	return Plugin_Handled;
+}
+
+stock float GetSongLength(char[] trackIdx)
+{
+	float duration;
+	char bgmTime[128];
+	KvGetString(BossKV[Special[0]], trackIdx, bgmTime, sizeof(bgmTime));
+	if(StrContains(bgmTime, ":", false)!=-1) // new-style MM:SS:MSMS
+	{
+		char time2[32][32];
+		int count = ExplodeString(bgmTime, ":", time2, sizeof(time2), sizeof(time2));
+		if (count > 0)
+		{
+			for (int i = 0; i < count; i+=3)
+			{
+				char newTime[64];
+				int mins=StringToInt(time2[i])*60;
+				int secs=StringToInt(time2[i+1]);
+				int milsecs=StringToInt(time2[i+2]);
+				Format(newTime, sizeof(newTime), "%i.%i", mins+secs, milsecs);
+				duration=StringToFloat(newTime);				   
+			}
+		}
+	}
+	else // old style seconds
+	{
+		duration=KvGetFloat(BossKV[Special[0]], trackIdx);
+	}
+	return duration;
+}
+
+//stock void GetSongTime(int trackIdx, char[] timeStr, length)
+stock GetSongTime(int trackIdx, char[] timeStr, length)
+{
+	char songIdx[32];
+	Format(songIdx, sizeof(songIdx), "time%i", trackIdx);
+	int time=RoundToFloor(GetSongLength(songIdx));
+	if(time/60>9)
+	{
+		IntToString(time/60, timeStr, length);
+	}
+	else
+	{
+		Format(timeStr, length, "0%i", time/60);
+	}
+
+	if(time%60>9)
+	{
+		Format(timeStr, length, "%s:%i", timeStr, time%60);
+	}
+	else
+	{
+		Format(timeStr, length, "%s:0%i", timeStr, time%60);
+	}
+}
+
+public int Command_TrackListH(Handle menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+
+		case MenuAction_Select:
+		{
+			CloseHandle(menu);
+			/*StopMusic(param1, true);
+			KvRewind(BossKV[Special[0]]);
+			if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+			{
+				char music[PLATFORM_MAX_PATH];
+				int track=param2+1;
+				Format(music, 10, "time%i", track);
+
+				float time=GetSongLength(music);
+				Format(music, 10, "path%i", track);
+				KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+
+				char id3[4][256];
+				Format(id3[0], sizeof(id3[]), "name%i", track);
+				KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+				Format(id3[1], sizeof(id3[]), "artist%i", track);
+				KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+
+				char temp[PLATFORM_MAX_PATH];
+				Format(temp, sizeof(temp), "sound/%s", music);
+				if(FileExists(temp, true))
+				{
+					PlayBGM(param1, music, time, _, id3[2], id3[3]);
+				}
+				else
+				{
+					char bossName[64];
+					KvRewind(BossKV[Special[0]]);
+					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+					LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+					if(PlayBGMAt[param1]!=INACTIVE)
+					{
+						PlayBGMAt[param1]+=time;
+					}
+					else
+					{
+						PlayBGMAt[param1]=GetEngineTime()+time;
+					}
+				}
+			}*/
+		}
+	}
+	return;
 }
 
 /*public Action:VoiceTogglePanelCmd(client, args)
