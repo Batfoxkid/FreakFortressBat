@@ -70,11 +70,11 @@ last time or to encourage others to do the same.
     as opposed to the public FF2 versioning system
 */
 #define FORK_MAJOR_REVISION "1"
-#define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "12"
+#define FORK_MINOR_REVISION "17"
+#define FORK_STABLE_REVISION "Experimental ALT"
 #define FORK_SUB_REVISION "Bat's Edit"
 
-#define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
+#define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..." "...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
 
 /*
     And now, let's report its version as the latest public FF2 version
@@ -140,6 +140,7 @@ new detonations[MAXPLAYERS+1];
 new bool:playBGM[MAXPLAYERS+1]=true;
 
 new String:currentBGM[MAXPLAYERS+1][PLATFORM_MAX_PATH];
+new bool:nomusic=false;
 
 new FF2flags[MAXPLAYERS+1];
 
@@ -214,6 +215,7 @@ new Handle:cvarPointsInterval;
 new Handle:cvarPointsMin;
 new Handle:cvarPointsDamage;
 new Handle:cvarPointsExtra;
+//new Handle:cvarAdvancedMusic;
 
 new Handle:FF2Cookies;
 
@@ -441,7 +443,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.9",
 	"1.16.10",
 	"1.16.11",
-	"1.16.12"
+	"1.16.12",
+	"1.17.0"
 };
 
 static const String:ff2versiondates[][]=
@@ -572,12 +575,17 @@ static const String:ff2versiondates[][]=
 	"January 7, 2019",		//1.16.10
 	"January 8, 2019",		//1.16.11
 	"January 9, 2019"		//1.16.12
+	"Experimental ALT"		//1.17.0
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 126:  //1.17.0
+		{
+			DrawPanelText(panel, "1) Advanced music menu and commands (Batfoxkid from SHADoW)");
+		}
 		case 125:  //1.16.12
 		{
 			DrawPanelText(panel, "1) Points extra cvar defines max queue points instead (Batfoxkid)");
@@ -1641,6 +1649,8 @@ public OnPluginStart()
 	cvarPointsDamage=CreateConVar("ff2_points_damage", "0", "Damage required to earn queue points", _, true, 0.0);
 	cvarPointsMin=CreateConVar("ff2_points_queue", "10", "Minimum queue points earned", _, true, 0.0);
 	cvarPointsExtra=CreateConVar("ff2_points_bonus", "10", "Maximum queue points earned", _, true, 0.0);
+	//cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
+	// Maybe I can have a cvar to toggle advanced or simple. Mainly lack of "title" and "author" stuff on public bosses
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1707,6 +1717,7 @@ public OnPluginStart()
 	HookConVarChange(cvarPointsDamage, CvarChange);
 	HookConVarChange(cvarPointsMin, CvarChange);
 	HookConVarChange(cvarPointsExtra, CvarChange);
+	//HookConVarChange(cvarAdvancedMusic, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -1761,6 +1772,19 @@ public OnPluginStart()
 		ClientCookie[i] = TOGGLE_UNDEF;
 		ClientCookie2[i] = TOGGLE_UNDEF;
 	}
+
+	RegConsoleCmd("ff2_skipsong", Command_SkipSong);
+	RegConsoleCmd("ff2skipsong", Command_SkipSong);
+	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong);
+	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong);
+	RegConsoleCmd("ff2_tracklist", Command_Tracklist);
+	RegConsoleCmd("ff2tracklist", Command_Tracklist);
+	RegConsoleCmd("hale_skipsong", Command_SkipSong);
+	RegConsoleCmd("haleskipsong", Command_SkipSong);
+	RegConsoleCmd("hale_shufflesong", Command_ShuffleSong);
+	RegConsoleCmd("haleshufflesong", Command_ShuffleSong);
+	RegConsoleCmd("hale_tracklist", Command_Tracklist);
+	RegConsoleCmd("haletracklist", Command_Tracklist);
 
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
@@ -4124,14 +4148,25 @@ PlayBGM(client)
 		new Float:time=KvGetFloat(BossKV[Special[0]], music);
 		Format(music, 10, "path%i", index);
 		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+		Format(music, 10, "name%i", index);
+		KvGetString(BossKV[Special[0]], music, name, sizeof(name));
+		Format(music, 10, "artist%i", index);
+		KvGetString(BossKV[Special[0]], music, artist, sizeof(artist));
 
 		new Action:action;
 		Call_StartForward(OnMusic);
-		decl String:temp[PLATFORM_MAX_PATH];
+		//decl String:temp[PLATFORM_MAX_PATH];
+		char temp[3][PLATFORM_MAX_PATH];
 		new Float:time2=time;
-		strcopy(temp, sizeof(temp), music);
-		Call_PushStringEx(temp, sizeof(temp), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		//strcopy(temp, sizeof(temp), music);
+		strcopy(temp[0], sizeof(temp[]), music);
+		strcopy(temp[1], sizeof(temp[]), name);
+		strcopy(temp[2], sizeof(temp[]), artist);
+		//Call_PushStringEx(temp, sizeof(temp), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 		Call_PushFloatRef(time2);
+		//Call_PushStringEx(temp[1], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		//Call_PushStringEx(temp[2], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 		Call_Finish(action);
 		switch(action)
 		{
@@ -4143,6 +4178,8 @@ PlayBGM(client)
 			{
 				strcopy(music, sizeof(music), temp);
 				time=time2;
+				//strcopy(name, 256, temp[1]);
+				//strcopy(artist, 256, temp[2]);
 			}
 		}
 
@@ -4158,6 +4195,15 @@ PlayBGM(client)
 					MusicTimer[client]=CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 				}
 			}
+			if(!name[0])
+			{
+				Format(name[0], 256, "%t", "unknown_song");
+			}
+			if(!artist[0])
+			{
+				Format(artist[0], 256, "%t", "unknown_artist");
+			}
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "track_info", artist, name);
 		}
 		else
 		{
