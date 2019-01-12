@@ -71,10 +71,10 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "Experimental ALT"
+#define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Bat's Edit"
 
-#define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..." "...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
+#define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
 
 /*
     And now, let's report its version as the latest public FF2 version
@@ -140,7 +140,6 @@ new detonations[MAXPLAYERS+1];
 new bool:playBGM[MAXPLAYERS+1]=true;
 
 new String:currentBGM[MAXPLAYERS+1][PLATFORM_MAX_PATH];
-new bool:nomusic=false;
 
 new FF2flags[MAXPLAYERS+1];
 
@@ -164,6 +163,7 @@ new bool:bossHasReloadAbility[MAXPLAYERS+1];
 new bool:bossHasRightMouseAbility[MAXPLAYERS+1];
 
 new timeleft;
+new cursongId[MAXPLAYERS+1]=1;
 
 new Handle:cvarVersion;
 new Handle:cvarPointDelay;
@@ -574,8 +574,8 @@ static const String:ff2versiondates[][]=
 	"January 5, 2019",		//1.16.9
 	"January 7, 2019",		//1.16.10
 	"January 8, 2019",		//1.16.11
-	"January 9, 2019"		//1.16.12
-	"Experimental ALT"		//1.17.0
+	"January 9, 2019",		//1.16.12
+	"January 11, 2019"		//1.17.0
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -4059,10 +4059,14 @@ public Action:StartBossTimer(Handle:timer)
 	playing=0;
 	for(new client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !IsBoss(client) && IsPlayerAlive(client))
+		if(IsValidClient(client))
 		{
-			playing++;
-			CreateTimer(0.15, MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
+			CreateTimer(2.0, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+			if(!IsBoss(client) && IsPlayerAlive(client))
+			{
+				playing++;
+				CreateTimer(0.15, MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
+			}
 		}
 	}
 
@@ -4070,7 +4074,6 @@ public Action:StartBossTimer(Handle:timer)
 	CreateTimer(0.2, CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(2.0, Timer_PrepareBGM, 0, TIMER_FLAG_NO_MAPCHANGE);
 
 	if(!PointType)
 	{
@@ -4081,7 +4084,7 @@ public Action:StartBossTimer(Handle:timer)
 
 public Action:Timer_PrepareBGM(Handle:timer, any:userid)
 {
-	new client=GetClientOfUserId(userid);
+	/*new client=GetClientOfUserId(userid);
 	if(CheckRoundState()!=1 || (!client && MapHasMusic()) || (!client && userid))
 	{
 		return Plugin_Stop;
@@ -4126,15 +4129,69 @@ public Action:Timer_PrepareBGM(Handle:timer, any:userid)
 			return Plugin_Stop;
 		}
 	}
-	return Plugin_Continue;
-}
+	return Plugin_Continue;*/
+	new client=GetClientOfUserId(userid);
+	if(CheckRoundState()!=1 || (!client && MapHasMusic()) || StrEqual(currentBGM[client], "ff2_stop_music", true))
+	{
+		MusicTimer[client]=INVALID_HANDLE;
+		return;
+	}
 
-PlayBGM(client)
-{
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 	{
 		decl String:music[PLATFORM_MAX_PATH];
+		new index;
+		do
+		{
+			index++;
+			Format(music, 10, "time%i", index);
+		}
+		while(KvGetFloat(BossKV[Special[0]], music)>1);
+
+		index=GetRandomInt(1, index-1);
+		Format(music, 10, "time%i", index);
+		new Float:time=KvGetFloat(BossKV[Special[0]], music);
+		Format(music, 10, "path%i", index);
+		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+		
+		cursongId[client]=index;
+		
+		// manual song ID
+		char id3[4][256];
+		Format(id3[0], sizeof(id3[]), "name%i", index);
+		KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+		Format(id3[1], sizeof(id3[]), "artist%i", index);
+		KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+		
+		decl String:temp[PLATFORM_MAX_PATH];
+		Format(temp, sizeof(temp), "sound/%s", music);
+		if(FileExists(temp, true))
+		{
+			PlayBGM(client, music, time, _, id3[2], id3[3]);
+		}
+		else
+		{
+			decl String:bossName[64];
+			KvRewind(BossKV[Special[0]]);
+			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+			LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+			if(MusicTimer[client]!=INVALID_HANDLE)
+			{
+				KillTimer(MusicTimer[client]);
+			}
+		}
+	}
+}
+
+PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char[] artist="")
+{
+	/*KvRewind(BossKV[Special[0]]);
+	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+	{
+		decl String:music[PLATFORM_MAX_PATH];
+		decl String:name[PLATFORM_MAX_PATH];
+		decl String:artist[PLATFORM_MAX_PATH];
 		new index;
 		do
 		{
@@ -4155,18 +4212,17 @@ PlayBGM(client)
 
 		new Action:action;
 		Call_StartForward(OnMusic);
-		//decl String:temp[PLATFORM_MAX_PATH];
-		char temp[3][PLATFORM_MAX_PATH];
+		decl String:temp[PLATFORM_MAX_PATH];
+		decl String:temp2[PLATFORM_MAX_PATH];
+		decl String:temp3[PLATFORM_MAX_PATH];
 		new Float:time2=time;
-		//strcopy(temp, sizeof(temp), music);
-		strcopy(temp[0], sizeof(temp[]), music);
-		strcopy(temp[1], sizeof(temp[]), name);
-		strcopy(temp[2], sizeof(temp[]), artist);
-		//Call_PushStringEx(temp, sizeof(temp), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-		Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		strcopy(temp, sizeof(temp), music);
+		strcopy(temp2, sizeof(temp2), name);
+		strcopy(temp3, sizeof(temp3), artist);
+		Call_PushStringEx(temp, sizeof(temp), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 		Call_PushFloatRef(time2);
-		//Call_PushStringEx(temp[1], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-		//Call_PushStringEx(temp[2], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		//Call_PushStringEx(temp2, sizeof(temp2), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		//Call_PushStringEx(temp3, sizeof(temp3), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 		Call_Finish(action);
 		switch(action)
 		{
@@ -4178,14 +4234,16 @@ PlayBGM(client)
 			{
 				strcopy(music, sizeof(music), temp);
 				time=time2;
-				//strcopy(name, 256, temp[1]);
-				//strcopy(artist, 256, temp[2]);
+				//strcopy(name, 256, temp2);
+				//strcopy(artist, 256, temp3);
 			}
 		}
 
 		Format(temp, sizeof(temp), "sound/%s", music);
 		if(FileExists(temp, true))
 		{
+			new unknown1 = true;
+			new unknown2 = true;
 			if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 			{
 				strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
@@ -4198,12 +4256,17 @@ PlayBGM(client)
 			if(!name[0])
 			{
 				Format(name[0], 256, "%t", "unknown_song");
+				unknown1 = false;
 			}
 			if(!artist[0])
 			{
 				Format(artist[0], 256, "%t", "unknown_artist");
+				unknown2 = false;
 			}
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "track_info", artist, name);
+			if((unknown1 && unknown2) || GetConVarBool(cvarAdvancedMusic))	// Has a artist and name or Advanced Music is on
+			{
+				CPrintToChat(client, "{olive}[FF2]{default} %t", "track_info", artist, name);
+			}
 		}
 		else
 		{
@@ -4212,6 +4275,76 @@ PlayBGM(client)
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			PrintToServer("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, music);
 		}
+	}*/
+	new Action:action;
+	Call_StartForward(OnMusic);
+	//decl String:temp1[PLATFORM_MAX_PATH];
+	//decl String:temp2[PLATFORM_MAX_PATH];
+	//decl String:temp3[PLATFORM_MAX_PATH];
+	char temp[3][PLATFORM_MAX_PATH];
+	new Float:time2=time;
+	//strcopy(temp1, sizeof(temp), music);
+	//strcopy(temp2, sizeof(temp2), name);
+	//strcopy(temp3, sizeof(temp3), artist);
+	strcopy(temp[0], sizeof(temp[]), music);
+	strcopy(temp[1], sizeof(temp[]), name);
+	strcopy(temp[2], sizeof(temp[]), artist);
+	Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushFloatRef(time2);
+	//Call_PushStringEx(temp2, sizeof(temp2), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	//Call_PushStringEx(temp3, sizeof(temp3), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_Finish(action);
+	switch(action)
+	{
+		case Plugin_Stop, Plugin_Handled:
+		{
+			return;
+		}
+		case Plugin_Changed:
+		{
+			//strcopy(music, sizeof(music), temp[0]);
+			strcopy(music, PLATFORM_MAX_PATH, temp[0]);
+			time=time2;
+			//strcopy(name, 256, temp[0]);
+			//strcopy(artist, 256, temp[1]);
+		}
+	}
+
+	Format(temp[0], sizeof(temp[]), "sound/%s", music);
+	if(FileExists(temp[0], true))
+	{
+		new unknown1 = true;
+		new unknown2 = true;
+		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+		{
+			strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
+			ClientCommand(client, "playgamesound \"%s\"", music);
+			if(time>1)
+			{
+				MusicTimer[client]=CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+			}
+		}
+		if(!name[0])
+		{
+			Format(name[0], 256, "%t", "unknown_song");
+			unknown1 = false;
+		}
+		if(!artist[0])
+		{
+			Format(artist[0], 256, "%t", "unknown_artist");
+			unknown2 = false;
+		}
+		if((unknown1 && unknown2 && loop) || GetConVarBool(cvarAdvancedMusic))	// Has a artist and name or Advanced Music is on
+		{ 
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "track_info", artist, name);
+		}
+	}
+	else
+	{
+		decl String:bossName[64];
+		KvRewind(BossKV[Special[0]]);
+		KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+		PrintToServer("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, music);
 	}
 }
 
@@ -10730,7 +10863,7 @@ public MusicTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 				case 0:
 				{
 					ToggleBGM(client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? false : true);               
-					CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
 				}
 				//case 1: Command_SkipSong(client, 0);
 				case 1: Command_ShuffleSong(client, 0);
@@ -10774,7 +10907,7 @@ public Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(if(!GetConVarBool(cvarAdvancedMusic))
+	if(!GetConVarBool(cvarAdvancedMusic))
 	{
 		return Plugin_Handled;
 	}
@@ -10804,7 +10937,7 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(if(!GetConVarBool(cvarAdvancedMusic))
+	if(!GetConVarBool(cvarAdvancedMusic))
 	{
 		return Plugin_Handled;
 	}
