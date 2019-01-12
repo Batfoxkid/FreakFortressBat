@@ -3120,7 +3120,7 @@ stock bool:MapHasMusic(bool:forceRecalc=false)  //SAAAAAARGE
 		while((entity=FindEntityByClassname2(entity, "info_target"))!=-1)
 		{
 			GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
-			if(!strcmp(name, "hale_no_music", false))
+			if(!strcmp(name, "hale_no_music", false) || !strncmp(currentmap, "vsh_megaman", 15, false))
 			{
 				hasMusic=true;
 			}
