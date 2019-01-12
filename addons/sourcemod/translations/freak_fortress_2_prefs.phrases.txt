@@ -289,6 +289,11 @@
 	{
 		"en"	"Music Settings"		
 	}
+	"track_info"
+	{
+		"#format" "{1:s},{2:s}"
+		"en"	"Now Playing: {1} - {2}"
+	}
 	"ff2_music_disabled"
 	{
 		"en"	"Boss themes are currently DISABLED. Please enable them!"
