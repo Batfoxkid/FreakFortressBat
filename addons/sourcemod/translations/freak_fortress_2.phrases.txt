@@ -270,14 +270,14 @@
 		"#format" "{1:s}"
 		"en"	"Freak Fortress 2 Boss's music is {1} now"
 	}
-	"ff2_voice"	// Depercated
+	"ff2_voice"	// Chat
 	{
 		"#format" "{1:s}"
-		"en"	"FF2 monologues: {1}."
+		"en"	"Freak Fortress 2 Boss's voices is {1} now."
 	}
-	"ff2_voice2"	// Depercated
+	"ff2_voice2"	// Chat
 	{
-		"en"	""
+		"en"	"Custom boss plugin sounds may still play."
 	}
 	"menu_8"	// Menu
 	{
