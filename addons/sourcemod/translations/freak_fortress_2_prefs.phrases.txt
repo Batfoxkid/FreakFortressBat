@@ -279,15 +279,20 @@
 	}
 	"theme_shuffle"
 	{
-		"en"	"Shuffle"	
+		"en"	"Shuffle"
 	}
 	"theme_select"
 	{
-		"en"	"Track selection"		
+		"en"	"Track selection"
 	}
 	"theme_menu"
 	{
-		"en"	"Music Settings"		
+		"en"	"Music Settings"
+	}
+	"track_info"
+	{
+		"#format" "{1:s},{2:s}"
+		"en"	"Now Playing: {blue}{1}{default} - {orange}{2}{default}"
 	}
 	"ff2_music_disabled"
 	{
@@ -299,10 +304,10 @@
 	}
 	"unknown_song"
 	{
-		"en"	"Unknown Song"
+		"en"	"{default}{snow}Unknown Song"
 	}
 	"unknown_artist"
 	{
-		"en"	"Unknown Artist"
+		"en"	"{default}{snow}Unknown Artist"
 	}
 }

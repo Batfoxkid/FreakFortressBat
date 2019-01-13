@@ -70,8 +70,8 @@ last time or to encourage others to do the same.
     as opposed to the public FF2 versioning system
 */
 #define FORK_MAJOR_REVISION "1"
-#define FORK_MINOR_REVISION "16"
-#define FORK_STABLE_REVISION "12"
+#define FORK_MINOR_REVISION "17"
+#define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -97,7 +97,7 @@ last time or to encourage others to do the same.
 #define HEALTHBAR_PROPERTY "m_iBossHealthPercentageByte"
 #define HEALTHBAR_MAX 255
 #define MONOCULUS "eyeball_boss"
-#define DISABLED_PERKS "toxic,noclip,uber,ammo,instant,jump,tinyplayer"
+//#define DISABLED_PERKS "toxic,noclip,uber,ammo,instant,jump,tinyplayer"
 
 // Config file paths
 #define ConfigPath "configs/freak_fortress_2"
@@ -163,6 +163,7 @@ new bool:bossHasReloadAbility[MAXPLAYERS+1];
 new bool:bossHasRightMouseAbility[MAXPLAYERS+1];
 
 new timeleft;
+new cursongId[MAXPLAYERS+1]=1;
 
 new Handle:cvarVersion;
 new Handle:cvarPointDelay;
@@ -214,6 +215,8 @@ new Handle:cvarPointsInterval;
 new Handle:cvarPointsMin;
 new Handle:cvarPointsDamage;
 new Handle:cvarPointsExtra;
+new Handle:cvarAdvancedMusic;
+new Handle:cvarSongInfo;
 
 new Handle:FF2Cookies;
 
@@ -441,7 +444,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.9",
 	"1.16.10",
 	"1.16.11",
-	"1.16.12"
+	"1.16.12",
+	"1.17.0"
 };
 
 static const String:ff2versiondates[][]=
@@ -571,13 +575,19 @@ static const String:ff2versiondates[][]=
 	"January 5, 2019",		//1.16.9
 	"January 7, 2019",		//1.16.10
 	"January 8, 2019",		//1.16.11
-	"January 9, 2019"		//1.16.12
+	"January 9, 2019",		//1.16.12
+	"January 13, 2019"		//1.17.0
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 126:  //1.17.0
+		{
+			DrawPanelText(panel, "1) Advanced music menu and commands (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "2) Readded and improved ff2_voice (Batfoxkid)");
+		}
 		case 125:  //1.16.12
 		{
 			DrawPanelText(panel, "1) Points extra cvar defines max queue points instead (Batfoxkid)");
@@ -1488,9 +1498,10 @@ new chancesIndex;
 public Plugin:myinfo=
 {
 	name="Freak Fortress 2",
-	author="Rainbolt Dash, FlaminSarge, Powerlord, the 50DKP team",
+	author="Many many people",
 	description="RUUUUNN!! COWAAAARRDSS!",
 	version=PLUGIN_VERSION,
+	url="https://forums.alliedmods.net/forumdisplay.php?f=154",
 };
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
@@ -1641,6 +1652,8 @@ public OnPluginStart()
 	cvarPointsDamage=CreateConVar("ff2_points_damage", "0", "Damage required to earn queue points", _, true, 0.0);
 	cvarPointsMin=CreateConVar("ff2_points_queue", "10", "Minimum queue points earned", _, true, 0.0);
 	cvarPointsExtra=CreateConVar("ff2_points_bonus", "10", "Maximum queue points earned", _, true, 0.0);
+	cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
+	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1707,6 +1720,8 @@ public OnPluginStart()
 	HookConVarChange(cvarPointsDamage, CvarChange);
 	HookConVarChange(cvarPointsMin, CvarChange);
 	HookConVarChange(cvarPointsExtra, CvarChange);
+	HookConVarChange(cvarAdvancedMusic, CvarChange);
+	HookConVarChange(cvarSongInfo, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -1719,8 +1734,8 @@ public OnPluginStart()
 	RegConsoleCmd("ff2new", NewPanelCmd);
 	RegConsoleCmd("ff2music", MusicTogglePanelCmd);
 	RegConsoleCmd("ff2_music", MusicTogglePanelCmd);
-	//RegConsoleCmd("ff2voice", VoiceTogglePanelCmd);
-	//RegConsoleCmd("ff2_voice", VoiceTogglePanelCmd);
+	RegConsoleCmd("ff2voice", VoiceTogglePanelCmd);
+	RegConsoleCmd("ff2_voice", VoiceTogglePanelCmd);
 	RegConsoleCmd("ff2_resetpoints", ResetQueuePointsCmd);
 	RegConsoleCmd("ff2resetpoints", ResetQueuePointsCmd);
 	RegConsoleCmd("ff2_boss", Command_SetMyBoss);
@@ -1738,8 +1753,8 @@ public OnPluginStart()
 	RegConsoleCmd("halenew", NewPanelCmd);
 	RegConsoleCmd("halemusic", MusicTogglePanelCmd);
 	RegConsoleCmd("hale_music", MusicTogglePanelCmd);
-	//RegConsoleCmd("halevoice", VoiceTogglePanelCmd);
-	//RegConsoleCmd("hale_voice", VoiceTogglePanelCmd);
+	RegConsoleCmd("halevoice", VoiceTogglePanelCmd);
+	RegConsoleCmd("hale_voice", VoiceTogglePanelCmd);
 	RegConsoleCmd("hale_resetpoints", ResetQueuePointsCmd);
 	RegConsoleCmd("haleresetpoints", ResetQueuePointsCmd);
 	RegConsoleCmd("hale_boss", Command_SetMyBoss);
@@ -1761,6 +1776,19 @@ public OnPluginStart()
 		ClientCookie[i] = TOGGLE_UNDEF;
 		ClientCookie2[i] = TOGGLE_UNDEF;
 	}
+
+	RegConsoleCmd("ff2_skipsong", Command_ShuffleSong);
+	RegConsoleCmd("ff2skipsong", Command_ShuffleSong);
+	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong);
+	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong);
+	RegConsoleCmd("ff2_tracklist", Command_Tracklist);
+	RegConsoleCmd("ff2tracklist", Command_Tracklist);
+	RegConsoleCmd("hale_skipsong", Command_ShuffleSong);
+	RegConsoleCmd("haleskipsong", Command_ShuffleSong);
+	RegConsoleCmd("hale_shufflesong", Command_ShuffleSong);
+	RegConsoleCmd("haleshufflesong", Command_ShuffleSong);
+	RegConsoleCmd("hale_tracklist", Command_Tracklist);
+	RegConsoleCmd("haletracklist", Command_Tracklist);
 
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
@@ -2239,6 +2267,12 @@ public OnMapEnd()
 public OnPluginEnd()
 {
 	OnMapEnd();
+	SetConVarString(hostName, oldName);
+	if (!ReloadFF2 && CheckRoundState() == 1)
+	{
+		ForceTeamWin(0);
+		CPrintToChatAll("{olive}[FF2]{default} The plugin has been unexpectedly unloaded!");
+	}
 }
 
 public EnableFF2()
@@ -3090,7 +3124,7 @@ stock bool:MapHasMusic(bool:forceRecalc=false)  //SAAAAAARGE
 		while((entity=FindEntityByClassname2(entity, "info_target"))!=-1)
 		{
 			GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
-			if(!strcmp(name, "hale_no_music", false))
+			if(!strcmp(name, "hale_no_music", false) || !strncmp(currentmap, "vsh_megaman", 15, false))
 			{
 				hasMusic=true;
 			}
@@ -3230,6 +3264,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
 	{
 		CPrintToChatAll("{olive}[FF2]{default} %t", "needmoreplayers");
+		SetConVarString(hostName, oldName);
 		Enabled=false;
 		DisableSubPlugins();
 		SetControlPoint(true);
@@ -3581,8 +3616,8 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		bossWin=true;
 		if(RandomSound("sound_win", sound, sizeof(sound)))
 		{
-			EmitSoundToAll(sound);
-			EmitSoundToAll(sound);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
 	}
 
@@ -3655,8 +3690,8 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 
 		if(!bossWin && RandomSound("sound_fail", sound, sizeof(sound), boss))
 		{
-			EmitSoundToAll(sound);
-			EmitSoundToAll(sound);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
 	}
 
@@ -4001,8 +4036,8 @@ public Action:StartResponseTimer(Handle:timer)
 	decl String:sound[PLATFORM_MAX_PATH];
 	if(RandomSound("sound_begin", sound, sizeof(sound)))
 	{
-		EmitSoundToAll(sound);
-		EmitSoundToAll(sound);
+		EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+		EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 	}
 	return Plugin_Continue;
 }
@@ -4028,10 +4063,14 @@ public Action:StartBossTimer(Handle:timer)
 	playing=0;
 	for(new client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !IsBoss(client) && IsPlayerAlive(client))
+		if(IsValidClient(client))
 		{
-			playing++;
-			CreateTimer(0.15, MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
+			CreateTimer(2.0, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+			if(!IsBoss(client) && IsPlayerAlive(client))
+			{
+				playing++;
+				CreateTimer(0.15, MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
+			}
 		}
 	}
 
@@ -4039,7 +4078,6 @@ public Action:StartBossTimer(Handle:timer)
 	CreateTimer(0.2, CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(2.0, Timer_PrepareBGM, 0, TIMER_FLAG_NO_MAPCHANGE);
 
 	if(!PointType)
 	{
@@ -4050,7 +4088,7 @@ public Action:StartBossTimer(Handle:timer)
 
 public Action:Timer_PrepareBGM(Handle:timer, any:userid)
 {
-	new client=GetClientOfUserId(userid);
+	/*new client=GetClientOfUserId(userid);
 	if(CheckRoundState()!=1 || (!client && MapHasMusic()) || (!client && userid))
 	{
 		return Plugin_Stop;
@@ -4095,11 +4133,14 @@ public Action:Timer_PrepareBGM(Handle:timer, any:userid)
 			return Plugin_Stop;
 		}
 	}
-	return Plugin_Continue;
-}
+	return Plugin_Continue;*/
+	new client=GetClientOfUserId(userid);
+	if(CheckRoundState()!=1 || (!client && MapHasMusic()) || StrEqual(currentBGM[client], "ff2_stop_music", true))
+	{
+		MusicTimer[client]=INVALID_HANDLE;
+		return;
+	}
 
-PlayBGM(client)
-{
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 	{
@@ -4117,48 +4158,107 @@ PlayBGM(client)
 		new Float:time=KvGetFloat(BossKV[Special[0]], music);
 		Format(music, 10, "path%i", index);
 		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
-
-		new Action:action;
-		Call_StartForward(OnMusic);
+		
+		cursongId[client]=index;
+		
+		// manual song ID
+		char id3[4][256];
+		Format(id3[0], sizeof(id3[]), "name%i", index);
+		KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+		Format(id3[1], sizeof(id3[]), "artist%i", index);
+		KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+		
 		decl String:temp[PLATFORM_MAX_PATH];
-		new Float:time2=time;
-		strcopy(temp, sizeof(temp), music);
-		Call_PushStringEx(temp, sizeof(temp), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-		Call_PushFloatRef(time2);
-		Call_Finish(action);
-		switch(action)
-		{
-			case Plugin_Stop, Plugin_Handled:
-			{
-				return;
-			}
-			case Plugin_Changed:
-			{
-				strcopy(music, sizeof(music), temp);
-				time=time2;
-			}
-		}
-
 		Format(temp, sizeof(temp), "sound/%s", music);
 		if(FileExists(temp, true))
 		{
-			if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
-			{
-				strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
-				ClientCommand(client, "playgamesound \"%s\"", music);
-				if(time>1)
-				{
-					MusicTimer[client]=CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-				}
-			}
+			PlayBGM(client, music, time, _, id3[2], id3[3]);
 		}
 		else
 		{
 			decl String:bossName[64];
 			KvRewind(BossKV[Special[0]]);
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-			PrintToServer("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, music);
+			LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+			if(MusicTimer[client]!=INVALID_HANDLE)
+			{
+				KillTimer(MusicTimer[client]);
+			}
 		}
+	}
+}
+
+PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char[] artist="")
+{
+	new Action:action;
+	Call_StartForward(OnMusic);
+	//decl String:temp1[PLATFORM_MAX_PATH];
+	//decl String:temp2[PLATFORM_MAX_PATH];
+	//decl String:temp3[PLATFORM_MAX_PATH];
+	char temp[3][PLATFORM_MAX_PATH];
+	new Float:time2=time;
+	//strcopy(temp1, sizeof(temp), music);
+	//strcopy(temp2, sizeof(temp2), name);
+	//strcopy(temp3, sizeof(temp3), artist);
+	strcopy(temp[0], sizeof(temp[]), music);
+	strcopy(temp[1], sizeof(temp[]), name);
+	strcopy(temp[2], sizeof(temp[]), artist);
+	Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushFloatRef(time2);
+	//Call_PushStringEx(temp2, sizeof(temp2), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	//Call_PushStringEx(temp3, sizeof(temp3), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_Finish(action);
+	switch(action)
+	{
+		case Plugin_Stop, Plugin_Handled:
+		{
+			return;
+		}
+		case Plugin_Changed:
+		{
+			//strcopy(music, sizeof(music), temp[0]);
+			strcopy(music, PLATFORM_MAX_PATH, temp[0]);
+			time=time2;
+			//strcopy(name, 256, temp[0]);
+			//strcopy(artist, 256, temp[1]);
+		}
+	}
+
+	Format(temp[0], sizeof(temp[]), "sound/%s", music);
+	if(FileExists(temp[0], true))
+	{
+		new unknown1 = true;
+		new unknown2 = true;
+		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+		{
+			strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
+			ClientCommand(client, "playgamesound \"%s\"", music);
+			if(time>1)
+			{
+				MusicTimer[client]=CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+			}
+		}
+		if(!name[0])
+		{
+			Format(name[0], 256, "%t", "unknown_song");
+			unknown1 = false;
+		}
+		if(!artist[0])
+		{
+			Format(artist[0], 256, "%t", "unknown_artist");
+			unknown2 = false;
+		}
+		if((GetConVarInt(cvarSongInfo) == 1) || (unknown1 && unknown2 && loop && (GetConVarInt(cvarSongInfo) == 0)))
+		{ 
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "track_info", artist, name);
+		}
+	}
+	else
+	{
+		decl String:bossName[64];
+		KvRewind(BossKV[Special[0]]);
+		KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+		PrintToServer("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, music);
 	}
 }
 
@@ -6220,8 +6320,8 @@ public Action:OnObjectDestroyed(Handle:event, const String:name[], bool:dontBroa
 			decl String:sound[PLATFORM_MAX_PATH];
 			if(RandomSound("sound_kill_buildable", sound, sizeof(sound)))
 			{
-				EmitSoundToAll(sound);
-				EmitSoundToAll(sound);
+				EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+				EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 			}
 		}
 	}
@@ -7280,12 +7380,12 @@ public Action:BossTimer(Handle:timer)
 					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 					FF2flags[client]|=FF2FLAG_TALKING;
-					EmitSoundToAll(sound, client, _, _, _, _, _, client, position);
-					EmitSoundToAll(sound, client, _, _, _, _, _, client, position);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 
 					for(new target=1; target<=MaxClients; target++)
 					{
-						if(IsClientInGame(target) && target!=client)
+						if(IsClientInGame(target) && target!=client && CheckSoundException(target, SOUNDEXCEPT_VOICE))
 						{
 							EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
 							EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
@@ -7559,12 +7659,12 @@ public Action:OnCallForMedic(client, const String:command[], args)
 		if(RandomSoundAbility("sound_ability", sound, sizeof(sound), boss))
 		{
 			FF2flags[Boss[boss]]|=FF2FLAG_TALKING;
-			EmitSoundToAll(sound);
-			EmitSoundToAll(sound);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 
 			for(new target=1; target<=MaxClients; target++)
 			{
-				if(IsClientInGame(target) && target!=Boss[boss])
+				if(IsClientInGame(target) && target!=Boss[boss] && CheckSoundException(target, SOUNDEXCEPT_VOICE))
 				{
 					EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
 					EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
@@ -7714,8 +7814,8 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 			{
 				if(RandomSound("sound_first_blood", sound, sizeof(sound), boss))
 				{
-					EmitSoundToAll(sound);
-					EmitSoundToAll(sound);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 				}
 				firstBlood=false;
 			}
@@ -7725,8 +7825,8 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 				ClassKill=GetRandomInt(1, 2);
 				if((ClassKill == 1) && RandomSound("sound_hit", sound, sizeof(sound), boss))
 				{
-					EmitSoundToAll(sound);
-					EmitSoundToAll(sound);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 				}
 				else if(ClassKill == 2)
 				{
@@ -7735,8 +7835,8 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 					Format(class, sizeof(class), "sound_kill_%s", classnames[TF2_GetPlayerClass(client)]);
 					if(RandomSound(class, sound, sizeof(sound), boss))
 					{
-						EmitSoundToAll(sound);
-						EmitSoundToAll(sound);
+						EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+						EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 					}
 				}
 				ClassKill=0;
@@ -7755,8 +7855,8 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 			{
 				if(RandomSound("sound_kspree", sound, sizeof(sound), boss))
 				{
-					EmitSoundToAll(sound);
-					EmitSoundToAll(sound);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 				}
 				KSpreeCount[boss]=0;
 			}
@@ -7776,8 +7876,8 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 
 		if(RandomSound("sound_death", sound, sizeof(sound), boss))
 		{
-			EmitSoundToAll(sound);
-			EmitSoundToAll(sound);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
 
 		BossHealth[boss]=0;
@@ -7919,8 +8019,8 @@ public Action:CheckAlivePlayers(Handle:timer)
 		decl String:sound[PLATFORM_MAX_PATH];
 		if(RandomSound("sound_lastman", sound, sizeof(sound)))
 		{
-			EmitSoundToAll(sound);
-			EmitSoundToAll(sound);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
 	}
 	else if(!PointType && RedAlivePlayers<=AliveToEnable && !executed)
@@ -8159,13 +8259,17 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 
 			if(BossLives[boss]==1 && RandomSound("sound_last_life", ability, sizeof(ability), boss))
 			{
-				EmitSoundToAll(ability);
-				EmitSoundToAll(ability);
+				//EmitSoundToAll(ability);
+				//EmitSoundToAll(ability);
+				EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, ability, _, _, _, _, _, _, _, _, _, false);
+				EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, ability, _, _, _, _, _, _, _, _, _, false);
 			}
 			else if(RandomSound("sound_nextlife", ability, sizeof(ability), boss))
 			{
-				EmitSoundToAll(ability);
-				EmitSoundToAll(ability);
+				//EmitSoundToAll(ability);
+				//EmitSoundToAll(ability);
+				EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, ability, _, _, _, _, _, _, _, _, _, false);
+				EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, ability, _, _, _, _, _, _, _, _, _, false);
 			}
 
 			UpdateHealthBar();
@@ -8492,8 +8596,8 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							decl String:sound[PLATFORM_MAX_PATH];
 							if(RandomSound("sound_cabered", sound, sizeof(sound)))
 							{
-								EmitSoundToAll(sound);
-								EmitSoundToAll(sound);
+								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 							}
 							return Plugin_Changed;
 						}
@@ -8596,8 +8700,8 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							decl String:sound[PLATFORM_MAX_PATH];
 							if(RandomSound("sound_marketed", sound, sizeof(sound)))
 							{
-								EmitSoundToAll(sound);
-								EmitSoundToAll(sound);
+								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 							}
 							return Plugin_Changed;
 						}
@@ -8832,8 +8936,8 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					decl String:sound[PLATFORM_MAX_PATH];
 					if(RandomSound("sound_telefraged", sound, sizeof(sound)))
 					{
-						EmitSoundToAll(sound);
-						EmitSoundToAll(sound);
+						EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+						EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 					}
 					return Plugin_Changed;
 				}
@@ -10321,8 +10425,8 @@ public Action:FF2Panel(client, args)  //._.
 		DrawPanelItem(panel, text);
 		Format(text, sizeof(text), "%t", "menu_8");  //Toggle music (/ff2music)
 		DrawPanelItem(panel, text);
-		//Format(text, sizeof(text), "%t", "menu_9");  //Toggle monologues (/ff2voice)
-		//DrawPanelItem(panel, text);
+		Format(text, sizeof(text), "%t", "menu_9");  //Toggle monologues (/ff2voice)
+		DrawPanelItem(panel, text);
 		Format(text, sizeof(text), "%t", "menu_9a");  //Toggle info about changes of classes in FF2
 		DrawPanelItem(panel, text);
 		Format(text, sizeof(text), "%t", "menu_6");  //Exit
@@ -10584,6 +10688,27 @@ public Action:MusicTogglePanelCmd(client, args)
 		return Plugin_Continue;
 	}
 
+	if(args)
+	{
+		decl String:cmd[64];
+		GetCmdArgString(cmd, sizeof(cmd));
+		if(StrContains(cmd, "off", false)!=-1 || StrContains(cmd, "disable", false)!=-1 || StrContains(cmd, "0", false)!=-1)
+		{
+			ToggleBGM(client, false);
+		}
+		else if(StrContains(cmd, "on", false)!=-1 || StrContains(cmd, "enable", false)!=-1 || StrContains(cmd, "1", false)!=-1)
+		{
+			if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} You already have boss themes enabled...");
+				return Plugin_Handled;
+			}
+			ToggleBGM(client, true);
+		}
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
+		return Plugin_Handled;
+	}
+
 	MusicTogglePanel(client);
 	return Plugin_Handled;
 }
@@ -10595,12 +10720,35 @@ public Action:MusicTogglePanel(client)
 		return Plugin_Continue;
 	}
 
-	new Handle:panel=CreatePanel();
-	SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
-	DrawPanelItem(panel, "Play");
-	DrawPanelItem(panel, "Stop");
-	SendPanelToClient(panel, client, MusicTogglePanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	if(!GetConVarBool(cvarAdvancedMusic))
+	{
+		new Handle:panel=CreatePanel();
+		SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
+		DrawPanelItem(panel, "On");
+		DrawPanelItem(panel, "Off");
+		SendPanelToClient(panel, client, MusicTogglePanelH, MENU_TIME_FOREVER);
+		CloseHandle(panel);
+	}
+	else
+	{
+		char title[128];
+		new Handle:togglemusic = CreateMenu(MusicTogglePanelH);
+		Format(title,sizeof(title), "%t", "theme_menu");
+		SetMenuTitle(togglemusic, title, title);
+		Format(title, sizeof(title), "%t", CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "themes_disable" : "themes_enable");
+		AddMenuItem(togglemusic, title, title);
+		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+		{
+			Format(title, sizeof(title), "%t", "theme_skip");
+			AddMenuItem(togglemusic, title, title);
+			//Format(title, sizeof(title), "%t", "theme_shuffle");
+			//AddMenuItem(togglemusic, title, title);
+			Format(title, sizeof(title), "%t", "theme_select");
+			AddMenuItem(togglemusic, title, title);
+		}
+		SetMenuExitButton(togglemusic, true);
+		DisplayMenu(togglemusic, client, MENU_TIME_FOREVER);
+	}
 	return Plugin_Continue;
 }
 
@@ -10608,33 +10756,284 @@ public MusicTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 {
 	if(IsValidClient(client) && action==MenuAction_Select)
 	{
-		if(selection==2)  //Off
+		if(!GetConVarBool(cvarAdvancedMusic))
 		{
-			SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, false);
-			StopMusic(client, true);
-		}
-		else  //On
-		{
-			//If they already have music enabled don't do anything
-			if(!CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+			if(selection==2)  //Off
 			{
-				SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, true);
+				SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, false);
 				StopMusic(client, true);
-				StartMusic(client);
+			}
+			else  //On
+			{
+				//If they already have music enabled don't do anything
+				if(!CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+				{
+					SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, true);
+					StartMusic(client);
+				}
+			}
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", selection==2 ? "off" : "on");
+		}
+		else
+		{
+			switch(selection)
+			{
+				case 0:
+				{
+					ToggleBGM(client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? false : true);               
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
+				}
+				//case 1: Command_SkipSong(client, 0);
+				case 1: Command_ShuffleSong(client, 0);
+				case 2: Command_Tracklist(client, 0);
 			}
 		}
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", selection==2 ? "off" : "on");
 	}
 }
 
-/*public Action:VoiceTogglePanelCmd(client, args)
+ToggleBGM(client, bool:enable)
+{
+	if(enable)
+	{
+		SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, true);
+		StartMusic(client);
+	}
+	else
+	{
+		SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, false);
+		StopMusic(client, true);    
+	}
+}
+
+public Action Command_ShuffleSong(int client, int args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "%t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!Enabled || CheckRoundState()!=1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		return Plugin_Handled;
+	}
+
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true)|| !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		return Plugin_Handled;
+	}
+
+	if(!GetConVarBool(cvarAdvancedMusic))
+	{
+		return Plugin_Handled;
+	}
+
+	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_shuffle");
+	StartMusic(client);
+	return Plugin_Handled;
+}
+
+public Action Command_Tracklist(int client, int args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "%t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!Enabled || CheckRoundState()!=1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		return Plugin_Handled;
+	}
+
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		return Plugin_Handled;
+	}
+
+	if(!GetConVarBool(cvarAdvancedMusic))
+	{
+		return Plugin_Handled;
+	}
+
+	char id3[6][256];
+	new Handle:trackList = CreateMenu(Command_TrackListH);
+	SetMenuTitle(trackList, "%t", "track_select");
+	KvRewind(BossKV[Special[0]]);
+	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+	{
+		decl String:music[PLATFORM_MAX_PATH];
+		new index;
+		do
+		{
+			index++;
+			Format(music, 10, "time%i", index);
+		}
+		while(KvGetFloat(BossKV[Special[0]], music)>1);
+
+		if(!index)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");		
+			return Plugin_Handled;		
+		}
+
+		for(new trackIdx=1;trackIdx<=index-1;trackIdx++)
+		{
+			Format(id3[0], sizeof(id3[]), "name%i", trackIdx);
+			KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+			Format(id3[1], sizeof(id3[]), "artist%i", trackIdx);
+			KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+			GetSongTime(trackIdx, id3[5], sizeof(id3[]));
+			if(!id3[3])
+			{
+				Format(id3[3], sizeof(id3[]), "%t", "unknown_artist");
+			}
+			if(!id3[2])
+			{
+				Format(id3[2], sizeof(id3[]), "%t", "unknown_song");
+			}
+			Format(id3[4], sizeof(id3[]), "%s - %s (%s)", id3[3], id3[2], id3[5]);
+			CRemoveTags(id3[4], sizeof(id3[]));
+			AddMenuItem(trackList, id3[4], id3[4]);
+		}
+	}  
+
+	SetMenuExitButton(trackList, true);
+	DisplayMenu(trackList, client, MENU_TIME_FOREVER);
+	return Plugin_Handled;
+}
+
+stock float GetSongLength(char[] trackIdx)
+{
+	float duration;
+	char bgmTime[128];
+	KvGetString(BossKV[Special[0]], trackIdx, bgmTime, sizeof(bgmTime));
+	if(StrContains(bgmTime, ":", false)!=-1) // new-style MM:SS:MSMS
+	{
+		char time2[32][32];
+		int count = ExplodeString(bgmTime, ":", time2, sizeof(time2), sizeof(time2));
+		if (count > 0)
+		{
+			for (int i = 0; i < count; i+=3)
+			{
+				char newTime[64];
+				int mins=StringToInt(time2[i])*60;
+				int secs=StringToInt(time2[i+1]);
+				int milsecs=StringToInt(time2[i+2]);
+				Format(newTime, sizeof(newTime), "%i.%i", mins+secs, milsecs);
+				duration=StringToFloat(newTime);				   
+			}
+		}
+	}
+	else // old style seconds
+	{
+		duration=KvGetFloat(BossKV[Special[0]], trackIdx);
+	}
+	return duration;
+}
+
+//stock void GetSongTime(int trackIdx, char[] timeStr, length)
+stock GetSongTime(int trackIdx, char[] timeStr, length)
+{
+	char songIdx[32];
+	Format(songIdx, sizeof(songIdx), "time%i", trackIdx);
+	int time=RoundToFloor(GetSongLength(songIdx));
+	if(time/60>9)
+	{
+		IntToString(time/60, timeStr, length);
+	}
+	else
+	{
+		Format(timeStr, length, "0%i", time/60);
+	}
+
+	if(time%60>9)
+	{
+		Format(timeStr, length, "%s:%i", timeStr, time%60);
+	}
+	else
+	{
+		Format(timeStr, length, "%s:0%i", timeStr, time%60);
+	}
+}
+
+public int Command_TrackListH(Handle menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+
+		case MenuAction_Select:
+		{
+			CloseHandle(menu);
+			/*StopMusic(param1, true);
+			KvRewind(BossKV[Special[0]]);
+			if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+			{
+				char music[PLATFORM_MAX_PATH];
+				int track=param2+1;
+				Format(music, 10, "time%i", track);
+
+				float time=GetSongLength(music);
+				Format(music, 10, "path%i", track);
+				KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+
+				char id3[4][256];
+				Format(id3[0], sizeof(id3[]), "name%i", track);
+				KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+				Format(id3[1], sizeof(id3[]), "artist%i", track);
+				KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+
+				char temp[PLATFORM_MAX_PATH];
+				Format(temp, sizeof(temp), "sound/%s", music);
+				if(FileExists(temp, true))
+				{
+					PlayBGM(param1, music, time, _, id3[2], id3[3]);
+				}
+				else
+				{
+					char bossName[64];
+					KvRewind(BossKV[Special[0]]);
+					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+					LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+					if(PlayBGMAt[param1]!=INACTIVE)
+					{
+						PlayBGMAt[param1]+=time;
+					}
+					else
+					{
+						PlayBGMAt[param1]=GetEngineTime()+time;
+					}
+				}
+			}*/
+		}
+	}
+	return;
+}
+
+public Action:VoiceTogglePanelCmd(client, args)
 {
 	if(!IsValidClient(client))
 	{
 		return Plugin_Continue;
 	}
 
-	VoiceTogglePanel(client);
+	if(!GetConVarBool(cvarAdvancedMusic))
+	{
+		VoiceTogglePanel(client);
+	}
+	else
+	{
+		ToggleVoice(client, CheckSoundException(client, SOUNDEXCEPT_VOICE) ? false : true);               
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_voice", !CheckSoundException(client, SOUNDEXCEPT_VOICE) ? "off" : "on");
+	}
 	return Plugin_Handled;
 }
 
@@ -10673,7 +11072,19 @@ public VoiceTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 			CPrintToChat(client, "%t", "ff2_voice2");
 		}
 	}
-}*/
+}
+
+ToggleVoice(client, bool:enable)
+{
+	if(enable)
+	{
+		SetClientSoundOptions(client, SOUNDEXCEPT_VOICE, true);
+	}
+	else
+	{
+		SetClientSoundOptions(client, SOUNDEXCEPT_VOICE, false);
+	}
+}
 
 //Ugly compatability layer since HookSound's arguments changed in 1.8
 #if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
