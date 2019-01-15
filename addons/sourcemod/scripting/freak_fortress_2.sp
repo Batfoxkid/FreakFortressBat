@@ -8420,7 +8420,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 		if(boss!=-1)
 		{
 			//ABILITY TO ROCKETJUMP PART2
-			if(damagetype & DMG_FALL && selfKnockback[attacker])
+			if(damagetype & DMG_FALL && selfKnockback[client])
 			{
 				damage=1.0;
 				return Plugin_Changed;
