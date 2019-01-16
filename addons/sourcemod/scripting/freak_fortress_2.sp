@@ -10828,13 +10828,9 @@ public Action Command_SkipSong(int client, int args)
 			KvRewind(BossKV[Special[0]]);
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
-			if(MusicTimer[client]=INVALID_HANDLE;)
+			if(MusicTimer[client]!=INVALID_HANDLE)
 			{
-				MusicTimer[client]+=time;
-			}
-			else
-			{
-				MusicTimer[client]=GetEngineTime()+time;
+				KillTimer(MusicTimer[client]);
 			}
 		}
 	}
@@ -10891,7 +10887,7 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!GetConVarBool(cvarAdvancedMusic) || (GetConVarInt(cvarSongInfo)>=0))
+	if(!GetConVarBool(cvarAdvancedMusic) || (GetConVarInt(cvarSongInfo)<0))
 	{
 		return Plugin_Handled;
 	}
@@ -11037,13 +11033,9 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 					KvRewind(BossKV[Special[0]]);
 					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 					LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
-					if(MusicTimer[param1]=INVALID_HANDLE;)
+					if(MusicTimer[param1]!=INVALID_HANDLE)
 					{
-						MusicTimer[param1]+=time;
-					}
-					else
-					{
-						MusicTimer[param1]=GetEngineTime()+time;
+						KillTimer(MusicTimer[param1]);
 					}
 				}
 			}
