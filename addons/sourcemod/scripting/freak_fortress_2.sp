@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "0"
+#define FORK_STABLE_REVISION "1"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -445,7 +445,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.10",
 	"1.16.11",
 	"1.16.12",
-	"1.17.0"
+	"1.17.0",
+	"1.17.1"
 };
 
 static const String:ff2versiondates[][]=
@@ -576,13 +577,19 @@ static const String:ff2versiondates[][]=
 	"January 7, 2019",		//1.16.10
 	"January 8, 2019",		//1.16.11
 	"January 9, 2019",		//1.16.12
-	"January 13, 2019"		//1.17.0
+	"January 13, 2019",		//1.17.0
+	"January 15, 2019"		//1.17.1
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 127:  //1.17.1
+		{
+			DrawPanelText(panel, "1) Skip song doesn't play previous song and added shuffle song (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "2) Selectable theme in track menu (Batfoxkid from SHADoW)");
+		}
 		case 126:  //1.17.0
 		{
 			DrawPanelText(panel, "1) Advanced music menu and commands (Batfoxkid from SHADoW)");
@@ -1777,14 +1784,14 @@ public OnPluginStart()
 		ClientCookie2[i] = TOGGLE_UNDEF;
 	}
 
-	RegConsoleCmd("ff2_skipsong", Command_ShuffleSong);
-	RegConsoleCmd("ff2skipsong", Command_ShuffleSong);
+	RegConsoleCmd("ff2_skipsong", Command_SkipSong);
+	RegConsoleCmd("ff2skipsong", Command_SkipSong);
 	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong);
 	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong);
 	RegConsoleCmd("ff2_tracklist", Command_Tracklist);
 	RegConsoleCmd("ff2tracklist", Command_Tracklist);
-	RegConsoleCmd("hale_skipsong", Command_ShuffleSong);
-	RegConsoleCmd("haleskipsong", Command_ShuffleSong);
+	RegConsoleCmd("hale_skipsong", Command_SkipSong);
+	RegConsoleCmd("haleskipsong", Command_SkipSong);
 	RegConsoleCmd("hale_shufflesong", Command_ShuffleSong);
 	RegConsoleCmd("haleshufflesong", Command_ShuffleSong);
 	RegConsoleCmd("hale_tracklist", Command_Tracklist);
@@ -4088,52 +4095,6 @@ public Action:StartBossTimer(Handle:timer)
 
 public Action:Timer_PrepareBGM(Handle:timer, any:userid)
 {
-	/*new client=GetClientOfUserId(userid);
-	if(CheckRoundState()!=1 || (!client && MapHasMusic()) || (!client && userid))
-	{
-		return Plugin_Stop;
-	}
-
-	if(!client)
-	{
-		for(client=1; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client))
-			{
-				if(playBGM[client])
-				{
-					StopMusic(client);
-					PlayBGM(client);
-				}
-				else if(MusicTimer[client]!=INVALID_HANDLE)
-				{
-					KillTimer(MusicTimer[client]);
-					MusicTimer[client]=INVALID_HANDLE;
-				}
-			}
-
-			else if(MusicTimer[client]!=INVALID_HANDLE)
-			{
-				KillTimer(MusicTimer[client]);
-				MusicTimer[client]=INVALID_HANDLE;
-			}
-		}
-	}
-	else
-	{
-		if(playBGM[client])
-		{
-			StopMusic(client);
-			PlayBGM(client);
-		}
-		else if(MusicTimer[client]!=INVALID_HANDLE)
-		{
-			KillTimer(MusicTimer[client]);
-			MusicTimer[client]=INVALID_HANDLE;
-			return Plugin_Stop;
-		}
-	}
-	return Plugin_Continue;*/
 	new client=GetClientOfUserId(userid);
 	if(CheckRoundState()!=1 || (!client && MapHasMusic()) || StrEqual(currentBGM[client], "ff2_stop_music", true))
 	{
@@ -4192,14 +4153,8 @@ PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char
 {
 	new Action:action;
 	Call_StartForward(OnMusic);
-	//decl String:temp1[PLATFORM_MAX_PATH];
-	//decl String:temp2[PLATFORM_MAX_PATH];
-	//decl String:temp3[PLATFORM_MAX_PATH];
 	char temp[3][PLATFORM_MAX_PATH];
 	new Float:time2=time;
-	//strcopy(temp1, sizeof(temp), music);
-	//strcopy(temp2, sizeof(temp2), name);
-	//strcopy(temp3, sizeof(temp3), artist);
 	strcopy(temp[0], sizeof(temp[]), music);
 	strcopy(temp[1], sizeof(temp[]), name);
 	strcopy(temp[2], sizeof(temp[]), artist);
@@ -8420,7 +8375,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 		if(boss!=-1)
 		{
 			//ABILITY TO ROCKETJUMP PART2
-			if(damagetype & DMG_FALL && selfKnockback[attacker])
+			if(damagetype & DMG_FALL && selfKnockback[client])
 			{
 				damage=1.0;
 				return Plugin_Changed;
@@ -10741,10 +10696,13 @@ public Action:MusicTogglePanel(client)
 		{
 			Format(title, sizeof(title), "%t", "theme_skip");
 			AddMenuItem(togglemusic, title, title);
-			//Format(title, sizeof(title), "%t", "theme_shuffle");
-			//AddMenuItem(togglemusic, title, title);
-			Format(title, sizeof(title), "%t", "theme_select");
+			Format(title, sizeof(title), "%t", "theme_shuffle");
 			AddMenuItem(togglemusic, title, title);
+			if(GetConVarInt(cvarSongInfo)>=0)
+			{
+				Format(title, sizeof(title), "%t", "theme_select");
+				AddMenuItem(togglemusic, title, title);
+			}
 		}
 		SetMenuExitButton(togglemusic, true);
 		DisplayMenu(togglemusic, client, MENU_TIME_FOREVER);
@@ -10783,9 +10741,9 @@ public MusicTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 					ToggleBGM(client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? false : true);               
 					CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
 				}
-				//case 1: Command_SkipSong(client, 0);
-				case 1: Command_ShuffleSong(client, 0);
-				case 2: Command_Tracklist(client, 0);
+				case 1: Command_SkipSong(client, 0);
+				case 2: Command_ShuffleSong(client, 0);
+				case 3: Command_Tracklist(client, 0);
 			}
 		}
 	}
@@ -10803,6 +10761,80 @@ ToggleBGM(client, bool:enable)
 		SetClientSoundOptions(client, SOUNDEXCEPT_MUSIC, false);
 		StopMusic(client, true);    
 	}
+}
+
+public Action Command_SkipSong(int client, int args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "%t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!Enabled || CheckRoundState()!=1)
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		return Plugin_Handled;
+	}
+
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true)|| !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+	{
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		return Plugin_Handled;
+	}
+
+    	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_skipped");
+
+	StopMusic(client, true);
+	
+	char id3[4][256];
+	KvRewind(BossKV[Special[0]]);
+	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+	{
+		char music[PLATFORM_MAX_PATH];
+		int index;
+		do
+		{
+			index++;
+			Format(music, 10, "time%i", index);
+		}
+		while(KvGetFloat(BossKV[Special[0]], music)>1);
+
+		cursongId[client]++;
+		if(cursongId[client]>=index)
+		{
+			cursongId[client]=1;
+		}
+
+		Format(music, 10, "time%i", cursongId[client]);
+		float time=KvGetFloat(BossKV[Special[0]], music);
+		Format(music, 10, "path%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+
+		Format(id3[0], sizeof(id3[]), "name%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+		Format(id3[1], sizeof(id3[]), "artist%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+		
+		decl String:temp[PLATFORM_MAX_PATH];
+		Format(temp, sizeof(temp), "sound/%s", music);
+		if(FileExists(temp, true))
+		{
+			PlayBGM(client, music, time, _, id3[2], id3[3]);
+		}
+		else
+		{
+			char bossName[64];
+			KvRewind(BossKV[Special[0]]);
+			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+			LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+			if(MusicTimer[client]!=INVALID_HANDLE)
+			{
+				KillTimer(MusicTimer[client]);
+			}
+		}
+	}
+	return Plugin_Handled;
 }
 
 public Action Command_ShuffleSong(int client, int args)
@@ -10855,7 +10887,7 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!GetConVarBool(cvarAdvancedMusic))
+	if(!GetConVarBool(cvarAdvancedMusic) || (GetConVarInt(cvarSongInfo)<0))
 	{
 		return Plugin_Handled;
 	}
@@ -10936,7 +10968,6 @@ stock float GetSongLength(char[] trackIdx)
 	return duration;
 }
 
-//stock void GetSongTime(int trackIdx, char[] timeStr, length)
 stock GetSongTime(int trackIdx, char[] timeStr, length)
 {
 	char songIdx[32];
@@ -10972,8 +11003,7 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 
 		case MenuAction_Select:
 		{
-			CloseHandle(menu);
-			/*StopMusic(param1, true);
+			StopMusic(param1, true);
 			KvRewind(BossKV[Special[0]]);
 			if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 			{
@@ -11003,16 +11033,12 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 					KvRewind(BossKV[Special[0]]);
 					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 					LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
-					if(PlayBGMAt[param1]!=INACTIVE)
+					if(MusicTimer[param1]!=INVALID_HANDLE)
 					{
-						PlayBGMAt[param1]+=time;
-					}
-					else
-					{
-						PlayBGMAt[param1]=GetEngineTime()+time;
+						KillTimer(MusicTimer[param1]);
 					}
 				}
-			}*/
+			}
 		}
 	}
 	return;
