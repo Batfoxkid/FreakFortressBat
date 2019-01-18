@@ -260,6 +260,7 @@ new Float:PointsInterval2=600.0;
 new PointsMin=10;
 new PointsDamage=0;
 new PointsExtra=10;
+new bool:DuoMin=false;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
 new Handle:BossInfoTimer[MAXPLAYERS+1][2];
@@ -3281,6 +3282,15 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
+	if(playing>=GetConVarInt(cvarDuoMin))  // Check if theres enough players for companions
+	{
+		DuoMin=true;
+	}
+	else
+	{
+		DuoMin=false;
+	}
+
 	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
 	{
 		CPrintToChatAll("{olive}[FF2]{default} %t", "needmoreplayers");
@@ -4463,11 +4473,11 @@ public Action:Command_SetMyBoss(client, args)
 	{
 		decl String:name[64], String:boss[64], String:companionName[64];
 		GetCmdArgString(name, sizeof(name));
-
+		
 		for(new config; config<Specials; config++)
 		{
 			KvRewind(BossKV[config]);
-			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName))
+			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 			if(KvGetNum(BossKV[config], "hidden", 0)) continue;
@@ -4475,7 +4485,7 @@ public Action:Command_SetMyBoss(client, args)
 			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-			if(strlen(companionName) && GetConVarInt(cvarDuoMin)<=players) continue;
+			if(strlen(companionName) && !DuoMin) continue;
 			if(StrContains(boss, name, false)!=-1)
 			{
 				IsBossSelected[client]=true;
@@ -4529,7 +4539,7 @@ public Action:Command_SetMyBoss(client, args)
 		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 		if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-		if(strlen(companionName) && GetConVarInt(cvarDuoMin)<=players) continue;
+		if(strlen(companionName) && !DuoMin) continue;
 		
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		AddMenuItem(dMenu, boss, boss);
@@ -9387,7 +9397,7 @@ stock GetRandomValidClient(bool:omit[])
 	new companion;
 	for(new client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)) && !omit[client])
+		if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
 		{
 			if(ClientCookie2[client]==TOGGLE_OFF && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
 				continue;
@@ -9403,7 +9413,7 @@ stock GetRandomValidClient(bool:omit[])
 	{
 		for(new client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)) && !omit[client])
+			if(IsValidClient(client) && !omit[client]) //&& (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
 			{
 				if(SpecForceBoss || GetClientTeam(client)>_:TFTeam_Spectator) // Ignore the companion toggle pref if we can't find available clients
 				{
@@ -9884,7 +9894,7 @@ public bool:PickCharacter(boss, companion)
 			PrecacheCharacter(Special[boss]);
 			return true;
 		}
-
+		
 		for(new tries; tries<100; tries++)
 		{
 			if(ChancesString[0])
@@ -9911,7 +9921,7 @@ public bool:PickCharacter(boss, companion)
 			   KvGetNum(BossKV[Special[boss]], "admin") ||
 			   KvGetNum(BossKV[Special[boss]], "owner") ||
 			  (KvGetNum(BossKV[Special[boss]], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) ||
-			  (strlen(companionName) && GetConVarInt(cvarDuoMin)<=players))
+			  (strlen(companionName) && !DuoMin))
 			{
 				Special[boss]=-1;
 				continue;
