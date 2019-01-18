@@ -10031,11 +10031,11 @@ public bool:PickCharacter(boss, companion)
 
 FindCompanion(boss, players, bool:omit[])
 {
-	static playersNeeded=GetConVarInt(cvarDuoMin);
+	static playersNeeded=2;
 	decl String:companionName[64];
 	KvRewind(BossKV[Special[boss]]);
 	KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
-	if(playersNeeded<=players && strlen(companionName))  //Only continue if we have enough players and if the boss has a companion
+	if(playersNeeded<players && strlen(companionName))  //Only continue if we have enough players and if the boss has a companion
 	{
 		new companion=GetRandomValidClient(omit);
 		Boss[companion]=companion;  //Woo boss indexes!
@@ -10060,7 +10060,7 @@ FindCompanion(boss, players, bool:omit[])
 			FindCompanion(companion, players, omit);  //Make sure this companion doesn't have a companion of their own
 		}
 	}
-	playersNeeded=GetConVarInt(cvarDuoMin);  //Reset the amount of players needed back after we're done
+	playersNeeded=2;  //Reset the amount of players needed back after we're done
 }
 
 stock SpawnWeapon(client, String:name[], index, level, qual, String:att[])
