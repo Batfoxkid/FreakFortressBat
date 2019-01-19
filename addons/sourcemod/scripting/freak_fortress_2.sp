@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "1"
+#define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -217,6 +217,8 @@ new Handle:cvarPointsDamage;
 new Handle:cvarPointsExtra;
 new Handle:cvarAdvancedMusic;
 new Handle:cvarSongInfo;
+new Handle:cvarDuoRandom;
+new Handle:cvarDuoMin;
 
 new Handle:FF2Cookies;
 
@@ -258,6 +260,7 @@ new Float:PointsInterval2=600.0;
 new PointsMin=10;
 new PointsDamage=0;
 new PointsExtra=10;
+new bool:DuoMin=false;
 
 new Handle:MusicTimer[MAXPLAYERS+1];
 new Handle:BossInfoTimer[MAXPLAYERS+1][2];
@@ -446,7 +449,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.11",
 	"1.16.12",
 	"1.17.0",
-	"1.17.1"
+	"1.17.1",
+	"1.17.2"
 };
 
 static const String:ff2versiondates[][]=
@@ -578,13 +582,19 @@ static const String:ff2versiondates[][]=
 	"January 8, 2019",		//1.16.11
 	"January 9, 2019",		//1.16.12
 	"January 13, 2019",		//1.17.0
-	"January 15, 2019"		//1.17.1
+	"January 15, 2019",		//1.17.1
+	"January 19, 2019"		//1.17.2
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 128:  //1.17.2
+		{
+			DrawPanelText(panel, "1) Companion bosses unplayable when less then defined players (Batfoxkid)");
+			DrawPanelText(panel, "2) Cvar to adjust how the companion is choosen (Batfoxkid)");
+		}
 		case 127:  //1.17.1
 		{
 			DrawPanelText(panel, "1) Skip song doesn't play previous song and added shuffle song (Batfoxkid from SHADoW)");
@@ -1661,6 +1671,8 @@ public OnPluginStart()
 	cvarPointsExtra=CreateConVar("ff2_points_bonus", "10", "Maximum queue points earned", _, true, 0.0);
 	cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
 	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
+	cvarDuoRandom=CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
+	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 3.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1729,6 +1741,8 @@ public OnPluginStart()
 	HookConVarChange(cvarPointsExtra, CvarChange);
 	HookConVarChange(cvarAdvancedMusic, CvarChange);
 	HookConVarChange(cvarSongInfo, CvarChange);
+	HookConVarChange(cvarDuoRandom, CvarChange);
+	HookConVarChange(cvarDuoMin, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -3268,6 +3282,15 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
+	if(playing>=GetConVarInt(cvarDuoMin))  // Check if theres enough players for companions
+	{
+		DuoMin=true;
+	}
+	else
+	{
+		DuoMin=false;
+	}
+
 	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
 	{
 		CPrintToChatAll("{olive}[FF2]{default} %t", "needmoreplayers");
@@ -4448,12 +4471,13 @@ public Action:Command_SetMyBoss(client, args)
 
 	if(args)
 	{
-		decl String:name[64], String:boss[64];
+		decl String:name[64], String:boss[64], String:companionName[64];
 		GetCmdArgString(name, sizeof(name));
-
+		
 		for(new config; config<Specials; config++)
 		{
 			KvRewind(BossKV[config]);
+			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 			if(KvGetNum(BossKV[config], "hidden", 0)) continue;
@@ -4461,6 +4485,7 @@ public Action:Command_SetMyBoss(client, args)
 			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
+			if(strlen(companionName) && !DuoMin) continue;
 			if(StrContains(boss, name, false)!=-1)
 			{
 				IsBossSelected[client]=true;
@@ -4504,14 +4529,17 @@ public Action:Command_SetMyBoss(client, args)
 	}
 	
 	for(new config; config<Specials; config++)
-	{	
+	{
+		decl String:companionName[64];
 		KvRewind(BossKV[config]);
+		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 		if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 		if(KvGetNum(BossKV[config], "hidden", 0)) continue;
 		if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) continue;
 		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 		if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
+		if(strlen(companionName) && !DuoMin) continue;
 		
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		AddMenuItem(dMenu, boss, boss);
@@ -8323,11 +8351,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	{
 		return Plugin_Continue;
 	}
-	if(!CheckRoundState() && IsBoss(client) && !selfKnockback[attacker])
+	/*if(!CheckRoundState() && IsBoss(client) && !selfKnockback[attacker])
 	{
 		damage*=0.0;
 		return Plugin_Changed;
-	}
+	}*/
 	//END OF PART 1
 
 	new Float:position[3];
@@ -9338,10 +9366,27 @@ stock GetClientWithMostQueuePoints(bool:omit[])
 	{
 		if(IsValidClient(client) && GetClientQueuePoints(client)>=GetClientQueuePoints(winner) && !omit[client])
 		{
+			if(ClientCookie[client]==TOGGLE_OFF && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
+				continue;
+			
 			if(SpecForceBoss || GetClientTeam(client)>_:TFTeam_Spectator)
 			{
 				winner=client;
 			}
+		}
+	}
+	
+	if(!winner)
+	{
+		for(new client=1; client<MaxClients; client++)
+		{
+			if(IsValidClient(client) && !omit[client])
+			{
+				if(SpecForceBoss || GetClientTeam(client)>_:TFTeam_Spectator)
+				{
+					winner=client;
+				}
+			}		
 		}
 	}
 	return winner;
@@ -9352,12 +9397,12 @@ stock GetRandomValidClient(bool:omit[])
 	new companion;
 	for(new client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !omit[client])
+		if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
 		{
 			if(ClientCookie2[client]==TOGGLE_OFF && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
 				continue;
-		
-			if(GetClientTeam(client)>_:TFTeam_Spectator)
+			
+			if((SpecForceBoss && !GetConVarBool(cvarDuoRandom)) || GetClientTeam(client)>_:TFTeam_Spectator)
 			{
 				companion=client;
 			}
@@ -9368,9 +9413,9 @@ stock GetRandomValidClient(bool:omit[])
 	{
 		for(new client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client])
+			if(IsValidClient(client) && !omit[client]) //&& (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
 			{
-				if(GetClientTeam(client)>_:TFTeam_Spectator) // Ignore the companion toggle pref if we can't find available clients
+				if(SpecForceBoss || GetClientTeam(client)>_:TFTeam_Spectator) // Ignore the companion toggle pref if we can't find available clients
 				{
 					companion=client;
 				}
@@ -9849,7 +9894,7 @@ public bool:PickCharacter(boss, companion)
 			PrecacheCharacter(Special[boss]);
 			return true;
 		}
-
+		
 		for(new tries; tries<100; tries++)
 		{
 			if(ChancesString[0])
@@ -9868,12 +9913,15 @@ public bool:PickCharacter(boss, companion)
 				Special[boss]=GetRandomInt(0, Specials-1);
 			}
 
+			decl String:companionName[64];
 			KvRewind(BossKV[Special[boss]]);
+			KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
 			if(KvGetNum(BossKV[Special[boss]], "blocked") ||
 			   KvGetNum(BossKV[Special[boss]], "donator") ||
 			   KvGetNum(BossKV[Special[boss]], "admin") ||
 			   KvGetNum(BossKV[Special[boss]], "owner") ||
-			   KvGetNum(BossKV[Special[boss]], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+			  (KvGetNum(BossKV[Special[boss]], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) ||
+			  (strlen(companionName) && !DuoMin))
 			{
 				Special[boss]=-1;
 				continue;
@@ -9983,7 +10031,7 @@ public bool:PickCharacter(boss, companion)
 
 FindCompanion(boss, players, bool:omit[])
 {
-	static playersNeeded=3;
+	static playersNeeded=2;
 	decl String:companionName[64];
 	KvRewind(BossKV[Special[boss]]);
 	KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
@@ -10012,7 +10060,7 @@ FindCompanion(boss, players, bool:omit[])
 			FindCompanion(companion, players, omit);  //Make sure this companion doesn't have a companion of their own
 		}
 	}
-	playersNeeded=3;  //Reset the amount of players needed back to 3 after we're done
+	playersNeeded=2;  //Reset the amount of players needed back after we're done
 }
 
 stock SpawnWeapon(client, String:name[], index, level, qual, String:att[])
