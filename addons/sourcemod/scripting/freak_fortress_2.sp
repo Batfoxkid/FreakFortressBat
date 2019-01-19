@@ -8351,11 +8351,6 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	{
 		return Plugin_Continue;
 	}
-	if(!CheckRoundState() && IsBoss(client) && !selfKnockback[attacker])
-	{
-		damage*=0.0;
-		return Plugin_Changed;
-	}
 	//END OF PART 1
 
 	new Float:position[3];
