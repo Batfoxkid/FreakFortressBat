@@ -583,7 +583,7 @@ static const String:ff2versiondates[][]=
 	"January 9, 2019",		//1.16.12
 	"January 13, 2019",		//1.17.0
 	"January 15, 2019",		//1.17.1
-	"January 17, 2019"		//1.17.2
+	"January 19, 2019"		//1.17.2
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -8351,6 +8351,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	{
 		return Plugin_Continue;
 	}
+	/*if(!CheckRoundState() && IsBoss(client) && !selfKnockback[attacker])
+	{
+		damage*=0.0;
+		return Plugin_Changed;
+	}*/
 	//END OF PART 1
 
 	new Float:position[3];
