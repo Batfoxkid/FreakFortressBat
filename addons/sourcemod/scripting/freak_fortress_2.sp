@@ -2658,7 +2658,7 @@ DisableSubPlugins(bool:force=false)
 
 public LoadCharacter(const String:character[])
 {
-	new String:extensions[][]={".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd"};
+	new String:extensions[][]={".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd", ".phy"};
 	decl String:config[PLATFORM_MAX_PATH];
 
 	//BuildPath(Path_SM, config, sizeof(config), "configs/freak_fortress_2/%s.cfg", character);
@@ -2751,7 +2751,10 @@ public LoadCharacter(const String:character[])
 					}
 					else
 					{
-						LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+						if(StrContains(key, ".phy")==-1)
+						{
+							LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+						}
 					}
 				}
 			}
