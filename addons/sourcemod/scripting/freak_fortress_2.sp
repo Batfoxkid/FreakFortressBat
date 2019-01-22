@@ -2683,7 +2683,7 @@ public LoadCharacter(const String:character[])
 	FileToKeyValues(BossKV[Specials], config);
 
 	new version=KvGetNum(BossKV[Specials], "version", 1);
-	if(version!=StringToInt(MAJOR_REVISION))
+	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
 		LogError("[FF2 Bosses] Character %s is only compatible with FF2 v%i!", character, version);
 		return;
