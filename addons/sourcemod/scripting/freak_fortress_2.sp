@@ -3546,18 +3546,18 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 		SetGlobalTransTarget(Boss[boss]);
 		if(bossHasRightMouseAbility[boss])
 		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t\n%t", "ff2_buttons_reload", "ff2_buttons_rmb");
+			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T\n%T", "ff2_buttons_reload", Boss[boss], "ff2_buttons_rmb", Boss[boss]);
 		}
 		else
 		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_reload");
+			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_reload", Boss[boss]);
 		}
 	}
 	else if(bossHasRightMouseAbility[boss])
 	{
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
 		SetGlobalTransTarget(Boss[boss]);
-		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_rmb");
+		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_rmb", Boss[boss]);
 	}
 	else
 	{
@@ -3782,11 +3782,11 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			//TODO:  Clear HUD text here
 			if(IsBoss(client))
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin ? "boss_win" : "boss_lose"));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin ? "boss_win" : "boss_lose")), client;
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T\n%t", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", client, RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
 	}
@@ -7340,7 +7340,7 @@ public Action:BossTimer(Handle:timer)
 		if(BossLivesMax[boss]>1)
 		{
 			SetHudTextParams(-1.0, 0.77, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, livesHUD, "%t", "Boss Lives Left", BossLives[boss], BossLivesMax[boss]);
+			FF2_ShowSyncHudText(client, livesHUD, "%T", "Boss Lives Left", client, BossLives[boss], BossLivesMax[boss]);
 		}
 
 		if(RoundFloat(BossCharge[boss][0])==100.0)
@@ -7353,7 +7353,7 @@ public Action:BossTimer(Handle:timer)
 			else
 			{
 				SetHudTextParams(-1.0, 0.83, 0.15, 255, 64, 64, 255);
-				FF2_ShowSyncHudText(client, rageHUD, "%t", "do_rage");
+				FF2_ShowSyncHudText(client, rageHUD, "%T", "do_rage", client);
 
 				decl String:sound[PLATFORM_MAX_PATH];
 				if(RandomSound("sound_full_rage", sound, sizeof(sound), boss) && emitRageSound[boss])
@@ -7381,7 +7381,7 @@ public Action:BossTimer(Handle:timer)
 		else
 		{
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, rageHUD, "%t", "rage_meter", RoundFloat(BossCharge[boss][0]));
+			FF2_ShowSyncHudText(client, rageHUD, "%T", "rage_meter", client, RoundFloat(BossCharge[boss][0]));
 		}
 		SetHudTextParams(-1.0, 0.88, 0.15, 255, 255, 255, 255);
 
