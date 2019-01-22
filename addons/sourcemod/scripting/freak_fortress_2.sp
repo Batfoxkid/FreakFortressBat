@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "2"
+#define FORK_STABLE_REVISION "3"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -219,6 +219,7 @@ new Handle:cvarAdvancedMusic;
 new Handle:cvarSongInfo;
 new Handle:cvarDuoRandom;
 new Handle:cvarDuoMin;
+//new Handle:cvarNewDownload;
 
 new Handle:FF2Cookies;
 
@@ -450,7 +451,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.12",
 	"1.17.0",
 	"1.17.1",
-	"1.17.2"
+	"1.17.2",
+	"1.17.3"
 };
 
 static const String:ff2versiondates[][]=
@@ -583,13 +585,19 @@ static const String:ff2versiondates[][]=
 	"January 9, 2019",		//1.16.12
 	"January 13, 2019",		//1.17.0
 	"January 15, 2019",		//1.17.1
-	"January 19, 2019"		//1.17.2
+	"January 19, 2019",		//1.17.2
+	"January 22, 2019"		//1.17.3
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 129:  //1.17.3
+		{
+			DrawPanelText(panel, "1) Last player glow cvar is now how many players are left (Batfoxkid)");
+			DrawPanelText(panel, "2) Multi-translation fixes (MAGNAT2645)");
+		}
 		case 128:  //1.17.2
 		{
 			DrawPanelText(panel, "1) Companion bosses unplayable when less then defined players (Batfoxkid)");
@@ -1673,6 +1681,7 @@ public OnPluginStart()
 	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
 	cvarDuoRandom=CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
 	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 3.0);
+	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1743,6 +1752,7 @@ public OnPluginStart()
 	HookConVarChange(cvarSongInfo, CvarChange);
 	HookConVarChange(cvarDuoRandom, CvarChange);
 	HookConVarChange(cvarDuoMin, CvarChange);
+	//HookConVarChange(cvarNewDownload, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -2789,6 +2799,28 @@ public LoadCharacter(const String:character[])
 				}
 			}
 		}
+		/*else if((!StrContains(section, "sound_") || !strcmp(section, "catch_phrase")) && bool:KvGetNum(BossKV[Specials], "newdownload", GetConVarInt(cvarNewDownload)))
+		{
+			for(new i=1; ; i++)
+			{
+				IntToString(i, key, sizeof(key));
+				KvGetString(BossKV[Specials], key, config, sizeof(config));
+				if(!config[0])
+				{
+					break;
+				}
+				Format(key, sizeof(key), "sound/%s", config);
+				if(FileExists(key, true) && (!StrContains(key, "sound/freak_fortress_2") || !StrContains(key, "sound/saxton_hale")))
+				{
+					AddFileToDownloadsTable(key);
+				}
+				else if(!StrContains(key, "sound/freak_fortress_2") || !StrContains(key, "sound/saxton_hale"))
+				{
+					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+				}
+				// No real way to do this properly... in my head...
+			}
+		}*/
 	}
 	Specials++;
 }
