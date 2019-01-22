@@ -3509,7 +3509,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 			}
 			else if (ClientCookie[client] == TOGGLE_OFF)
 			{
-				SetClientQueuePoints(client, -15);
+				//SetClientQueuePoints(client, -15);
 				decl String:nick[64];
 				GetClientName(client, nick, sizeof(nick));
 				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
@@ -4001,6 +4001,9 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 	new add_points2[MaxClients+1];
 	for(new client=1; client<=MaxClients; client++)
 	{
+		if(ClientCookie[client] == TOGGLE_OFF) // Do not give queue points to those who have ff2 bosses disabled
+			continue;
+
 		if(IsValidClient(client))
 		{
 			damage=Damage[client];
