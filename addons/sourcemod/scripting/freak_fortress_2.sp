@@ -598,6 +598,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "1) Last player glow cvar is now how many players are left (Batfoxkid)");
 			DrawPanelText(panel, "2) Multi-translation fixes (MAGNAT2645)");
 			DrawPanelText(panel, "3) Added 'sound_ability_serverwide' for serverwide RAGE sound (SHADoW)");
+			DrawPanelText(panel, "4) Allowed 'ragedamage' to be a formula (Batfoxkid)");
 		}
 		case 128:  //1.17.2
 		{
@@ -5091,14 +5092,15 @@ public Action:MakeBoss(Handle:timer, any:boss)
 		AssignTeam(client, BossTeam);
 	}
 
-	BossRageDamage[boss]=KvGetNum(BossKV[Special[boss]], "ragedamage", 1900);
+	BossRageDamage[boss]=ParseFormula(boss, "ragedamage", "1900", RoundFloat(1900));
+	/*BossRageDamage[boss]=KvGetNum(BossKV[Special[boss]], "ragedamage", 1900);
 	if(BossRageDamage[boss]<=0)
 	{
 		decl String:bossName[64];
 		KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName));
 		PrintToServer("[FF2 Bosses] Warning: Boss %s's rage damage is 0 or below, setting to 1900", bossName);
 		BossRageDamage[boss]=1900;
-	}
+	}*/
 
 	BossLivesMax[boss]=KvGetNum(BossKV[Special[boss]], "lives", 1);
 	if(BossLivesMax[boss]<=0)
@@ -9664,7 +9666,7 @@ stock ParseFormula(boss, const String:key[], const String:defaultFormula[], defa
 		return defaultValue;
 	}
 
-	if(bMedieval)
+	if(bMedieval && StrContains(key, "ragedamage", false))
 	{
 		return RoundFloat(result/3.6);  //TODO: Make this configurable
 	}
@@ -10084,14 +10086,15 @@ FindCompanion(boss, players, bool:omit[])
 		omit[companion]=true;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
-			BossRageDamage[companion]=KvGetNum(BossKV[Special[companion]], "ragedamage", 1900);
+			BossRageDamage[companion]=ParseFormula(boss, "ragedamage", "1900", RoundFloat(1900));
+			/*BossRageDamage[companion]=KvGetNum(BossKV[Special[companion]], "ragedamage", 1900);
 			if(BossRageDamage[companion]<=0)
 			{
 				new String:bossName[64];
 				KvGetString(BossKV[Special[companion]], "name", bossName, sizeof(bossName));
 				LogError("[FF2 Bosses] Warning: Boss %s's rage damage is below 0, setting to 1900", bossName);
 				BossRageDamage[companion]=1900;
-			}
+			}*/
 			BossLivesMax[companion]=KvGetNum(BossKV[Special[companion]], "lives", 1);
 			if(BossLivesMax[companion]<=0)
 			{
