@@ -597,6 +597,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 		{
 			DrawPanelText(panel, "1) Last player glow cvar is now how many players are left (Batfoxkid)");
 			DrawPanelText(panel, "2) Multi-translation fixes (MAGNAT2645)");
+			DrawPanelText(panel, "3) Added 'sound_ability_serverwide' for serverwide RAGE sound (SHADoW)");
 		}
 		case 128:  //1.17.2
 		{
@@ -7672,6 +7673,11 @@ public Action:OnCallForMedic(client, const String:command[], args)
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 		decl String:sound[PLATFORM_MAX_PATH];
+		if(RandomSound("sound_ability_serverwide", sound, sizeof(sound), boss))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+		}
 		if(RandomSoundAbility("sound_ability", sound, sizeof(sound), boss))
 		{
 			FF2flags[Boss[boss]]|=FF2FLAG_TALKING;
