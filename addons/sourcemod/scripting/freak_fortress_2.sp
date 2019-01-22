@@ -242,7 +242,7 @@ new countdownPlayers=1;
 new countdownTime=120;
 new countdownHealth=2000;
 new bool:SpecForceBoss;
-new bool:lastPlayerGlow=true;
+new lastPlayerGlow=1;
 new bool:bossTeleportation=true;
 new shieldCrits;
 //new allowedDetonations;
@@ -1636,7 +1636,7 @@ public OnPluginStart()
 	cvarEnableEurekaEffect=CreateConVar("ff2_enable_eureka", "0", "0-Disable the Eureka Effect, 1-Enable the Eureka Effect", _, true, 0.0, true, 1.0);
 	cvarForceBossTeam=CreateConVar("ff2_force_team", "0", "0-Boss is always on Blu, 1-Boss is on a random team each round, 2-Boss is always on Red", _, true, 0.0, true, 3.0);
 	cvarHealthBar=CreateConVar("ff2_health_bar", "0", "0-Disable the health bar, 1-Show the health bar", _, true, 0.0, true, 1.0);
-	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "0-Don't outline the last player, 1-Outline the last player alive", _, true, 0.0, true, 1.0);
+	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "How many players left before outlining everyone", _, true, 0.0, true, 32.0);
 	cvarBossTeleporter=CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
 	cvarBossSuicide=CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
 	cvarPreroundBossDisconnect=CreateConVar("ff2_replace_disconnected_boss", "0", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
@@ -2337,7 +2337,7 @@ public EnableFF2()
 	countdownHealth=GetConVarInt(cvarCountdownHealth);
 	countdownPlayers=GetConVarInt(cvarCountdownPlayers);
 	countdownTime=GetConVarInt(cvarCountdownTime);
-	lastPlayerGlow=GetConVarBool(cvarLastPlayerGlow);
+	lastPlayerGlow=GetConVarInt(cvarLastPlayerGlow);
 	bossTeleportation=GetConVarBool(cvarBossTeleporter);
 	shieldCrits=GetConVarInt(cvarShieldCrits);
 	//allowedDetonations=GetConVarInt(cvarCaberDetonations);
@@ -2915,7 +2915,7 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	}
 	else if(convar==cvarLastPlayerGlow)
 	{
-		lastPlayerGlow=bool:StringToInt(newValue);
+		lastPlayerGlow=StringToInt(newValue);
 	}
 	else if(convar==cvarSpecForceBoss)
 	{
@@ -7118,19 +7118,18 @@ public Action:ClientTimer(Handle:timer)
 				}
 			}
 
+			if(RedAlivePlayers<=lastPlayerGlow)
+			{
+				SetClientGlow(client, 3600.0);
+			}
 			if(RedAlivePlayers==1 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 			{
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.3);
-				if(class==TFClass_Engineer && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))
+				if(class==TFClass_Engineer && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))  // TODO: Is this necessary?
 				{
 					SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
 				}
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
-
-				if(lastPlayerGlow)
-				{
-					SetClientGlow(client, 3600.0);
-				}
 				continue;
 			}
 			else if(RedAlivePlayers==2 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
@@ -7433,6 +7432,10 @@ public Action:BossTimer(Handle:timer)
 			}
 		}
 
+		if(RedAlivePlayers<=lastPlayerGlow)
+		{
+			SetClientGlow(client, 3600.0);
+		}
 		if(RedAlivePlayers==1)
 		{
 			new String:message[512];  //Do not decl this
@@ -7465,11 +7468,6 @@ public Action:BossTimer(Handle:timer)
 					SetGlobalTransTarget(target);
 					PrintCenterText(target, message);
 				}
-			}
-
-			if(lastPlayerGlow)
-			{
-				SetClientGlow(client, 3600.0);
 			}
 		}
 
