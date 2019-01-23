@@ -1612,6 +1612,7 @@ new String:xIncoming[MAXPLAYERS+1][700];
 #define TOGGLE_UNDEF -1
 #define TOGGLE_ON  1
 #define TOGGLE_OFF 2
+#define TOGGLE_TEMP 3
 
 new Handle:BossCookie=INVALID_HANDLE;
 new Handle:CompanionCookie=INVALID_HANDLE;
@@ -2434,6 +2435,14 @@ public DisableFF2()
 			MusicTimer[client]=INVALID_HANDLE;
 		}
 
+		if(ClientCookie[client] == TOGGLE_TEMP)
+		{
+			ClientCookie[client] == TOGGLE_UNDEF;
+		}
+		if(ClientCookie2[client] == TOGGLE_TEMP)
+		{
+			ClientCookie2[client] == TOGGLE_UNDEF;
+		}
 		bossHasReloadAbility[client]=false;
 		bossHasRightMouseAbility[client]=false;
 	}
@@ -3077,7 +3086,7 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 3:
 			{
-				if (GetConVarBool(cvarToggleBoss))	// Toggle Command?
+				if(GetConVarBool(cvarToggleBoss))	// Toggle Command?
 				{
 					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Toggle Command");
 				}
@@ -3093,7 +3102,7 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 5:
 			{
-				if (GetConVarBool(cvarDuoBoss))		// Companion Toggle?
+				if(GetConVarBool(cvarDuoBoss))		// Companion Toggle?
 				{
 					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Companion Command");
 				}
@@ -3508,12 +3517,19 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
    				}
 			}
-			else if (ClientCookie[client] == TOGGLE_OFF)
+			else if (ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP)
 			{
 				//SetClientQueuePoints(client, -15);
 				decl String:nick[64];
 				GetClientName(client, nick, sizeof(nick));
-				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+				if(ClientCookie[client] == TOGGLE_OFF)
+				{
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+				}
+				else
+				{
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
+				}
 			}
 			else if (ClientCookie[client] == TOGGLE_UNDEF || !ClientCookie[client])
 			{
@@ -3832,7 +3848,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	{
 		if (client>0 && IsValidEntity(client) && IsClientConnected(client))
 		{
-			if (ClientCookie[client] == TOGGLE_OFF && GetConVarBool(cvarToggleBoss))
+			if ((ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss))
 			{
 				//FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
     				decl String:nick[64]; 
@@ -3874,6 +3890,8 @@ public Action:CompanionMenu(client, args)
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
 		Format(menuoption,sizeof(menuoption),"%t","Disable Companion Selection");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
+		Format(menuoption,sizeof(menuoption),"%t","Disable Companion Selection For Map");
+		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
 
 		SetMenuExitButton(menu, true);
 
@@ -3902,6 +3920,10 @@ public MenuHandlerCompanion(Handle:menu, MenuAction:action, param1, param2)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled");
 		}
+		else if(3 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
+		}
 	}
 	else if(action == MenuAction_End)
 	{
@@ -3926,6 +3948,8 @@ public Action:BossMenu(client, args)
 		Format(menuoption,sizeof(menuoption),"%t","Enable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points");
+		AddMenuItem(menu, "Boss Toggle", menuoption);
+		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points For Map");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 
 		SetMenuExitButton(menu, true);
@@ -3954,6 +3978,10 @@ public MenuHandlerBoss(Handle:menu, MenuAction:action, param1, param2)
 		else if(2 == choice)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+		}
+		else if(3 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 		}
 	} 
 	else if(action == MenuAction_End)
@@ -3999,7 +4027,7 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 	new add_points2[MaxClients+1];
 	for(new client=1; client<=MaxClients; client++)
 	{
-		if(ClientCookie[client] == TOGGLE_OFF) // Do not give queue points to those who have ff2 bosses disabled
+		if(ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) // Do not give queue points to those who have ff2 bosses disabled
 			continue;
 
 		if(IsValidClient(client))
@@ -4522,7 +4550,7 @@ public Action:Command_SetMyBoss(client, args)
 			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-			if(strlen(companionName) && !DuoMin) continue;
+			if(strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))) continue;
 			if(StrContains(boss, name, false)!=-1)
 			{
 				IsBossSelected[client]=true;
@@ -4555,13 +4583,13 @@ public Action:Command_SetMyBoss(client, args)
 	
 	if (GetConVarBool(cvarToggleBoss))
 	{
-		Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_OFF ? "to0_enablepts" : "to0_disablepts");
+		Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_ON ? "to0_disablepts" : "to0_enablepts");
 		AddMenuItem(dMenu, boss, boss);
 	}
 	
 	if (GetConVarBool(cvarDuoBoss))
 	{
-		Format(boss, sizeof(boss), "%t", ClientCookie2[client] == TOGGLE_OFF ? "to0_enableduo" : "to0_disableduo");
+		Format(boss, sizeof(boss), "%t", ClientCookie2[client] == TOGGLE_ON ? "to0_disableduo" : "to0_enableduo");
 		AddMenuItem(dMenu, boss, boss);
 	}
 	
@@ -4576,7 +4604,7 @@ public Action:Command_SetMyBoss(client, args)
 		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 		if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-		if(strlen(companionName) && !DuoMin) continue;
+		if(strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))) continue;
 		
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		AddMenuItem(dMenu, boss, boss);
@@ -9407,7 +9435,7 @@ stock GetClientWithMostQueuePoints(bool:omit[])
 	{
 		if(IsValidClient(client) && GetClientQueuePoints(client)>=GetClientQueuePoints(winner) && !omit[client])
 		{
-			if(ClientCookie[client]==TOGGLE_OFF && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
+			if((ClientCookie[client]==TOGGLE_OFF | ClientCookie[client]==TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
 				continue;
 			
 			if(SpecForceBoss || GetClientTeam(client)>_:TFTeam_Spectator)
@@ -9440,7 +9468,7 @@ stock GetRandomValidClient(bool:omit[])
 	{
 		if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
 		{
-			if(ClientCookie2[client]==TOGGLE_OFF && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
+			if((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
 				continue;
 			
 			if((SpecForceBoss && !GetConVarBool(cvarDuoRandom)) || GetClientTeam(client)>_:TFTeam_Spectator)
