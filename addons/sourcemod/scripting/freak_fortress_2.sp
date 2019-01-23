@@ -2437,11 +2437,11 @@ public DisableFF2()
 
 		if(ClientCookie[client] == TOGGLE_TEMP)
 		{
-			SetClientCookie(client, BossCookie, TOGGLE_UNDEF);
+			SetClientCookie(client, BossCookie, "TOGGLE_UNDEF");
 		}
 		if(ClientCookie2[client] == TOGGLE_TEMP)
 		{
-			SetClientCookie(client, CompanionCookie, TOGGLE_UNDEF);
+			SetClientCookie(client, CompanionCookie, "TOGGLE_UNDEF");
 		}
 		bossHasReloadAbility[client]=false;
 		bossHasRightMouseAbility[client]=false;
