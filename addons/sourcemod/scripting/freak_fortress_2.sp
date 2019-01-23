@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "2"
+#define FORK_STABLE_REVISION "3"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -219,6 +219,7 @@ new Handle:cvarAdvancedMusic;
 new Handle:cvarSongInfo;
 new Handle:cvarDuoRandom;
 new Handle:cvarDuoMin;
+//new Handle:cvarNewDownload;
 
 new Handle:FF2Cookies;
 
@@ -242,7 +243,7 @@ new countdownPlayers=1;
 new countdownTime=120;
 new countdownHealth=2000;
 new bool:SpecForceBoss;
-new bool:lastPlayerGlow=true;
+new lastPlayerGlow=1;
 new bool:bossTeleportation=true;
 new shieldCrits;
 //new allowedDetonations;
@@ -450,7 +451,8 @@ static const String:ff2versiontitles[][]=
 	"1.16.12",
 	"1.17.0",
 	"1.17.1",
-	"1.17.2"
+	"1.17.2",
+	"1.17.3"
 };
 
 static const String:ff2versiondates[][]=
@@ -583,13 +585,21 @@ static const String:ff2versiondates[][]=
 	"January 9, 2019",		//1.16.12
 	"January 13, 2019",		//1.17.0
 	"January 15, 2019",		//1.17.1
-	"January 19, 2019"		//1.17.2
+	"January 19, 2019",		//1.17.2
+	"January 22, 2019"		//1.17.3
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 129:  //1.17.3
+		{
+			DrawPanelText(panel, "1) Last player glow cvar is now how many players are left (Batfoxkid)");
+			DrawPanelText(panel, "2) Multi-translation fixes (MAGNAT2645)");
+			DrawPanelText(panel, "3) Added 'sound_ability_serverwide' for serverwide RAGE sound (SHADoW)");
+			DrawPanelText(panel, "4) Allowed 'ragedamage' to be a formula (Batfoxkid)");
+		}
 		case 128:  //1.17.2
 		{
 			DrawPanelText(panel, "1) Companion bosses unplayable when less then defined players (Batfoxkid)");
@@ -1636,7 +1646,7 @@ public OnPluginStart()
 	cvarEnableEurekaEffect=CreateConVar("ff2_enable_eureka", "0", "0-Disable the Eureka Effect, 1-Enable the Eureka Effect", _, true, 0.0, true, 1.0);
 	cvarForceBossTeam=CreateConVar("ff2_force_team", "0", "0-Boss is always on Blu, 1-Boss is on a random team each round, 2-Boss is always on Red", _, true, 0.0, true, 3.0);
 	cvarHealthBar=CreateConVar("ff2_health_bar", "0", "0-Disable the health bar, 1-Show the health bar", _, true, 0.0, true, 1.0);
-	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "0-Don't outline the last player, 1-Outline the last player alive", _, true, 0.0, true, 1.0);
+	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "How many players left before outlining everyone", _, true, 0.0, true, 32.0);
 	cvarBossTeleporter=CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
 	cvarBossSuicide=CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
 	cvarPreroundBossDisconnect=CreateConVar("ff2_replace_disconnected_boss", "0", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
@@ -1673,6 +1683,7 @@ public OnPluginStart()
 	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
 	cvarDuoRandom=CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
 	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 3.0);
+	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1743,6 +1754,7 @@ public OnPluginStart()
 	HookConVarChange(cvarSongInfo, CvarChange);
 	HookConVarChange(cvarDuoRandom, CvarChange);
 	HookConVarChange(cvarDuoMin, CvarChange);
+	//HookConVarChange(cvarNewDownload, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -2337,7 +2349,7 @@ public EnableFF2()
 	countdownHealth=GetConVarInt(cvarCountdownHealth);
 	countdownPlayers=GetConVarInt(cvarCountdownPlayers);
 	countdownTime=GetConVarInt(cvarCountdownTime);
-	lastPlayerGlow=GetConVarBool(cvarLastPlayerGlow);
+	lastPlayerGlow=GetConVarInt(cvarLastPlayerGlow);
 	bossTeleportation=GetConVarBool(cvarBossTeleporter);
 	shieldCrits=GetConVarInt(cvarShieldCrits);
 	//allowedDetonations=GetConVarInt(cvarCaberDetonations);
@@ -2658,7 +2670,7 @@ DisableSubPlugins(bool:force=false)
 
 public LoadCharacter(const String:character[])
 {
-	new String:extensions[][]={".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd"};
+	new String:extensions[][]={".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd", ".phy"};
 	decl String:config[PLATFORM_MAX_PATH];
 
 	//BuildPath(Path_SM, config, sizeof(config), "configs/freak_fortress_2/%s.cfg", character);
@@ -2672,7 +2684,7 @@ public LoadCharacter(const String:character[])
 	FileToKeyValues(BossKV[Specials], config);
 
 	new version=KvGetNum(BossKV[Specials], "version", 1);
-	if(version!=StringToInt(MAJOR_REVISION))
+	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
 		LogError("[FF2 Bosses] Character %s is only compatible with FF2 v%i!", character, version);
 		return;
@@ -2751,7 +2763,10 @@ public LoadCharacter(const String:character[])
 					}
 					else
 					{
-						LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+						if(StrContains(key, ".phy")==-1)
+						{
+							LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+						}
 					}
 				}
 			}
@@ -2786,6 +2801,28 @@ public LoadCharacter(const String:character[])
 				}
 			}
 		}
+		/*else if((!StrContains(section, "sound_") || !strcmp(section, "catch_phrase")) && bool:KvGetNum(BossKV[Specials], "newdownload", GetConVarInt(cvarNewDownload)))
+		{
+			for(new i=1; ; i++)
+			{
+				IntToString(i, key, sizeof(key));
+				KvGetString(BossKV[Specials], key, config, sizeof(config));
+				if(!config[0])
+				{
+					break;
+				}
+				Format(key, sizeof(key), "sound/%s", config);
+				if(FileExists(key, true) && (!StrContains(key, "sound/freak_fortress_2") || !StrContains(key, "sound/saxton_hale")))
+				{
+					AddFileToDownloadsTable(key);
+				}
+				else if(!StrContains(key, "sound/freak_fortress_2") || !StrContains(key, "sound/saxton_hale"))
+				{
+					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+				}
+				// No real way to do this properly... in my head...
+			}
+		}*/
 	}
 	Specials++;
 }
@@ -2915,7 +2952,7 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	}
 	else if(convar==cvarLastPlayerGlow)
 	{
-		lastPlayerGlow=bool:StringToInt(newValue);
+		lastPlayerGlow=StringToInt(newValue);
 	}
 	else if(convar==cvarSpecForceBoss)
 	{
@@ -3473,7 +3510,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 			}
 			else if (ClientCookie[client] == TOGGLE_OFF)
 			{
-				SetClientQueuePoints(client, -15);
+				//SetClientQueuePoints(client, -15);
 				decl String:nick[64];
 				GetClientName(client, nick, sizeof(nick));
 				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
@@ -3546,18 +3583,18 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 		SetGlobalTransTarget(Boss[boss]);
 		if(bossHasRightMouseAbility[boss])
 		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t\n%t", "ff2_buttons_reload", "ff2_buttons_rmb");
+			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T\n%T", "ff2_buttons_reload", Boss[boss], "ff2_buttons_rmb", Boss[boss]);
 		}
 		else
 		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_reload");
+			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_reload", Boss[boss]);
 		}
 	}
 	else if(bossHasRightMouseAbility[boss])
 	{
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
 		SetGlobalTransTarget(Boss[boss]);
-		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_rmb");
+		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_rmb", Boss[boss]);
 	}
 	else
 	{
@@ -3782,11 +3819,11 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			//TODO:  Clear HUD text here
 			if(IsBoss(client))
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin ? "boss_win" : "boss_lose"));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin ? "boss_win" : "boss_lose"), client);
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
 	}
@@ -3800,7 +3837,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		{
 			if (ClientCookie[client] == TOGGLE_OFF && GetConVarBool(cvarToggleBoss))
 			{
-				FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
+				//FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
     				decl String:nick[64]; 
     				GetClientName(client, nick, sizeof(nick));
 			}
@@ -3965,6 +4002,9 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 	new add_points2[MaxClients+1];
 	for(new client=1; client<=MaxClients; client++)
 	{
+		if(ClientCookie[client] == TOGGLE_OFF) // Do not give queue points to those who have ff2 bosses disabled
+			continue;
+
 		if(IsValidClient(client))
 		{
 			damage=Damage[client];
@@ -5052,14 +5092,15 @@ public Action:MakeBoss(Handle:timer, any:boss)
 		AssignTeam(client, BossTeam);
 	}
 
-	BossRageDamage[boss]=KvGetNum(BossKV[Special[boss]], "ragedamage", 1900);
+	BossRageDamage[boss]=ParseFormula(boss, "ragedamage", "1900", 1900);
+	/*BossRageDamage[boss]=KvGetNum(BossKV[Special[boss]], "ragedamage", 1900);
 	if(BossRageDamage[boss]<=0)
 	{
 		decl String:bossName[64];
 		KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName));
 		PrintToServer("[FF2 Bosses] Warning: Boss %s's rage damage is 0 or below, setting to 1900", bossName);
 		BossRageDamage[boss]=1900;
-	}
+	}*/
 
 	BossLivesMax[boss]=KvGetNum(BossKV[Special[boss]], "lives", 1);
 	if(BossLivesMax[boss]<=0)
@@ -7118,19 +7159,18 @@ public Action:ClientTimer(Handle:timer)
 				}
 			}
 
+			if(RedAlivePlayers<=lastPlayerGlow)
+			{
+				SetClientGlow(client, 3600.0);
+			}
 			if(RedAlivePlayers==1 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 			{
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.3);
-				if(class==TFClass_Engineer && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))
+				if(class==TFClass_Engineer && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))  // TODO: Is this necessary?
 				{
 					SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
 				}
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
-
-				if(lastPlayerGlow)
-				{
-					SetClientGlow(client, 3600.0);
-				}
 				continue;
 			}
 			else if(RedAlivePlayers==2 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
@@ -7341,7 +7381,7 @@ public Action:BossTimer(Handle:timer)
 		if(BossLivesMax[boss]>1)
 		{
 			SetHudTextParams(-1.0, 0.77, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, livesHUD, "%t", "Boss Lives Left", BossLives[boss], BossLivesMax[boss]);
+			FF2_ShowSyncHudText(client, livesHUD, "%T", "Boss Lives Left", client, BossLives[boss], BossLivesMax[boss]);
 		}
 
 		if(RoundFloat(BossCharge[boss][0])==100.0)
@@ -7354,7 +7394,7 @@ public Action:BossTimer(Handle:timer)
 			else
 			{
 				SetHudTextParams(-1.0, 0.83, 0.15, 255, 64, 64, 255);
-				FF2_ShowSyncHudText(client, rageHUD, "%t", "do_rage");
+				FF2_ShowSyncHudText(client, rageHUD, "%T", "do_rage", client);
 
 				decl String:sound[PLATFORM_MAX_PATH];
 				if(RandomSound("sound_full_rage", sound, sizeof(sound), boss) && emitRageSound[boss])
@@ -7382,7 +7422,7 @@ public Action:BossTimer(Handle:timer)
 		else
 		{
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, rageHUD, "%t", "rage_meter", RoundFloat(BossCharge[boss][0]));
+			FF2_ShowSyncHudText(client, rageHUD, "%T", "rage_meter", client, RoundFloat(BossCharge[boss][0]));
 		}
 		SetHudTextParams(-1.0, 0.88, 0.15, 255, 255, 255, 255);
 
@@ -7433,6 +7473,10 @@ public Action:BossTimer(Handle:timer)
 			}
 		}
 
+		if(RedAlivePlayers<=lastPlayerGlow)
+		{
+			SetClientGlow(client, 3600.0);
+		}
 		if(RedAlivePlayers==1)
 		{
 			new String:message[512];  //Do not decl this
@@ -7465,11 +7509,6 @@ public Action:BossTimer(Handle:timer)
 					SetGlobalTransTarget(target);
 					PrintCenterText(target, message);
 				}
-			}
-
-			if(lastPlayerGlow)
-			{
-				SetClientGlow(client, 3600.0);
 			}
 		}
 
@@ -7639,6 +7678,11 @@ public Action:OnCallForMedic(client, const String:command[], args)
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 		decl String:sound[PLATFORM_MAX_PATH];
+		if(RandomSound("sound_ability_serverwide", sound, sizeof(sound), boss))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+		}
 		if(RandomSoundAbility("sound_ability", sound, sizeof(sound), boss))
 		{
 			FF2flags[Boss[boss]]|=FF2FLAG_TALKING;
@@ -9622,7 +9666,7 @@ stock ParseFormula(boss, const String:key[], const String:defaultFormula[], defa
 		return defaultValue;
 	}
 
-	if(bMedieval)
+	if(bMedieval && StrContains(key, "ragedamage", false))
 	{
 		return RoundFloat(result/3.6);  //TODO: Make this configurable
 	}
@@ -10042,14 +10086,15 @@ FindCompanion(boss, players, bool:omit[])
 		omit[companion]=true;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
-			BossRageDamage[companion]=KvGetNum(BossKV[Special[companion]], "ragedamage", 1900);
+			BossRageDamage[companion]=ParseFormula(companion, "ragedamage", "1900", 1900);
+			/*BossRageDamage[companion]=KvGetNum(BossKV[Special[companion]], "ragedamage", 1900);
 			if(BossRageDamage[companion]<=0)
 			{
 				new String:bossName[64];
 				KvGetString(BossKV[Special[companion]], "name", bossName, sizeof(bossName));
 				LogError("[FF2 Bosses] Warning: Boss %s's rage damage is below 0, setting to 1900", bossName);
 				BossRageDamage[companion]=1900;
-			}
+			}*/
 			BossLivesMax[companion]=KvGetNum(BossKV[Special[companion]], "lives", 1);
 			if(BossLivesMax[companion]<=0)
 			{
