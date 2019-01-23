@@ -5092,7 +5092,7 @@ public Action:MakeBoss(Handle:timer, any:boss)
 		AssignTeam(client, BossTeam);
 	}
 
-	BossRageDamage[boss]=ParseFormula(boss, "ragedamage", "1900", RoundFloat(1900));
+	BossRageDamage[boss]=ParseFormula(boss, "ragedamage", "1900", 1900);
 	/*BossRageDamage[boss]=KvGetNum(BossKV[Special[boss]], "ragedamage", 1900);
 	if(BossRageDamage[boss]<=0)
 	{
@@ -10086,7 +10086,7 @@ FindCompanion(boss, players, bool:omit[])
 		omit[companion]=true;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
-			BossRageDamage[companion]=ParseFormula(boss, "ragedamage", "1900", RoundFloat(1900));
+			BossRageDamage[companion]=ParseFormula(companion, "ragedamage", "1900", 900);
 			/*BossRageDamage[companion]=KvGetNum(BossKV[Special[companion]], "ragedamage", 1900);
 			if(BossRageDamage[companion]<=0)
 			{
