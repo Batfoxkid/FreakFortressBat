@@ -3580,7 +3580,6 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 	if(bossHasReloadAbility[boss])
 	{
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
-		SetGlobalTransTarget(Boss[boss]);
 		if(bossHasRightMouseAbility[boss])
 		{
 			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T\n%T", "ff2_buttons_reload", Boss[boss], "ff2_buttons_rmb", Boss[boss]);
@@ -3593,7 +3592,6 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 	else if(bossHasRightMouseAbility[boss])
 	{
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
-		SetGlobalTransTarget(Boss[boss]);
 		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_rmb", Boss[boss]);
 	}
 	else
@@ -3815,7 +3813,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	{
 		if(IsValidClient(client))
 		{
-			SetGlobalTransTarget(client);
 			//TODO:  Clear HUD text here
 			if(IsBoss(client))
 			{
@@ -3823,7 +3820,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T\n%T", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", client, Damage[client], "scores", client, RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
 	}
@@ -4818,7 +4815,7 @@ public Action:MessageTimer(Handle:timer)
 			}
 			else
 			{
-				strcopy(lives, 2, "");
+				lives[0]='\0';
 			}
 
 			Format(text, sizeof(text), "%s\n%t", text, "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
@@ -6448,7 +6445,7 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 				}
 				else
 				{
-					strcopy(lives, 2, "");
+					lives[0]='\0';
 				}
 				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
@@ -10188,8 +10185,7 @@ public Action:QueuePanelCmd(client, args)
 	new bool:added[MaxClients+1];
 
 	new Handle:panel=CreatePanel();
-	SetGlobalTransTarget(client);
-	Format(text, sizeof(text), "%t", "thequeue");  //"Boss Queue"
+	Format(text, sizeof(text), "%T", "thequeue", client);  //"Boss Queue"
 	SetPanelTitle(panel, text);
 	for(new boss; boss<=MaxClients; boss++)  //Add the current bosses to the top of the list
 	{
@@ -10320,21 +10316,20 @@ public Action:TurnToZeroPanel(client, target)
 
 	new Handle:panel=CreatePanel();
 	decl String:text[128];
-	SetGlobalTransTarget(client);
 	if(client==target)
 	{
-		Format(text, sizeof(text), "%t", "to0_title");  //Do you really want to set your queue points to 0?
+		Format(text, sizeof(text), "%T", "to0_title", client);  //Do you really want to set your queue points to 0?
 	}
 	else
 	{
-		Format(text, sizeof(text), "%t", "to0_title_admin", target);  //Do you really want to set {1}'s queue points to 0?
+		Format(text, sizeof(text), "%T", "to0_title_admin", client, target);  //Do you really want to set {1}'s queue points to 0?
 	}
 
 	PrintToChat(client, text);
 	SetPanelTitle(panel, text);
-	Format(text, sizeof(text), "%t", "Yes");
+	Format(text, sizeof(text), "%T", "Yes", client);
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "No");
+	Format(text, sizeof(text), "%T", "No", client);
 	DrawPanelItem(panel, text);
 	shortname[client]=target;
 	SendPanelToClient(panel, client, TurnToZeroPanelH, MENU_TIME_FOREVER);
