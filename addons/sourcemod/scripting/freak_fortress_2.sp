@@ -2437,11 +2437,11 @@ public DisableFF2()
 
 		if(ClientCookie[client] == TOGGLE_TEMP)
 		{
-			ClientCookie[client] == TOGGLE_UNDEF;
+			SetClientCookie(client, BossCookie, TOGGLE_UNDEF);
 		}
 		if(ClientCookie2[client] == TOGGLE_TEMP)
 		{
-			ClientCookie2[client] == TOGGLE_UNDEF;
+			SetClientCookie(client, CompanionCookie, TOGGLE_UNDEF);
 		}
 		bossHasReloadAbility[client]=false;
 		bossHasRightMouseAbility[client]=false;
@@ -9435,7 +9435,7 @@ stock GetClientWithMostQueuePoints(bool:omit[])
 	{
 		if(IsValidClient(client) && GetClientQueuePoints(client)>=GetClientQueuePoints(winner) && !omit[client])
 		{
-			if((ClientCookie[client]==TOGGLE_OFF | ClientCookie[client]==TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
+			if((ClientCookie[client]==TOGGLE_OFF || ClientCookie[client]==TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
 				continue;
 			
 			if(SpecForceBoss || GetClientTeam(client)>_:TFTeam_Spectator)
