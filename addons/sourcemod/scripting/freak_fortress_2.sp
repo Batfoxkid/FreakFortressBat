@@ -3823,7 +3823,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T\n%t", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", client, RoundFloat(Damage[client]/PointsInterval2));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
 	}
@@ -3837,7 +3837,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		{
 			if (ClientCookie[client] == TOGGLE_OFF && GetConVarBool(cvarToggleBoss))
 			{
-				FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
+				//FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
     				decl String:nick[64]; 
     				GetClientName(client, nick, sizeof(nick));
 			}
