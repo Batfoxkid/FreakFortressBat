@@ -4037,7 +4037,7 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 	new add_points2[MaxClients+1];
 	for(new client=1; client<=MaxClients; client++)
 	{
-		if(ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) // Do not give queue points to those who have ff2 bosses disabled
+		if((ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Do not give queue points to those who have ff2 bosses disabled
 			continue;
 
 		if(IsValidClient(client))
