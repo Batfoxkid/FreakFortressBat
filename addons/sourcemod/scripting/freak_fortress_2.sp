@@ -11672,10 +11672,12 @@ public Native_ForkVersion(Handle:plugin, numParams)
 
 public Native_ForkName(Handle:plugin, numParams)
 {
+	decl String:fname[64];
+	fname=FORK_SUB_REVISION;
 	#if !defined FORK_SUB_REVISION
 		return false;
 	#else
-		return FORK_SUB_REVISION;
+		return fname;
 	#endif
 }
 
