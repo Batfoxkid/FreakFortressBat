@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "3"
+#define FORK_STABLE_REVISION "4"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -220,6 +220,7 @@ new Handle:cvarSongInfo;
 new Handle:cvarDuoRandom;
 new Handle:cvarDuoMin;
 //new Handle:cvarNewDownload;
+new Handle:cvarDuoRestore;
 
 new Handle:FF2Cookies;
 
@@ -452,7 +453,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.0",
 	"1.17.1",
 	"1.17.2",
-	"1.17.3"
+	"1.17.3",
+	"1.17.4"
 };
 
 static const String:ff2versiondates[][]=
@@ -586,13 +588,20 @@ static const String:ff2versiondates[][]=
 	"January 13, 2019",		//1.17.0
 	"January 15, 2019",		//1.17.1
 	"January 19, 2019",		//1.17.2
-	"January 22, 2019"		//1.17.3
+	"January 22, 2019",		//1.17.3
+	"January 23, 2019"		//1.17.4
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 130:  //1.17.4
+		{
+			DrawPanelText(panel, "1) Disable boss/companion for a map duration (Batfoxkid)");
+			DrawPanelText(panel, "2) More multi-translation fixes (MAGNAT2645)");
+			DrawPanelText(panel, "3) Option to restore queue points after being a companion (Batfoxkid)");
+		}
 		case 129:  //1.17.3
 		{
 			DrawPanelText(panel, "1) Last player glow cvar is now how many players are left (Batfoxkid)");
@@ -1683,8 +1692,9 @@ public OnPluginStart()
 	cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
 	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
 	cvarDuoRandom=CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
-	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 3.0);
+	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 1.0);
 	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
+	cvarDuoRestore=CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1756,6 +1766,7 @@ public OnPluginStart()
 	HookConVarChange(cvarDuoRandom, CvarChange);
 	HookConVarChange(cvarDuoMin, CvarChange);
 	//HookConVarChange(cvarNewDownload, CvarChange);
+	HookConVarChange(cvarDuoRestore, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -2435,14 +2446,14 @@ public DisableFF2()
 			MusicTimer[client]=INVALID_HANDLE;
 		}
 
-		if(ClientCookie[client] == TOGGLE_TEMP)
+		/*if(ClientCookie[client] == TOGGLE_TEMP)
 		{
-			SetClientCookie(client, BossCookie, "TOGGLE_UNDEF");
+			SetClientCookie(client, BossCookie, "-1");
 		}
 		if(ClientCookie2[client] == TOGGLE_TEMP)
 		{
-			SetClientCookie(client, CompanionCookie, "TOGGLE_UNDEF");
-		}
+			SetClientCookie(client, CompanionCookie, "1");
+		}*/
 		bossHasReloadAbility[client]=false;
 		bossHasRightMouseAbility[client]=false;
 	}
@@ -3721,7 +3732,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			{
 				BossCharge[boss][slot]=0.0;
 			}
-
 			bossHasReloadAbility[boss]=false;
 			bossHasRightMouseAbility[boss]=false;
 		}
@@ -3949,7 +3959,7 @@ public Action:BossMenu(client, args)
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
-		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points For Map");
+		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points For This Map");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 
 		SetMenuExitButton(menu, true);
@@ -4048,11 +4058,12 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 
 			if(IsBoss(client))
 			{
+				//CPrintToChatAll("%s Index: %d", client, GetBossIndex(client));
 				if(IsFakeClient(client))
 				{
 					botqueuepoints=0;
 				}
-				else
+				else if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 				{
 					add_points[client]=-GetClientQueuePoints(client);
 					add_points2[client]=add_points[client];
@@ -4581,15 +4592,29 @@ public Action:Command_SetMyBoss(client, args)
 	Format(boss, sizeof(boss), "%t", "to0_random");
 	AddMenuItem(dMenu, boss, boss);
 	
-	if (GetConVarBool(cvarToggleBoss))
+	if(GetConVarBool(cvarToggleBoss))
 	{
-		Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_ON ? "to0_disablepts" : "to0_enablepts");
+		if(ClientCookie[client] == TOGGLE_ON || ClientCookie[client] == TOGGLE_UNDEF)
+		{
+			Format(boss, sizeof(boss), "%t", "to0_disablepts");
+		}
+		else
+		{
+			Format(boss, sizeof(boss), "%t", "to0_enablepts");
+		}
 		AddMenuItem(dMenu, boss, boss);
 	}
 	
-	if (GetConVarBool(cvarDuoBoss))
+	if(GetConVarBool(cvarDuoBoss))
 	{
-		Format(boss, sizeof(boss), "%t", ClientCookie2[client] == TOGGLE_ON ? "to0_disableduo" : "to0_enableduo");
+		if(ClientCookie2[client] == TOGGLE_ON || ClientCookie2[client] == TOGGLE_UNDEF)
+		{
+			Format(boss, sizeof(boss), "%t", "to0_disableduo");
+		}
+		else
+		{
+			Format(boss, sizeof(boss), "%t", "to0_enableduo");
+		}
 		AddMenuItem(dMenu, boss, boss);
 	}
 	
@@ -5241,7 +5266,11 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	EquipBoss(boss);
 	KSpreeCount[boss]=0;
 	BossCharge[boss][0]=0.0;
-	SetClientQueuePoints(client, 0);
+	//CPrintToChatAll("%s Index: %d", client, GetBossIndex(client));
+	if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
+	{
+		SetClientQueuePoints(client, 0);
+	}
 	return Plugin_Continue;
 }
 
@@ -7015,6 +7044,14 @@ public OnClientDisconnect(client)
 	{
 		KillTimer(MusicTimer[client]);
 		MusicTimer[client]=INVALID_HANDLE;
+	}
+	if(ClientCookie[client] == TOGGLE_TEMP)
+	{
+		SetClientCookie(client, BossCookie, "-1");
+	}
+	if(ClientCookie2[client] == TOGGLE_TEMP)
+	{
+		SetClientCookie(client, CompanionCookie, "1");
 	}
 }
 
