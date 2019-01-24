@@ -589,7 +589,7 @@ static const String:ff2versiondates[][]=
 	"January 15, 2019",		//1.17.1
 	"January 19, 2019",		//1.17.2
 	"January 22, 2019",		//1.17.3
-	"January 23, 2019"		//1.17.4
+	"January 24, 2019"		//1.17.4
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -601,6 +601,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "1) Disable boss/companion for a map duration (Batfoxkid)");
 			DrawPanelText(panel, "2) More multi-translation fixes (MAGNAT2645)");
 			DrawPanelText(panel, "3) Option to restore queue points after being a companion (Batfoxkid)");
+			DrawPanelText(panel, "4) Added FF2_GetForkVersion and FF2_GetForkName natives (Batfoxkid)");
 		}
 		case 129:  //1.17.3
 		{
@@ -1552,6 +1553,8 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 	CreateNative("FF2_IsFF2Enabled", Native_IsEnabled);
 	CreateNative("FF2_GetFF2Version", Native_FF2Version);
+	CreateNative("FF2_GetForkVersion", Native_ForkVersion);
+	CreateNative("FF2_GetForkName", Native_ForkName);
 	CreateNative("FF2_GetBossUserId", Native_GetBoss);
 	CreateNative("FF2_GetBossIndex", Native_GetIndex);
 	CreateNative("FF2_GetBossTeam", Native_GetTeam);
@@ -11650,6 +11653,29 @@ public Native_FF2Version(Handle:plugin, numParams)
 		return false;
 	#else
 		return true;
+	#endif
+}
+
+public Native_ForkVersion(Handle:plugin, numParams)
+{
+	new fversion[3];
+	fversion[0]=StringToInt(FORK_MAJOR_REVISION);
+	fversion[1]=StringToInt(FORK_MINOR_REVISION);
+	fversion[2]=StringToInt(FORK_STABLE_REVISION);
+	SetNativeArray(1, fversion, sizeof(fversion));
+	#if !defined FORK_SUB_REVISION
+		return false;
+	#else
+		return true;
+	#endif
+}
+
+public Native_ForkName(Handle:plugin, numParams)
+{
+	#if !defined FORK_SUB_REVISION
+		return false;
+	#else
+		return FORK_SUB_REVISION;
 	#endif
 }
 
