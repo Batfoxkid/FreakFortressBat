@@ -5219,9 +5219,9 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	{
 		randomCrits[client]=GetConVarBool(cvarCrits);
 	}
-	rageMax[client]=KvGetNum(BossKV[Special[boss]], "ragemax", 100);
-	rageMin[client]=KvGetNum(BossKV[Special[boss]], "ragemin", 100);
-	rageMode[client]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
+	rageMax[boss]=KvGetNum(BossKV[Special[boss]], "ragemax", 100);
+	rageMin[boss]=KvGetNum(BossKV[Special[boss]], "ragemin", 100);
+	rageMode[boss]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
