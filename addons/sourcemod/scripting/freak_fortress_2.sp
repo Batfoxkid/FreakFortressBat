@@ -129,8 +129,8 @@ new RedAlivePlayers;
 new BlueAlivePlayers;
 new RoundCount;
 new ClassKill=0;
-new Float:rageMax;
-new Float:rageMin;
+new rageMax;
+new rageMin;
 new rageMode;
 new Special[MAXPLAYERS+1];
 new Incoming[MAXPLAYERS+1];
@@ -5219,8 +5219,8 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	{
 		randomCrits[client]=GetConVarBool(cvarCrits);
 	}
-	rageMax=KvGetNum(BossKV[Special[boss]], "ragemax", 100.0);
-	rageMin=KvGetNum(BossKV[Special[boss]], "ragemin", 100.0);
+	rageMax=KvGetNum(BossKV[Special[boss]], "ragemax", 100);
+	rageMin=KvGetNum(BossKV[Special[boss]], "ragemin", 100);
 	rageMode=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
