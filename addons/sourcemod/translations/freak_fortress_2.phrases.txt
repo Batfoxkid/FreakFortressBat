@@ -367,15 +367,15 @@
 		"#format"	"{1:i}"
 		"en"		"You have {1} detonations left!"
 	}
-	"Damage Spectate"
+	"Damage Spectate"	// HUD
 	{
 		"#format"	"{1:i},{2:N},{3:i}"
-		"en"		"Damage: %d-%N's Damage: %d"
+		"en"		"Damage: {1}-{2}'s Damage: {3}"
 	}
-	"Damage Self"
+	"Damage Self"	// HUD
 	{
 		"#format"	"{1:i}"
-		"en"		"Damage: %d"
+		"en"		"Damage: {1}"
 	}
 	"Caber"	// Hint
 	{
