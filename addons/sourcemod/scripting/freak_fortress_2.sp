@@ -1948,7 +1948,7 @@ public Action:Command_SetRage(client, args)
 			GetCmdArg(1, ragePCT, sizeof(ragePCT));
 			new Float:rageMeter=StringToFloat(ragePCT);
 			
-			BossCharge[Boss[client]][0]==rageMeter;
+			BossCharge[Boss[client]][0]=rageMeter;
 			CReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
 		}
@@ -1984,7 +1984,7 @@ public Action:Command_SetRage(client, args)
 			return Plugin_Handled;
 		}
 
-		BossCharge[Boss[target_list[target]]][0]==rageMeter;
+		BossCharge[Boss[target_list[target]]][0]=rageMeter;
 		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		CReplyToCommand(client, "{olive}[FF2]{default} Set %d rage to %s", RoundFloat(rageMeter), target_name);
 	}
@@ -5151,15 +5151,20 @@ public Action:MakeBoss(Handle:timer, any:boss)
 		AssignTeam(client, BossTeam);
 	}
 
-	BossRageDamage[boss]=ParseFormula(boss, "ragedamage", "1900", 1900);
-	/*BossRageDamage[boss]=KvGetNum(BossKV[Special[boss]], "ragedamage", 1900);
-	if(BossRageDamage[boss]<=0)
+	if(BossRageDamage[boss]==0)	// If 0, toggle infinite rage
 	{
-		decl String:bossName[64];
-		KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName));
-		PrintToServer("[FF2 Bosses] Warning: Boss %s's rage damage is 0 or below, setting to 1900", bossName);
-		BossRageDamage[boss]=1900;
-	}*/
+		InfiniteRageActive[client]=true;
+		CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+		BossRageDamage[boss]=1;
+	}
+	else if(BossRageDamage[boss]==-1)	// If -1, never rage
+	{
+		BossRageDamage[boss]=99999;
+	}
+	else	// Use formula or straight value
+	{
+		BossRageDamage[boss]=ParseFormula(boss, "ragedamage", "1900", 1900);
+	}
 
 	BossLivesMax[boss]=KvGetNum(BossKV[Special[boss]], "lives", 1);
 	if(BossLivesMax[boss]<=0)
@@ -7442,7 +7447,15 @@ public Action:BossTimer(Handle:timer)
 		}
 		validBoss=true;
 
-		SetEntPropFloat(client, Prop_Data, "m_flMaxspeed", BossSpeed[Special[boss]]+0.7*(100-BossHealth[boss]*100/BossLivesMax[boss]/BossHealthMax[boss]));
+		if(BossSpeed[Special[boss]]>0)	// Above 0, uses the classic FF2 method
+		{
+			SetEntPropFloat(client, Prop_Data, "m_flMaxspeed", BossSpeed[Special[boss]]+0.7*(100-BossHealth[boss]*100/BossLivesMax[boss]/BossHealthMax[boss]));
+		}
+		else if(BossSpeed[Special[boss]]==0 && GetEntityMoveType(client)!=MOVETYPE_NONE) // Is 0, freeze movement (some uses)
+		{
+			SetEntityMoveType(client, MOVETYPE_NONE);
+		}
+		// Below 0, TF2's default speeds and whatever attributes or conditions
 
 		if(BossHealth[boss]<=0 && IsPlayerAlive(client))  //Wat.  TODO:  Investigate
 		{
@@ -7455,7 +7468,7 @@ public Action:BossTimer(Handle:timer)
 			FF2_ShowSyncHudText(client, livesHUD, "%T", "Boss Lives Left", client, BossLives[boss], BossLivesMax[boss]);
 		}
 
-		if(RoundFloat(BossCharge[boss][0])==100.0)
+		if((RoundFloat(BossCharge[boss][0])>=100.0 && BossRageDamage[0]>0) || BossRageDamage[0]==0)	// ragedamage above 0 and full rage, or ragedamage is 0
 		{
 			if(IsFakeClient(client) && !(FF2flags[client] & FF2FLAG_BOTRAGE))
 			{
@@ -7490,7 +7503,7 @@ public Action:BossTimer(Handle:timer)
 				}
 			}
 		}
-		else
+		else if(BossRageDamage[0]>0)	// ragedamage above 0
 		{
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255);
 			FF2_ShowSyncHudText(client, rageHUD, "%T", "rage_meter", client, RoundFloat(BossCharge[boss][0]));
@@ -7699,7 +7712,7 @@ public Action:OnCallForMedic(client, const String:command[], args)
 		return Plugin_Continue;
 	}
 
-	if(RoundFloat(BossCharge[boss][0])==100)
+	if(RoundFloat(BossCharge[boss][0])>=100)
 	{
 		decl String:ability[10], String:lives[MAXRANDOMS][3];
 		for(new i=1; i<MAXRANDOMS; i++)
