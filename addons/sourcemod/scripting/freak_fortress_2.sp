@@ -4289,6 +4289,12 @@ PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char
 		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 		{
 			strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
+
+			// EmitSoundToClient is ok
+			// 'playgamesound' works great but doesn't stop previous BGM
+			// 'play' also works but clients use 'play' in console to stop BGMs
+			// # effects music slider but sometimes doesn't stop previous BGMs of all the above
+
 			ClientCommand(client, "playgamesound \"%s\"", music);
 			if(time>1)
 			{
@@ -7135,15 +7141,15 @@ public Action:ClientTimer(Handle:timer)
 				new observer=GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 				if(IsValidClient(observer) && !IsBoss(observer) && observer!=client)
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "%T", "Damage Spectate", client, Damage[client], observer, Damage[observer]);
+					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Spectate", Damage[client], observer, Damage[observer]);
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "%T", "Damage Self", client, Damage[client]);
+					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
 				}
 				continue;
 			}
-			FF2_ShowSyncHudText(client, rageHUD, "%T", "Damage Self", client, Damage[client]);
+			FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
 
 			new TFClassType:class=TF2_GetPlayerClass(client);
 			new weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
