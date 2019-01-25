@@ -313,7 +313,7 @@ new bool:selfKnockback[MAXPLAYERS+1];
 new bool:randomCrits[MAXPLAYERS+1];
 new Float:rageMax[MAXPLAYERS+1];
 new Float:rageMin[MAXPLAYERS+1];
-new Float:rageMode[MAXPLAYERS+1];
+new rageMode[MAXPLAYERS+1];
 
 enum Operators
 {
@@ -5219,9 +5219,9 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	{
 		randomCrits[client]=GetConVarBool(cvarCrits);
 	}
-	rageMax[boss]=KvGetNum(BossKV[Special[boss]], "ragemax", 100);
-	rageMin[boss]=KvGetNum(BossKV[Special[boss]], "ragemin", 100);
-	rageMode[boss]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
+	rageMax[client]=KvGetNum(BossKV[Special[boss]], "ragemax", 100.0);
+	rageMin[client]=KvGetNum(BossKV[Special[boss]], "ragemin", 100.0);
+	rageMode[client]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
