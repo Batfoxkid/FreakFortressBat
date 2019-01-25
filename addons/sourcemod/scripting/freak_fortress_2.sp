@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "3"
+#define FORK_STABLE_REVISION "4"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -220,6 +220,7 @@ new Handle:cvarSongInfo;
 new Handle:cvarDuoRandom;
 new Handle:cvarDuoMin;
 //new Handle:cvarNewDownload;
+new Handle:cvarDuoRestore;
 
 new Handle:FF2Cookies;
 
@@ -452,7 +453,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.0",
 	"1.17.1",
 	"1.17.2",
-	"1.17.3"
+	"1.17.3",
+	"1.17.4"
 };
 
 static const String:ff2versiondates[][]=
@@ -586,13 +588,21 @@ static const String:ff2versiondates[][]=
 	"January 13, 2019",		//1.17.0
 	"January 15, 2019",		//1.17.1
 	"January 19, 2019",		//1.17.2
-	"January 22, 2019"		//1.17.3
+	"January 22, 2019",		//1.17.3
+	"January 24, 2019"		//1.17.4
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 130:  //1.17.4
+		{
+			DrawPanelText(panel, "1) Disable boss/companion for a map duration (Batfoxkid)");
+			DrawPanelText(panel, "2) More multi-translation fixes (MAGNAT2645)");
+			DrawPanelText(panel, "3) Option to restore queue points after being a companion (Batfoxkid)");
+			DrawPanelText(panel, "4) Added FF2_GetForkVersion native (Batfoxkid)");
+		}
 		case 129:  //1.17.3
 		{
 			DrawPanelText(panel, "1) Last player glow cvar is now how many players are left (Batfoxkid)");
@@ -1543,6 +1553,8 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 	CreateNative("FF2_IsFF2Enabled", Native_IsEnabled);
 	CreateNative("FF2_GetFF2Version", Native_FF2Version);
+	CreateNative("FF2_GetForkVersion", Native_ForkVersion);
+	//CreateNative("FF2_GetForkName", Native_ForkName);
 	CreateNative("FF2_GetBossUserId", Native_GetBoss);
 	CreateNative("FF2_GetBossIndex", Native_GetIndex);
 	CreateNative("FF2_GetBossTeam", Native_GetTeam);
@@ -1612,6 +1624,7 @@ new String:xIncoming[MAXPLAYERS+1][700];
 #define TOGGLE_UNDEF -1
 #define TOGGLE_ON  1
 #define TOGGLE_OFF 2
+#define TOGGLE_TEMP 3
 
 new Handle:BossCookie=INVALID_HANDLE;
 new Handle:CompanionCookie=INVALID_HANDLE;
@@ -1682,8 +1695,9 @@ public OnPluginStart()
 	cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
 	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
 	cvarDuoRandom=CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
-	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 3.0);
+	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 1.0);
 	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
+	cvarDuoRestore=CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1755,6 +1769,7 @@ public OnPluginStart()
 	HookConVarChange(cvarDuoRandom, CvarChange);
 	HookConVarChange(cvarDuoMin, CvarChange);
 	//HookConVarChange(cvarNewDownload, CvarChange);
+	HookConVarChange(cvarDuoRestore, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -2434,6 +2449,14 @@ public DisableFF2()
 			MusicTimer[client]=INVALID_HANDLE;
 		}
 
+		/*if(ClientCookie[client] == TOGGLE_TEMP)
+		{
+			SetClientCookie(client, BossCookie, "-1");
+		}
+		if(ClientCookie2[client] == TOGGLE_TEMP)
+		{
+			SetClientCookie(client, CompanionCookie, "1");
+		}*/
 		bossHasReloadAbility[client]=false;
 		bossHasRightMouseAbility[client]=false;
 	}
@@ -3077,7 +3100,7 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 3:
 			{
-				if (GetConVarBool(cvarToggleBoss))	// Toggle Command?
+				if(GetConVarBool(cvarToggleBoss))	// Toggle Command?
 				{
 					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Toggle Command");
 				}
@@ -3093,7 +3116,7 @@ public Action:Timer_Announce(Handle:timer)
 			}
 			case 5:
 			{
-				if (GetConVarBool(cvarDuoBoss))		// Companion Toggle?
+				if(GetConVarBool(cvarDuoBoss))		// Companion Toggle?
 				{
 					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Companion Command");
 				}
@@ -3508,12 +3531,19 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
    				}
 			}
-			else if (ClientCookie[client] == TOGGLE_OFF)
+			else if (ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP)
 			{
 				//SetClientQueuePoints(client, -15);
 				decl String:nick[64];
 				GetClientName(client, nick, sizeof(nick));
-				CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+				if(ClientCookie[client] == TOGGLE_OFF)
+				{
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+				}
+				else
+				{
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
+				}
 			}
 			else if (ClientCookie[client] == TOGGLE_UNDEF || !ClientCookie[client])
 			{
@@ -3580,7 +3610,6 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 	if(bossHasReloadAbility[boss])
 	{
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
-		SetGlobalTransTarget(Boss[boss]);
 		if(bossHasRightMouseAbility[boss])
 		{
 			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T\n%T", "ff2_buttons_reload", Boss[boss], "ff2_buttons_rmb", Boss[boss]);
@@ -3593,7 +3622,6 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 	else if(bossHasRightMouseAbility[boss])
 	{
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
-		SetGlobalTransTarget(Boss[boss]);
 		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_rmb", Boss[boss]);
 	}
 	else
@@ -3707,7 +3735,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			{
 				BossCharge[boss][slot]=0.0;
 			}
-
 			bossHasReloadAbility[boss]=false;
 			bossHasRightMouseAbility[boss]=false;
 		}
@@ -3815,7 +3842,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	{
 		if(IsValidClient(client))
 		{
-			SetGlobalTransTarget(client);
 			//TODO:  Clear HUD text here
 			if(IsBoss(client))
 			{
@@ -3823,7 +3849,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T\n%T", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", client, Damage[client], "scores", client, RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
 	}
@@ -3835,7 +3861,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	{
 		if (client>0 && IsValidEntity(client) && IsClientConnected(client))
 		{
-			if (ClientCookie[client] == TOGGLE_OFF && GetConVarBool(cvarToggleBoss))
+			if ((ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss))
 			{
 				//FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
     				decl String:nick[64]; 
@@ -3877,6 +3903,8 @@ public Action:CompanionMenu(client, args)
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
 		Format(menuoption,sizeof(menuoption),"%t","Disable Companion Selection");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
+		Format(menuoption,sizeof(menuoption),"%t","Disable Companion Selection For Map");
+		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
 
 		SetMenuExitButton(menu, true);
 
@@ -3905,6 +3933,10 @@ public MenuHandlerCompanion(Handle:menu, MenuAction:action, param1, param2)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled");
 		}
+		else if(3 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
+		}
 	}
 	else if(action == MenuAction_End)
 	{
@@ -3929,6 +3961,8 @@ public Action:BossMenu(client, args)
 		Format(menuoption,sizeof(menuoption),"%t","Enable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points");
+		AddMenuItem(menu, "Boss Toggle", menuoption);
+		Format(menuoption,sizeof(menuoption),"%t","Disable Queue Points For This Map");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 
 		SetMenuExitButton(menu, true);
@@ -3957,6 +3991,10 @@ public MenuHandlerBoss(Handle:menu, MenuAction:action, param1, param2)
 		else if(2 == choice)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+		}
+		else if(3 == choice)
+		{
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 		}
 	} 
 	else if(action == MenuAction_End)
@@ -4002,7 +4040,7 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 	new add_points2[MaxClients+1];
 	for(new client=1; client<=MaxClients; client++)
 	{
-		if(ClientCookie[client] == TOGGLE_OFF) // Do not give queue points to those who have ff2 bosses disabled
+		if((ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Do not give queue points to those who have ff2 bosses disabled
 			continue;
 
 		if(IsValidClient(client))
@@ -4023,11 +4061,12 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 
 			if(IsBoss(client))
 			{
+				//CPrintToChatAll("%s Index: %d", client, GetBossIndex(client));
 				if(IsFakeClient(client))
 				{
 					botqueuepoints=0;
 				}
-				else
+				else if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 				{
 					add_points[client]=-GetClientQueuePoints(client);
 					add_points2[client]=add_points[client];
@@ -4250,6 +4289,12 @@ PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char
 		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 		{
 			strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
+
+			// EmitSoundToClient is ok
+			// 'playgamesound' works great but doesn't stop previous BGM
+			// 'play' also works but clients use 'play' in console to stop BGMs
+			// # effects music slider but sometimes doesn't stop previous BGMs of all the above
+
 			ClientCommand(client, "playgamesound \"%s\"", music);
 			if(time>1)
 			{
@@ -4525,7 +4570,7 @@ public Action:Command_SetMyBoss(client, args)
 			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-			if(strlen(companionName) && !DuoMin) continue;
+			if(strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))) continue;
 			if(StrContains(boss, name, false)!=-1)
 			{
 				IsBossSelected[client]=true;
@@ -4556,15 +4601,29 @@ public Action:Command_SetMyBoss(client, args)
 	Format(boss, sizeof(boss), "%t", "to0_random");
 	AddMenuItem(dMenu, boss, boss);
 	
-	if (GetConVarBool(cvarToggleBoss))
+	if(GetConVarBool(cvarToggleBoss))
 	{
-		Format(boss, sizeof(boss), "%t", ClientCookie[client] == TOGGLE_OFF ? "to0_enablepts" : "to0_disablepts");
+		if(ClientCookie[client] == TOGGLE_ON || ClientCookie[client] == TOGGLE_UNDEF)
+		{
+			Format(boss, sizeof(boss), "%t", "to0_disablepts");
+		}
+		else
+		{
+			Format(boss, sizeof(boss), "%t", "to0_enablepts");
+		}
 		AddMenuItem(dMenu, boss, boss);
 	}
 	
-	if (GetConVarBool(cvarDuoBoss))
+	if(GetConVarBool(cvarDuoBoss))
 	{
-		Format(boss, sizeof(boss), "%t", ClientCookie2[client] == TOGGLE_OFF ? "to0_enableduo" : "to0_disableduo");
+		if(ClientCookie2[client] == TOGGLE_ON || ClientCookie2[client] == TOGGLE_UNDEF)
+		{
+			Format(boss, sizeof(boss), "%t", "to0_disableduo");
+		}
+		else
+		{
+			Format(boss, sizeof(boss), "%t", "to0_enableduo");
+		}
 		AddMenuItem(dMenu, boss, boss);
 	}
 	
@@ -4579,7 +4638,7 @@ public Action:Command_SetMyBoss(client, args)
 		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
 		if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-		if(strlen(companionName) && !DuoMin) continue;
+		if(strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))) continue;
 		
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		AddMenuItem(dMenu, boss, boss);
@@ -4818,7 +4877,7 @@ public Action:MessageTimer(Handle:timer)
 			}
 			else
 			{
-				strcopy(lives, 2, "");
+				lives[0]='\0';
 			}
 
 			Format(text, sizeof(text), "%s\n%t", text, "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
@@ -5216,7 +5275,11 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	EquipBoss(boss);
 	KSpreeCount[boss]=0;
 	BossCharge[boss][0]=0.0;
-	SetClientQueuePoints(client, 0);
+	//CPrintToChatAll("%s Index: %d", client, GetBossIndex(client));
+	if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
+	{
+		SetClientQueuePoints(client, 0);
+	}
 	return Plugin_Continue;
 }
 
@@ -6448,7 +6511,7 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 				}
 				else
 				{
-					strcopy(lives, 2, "");
+					lives[0]='\0';
 				}
 				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
@@ -6991,6 +7054,14 @@ public OnClientDisconnect(client)
 		KillTimer(MusicTimer[client]);
 		MusicTimer[client]=INVALID_HANDLE;
 	}
+	if(ClientCookie[client] == TOGGLE_TEMP)
+	{
+		SetClientCookie(client, BossCookie, "-1");
+	}
+	if(ClientCookie2[client] == TOGGLE_TEMP)
+	{
+		SetClientCookie(client, CompanionCookie, "1");
+	}
 }
 
 public Action:OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
@@ -7070,15 +7141,15 @@ public Action:ClientTimer(Handle:timer)
 				new observer=GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 				if(IsValidClient(observer) && !IsBoss(observer) && observer!=client)
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "Damage: %d-%N's Damage: %d", Damage[client], observer, Damage[observer]);
+					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Spectate", Damage[client], observer, Damage[observer]);
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "Damage: %d", Damage[client]);
+					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
 				}
 				continue;
 			}
-			FF2_ShowSyncHudText(client, rageHUD, "Damage: %d", Damage[client]);
+			FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
 
 			new TFClassType:class=TF2_GetPlayerClass(client);
 			new weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -9410,7 +9481,7 @@ stock GetClientWithMostQueuePoints(bool:omit[])
 	{
 		if(IsValidClient(client) && GetClientQueuePoints(client)>=GetClientQueuePoints(winner) && !omit[client])
 		{
-			if(ClientCookie[client]==TOGGLE_OFF && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
+			if((ClientCookie[client]==TOGGLE_OFF || ClientCookie[client]==TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
 				continue;
 			
 			if(SpecForceBoss || GetClientTeam(client)>_:TFTeam_Spectator)
@@ -9443,7 +9514,7 @@ stock GetRandomValidClient(bool:omit[])
 	{
 		if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
 		{
-			if(ClientCookie2[client]==TOGGLE_OFF && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
+			if((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
 				continue;
 			
 			if((SpecForceBoss && !GetConVarBool(cvarDuoRandom)) || GetClientTeam(client)>_:TFTeam_Spectator)
@@ -10188,8 +10259,7 @@ public Action:QueuePanelCmd(client, args)
 	new bool:added[MaxClients+1];
 
 	new Handle:panel=CreatePanel();
-	SetGlobalTransTarget(client);
-	Format(text, sizeof(text), "%t", "thequeue");  //"Boss Queue"
+	Format(text, sizeof(text), "%T", "thequeue", client);  //"Boss Queue"
 	SetPanelTitle(panel, text);
 	for(new boss; boss<=MaxClients; boss++)  //Add the current bosses to the top of the list
 	{
@@ -10320,21 +10390,20 @@ public Action:TurnToZeroPanel(client, target)
 
 	new Handle:panel=CreatePanel();
 	decl String:text[128];
-	SetGlobalTransTarget(client);
 	if(client==target)
 	{
-		Format(text, sizeof(text), "%t", "to0_title");  //Do you really want to set your queue points to 0?
+		Format(text, sizeof(text), "%T", "to0_title", client);  //Do you really want to set your queue points to 0?
 	}
 	else
 	{
-		Format(text, sizeof(text), "%t", "to0_title_admin", target);  //Do you really want to set {1}'s queue points to 0?
+		Format(text, sizeof(text), "%T", "to0_title_admin", client, target);  //Do you really want to set {1}'s queue points to 0?
 	}
 
 	PrintToChat(client, text);
 	SetPanelTitle(panel, text);
-	Format(text, sizeof(text), "%t", "Yes");
+	Format(text, sizeof(text), "%T", "Yes", client);
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "No");
+	Format(text, sizeof(text), "%T", "No", client);
 	DrawPanelItem(panel, text);
 	shortname[client]=target;
 	SendPanelToClient(panel, client, TurnToZeroPanelH, MENU_TIME_FOREVER);
@@ -11592,6 +11661,31 @@ public Native_FF2Version(Handle:plugin, numParams)
 		return true;
 	#endif
 }
+
+public Native_ForkVersion(Handle:plugin, numParams)
+{
+	new fversion[3];
+	fversion[0]=StringToInt(FORK_MAJOR_REVISION);
+	fversion[1]=StringToInt(FORK_MINOR_REVISION);
+	fversion[2]=StringToInt(FORK_STABLE_REVISION);
+	SetNativeArray(1, fversion, sizeof(fversion));
+	#if !defined FORK_SUB_REVISION
+		return false;
+	#else
+		return true;
+	#endif
+}
+
+/*public Native_ForkName(Handle:plugin, numParams)
+{
+	decl String:fname[64];
+	fname=FORK_SUB_REVISION;
+	#if !defined FORK_SUB_REVISION
+		return false;
+	#else
+		return fname;
+	#endif
+}*/
 
 public Native_GetBoss(Handle:plugin, numParams)
 {

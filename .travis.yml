@@ -9,8 +9,9 @@ addons:
 
 # Set the build environment
 env:
-    - SMVERSION=1.8 # Stable
-    - SMVERSION=1.9 # Unstable
+    - SMVERSION=1.7 # Legacy
+    - SMVERSION=1.8 # Legacy
+    - SMVERSION=1.9 # Stable
 
 # And compile!
 install:
@@ -22,12 +23,8 @@ before_script:
     - wget "http://www.doctormckay.com/download/scripting/include/morecolors.inc" -O include/morecolors.inc
     - wget "https://raw.githubusercontent.com/asherkin/SteamTools/master/plugin/steamtools.inc" -O include/steamtools.inc
     - wget "https://raw.githubusercontent.com/Flyflo/SM-Goomba-Stomp/master/addons/sourcemod/scripting/include/goomba.inc" -O include/goomba.inc
-    - wget "https://forums.alliedmods.net/attachment.php?attachmentid=115795&d=1360508618" -O include/rtd.inc
     - wget "https://raw.githubusercontent.com/Phil25/RTD/master/scripting/include/rtd2.inc" -O include/rtd2.inc
     - wget "https://forums.alliedmods.net/attachment.php?attachmentid=116849&d=1377667508" -O include/tf2attributes.inc
-
-    # RTD is particularly annoying since it doesn't handle optional plugin dependencies correctly
-    - sed -i'' 's/required = 1/#if defined REQUIRE_PLUGIN\nrequired = 1\n\#else\nrequired = 0/' include/rtd.inc
 
     - chmod +x spcomp
     - mkdir compiled

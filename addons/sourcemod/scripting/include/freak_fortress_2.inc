@@ -41,6 +41,14 @@ native bool:FF2_IsFF2Enabled();
 native FF2_GetFF2Version(version[]=0);
 
 /**
+ * Gets the version of the FF2 fork running on the server
+ *
+ * @param version   An array of size 3 that will contain the major, minor, and stable version numbers respectively
+ * @return			True if the server has a sub name defined, false otherwise
+ */
+native FF2_GetForkVersion(fversion[]=0);
+
+/**
  * Gets current round state
  *
  * @return	0 - in setup
@@ -592,6 +600,7 @@ public __pl_FF2_SetNTVOptional()
 {
 	MarkNativeAsOptional("FF2_IsFF2Enabled");
 	MarkNativeAsOptional("FF2_GetFF2Version");
+	MarkNativeAsOptional("FF2_GetForkVersion");
 	MarkNativeAsOptional("FF2_GetBossUserId");
 	MarkNativeAsOptional("FF2_GetBossIndex");
 	MarkNativeAsOptional("FF2_GetBossTeam");
