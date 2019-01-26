@@ -1,3 +1,6 @@
+## NOTICE: Updates may be temporarily stalled due to recent attacks on Gamers Freak Fortress
+## Updates are still in the works, just not on GitHub. Sorry for any inconvenience.
+
 # Ｂａｔ'ｓ　Ｆｒｅａｋ　Ｆｏｒｔｒｅｓｓ
 ## A mixture of various popular plugins for FF2 and extra setting to give the best out of bosses and small community servers
 
@@ -26,5 +29,5 @@ https://steamcommunity.com/profiles/76561198049884052/ | https://steamcommunity.
 Deathreus for the current boss in server name                                                                 
 https://github.com/Deathreus | https://github.com/Deathreus/FF2-Official
 
-And the FF2 team (that I would like to see work on the offical more)                                          
+And the FF2 team (that I would like to see work on the official more)                                          
 https://github.com/50DKP/FF2-Official
