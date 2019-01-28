@@ -245,7 +245,7 @@ native bool:FF2_HasAbility(boss, const String:pluginName[], const String:ability
  *							2 - by reload button
  * @noreturn
  */
-native FF2_DoAbility(boss, const String:pluginName[], const String:abilityName[], slot, buttonMode=0, rageMode=0, rageMin=100);
+native FF2_DoAbility(boss, const String:pluginName[], const String:abilityName[], slot, buttonMode=0);
 
 /**
  * Gets the integer value of an ability argument
