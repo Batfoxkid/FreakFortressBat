@@ -175,7 +175,6 @@ new Handle:cvarEnabled;
 new Handle:cvarAliveToEnable;
 new Handle:cvarPointType;
 new Handle:cvarCrits;
-new Handle:cvarFirstRound;  //DEPRECATED
 new Handle:cvarArenaRounds;
 new Handle:cvarCircuitStun;
 new Handle:cvarSpecForceBoss;
@@ -1651,7 +1650,6 @@ public OnPluginStart()
 	cvarAnnounce=CreateConVar("ff2_announce", "120", "Amount of seconds to wait until FF2 info is displayed again.  0 to disable", _, true, 0.0);
 	cvarEnabled=CreateConVar("ff2_enabled", "1", "0-Disable FF2 (WHY?), 1-Enable FF2", FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	cvarCrits=CreateConVar("ff2_crits", "0", "Can the boss get random crits?", _, true, 0.0, true, 1.0);
-	cvarFirstRound=CreateConVar("ff2_first_round", "-1", "This cvar is deprecated.  Please use 'ff2_arena_rounds' instead by setting this cvar to -1", _, true, -1.0, true, 1.0);  //DEPRECATED
 	cvarArenaRounds=CreateConVar("ff2_arena_rounds", "1", "Number of rounds to make arena before switching to FF2 (helps for slow-loading players)", _, true, 0.0);
 	cvarCircuitStun=CreateConVar("ff2_circuit_stun", "0", "Amount of seconds the Short Circuit stuns the boss for.  0 to disable", _, true, 0.0);
 	cvarCountdownPlayers=CreateConVar("ff2_countdown_players", "1", "Amount of players until the countdown timer starts (0 to disable)", _, true, 0.0, true, 34.0);
@@ -2355,14 +2353,7 @@ public EnableFF2()
 	PointsDamage=GetConVarInt(cvarPointsDamage);
 	PointsMin=GetConVarInt(cvarPointsMin);
 	PointsExtra=GetConVarInt(cvarPointsExtra);
-	if(GetConVarInt(cvarFirstRound)!=-1)
-	{
-		arenaRounds=GetConVarInt(cvarFirstRound) ? 0 : 1;
-	}
-	else
-	{
-		arenaRounds=GetConVarInt(cvarArenaRounds);
-	}
+	arenaRounds=GetConVarInt(cvarArenaRounds);
 	circuitStun=GetConVarFloat(cvarCircuitStun);
 	countdownHealth=GetConVarInt(cvarCountdownHealth);
 	countdownPlayers=GetConVarInt(cvarCountdownPlayers);
@@ -2948,13 +2939,6 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarAliveToEnable)
 	{
 		AliveToEnable=StringToInt(newValue);
-	}
-	else if(convar==cvarFirstRound)  //DEPRECATED
-	{
-		if(StringToInt(newValue)!=-1)
-		{
-			arenaRounds=StringToInt(newValue) ? 0 : 1;
-		}
 	}
 	else if(convar==cvarArenaRounds)
 	{
