@@ -1647,14 +1647,14 @@ public OnPluginStart()
 	cvarVersion=CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
 	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time", _, true, 0.0, true, 1.0);
 	cvarPointDelay=CreateConVar("ff2_point_delay", "6", "Seconds to add to the point delay per player");
-	cvarAliveToEnable=CreateConVar("ff2_point_alive", "5", "The control point will only activate when there are this many people or less left alive");
+	cvarAliveToEnable=CreateConVar("ff2_point_alive", "5", "The control point will only activate when there are this many people or less left alive", _, true, 0.0, true, 34.0);
 	cvarAnnounce=CreateConVar("ff2_announce", "120", "Amount of seconds to wait until FF2 info is displayed again.  0 to disable", _, true, 0.0);
 	cvarEnabled=CreateConVar("ff2_enabled", "1", "0-Disable FF2 (WHY?), 1-Enable FF2", FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	cvarCrits=CreateConVar("ff2_crits", "0", "Can the boss get random crits?", _, true, 0.0, true, 1.0);
 	cvarFirstRound=CreateConVar("ff2_first_round", "-1", "This cvar is deprecated.  Please use 'ff2_arena_rounds' instead by setting this cvar to -1", _, true, -1.0, true, 1.0);  //DEPRECATED
 	cvarArenaRounds=CreateConVar("ff2_arena_rounds", "1", "Number of rounds to make arena before switching to FF2 (helps for slow-loading players)", _, true, 0.0);
 	cvarCircuitStun=CreateConVar("ff2_circuit_stun", "0", "Amount of seconds the Short Circuit stuns the boss for.  0 to disable", _, true, 0.0);
-	cvarCountdownPlayers=CreateConVar("ff2_countdown_players", "1", "Amount of players until the countdown timer starts (0 to disable)", _, true, 0.0);
+	cvarCountdownPlayers=CreateConVar("ff2_countdown_players", "1", "Amount of players until the countdown timer starts (0 to disable)", _, true, 0.0, true, 34.0);
 	cvarCountdownTime=CreateConVar("ff2_countdown", "120", "Amount of seconds until the round ends in a stalemate");
 	cvarCountdownHealth=CreateConVar("ff2_countdown_health", "2000", "Amount of health the Boss has remaining until the countdown stops", _, true, 0.0);
 	cvarCountdownResult=CreateConVar("ff2_countdown_result", "0", "0-Kill players when the countdown ends, 1-End the round in a stalemate", _, true, 0.0, true, 1.0);
@@ -1662,7 +1662,7 @@ public OnPluginStart()
 	cvarEnableEurekaEffect=CreateConVar("ff2_enable_eureka", "0", "0-Disable the Eureka Effect, 1-Enable the Eureka Effect", _, true, 0.0, true, 1.0);
 	cvarForceBossTeam=CreateConVar("ff2_force_team", "0", "0-Boss is always on Blu, 1-Boss is on a random team each round, 2-Boss is always on Red", _, true, 0.0, true, 3.0);
 	cvarHealthBar=CreateConVar("ff2_health_bar", "0", "0-Disable the health bar, 1-Show the health bar", _, true, 0.0, true, 1.0);
-	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "How many players left before outlining everyone", _, true, 0.0, true, 32.0);
+	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "How many players left before outlining everyone", _, true, 0.0, true, 34.0);
 	cvarBossTeleporter=CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
 	cvarBossSuicide=CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
 	cvarPreroundBossDisconnect=CreateConVar("ff2_replace_disconnected_boss", "0", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
@@ -1698,7 +1698,7 @@ public OnPluginStart()
 	cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
 	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
 	cvarDuoRandom=CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
-	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 1.0);
+	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 1.0, true, 34.0);
 	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
 	cvarDuoRestore=CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
 
@@ -7541,7 +7541,7 @@ public Action:BossTimer(Handle:timer)
 				{
 					decl String:ability_name[64];
 					KvGetString(BossKV[Special[boss]], "name", ability_name, sizeof(ability_name));
-					UseAbility(ability_name, plugin_name, boss, slot, buttonmode);
+					UseAbility(ability_name, plugin_name, boss, slot, buttonmode, rageMode[client], rageMin[client]);
 				}
 				else
 				{
@@ -7552,7 +7552,7 @@ public Action:BossTimer(Handle:timer)
 						{
 							decl String:ability_name[64];
 							KvGetString(BossKV[Special[boss]], "name", ability_name, sizeof(ability_name));
-							UseAbility(ability_name, plugin_name, boss, slot, buttonmode);
+							UseAbility(ability_name, plugin_name, boss, slot, buttonmode, rageMode[client], rageMin[client]);
 							break;
 						}
 					}
@@ -11526,7 +11526,7 @@ stock FindEntityByClassname2(startEnt, const String:classname[])
 	return FindEntityByClassname(startEnt, classname);
 }
 
-bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, slot, buttonMode=0)
+bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, slot, buttonMode=0, rageMode=0, rageMin=100)
 {
 	new bool:enabled=true;
 	Call_StartForward(PreAbility);
@@ -11557,11 +11557,11 @@ bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, s
 		FF2flags[Boss[boss]]&=~FF2FLAG_BOTRAGE;
 		Call_PushCell(3);  //Status - we're assuming here a rage ability will always be in use if it gets called
 		Call_Finish(action);
-		if(rageMode[boss]==1)
+		if(rageMode==1)
 		{
-			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin[boss];
+			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin;
 		}
-		else if(rageMode[boss]==0)
+		else if(rageMode==0)
 		{
 			BossCharge[boss][slot]=0.0;
 		}
@@ -11914,7 +11914,7 @@ public Native_DoAbility(Handle:plugin, numParams)
 	decl String:ability_name[64];
 	GetNativeString(2,plugin_name,64);
 	GetNativeString(3,ability_name,64);
-	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
+	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5), GetNativeCell(6), GetNativeCell(7));
 }
 
 public Native_GetAbilityArgument(Handle:plugin, numParams)
