@@ -1,6 +1,3 @@
-## NOTICE: Updates may be temporarily stalled due to recent attacks on Gamers Freak Fortress
-## Updates are still in the works, just not on GitHub. Sorry for any inconvenience.
-
 # Ｂａｔ'ｓ　Ｆｒｅａｋ　Ｆｏｒｔｒｅｓｓ
 ## A mixture of various popular plugins for FF2 and extra setting to give the best out of bosses and small community servers
 
