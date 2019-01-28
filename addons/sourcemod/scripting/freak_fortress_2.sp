@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "4"
+#define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Bat's Edit"
 
 #define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
@@ -456,7 +456,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.1",
 	"1.17.2",
 	"1.17.3",
-	"1.17.4"
+	"1.17.4",
+	"1.17.5"
 };
 
 static const String:ff2versiondates[][]=
@@ -591,13 +592,20 @@ static const String:ff2versiondates[][]=
 	"January 15, 2019",		//1.17.1
 	"January 19, 2019",		//1.17.2
 	"January 22, 2019",		//1.17.3
-	"January 24, 2019"		//1.17.4
+	"January 24, 2019",		//1.17.4
+	"January 28, 2019"		//1.17.5
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 131:  //1.17.5
+		{
+			DrawPanelText(panel, "1) Rages can be toggled infinite or disabled completely (Batfoxkid)");
+			DrawPanelText(panel, "2) Speeds can be toggled a stand-still or not handled by FF2 (Batfoxkid)");
+			DrawPanelText(panel, "3) Added minimum, maximum, and mode rage percent settings (Batfoxkid)");
+		}
 		case 130:  //1.17.4
 		{
 			DrawPanelText(panel, "1) Disable boss/companion for a map duration (Batfoxkid)");
@@ -4520,7 +4528,6 @@ public SkipBossPanelH(Handle:menu, MenuAction:action, param1, param2)
 	return;
 }
 
-
 public Action:Command_SetMyBoss(client, args)
 {
 	if (!client)
@@ -6032,7 +6039,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 						}
 					}
 					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
-					{						
+					{
 						int wepIndex;
 						char wepIndexes[768][32];
 						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
