@@ -129,9 +129,9 @@ new RedAlivePlayers;
 new BlueAlivePlayers;
 new RoundCount;
 new ClassKill=0;
-new Float:rageMax;
-new Float:rageMin;
-new rageMode;
+new Float:rageMax[MAXPLAYERS+1];
+new Float:rageMin[MAXPLAYERS+1];
+new rageMode[MAXPLAYERS+1];
 new Special[MAXPLAYERS+1];
 new Incoming[MAXPLAYERS+1];
 
@@ -2087,7 +2087,7 @@ public Action:Command_SetInfiniteRage(client, args)
 			if(!InfiniteRageActive[client])
 			{
 				InfiniteRageActive[client]=true;
-				BossCharge[Boss[client]][0]=rageMax;
+				BossCharge[Boss[client]][0]=rageMax[client];
 				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infiite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
@@ -2131,7 +2131,7 @@ public Action:Command_SetInfiniteRage(client, args)
 		if(!InfiniteRageActive[target_list[target]])
 		{
 			InfiniteRageActive[target_list[target]]=true;
-			BossCharge[Boss[target_list[target]]][0]=rageMax;
+			BossCharge[Boss[target_list[target]]][0]=rageMax[target_list[target]];
 			CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
 			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
@@ -2157,7 +2157,7 @@ public Action:Timer_InfiniteRage(Handle:timer, any:client)
 	{
 		return Plugin_Stop;
 	}
-	BossCharge[Boss[client]][0]=rageMax;
+	BossCharge[Boss[client]][0]=rageMax[client];
 	return Plugin_Continue;
 }
 
@@ -5219,9 +5219,9 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	{
 		randomCrits[client]=GetConVarBool(cvarCrits);
 	}
-	rageMax=float(KvGetNum(BossKV[Special[boss]], "ragemax", 100));
-	rageMin=float(KvGetNum(BossKV[Special[boss]], "ragemin", 100));
-	rageMode=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
+	rageMax[client]=float(KvGetNum(BossKV[Special[boss]], "ragemax", 100));
+	rageMin[client]=float(KvGetNum(BossKV[Special[boss]], "ragemin", 100));
+	rageMode[client]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
@@ -7475,7 +7475,7 @@ public Action:BossTimer(Handle:timer)
 			FF2_ShowSyncHudText(client, livesHUD, "%T", "Boss Lives Left", client, BossLives[boss], BossLivesMax[boss]);
 		}
 
-		if((RoundFloat(BossCharge[boss][0])>=rageMin && BossRageDamage[0]>1 && BossRageDamage[0]<99999) || BossRageDamage[0]==1)	// ragedamage above 1 and below 99999 and full rage, or ragedamage is 1
+		if((RoundFloat(BossCharge[boss][0])>=rageMin[client] && BossRageDamage[0]>1 && BossRageDamage[0]<99999) || BossRageDamage[0]==1)	// ragedamage above 1 and below 99999 and full rage, or ragedamage is 1
 		{
 			if(IsFakeClient(client) && !(FF2flags[client] & FF2FLAG_BOTRAGE))
 			{
@@ -7603,12 +7603,12 @@ public Action:BossTimer(Handle:timer)
 			}
 		}
 
-		if(BossCharge[boss][0]<rageMax)
+		if(BossCharge[boss][0]<rageMax[client])
 		{
 			BossCharge[boss][0]+=OnlyScoutsLeft()*0.2;
-			if(BossCharge[boss][0]>rageMax)
+			if(BossCharge[boss][0]>rageMax[client])
 			{
-				BossCharge[boss][0]=rageMax;
+				BossCharge[boss][0]=rageMax[client];
 			}
 		}
 
@@ -7706,7 +7706,7 @@ public Action:OnCallForMedic(client, const String:command[], args)
 	}
 
 	new boss=GetBossIndex(client);
-	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || BossRageDamage[0]>=99999 || rageMode==2)
+	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || BossRageDamage[0]>=99999 || rageMode[client]==2)
 	{
 		return Plugin_Continue;
 	}
@@ -7719,7 +7719,7 @@ public Action:OnCallForMedic(client, const String:command[], args)
 		return Plugin_Continue;
 	}
 
-	if(RoundFloat(BossCharge[boss][0])>=rageMin)
+	if(RoundFloat(BossCharge[boss][0])>=rageMin[client])
 	{
 		decl String:ability[10], String:lives[MAXRANDOMS][3];
 		for(new i=1; i<MAXRANDOMS; i++)
@@ -8079,12 +8079,12 @@ public Action:OnObjectDeflected(Handle:event, const String:name[], bool:dontBroa
 	}
 
 	new boss=GetBossIndex(GetClientOfUserId(GetEventInt(event, "ownerid")));
-	if(boss!=-1 && BossCharge[boss][0]<rageMax)
+	if(boss!=-1 && BossCharge[boss][0]<rageMax[boss])
 	{
-		BossCharge[boss][0]+=(rageMax*7/rageMin);  //TODO: Allow this to be customizable
-		if(BossCharge[boss][0]>rageMax)
+		BossCharge[boss][0]+=(rageMax[boss]*7/rageMin[boss]);  //TODO: Allow this to be customizable
+		if(BossCharge[boss][0]>rageMax[boss])
 		{
-			BossCharge[boss][0]=rageMax;
+			BossCharge[boss][0]=rageMax[boss];
 		}
 	}
 	return Plugin_Continue;
@@ -8440,9 +8440,9 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
-	if(BossCharge[boss][0]>rageMax)
+	if(BossCharge[boss][0]>rageMax[client])
 	{
-		BossCharge[boss][0]=rageMax;
+		BossCharge[boss][0]=rageMax[client];
 	}
 	return Plugin_Continue;
 }
@@ -8627,7 +8627,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							}
 							else
 							{
-								if(index!=230 || BossCharge[boss][0]>(rageMax*90/rageMin))  //Sydney Sleeper
+								if(index!=230 || BossCharge[boss][0]>(rageMax[client]*90/rageMin[client]))  //Sydney Sleeper
 								{
 									damage*=SniperDamage;
 								}
@@ -9091,9 +9091,9 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							damage*=5;
 						}
 
-						if(BossCharge[boss][0]>rageMax)
+						if(BossCharge[boss][0]>rageMax[client])
 						{
-							BossCharge[boss][0]=rageMax;
+							BossCharge[boss][0]=rageMax[client];
 						}
 						return Plugin_Changed;
 					}
@@ -9104,9 +9104,9 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				}
 			}
 
-			if(BossCharge[boss][0]>rageMax)
+			if(BossCharge[boss][0]>rageMax[client])
 			{
-				BossCharge[boss][0]=rageMax;
+				BossCharge[boss][0]=rageMax[client];
 			}
 		}
 		else
@@ -11557,11 +11557,11 @@ bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, s
 		FF2flags[Boss[boss]]&=~FF2FLAG_BOTRAGE;
 		Call_PushCell(3);  //Status - we're assuming here a rage ability will always be in use if it gets called
 		Call_Finish(action);
-		if(rageMode==1)
+		if(rageMode[boss]==1)
 		{
-			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin;
+			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin[boss];
 		}
-		else if(rageMode==0)
+		else if(rageMode[boss]==0)
 		{
 			BossCharge[boss][slot]=0.0;
 		}
