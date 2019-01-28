@@ -7541,7 +7541,7 @@ public Action:BossTimer(Handle:timer)
 				{
 					decl String:ability_name[64];
 					KvGetString(BossKV[Special[boss]], "name", ability_name, sizeof(ability_name));
-					UseAbility(ability_name, plugin_name, boss, slot, buttonmode, rageMode[client], rageMin[client]);
+					UseAbility(ability_name, plugin_name, boss, slot, buttonmode);
 				}
 				else
 				{
@@ -7552,7 +7552,7 @@ public Action:BossTimer(Handle:timer)
 						{
 							decl String:ability_name[64];
 							KvGetString(BossKV[Special[boss]], "name", ability_name, sizeof(ability_name));
-							UseAbility(ability_name, plugin_name, boss, slot, buttonmode, rageMode[client], rageMin[client]);
+							UseAbility(ability_name, plugin_name, boss, slot, buttonmode);
 							break;
 						}
 					}
@@ -11526,8 +11526,9 @@ stock FindEntityByClassname2(startEnt, const String:classname[])
 	return FindEntityByClassname(startEnt, classname);
 }
 
-bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, slot, buttonMode=0, rageMode=0, rageMin=100)
+bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, slot, buttonMode=0)
 {
+	new client=Boss[boss];
 	new bool:enabled=true;
 	Call_StartForward(PreAbility);
 	Call_PushCell(boss);
@@ -11557,11 +11558,11 @@ bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, s
 		FF2flags[Boss[boss]]&=~FF2FLAG_BOTRAGE;
 		Call_PushCell(3);  //Status - we're assuming here a rage ability will always be in use if it gets called
 		Call_Finish(action);
-		if(rageMode==1)
+		if(rageMode[client]==1)
 		{
-			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin;
+			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin[client];
 		}
-		else if(rageMode==0)
+		else if(rageMode[client]==0)
 		{
 			BossCharge[boss][slot]=0.0;
 		}
@@ -11914,7 +11915,7 @@ public Native_DoAbility(Handle:plugin, numParams)
 	decl String:ability_name[64];
 	GetNativeString(2,plugin_name,64);
 	GetNativeString(3,ability_name,64);
-	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5), GetNativeCell(6), GetNativeCell(7));
+	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
 public Native_GetAbilityArgument(Handle:plugin, numParams)
