@@ -1,5 +1,5 @@
 /*
-               << Freak Fortress 2 >>
+                << Freak Fortress 2 >>
 
      Original Author of VSH and FF2, Rainbolt Dash
         Programmer, modeller, mapper, painter
@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 */
 #define MAJOR_REVISION "1"
 #define MINOR_REVISION "10"
-#define STABLE_REVISION "14"
+#define STABLE_REVISION "15"
 
 #define UPDATE_URL ""
 
@@ -97,7 +97,6 @@ last time or to encourage others to do the same.
 #define HEALTHBAR_PROPERTY "m_iBossHealthPercentageByte"
 #define HEALTHBAR_MAX 255
 #define MONOCULUS "eyeball_boss"
-//#define DISABLED_PERKS "toxic,noclip,uber,ammo,instant,jump,tinyplayer"
 
 // Config file paths
 #define ConfigPath "configs/freak_fortress_2"
@@ -170,6 +169,7 @@ new cursongId[MAXPLAYERS+1]=1;
 
 new Handle:cvarVersion;
 new Handle:cvarPointDelay;
+new Handle:cvarPointTime;
 new Handle:cvarAnnounce;
 new Handle:cvarEnabled;
 new Handle:cvarAliveToEnable;
@@ -237,6 +237,7 @@ new Handle:infoHUD;
 new bool:Enabled=true;
 new bool:Enabled2=true;
 new PointDelay=6;
+new PointTime=45;
 new Float:Announce=120.0;
 new AliveToEnable=5;
 new PointType;
@@ -283,8 +284,7 @@ new mp_teams_unbalance_limit;
 new tf_arena_first_blood;
 new mp_forcecamera;
 new tf_dropped_weapon_lifetime;
-new Float:tf_feign_death_activate_damage_scale;
-new Float:tf_feign_death_damage_scale;
+new String:mp_humans_must_join_team[16];
 
 new Handle:cvarNextmap;
 new bool:areSubPluginsEnabled;
@@ -593,7 +593,7 @@ static const String:ff2versiondates[][]=
 	"January 19, 2019",		//1.17.2
 	"January 22, 2019",		//1.17.3
 	"January 24, 2019",		//1.17.4
-	"January 28, 2019"		//1.17.5
+	"January 29, 2019"		//1.17.5
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
@@ -605,6 +605,9 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "1) Rages can be toggled infinite or disabled completely (Batfoxkid)");
 			DrawPanelText(panel, "2) Speeds can be toggled a stand-still or not handled by FF2 (Batfoxkid)");
 			DrawPanelText(panel, "3) Added minimum, maximum, and mode rage percent settings (Batfoxkid)");
+			DrawPanelText(panel, "4) Imported official 1.10.15 commits (naydef/Wliu)");
+			DrawPanelText(panel, "5) Control point and round time can be done per-boss (Batfoxkid)");
+			DrawPanelText(panel, "6) Allowed both time and alive for control points (Batfoxkid)");
 		}
 		case 130:  //1.17.4
 		{
@@ -1652,8 +1655,9 @@ public OnPluginStart()
 	LogMessage("===Freak Fortress 2 Initializing-v%s===", PLUGIN_VERSION);
 
 	cvarVersion=CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
-	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time", _, true, 0.0, true, 1.0);
-	cvarPointDelay=CreateConVar("ff2_point_delay", "6", "Seconds to add to the point delay per player");
+	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
+	cvarPointDelay=CreateConVar("ff2_point_delay", "6", "Seconds to add to ff2_point_time per player");
+	cvarPointTime=CreateConVar("ff2_point_time", "45", "Time before unlocking the control point");
 	cvarAliveToEnable=CreateConVar("ff2_point_alive", "5", "The control point will only activate when there are this many people or less left alive", _, true, 0.0, true, 34.0);
 	cvarAnnounce=CreateConVar("ff2_announce", "120", "Amount of seconds to wait until FF2 info is displayed again.  0 to disable", _, true, 0.0);
 	cvarEnabled=CreateConVar("ff2_enabled", "1", "0-Disable FF2 (WHY?), 1-Enable FF2", FCVAR_DONTRECORD, true, 0.0, true, 1.0);
@@ -1737,7 +1741,7 @@ public OnPluginStart()
 	HookConVarChange(cvarPointDelay, CvarChange);
 	HookConVarChange(cvarAnnounce, CvarChange);
 	HookConVarChange(cvarPointType, CvarChange);
-	HookConVarChange(cvarPointDelay, CvarChange);
+	HookConVarChange(cvarPointTime, CvarChange);
 	HookConVarChange(cvarAliveToEnable, CvarChange);
 	HookConVarChange(cvarCrits, CvarChange);
 	HookConVarChange(cvarCircuitStun, CvarChange);
@@ -2269,8 +2273,7 @@ public OnConfigsExecuted()
 	tf_arena_first_blood=GetConVarInt(FindConVar("tf_arena_first_blood"));
 	mp_forcecamera=GetConVarInt(FindConVar("mp_forcecamera"));
 	tf_dropped_weapon_lifetime=bool:GetConVarInt(FindConVar("tf_dropped_weapon_lifetime"));
-	tf_feign_death_activate_damage_scale=GetConVarFloat(FindConVar("tf_feign_death_activate_damage_scale"));
-	tf_feign_death_damage_scale=GetConVarFloat(FindConVar("tf_feign_death_damage_scale"));
+	GetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team, sizeof(mp_humans_must_join_team));
 	GetConVarString(hostName=FindConVar("hostname"), oldName, sizeof(oldName));
 
 	if(IsFF2Map() && GetConVarBool(cvarEnabled))
@@ -2342,10 +2345,6 @@ public EnableFF2()
 	Announce=GetConVarFloat(cvarAnnounce);
 	PointType=GetConVarInt(cvarPointType);
 	PointDelay=GetConVarInt(cvarPointDelay);
-	if(PointDelay<0)
-	{
-		PointDelay*=-1;
-	}
 	GoombaDamage=GetConVarFloat(cvarGoombaDamage);
 	reboundPower=GetConVarFloat(cvarGoombaRebound);
 	SniperDamage=GetConVarFloat(cvarSniperDamage);
@@ -2377,8 +2376,7 @@ public EnableFF2()
 	SetConVarInt(FindConVar("tf_arena_first_blood"), 0);
 	SetConVarInt(FindConVar("mp_forcecamera"), 0);
 	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), 0);
-	SetConVarFloat(FindConVar("tf_feign_death_activate_damage_scale"), 0.3);
-	SetConVarFloat(FindConVar("tf_feign_death_damage_scale"), 0.0);
+	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
 	new Float:time=Announce;
 	if(time>1.0)
@@ -2425,8 +2423,7 @@ public DisableFF2()
 	SetConVarInt(FindConVar("tf_arena_first_blood"), tf_arena_first_blood);
 	SetConVarInt(FindConVar("mp_forcecamera"), mp_forcecamera);
 	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), tf_dropped_weapon_lifetime);
-	SetConVarFloat(FindConVar("tf_feign_death_activate_damage_scale"), tf_feign_death_activate_damage_scale);
-	SetConVarFloat(FindConVar("tf_feign_death_damage_scale"), tf_feign_death_damage_scale);
+	SetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team);
 
 	if(doorCheckTimer!=INVALID_HANDLE)
 	{
@@ -2924,29 +2921,9 @@ public PrecacheCharacter(characterIndex)
 
 public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[])
 {
-	if(convar==cvarPointDelay)
-	{
-		PointDelay=StringToInt(newValue);
-		if(PointDelay<0)
-		{
-			PointDelay*=-1;
-		}
-	}
-	else if(convar==cvarAnnounce)
+	if(convar==cvarAnnounce)
 	{
 		Announce=StringToFloat(newValue);
-	}
-	else if(convar==cvarPointType)
-	{
-		PointType=StringToInt(newValue);
-	}
-	else if(convar==cvarPointDelay)
-	{
-		PointDelay=StringToInt(newValue);
-	}
-	else if(convar==cvarAliveToEnable)
-	{
-		AliveToEnable=StringToInt(newValue);
 	}
 	else if(convar==cvarArenaRounds)
 	{
@@ -2955,18 +2932,6 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarCircuitStun)
 	{
 		circuitStun=StringToFloat(newValue);
-	}
-	else if(convar==cvarCountdownPlayers)
-	{
-		countdownPlayers=StringToInt(newValue);
-	}
-	else if(convar==cvarCountdownTime)
-	{
-		countdownTime=StringToInt(newValue);
-	}
-	else if(convar==cvarCountdownHealth)
-	{
-		countdownHealth=StringToInt(newValue);
 	}
 	else if(convar==cvarLastPlayerGlow)
 	{
@@ -3431,7 +3396,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		{
 			if(IsValidClient(client) && !IsBoss(client) && GetClientTeam(client)!=OtherTeam)
 			{
-				CreateTimer(0.1, MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+				CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 			}
 		}
 		return Plugin_Continue;  //NOTE: This is needed because OnRoundStart gets fired a second time once both teams have players
@@ -3452,9 +3417,9 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		BossInfoTimer[boss][1]=INVALID_HANDLE;
 		if(Boss[boss])
 		{
-			CreateTimer(0.3, MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(0.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 			BossInfoTimer[boss][0]=CreateTimer(30.2, BossInfoTimer_Begin, boss, TIMER_FLAG_NO_MAPCHANGE);
-			CreateTimer(9.3, MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(9.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 
@@ -3651,14 +3616,15 @@ public Action:Timer_CheckDoors(Handle:timer)
 
 public CheckArena()
 {
-	if(PointType)
-	{
-		SetArenaCapEnableTime(float(45+PointDelay*(playing-1)));
-	}
-	else
+	new Float:PointTotal=float(PointTime+PointDelay*(playing-1));
+	if(PointType!=1 || PointTotal<0)
 	{
 		SetArenaCapEnableTime(0.0);
 		SetControlPoint(false);
+	}
+	else
+	{
+		SetArenaCapEnableTime(PointTotal);
 	}
 }
 
@@ -4173,17 +4139,17 @@ public Action:StartBossTimer(Handle:timer)
 			if(!IsBoss(client) && IsPlayerAlive(client))
 			{
 				playing++;
-				CreateTimer(0.15, MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
+				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
 			}
 		}
 	}
 
 	CreateTimer(0.2, BossTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(0.2, CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(0.2, StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.2, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.2, Timer_StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
-	if(!PointType)
+	if(PointType==0)
 	{
 		SetControlPoint(false);
 	}
@@ -4352,7 +4318,6 @@ StopMusic(client=0, bool:permanent=false)
 		{
 			if(IsValidClient(client))
 			{
-				StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 				StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 
 				if(MusicTimer[client]!=INVALID_HANDLE)
@@ -4803,7 +4768,7 @@ public Action:Timer_Move(Handle:timer)
 	}
 }
 
-public Action:StartRound(Handle:timer)
+public Action:Timer_StartRound(Handle:timer)
 {
 	CreateTimer(10.0, Timer_NextBossPanel, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
@@ -5119,7 +5084,7 @@ EquipBoss(boss)
 	}
 }
 
-public Action:MakeBoss(Handle:timer, any:boss)
+public Action:Timer_MakeBoss(Handle:timer, any:boss)
 {
 	new client=Boss[boss];
 	if(!IsValidClient(client) || CheckRoundState()==-1)
@@ -5210,9 +5175,68 @@ public Action:MakeBoss(Handle:timer, any:boss)
 	{
 		randomCrits[client]=GetConVarBool(cvarCrits);
 	}
+
 	rageMax[client]=float(KvGetNum(BossKV[Special[boss]], "ragemax", 100));
 	rageMin[client]=float(KvGetNum(BossKV[Special[boss]], "ragemin", 100));
 	rageMode[client]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
+
+	// NOT going to be companion compatible, it's a global event...
+	if(KvGetNum(BossKV[Special[boss]], "pointtype", -1)>=0 && KvGetNum(BossKV[Special[boss]], "pointtype", -1)<=2)
+	{
+		PointType=KvGetNum(BossKV[Special[boss]], "pointtype", -1);
+	}
+	else
+	{
+		PointType=GetConVarInt(cvarPointType);
+	}
+	if(KvGetNum(BossKV[Special[boss]], "pointdelay", -9999)!=-9999)	// Can be below 0 so...
+	{
+		PointDelay=KvGetNum(BossKV[Special[boss]], "pointdelay", -9999);
+	}
+	else
+	{
+		PointDelay=GetConVarInt(cvarPointDelay);
+	}
+	if(KvGetNum(BossKV[Special[boss]], "pointtime", -9999)!=-9999)	// Same here, in-case of some weird boss logic
+	{
+		PointTime=KvGetNum(BossKV[Special[boss]], "pointtime", -9999);
+	}
+	else
+	{
+		PointTime=GetConVarInt(cvarPointTime);
+	}
+	if(KvGetNum(BossKV[Special[boss]], "pointalive", -1)>=0)	// Can't be below 0, it's players
+	{
+		AliveToEnable=KvGetNum(BossKV[Special[boss]], "pointalive", -1);
+	}
+	else
+	{
+		AliveToEnable=GetConVarInt(cvarAliveToEnable);
+	}
+	if(KvGetNum(BossKV[Special[boss]], "countdownhealth", -1)>=0)	// Also can't be below 0, it's health
+	{
+		countdownHealth=KvGetNum(BossKV[Special[boss]], "countdownhealth", -1);
+	}
+	else
+	{
+		countdownHealth=GetConVarInt(cvarCountdownHealth);
+	}
+	if(KvGetNum(BossKV[Special[boss]], "countdownalive", -1)>=0)	// Yet again, can't be below 0
+	{
+		countdownPlayers=KvGetNum(BossKV[Special[boss]], "countdownalive", -1);
+	}
+	else
+	{
+		countdownPlayers=GetConVarInt(cvarCountdownPlayers);
+	}
+	if(KvGetNum(BossKV[Special[boss]], "countdowntime", -1)>=0)	// .w.
+	{
+		countdownTime=KvGetNum(BossKV[Special[boss]], "countdowntime", -1);
+	}
+	else
+	{
+		countdownTime=GetConVarInt(cvarCountdownTime);
+	}
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
@@ -6206,7 +6230,7 @@ stock Handle:PrepareItemHandle(Handle:item, String:name[]="", index=-1, const St
 	return weapon;
 }
 
-public Action:MakeNotBoss(Handle:timer, any:userid)
+public Action:Timer_MakeNotBoss(Handle:timer, any:userid)
 {
 	new client=GetClientOfUserId(userid);
 	if(!IsValidClient(client) || !IsPlayerAlive(client) || CheckRoundState()==2 || IsBoss(client) || (FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
@@ -6227,11 +6251,11 @@ public Action:MakeNotBoss(Handle:timer, any:userid)
 		AssignTeam(client, OtherTeam);
 	}
 
-	CreateTimer(0.1, CheckItems, userid, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.1, Timer_CheckItems, userid, TIMER_FLAG_NO_MAPCHANGE);
 	return Plugin_Continue;
 }
 
-public Action:CheckItems(Handle:timer, any:userid)
+public Action:Timer_CheckItems(Handle:timer, any:userid)
 {
 	new client=GetClientOfUserId(userid);
 	if(!IsValidClient(client) || !IsPlayerAlive(client) || CheckRoundState()==2 || IsBoss(client) || (FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
@@ -7036,7 +7060,7 @@ public OnClientDisconnect(client)
 
 			if(Boss[boss])
 			{
-				CreateTimer(0.1, MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
+				CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 				CPrintToChat(Boss[boss], "{olive}[FF2]{default} %t", "Replace Disconnected Boss");
 				CPrintToChatAll("{olive}[FF2]{default} %t", "Boss Disconnected", client, Boss[boss]);
 			}
@@ -7044,7 +7068,7 @@ public OnClientDisconnect(client)
 
 		if(IsClientInGame(client) && IsPlayerAlive(client) && CheckRoundState()==1)
 		{
-			CreateTimer(0.1, CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 
@@ -7071,7 +7095,7 @@ public Action:OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcas
 {
 	if(Enabled && CheckRoundState()==1)
 	{
-		CreateTimer(0.1, CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	}
 	return Plugin_Continue;
 }
@@ -7094,7 +7118,7 @@ public Action:OnPostInventoryApplication(Handle:event, const String:name[], bool
 
 	if(IsBoss(client))
 	{
-		CreateTimer(0.1, MakeBoss, GetBossIndex(client), TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(0.1, Timer_MakeBoss, GetBossIndex(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 
 	if(!(FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
@@ -7108,7 +7132,7 @@ public Action:OnPostInventoryApplication(Handle:event, const String:name[], bool
 			TF2_RegeneratePlayer(client);
 			CreateTimer(0.1, Timer_RegenPlayer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		}
-		CreateTimer(0.2, MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(0.2, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 
 	FF2flags[client]&=~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS|FF2FLAG_ROCKET_JUMPING);
@@ -7907,7 +7931,7 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 
 	new client=GetClientOfUserId(GetEventInt(event, "userid")), attacker=GetClientOfUserId(GetEventInt(event, "attacker"));
 	decl String:sound[PLATFORM_MAX_PATH];
-	CreateTimer(0.1, CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	DoOverlay(client, "");
 	if(!IsBoss(client))
 	{
@@ -8090,7 +8114,7 @@ public Action:OnDeployBackup(Handle:event, const String:name[], bool:dontBroadca
 	return Plugin_Continue;
 }
 
-public Action:CheckAlivePlayers(Handle:timer)
+public Action:Timer_CheckAlivePlayers(Handle:timer)
 {
 	if(CheckRoundState()==2)
 	{
@@ -8132,13 +8156,13 @@ public Action:CheckAlivePlayers(Handle:timer)
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
 	}
-	else if(!PointType && RedAlivePlayers<=AliveToEnable && !executed)
+	else if(PointType!=1 && RedAlivePlayers<=AliveToEnable && !executed)
 	{
 		PrintHintTextToAll("%t", "point_enable", AliveToEnable);
 		if(RedAlivePlayers==AliveToEnable)
 		{
 			new String:sound[64];
-			if(GetRandomInt(0, 1))
+			if(GetRandomInt(0, 2))
 			{
 				Format(sound, sizeof(sound), "vo/announcer_am_capenabled0%i.mp3", GetRandomInt(1, 4));
 			}
@@ -8148,6 +8172,7 @@ public Action:CheckAlivePlayers(Handle:timer)
 			}
 			EmitSoundToAll(sound);
 		}
+		SetArenaCapEnableTime(0.0);
 		SetControlPoint(true);
 		executed=true;
 	}
@@ -10490,7 +10515,14 @@ DoOverlay(client, const String:overlay[])
 {
 	new flags=GetCommandFlags("r_screenoverlay");
 	SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
-	ClientCommand(client, "r_screenoverlay \"%s\"", overlay);
+	if(overlay[0]=='\0')
+	{
+		ClientCommand(client, "r_screenoverlay off");
+	}
+	else
+	{
+		ClientCommand(client, "r_screenoverlay \"%s\"", overlay);
+	}
 	SetCommandFlags("r_screenoverlay", flags);
 }
 
