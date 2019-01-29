@@ -5139,104 +5139,62 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 	BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss]=BossHealth[boss];
 
-	if(KvGetNum(BossKV[Special[boss]], "triple", 2) == 0)
-	{
-		dmgTriple[client]=false;
-	}
-	else if(KvGetNum(BossKV[Special[boss]], "triple", 2) == 1)
-	{
-		dmgTriple[client]=true;
-	}
+	// True or false settings
+	if(KvGetNum(BossKV[Special[boss]], "triple", -1)>=0)
+		dmgTriple[client]=bool:KvGetNum(BossKV[Special[boss]], "triple", -1);
 	else
-	{
 		dmgTriple[client]=GetConVarBool(cvarTripleWep);
-	}
-	if(KvGetNum(BossKV[Special[boss]], "knockback", 2) == 0)
-	{
-		selfKnockback[client]=false;
-	}
-	else if(KvGetNum(BossKV[Special[boss]], "knockback", 2) == 1)
-	{
-		selfKnockback[client]=true;
-	}
-	else
-	{
-		selfKnockback[client]=GetConVarBool(cvarSelfKnockback);
-	}
-	if(KvGetNum(BossKV[Special[boss]], "crits", 2) == 0)
-	{
-		randomCrits[client]=false;
-	}
-	else if(KvGetNum(BossKV[Special[boss]], "crits", 2) == 1)
-	{
-		randomCrits[client]=true;
-	}
-	else
-	{
-		randomCrits[client]=GetConVarBool(cvarCrits);
-	}
 
+	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0)
+		selfKnockback[client]=bool:KvGetNum(BossKV[Special[boss]], "knockback", -1);
+	else
+		selfKnockback[client]=GetConVarBool(cvarSelfKnockback);
+
+	if(KvGetNum(BossKV[Special[boss]], "crits", -1)>=0)
+		randomCrits[client]=bool:KvGetNum(BossKV[Special[boss]], "crits", -1);
+	else
+		randomCrits[client]=GetConVarBool(cvarCrits);
+
+	// Rage settings
 	rageMax[client]=float(KvGetNum(BossKV[Special[boss]], "ragemax", 100));
 	rageMin[client]=float(KvGetNum(BossKV[Special[boss]], "ragemin", 100));
 	rageMode[client]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
 
-	// NOT going to be companion compatible, it's a global event...
+	// Timer/point settings
 	if(KvGetNum(BossKV[Special[boss]], "pointtype", -1)>=0 && KvGetNum(BossKV[Special[boss]], "pointtype", -1)<=2)
-	{
 		PointType=KvGetNum(BossKV[Special[boss]], "pointtype", -1);
-	}
 	else
-	{
 		PointType=GetConVarInt(cvarPointType);
-	}
+
 	if(KvGetNum(BossKV[Special[boss]], "pointdelay", -9999)!=-9999)	// Can be below 0 so...
-	{
 		PointDelay=KvGetNum(BossKV[Special[boss]], "pointdelay", -9999);
-	}
 	else
-	{
 		PointDelay=GetConVarInt(cvarPointDelay);
-	}
+
 	if(KvGetNum(BossKV[Special[boss]], "pointtime", -9999)!=-9999)	// Same here, in-case of some weird boss logic
-	{
 		PointTime=KvGetNum(BossKV[Special[boss]], "pointtime", -9999);
-	}
 	else
-	{
 		PointTime=GetConVarInt(cvarPointTime);
-	}
+
 	if(KvGetNum(BossKV[Special[boss]], "pointalive", -1)>=0)	// Can't be below 0, it's players
-	{
 		AliveToEnable=KvGetNum(BossKV[Special[boss]], "pointalive", -1);
-	}
 	else
-	{
 		AliveToEnable=GetConVarInt(cvarAliveToEnable);
-	}
+
 	if(KvGetNum(BossKV[Special[boss]], "countdownhealth", -1)>=0)	// Also can't be below 0, it's health
-	{
 		countdownHealth=KvGetNum(BossKV[Special[boss]], "countdownhealth", -1);
-	}
 	else
-	{
 		countdownHealth=GetConVarInt(cvarCountdownHealth);
-	}
+
 	if(KvGetNum(BossKV[Special[boss]], "countdownalive", -1)>=0)	// Yet again, can't be below 0
-	{
 		countdownPlayers=KvGetNum(BossKV[Special[boss]], "countdownalive", -1);
-	}
 	else
-	{
 		countdownPlayers=GetConVarInt(cvarCountdownPlayers);
-	}
+
 	if(KvGetNum(BossKV[Special[boss]], "countdowntime", -1)>=0)	// .w.
-	{
 		countdownTime=KvGetNum(BossKV[Special[boss]], "countdowntime", -1);
-	}
 	else
-	{
 		countdownTime=GetConVarInt(cvarCountdownTime);
-	}
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
