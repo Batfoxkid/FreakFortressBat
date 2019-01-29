@@ -465,6 +465,7 @@ static const String:ff2versiontitles[][]=
 	"1.17.2",
 	"1.17.3",
 	"1.17.4",
+	"1.17.5",
 	"1.17.5"
 };
 
@@ -601,6 +602,7 @@ static const String:ff2versiondates[][]=
 	"January 19, 2019",		//1.17.2
 	"January 22, 2019",		//1.17.3
 	"January 24, 2019",		//1.17.4
+	"January 29, 2019",		//1.17.5
 	"January 29, 2019"		//1.17.5
 };
 
@@ -608,14 +610,19 @@ stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 132:  //1.17.5
+		{
+			DrawPanelText(panel, "1) Rages can be set infinitely, disabled, or blocked (Batfoxkid)");
+			DrawPanelText(panel, "2) Speeds can be set to not handled by FF2 or full stand-still (Batfoxkid)");
+			DrawPanelText(panel, "3) Added minimum, maximum, and mode rage settings (Batfoxkid)");
+			DrawPanelText(panel, "4) Imported official 1.10.15 commits (naydef/Wliu)");
+			DrawPanelText(panel, "5) Control point and round time settings can be done per-boss (Batfoxkid)");
+		}
 		case 131:  //1.17.5
 		{
-			DrawPanelText(panel, "1) Rages and speeds have new settings (Batfoxkid)");
-			DrawPanelText(panel, "2) Added minimum, maximum, and mode rage percent settings (Batfoxkid)");
-			DrawPanelText(panel, "3) Imported official 1.10.15 commits (naydef/Wliu)");
-			DrawPanelText(panel, "4) Control point and round time can be done per-boss (Batfoxkid)");
-			DrawPanelText(panel, "5) Allowed both time and alive for control points (Batfoxkid)");
-			DrawPanelText(panel, "6) Boss weapons can set custom models, clip, ammo, and color (SHADoW)");
+			DrawPanelText(panel, "6) Allowed both ff2_point_time and ff2_point_alive for ff2_point_type (Batfoxkid)");
+			DrawPanelText(panel, "7) Boss weapons can set custom models, clip, ammo, and color (SHADoW)");
+			DrawPanelText(panel, "8) Boss weapons can disable base damage bonus and capture rate (Batfoxkid)");
 		}
 		case 130:  //1.17.4
 		{
@@ -4895,164 +4902,124 @@ EquipBoss(boss)
 			KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
 			KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
 			new strangerank=KvGetNum(BossKV[Special[boss]], "rank", 21);
-			new weaponlevel=KvGetNum(BossKV[Special[boss]], "level", 102);
+			new weaponlevel=KvGetNum(BossKV[Special[boss]], "level", -1);
 			new index=KvGetNum(BossKV[Special[boss]], "index");
-			//new strangekills=-1;
-			//if(strangerank == 21 && weaponlevel == 102 && GetConVarBool(cvarStrangeWep))
-			if(strangerank != 21 || GetConVarBool(cvarStrangeWep))
+			new overridewep=KvGetNum(BossKV[Special[boss]], "override", 0);
+			new strangekills=-1;
+			new strangewep=1;
+			switch(strangerank)
 			{
-				if(attributes[0]!='\0')
+				case 0:
+					strangekills=GetRandomInt(0, 9);
+				case 1:
+					strangekills=GetRandomInt(10, 24);
+				case 2:
+					strangekills=GetRandomInt(25, 44);
+				case 3:
+					strangekills=GetRandomInt(45, 69);
+				case 4:
+					strangekills=GetRandomInt(70, 99);
+				case 5:
+					strangekills=GetRandomInt(100, 134);
+				case 6:
+					strangekills=GetRandomInt(135, 174);
+				case 7:
+					strangekills=GetRandomInt(175, 224);
+				case 8:
+					strangekills=GetRandomInt(225, 274);
+				case 9:
+					strangekills=GetRandomInt(275, 349);
+				case 10:
+					strangekills=GetRandomInt(350, 499);
+				case 11:
 				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1 ; %s", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, GetRandomInt(0, 9999), attributes);
+					if(index==656)	// Holiday Punch is different
+						strangekills=GetRandomInt(500, 748);
+					else
+						strangekills=GetRandomInt(500, 749);
 				}
-				else
+				case 12:
 				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, GetRandomInt(0, 9999));
+					if(index==656)
+						strangekills=749;
+					else
+						strangekills=GetRandomInt(750, 998);
+				}
+				case 13:
+				{
+					if(index==656)
+						strangekills=GetRandomInt(750, 999);
+					else
+						strangekills=999;
+				}
+				case 14:
+					strangekills=GetRandomInt(1000, 1499);
+				case 15:
+					strangekills=GetRandomInt(1500, 2499);
+				case 16:
+					strangekills=GetRandomInt(2500, 4999);
+				case 17:
+					strangekills=GetRandomInt(5000, 7499);
+				case 18:
+				{
+					if(index==656)
+						strangekills=GetRandomInt(7500, 7922);
+					else
+						strangekills=GetRandomInt(7500, 7615);
+				}
+				case 19:
+				{
+					if(index==656)
+						strangekills=GetRandomInt(7923, 8499);
+					else
+						strangekills=GetRandomInt(7616, 8499);
+				}
+				case 20:
+					strangekills=GetRandomInt(8500, 9999);
+				default:
+				{
+					strangekills=GetRandomInt(0, 9999);
+					if(!GetConVarBool(cvarStrangeWep) || weaponlevel!=-1 || overridewep)
+						strangewep=0;
 				}
 			}
-			//else if((strangerank == 21 && weaponlevel != 102) || !GetConVarBool(cvarStrangeWep))
-			else
-			{
-				if(attributes[0]!='\0')
-				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 275 ; 1 ; %s", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
-				}
-				else
-				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
-				}
-			}/*
-			else
-			{
-				if(strangerank == 1)
-				{
-					strangekills = GetRandomInt(10, 24);
-				}
-				else if(strangerank == 2)
-				{
-					strangekills = GetRandomInt(25, 44);
-				}
-				else if(strangerank == 3)
-				{
-					strangekills = GetRandomInt(45, 69);
-				}
-				else if(strangerank == 4)
-				{
-					strangekills = GetRandomInt(70, 99);
-				}
-				else if(strangerank == 5)
-				{
-					strangekills = GetRandomInt(100, 134);
-				}
-				else if(strangerank == 6)
-				{
-					strangekills = GetRandomInt(135, 174);
-				}
-				else if(strangerank == 7)
-				{
-					strangekills = GetRandomInt(175, 224);
-				}
-				else if(strangerank == 8)
-				{
-					strangekills = GetRandomInt(225, 274);
-				}
-				else if(strangerank == 9)
-				{
-					strangekills = GetRandomInt(275, 349);
-				}
-				else if(strangerank == 10)
-				{
-					strangekills = GetRandomInt(350, 499);
-				}
-				else if(strangerank == 11)
-				{
-					if(index == 656)
-					{
-						strangekills = GetRandomInt(500, 748);
-					}
-					else
-					{
-						strangekills = GetRandomInt(500, 749);
-					}
-				}
-				else if(strangerank == 12)
-				{
-					if(index == 656)
-					{
-						strangekills = 749;
-					}
-					else
-					{
-						strangekills = GetRandomInt(750, 998);
-					}
-				}
-				else if(strangerank == 13)
-				{
-					if(index == 656)
-					{
-						strangekills = GetRandomInt(750, 999);
-					}
-					else
-					{
-						strangekills = 999;
-					}
-				}
-				else if(strangerank == 14)
-				{
-					strangekills = GetRandomInt(1000, 1499);
-				}
-				else if(strangerank == 15)
-				{
-					strangekills = GetRandomInt(1500, 2499);
-				}
-				else if(strangerank == 16)
-				{
-					strangekills = GetRandomInt(2500, 4999);
-				}
-				else if(strangerank == 17)
-				{
-					strangekills = GetRandomInt(5000, 7499);
-				}
-				else if(strangerank == 18)
-				{
-					if(index == 656)
-					{
-						strangekills = GetRandomInt(7500, 7922);
-					}
-					else
-					{
-						strangekills = GetRandomInt(7500, 7615);
-					}
-				}
-				else if(strangerank == 19)
-				{
-					if(index == 656)
-					{
-						strangekills = GetRandomInt(7923, 8499);
-					}
-					else
-					{
-						strangekills = GetRandomInt(7616, 8499);
-					}
-				}
-				else if(strangerank == 20)
-				{
-					strangekills = GetRandomInt(8500, 9999);
-				}
-				else
-				{
-					strangekills = GetRandomInt(0, 9);
-				}
+			if(weaponlevel<0)
+				weaponlevel=101;
 
+			if(strangewep)
+			{
 				if(attributes[0]!='\0')
 				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1 ; %s", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
+					if(overridewep)
+						Format(attributes, sizeof(attributes), "214 ; %d ; %s", strangekills, attributes);
+					else
+						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1 ; %s", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
 				}
 				else
 				{
-					Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
+					if(overridewep)
+						Format(attributes, sizeof(attributes), "214 ; %d", strangekills);
+					else
+						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
 				}
-			}*/
+			}
+			else
+			{
+				if(attributes[0]!='\0')
+				{
+					if(overridewep)
+						Format(attributes, sizeof(attributes), "%s", attributes);
+					else
+						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 275 ; 1 ; %s", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
+				}
+				else
+				{
+					if(overridewep)
+						Format(attributes, sizeof(attributes), "28 ; 1");	// Does nothing
+					else
+						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
+				}
+			}
 
 			new weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 			SetWeaponAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", 0));
