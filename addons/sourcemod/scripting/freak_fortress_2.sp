@@ -5100,10 +5100,10 @@ EquipBoss(boss)
 			}
 
 			new rgba[4];
-			rgba[0]=KvGetNum(BossKV[characterIdx[boss]], "alpha", 255);
-			rgba[1]=KvGetNum(BossKV[characterIdx[boss]], "red", 255);
-			rgba[2]=KvGetNum(BossKV[characterIdx[boss]], "green", 255);
-			rgba[3]=KvGetNum(BossKV[characterIdx[boss]], "blue", 255);
+			rgba[0]=KvGetNum(BossKV[Special[boss]], "alpha", 255);
+			rgba[1]=KvGetNum(BossKV[Special[boss]], "red", 255);
+			rgba[2]=KvGetNum(BossKV[Special[boss]], "green", 255);
+			rgba[3]=KvGetNum(BossKV[Special[boss]], "blue", 255);
 
 			SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
 			SetEntityRenderColor(weapon, rgba[1], rgba[2], rgba[3], rgba[0]);
