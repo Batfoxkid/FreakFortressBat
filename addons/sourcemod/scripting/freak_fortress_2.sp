@@ -314,6 +314,14 @@ new bool:dmgTriple[MAXPLAYERS+1];
 new bool:selfKnockback[MAXPLAYERS+1];
 new bool:randomCrits[MAXPLAYERS+1];
 
+enum WorldModelType
+{
+	ModelType_Normal=0,
+	ModelType_PyroVision,
+	ModelType_HalloweenVision,
+	ModelType_RomeVision
+};
+
 enum Operators
 {
 	Operator_None=0,
@@ -602,12 +610,12 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 131:  //1.17.5
 		{
-			DrawPanelText(panel, "1) Rages can be toggled infinite or disabled completely (Batfoxkid)");
-			DrawPanelText(panel, "2) Speeds can be toggled a stand-still or not handled by FF2 (Batfoxkid)");
-			DrawPanelText(panel, "3) Added minimum, maximum, and mode rage percent settings (Batfoxkid)");
-			DrawPanelText(panel, "4) Imported official 1.10.15 commits (naydef/Wliu)");
-			DrawPanelText(panel, "5) Control point and round time can be done per-boss (Batfoxkid)");
-			DrawPanelText(panel, "6) Allowed both time and alive for control points (Batfoxkid)");
+			DrawPanelText(panel, "1) Rages and speeds have new settings (Batfoxkid)");
+			DrawPanelText(panel, "2) Added minimum, maximum, and mode rage percent settings (Batfoxkid)");
+			DrawPanelText(panel, "3) Imported official 1.10.15 commits (naydef/Wliu)");
+			DrawPanelText(panel, "4) Control point and round time can be done per-boss (Batfoxkid)");
+			DrawPanelText(panel, "5) Allowed both time and alive for control points (Batfoxkid)");
+			DrawPanelText(panel, "6) Boss weapons can set custom models, clip, ammo, and color (SHADoW)");
 		}
 		case 130:  //1.17.4
 		{
@@ -5047,6 +5055,8 @@ EquipBoss(boss)
 			}*/
 
 			new weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+			SetWeaponAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", 0));
+			SetWeaponClip(client, weapon, KvGetNum(BossKV[Special[boss]], "clip", 0));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -5067,7 +5077,37 @@ EquipBoss(boss)
 			if(!KvGetNum(BossKV[Special[boss]], "show", 0))
 			{
 				SetEntPropFloat(weapon, Prop_Send, "m_flModelScale", 0.001);
+				if(index==221 || index==572 || index==939 || index==999 || index==1013) // Workaround for jiggleboned weapons
+				{
+					SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", -1);
+					SetEntProp(weapon, Prop_Send, "m_nModelIndexOverrides", -1, _, 0);
+				}
 			}
+			else
+			{
+				new String:wModel[4][PLATFORM_MAX_PATH];
+				KvGetString(BossKV[Special[boss]], "worldmodel", wModel[0], sizeof(wModel[]));
+				KvGetString(BossKV[Special[boss]], "pyrovision", wModel[1], sizeof(wModel[]));
+				KvGetString(BossKV[Special[boss]], "halloweenvision", wModel[2], sizeof(wModel[]));
+				KvGetString(BossKV[Special[boss]], "romevision", wModel[3], sizeof(wModel[]));
+				for(new type=0;type<=3;type++)
+				{
+					if(wModel[type][0])
+					{
+						ConfigureWorldModelOverride(weapon, index, wModel[type], WorldModelType:type);
+					}
+				}
+			}
+
+			new rgba[4];
+			rgba[0]=KvGetNum(BossKV[characterIdx[boss]], "alpha", 255);
+			rgba[1]=KvGetNum(BossKV[characterIdx[boss]], "red", 255);
+			rgba[2]=KvGetNum(BossKV[characterIdx[boss]], "green", 255);
+			rgba[3]=KvGetNum(BossKV[characterIdx[boss]], "blue", 255);
+
+			SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
+			SetEntityRenderColor(weapon, rgba[1], rgba[2], rgba[3], rgba[0]);
+
 			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
 		}
 		else
@@ -5081,6 +5121,44 @@ EquipBoss(boss)
 	if(TF2_GetPlayerClass(client)!=class)
 	{
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
+	}
+}
+
+stock bool ConfigureWorldModelOverride(int entity, int index, const char[] model, WorldModelType type, bool wearable=false)
+{
+	if(!FileExists(model, true))
+		return false;
+        
+	int modelIndex=PrecacheModel(model);
+	if(!type)
+	{
+		SetEntProp(entity, Prop_Send, "m_nModelIndex", modelIndex);
+	}
+	else
+	{
+		SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, _:type);
+		SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", (!wearable ? GetEntProp(entity, Prop_Send, "m_iWorldModelIndex") : GetEntProp(entity, Prop_Send, "m_nModelIndex")), _, 0);    
+	}
+	return true;
+}
+
+stock int SetWeaponClip(int client, int slot, int clip)
+{
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	if (IsValidEntity(weapon))
+	{
+		SetEntProp(weapon, Prop_Send, "m_iClip1", clip);
+	}
+}
+
+stock int SetWeaponAmmo(int client, int slot, int ammo)
+{
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	if (IsValidEntity(weapon))
+	{
+		int iOffset = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType", 1)*4;
+		int iAmmoTable = FindSendPropInfo("CTFPlayer", "m_iAmmo");
+		SetEntData(client, iAmmoTable+iOffset, ammo, 4, true);
 	}
 }
 
