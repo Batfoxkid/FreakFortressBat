@@ -3636,7 +3636,7 @@ public Action:Timer_CheckDoors(Handle:timer)
 public CheckArena()
 {
 	new Float:PointTotal=float(PointTime+PointDelay*(playing-1));
-	if(PointType!=1 || PointTotal<0)
+	if(PointType==0 || PointTotal<0)
 	{
 		SetArenaCapEnableTime(0.0);
 		SetControlPoint(false);
