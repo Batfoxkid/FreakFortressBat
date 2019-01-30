@@ -26,5 +26,5 @@ https://steamcommunity.com/profiles/76561198049884052/ | https://steamcommunity.
 Deathreus for the current boss in server name                                                                 
 https://github.com/Deathreus | https://github.com/Deathreus/FF2-Official
 
-And the FF2 team (that I would like to see work on the offical more)                                          
+And the FF2 team (that I would like to see work on the official more)                                          
 https://github.com/50DKP/FF2-Official
