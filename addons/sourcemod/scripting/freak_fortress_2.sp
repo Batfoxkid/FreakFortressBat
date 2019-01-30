@@ -223,6 +223,7 @@ new Handle:cvarDuoRandom;
 new Handle:cvarDuoMin;
 //new Handle:cvarNewDownload;
 new Handle:cvarDuoRestore;
+new Handle:cvarLowStab;
 
 new Handle:FF2Cookies;
 
@@ -623,6 +624,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "6) Allowed both ff2_point_time and ff2_point_alive for ff2_point_type (Batfoxkid)");
 			DrawPanelText(panel, "7) Boss weapons can set custom models, clip, ammo, and color (SHADoW)");
 			DrawPanelText(panel, "8) Boss weapons can disable base damage bonus and capture rate (Batfoxkid)");
+			DrawPanelText(panel, "9) Cvar to buff backstab, market garden, and caber for low-player count (Batfoxkid)");
 		}
 		case 130:  //1.17.4
 		{
@@ -1726,6 +1728,7 @@ public OnPluginStart()
 	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 1.0, true, 34.0);
 	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
 	cvarDuoRestore=CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
+	cvarLowStab=CreateConVar("ff2_low_stab", "0", "0-Disable, 1-Low-player count stabs, market, and caber do more damage", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1798,6 +1801,7 @@ public OnPluginStart()
 	HookConVarChange(cvarDuoMin, CvarChange);
 	//HookConVarChange(cvarNewDownload, CvarChange);
 	HookConVarChange(cvarDuoRestore, CvarChange);
+	HookConVarChange(cvarLowStab, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -8713,7 +8717,10 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						if(GetEntProp(weapon, Prop_Send, "m_iDetonated") == 0)	// If using ullapool caber, only trigger if bomb hasn't been detonated
                         			{
-							damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
+							if(GetConVarBool(cvarLowStab))
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(2250/float(playing))-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
+							else
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
 							damagetype|=DMG_CRIT;
 
 							if(Cabered[client]<5)
@@ -8816,7 +8823,10 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if (RemoveCond(attacker, TFCond_BlastJumping))	// New way to check explosive jumping status
 						//if(FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING)
                         			{
-							damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3.0;
+							if(GetConVarBool(cvarLowStab))
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(1750/float(playing))-(Marketed[client]/128.0*float(BossHealthMax[boss])))/6;
+							else
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/6;
 							damagetype|=DMG_CRIT;
 
 							if (RemoveCond(attacker, TFCond_Parachute))	// If you parachuted to do this, remove your parachute.
@@ -8931,7 +8941,10 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 
 				if(bIsBackstab)
 				{
-					damage=BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
+					if(GetConVarBool(cvarLowStab))
+						damage=(BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(2000/float(playing)))/3;
+					else
+						damage=BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 					damagetype|=DMG_CRIT;
 					damagecustom=0;
 
@@ -11584,14 +11597,16 @@ bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, s
 		FF2flags[Boss[boss]]&=~FF2FLAG_BOTRAGE;
 		Call_PushCell(3);  //Status - we're assuming here a rage ability will always be in use if it gets called
 		Call_Finish(action);
-		if(rageMode[client]==1)
+		/*if(rageMode[client]==1)
 		{
-			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin[client];
+			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin[client];	// This is weird...
 		}
 		else if(rageMode[client]==0)
 		{
 			BossCharge[boss][slot]=0.0;
-		}
+		}*/
+		if(rageMode[client]==0 || rageMode[client]==1)
+			BossCharge[boss][slot]=0.0;
 	}
 	else
 	{
