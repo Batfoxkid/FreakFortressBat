@@ -5100,78 +5100,201 @@ EquipBoss(boss)
 			new overridecos=KvGetNum(BossKV[Special[boss]], "override", 0);
 			new strangepts=-1;
 			new strangecos=1;
-			switch(strangerank)	// TODO: Set up the strange points
+			switch(strangerank)
 			{
 				case 0:
-					strangepts=GetRandomInt(0, 9);
+				{
+					if(index==133 || index==444 || index==655)	// Gunboats, Mantreads, or Spirit of Giving
+						strangepts=0;
+					else
+						strangepts=GetRandomInt(0, 14);
+				}
 				case 1:
-					strangepts=GetRandomInt(10, 24);
+				{
+					if(index==133 || index==444 || index==655)	// Gunboats, Mantreads, or Spirit of Giving
+						strangepts=GetRandomInt(1, 2);
+					else
+						strangepts=GetRandomInt(15, 29);
+				}
 				case 2:
-					strangepts=GetRandomInt(25, 44);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(3, 4);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(3, 6);
+					else
+						strangepts=GetRandomInt(30, 49);
+				}
 				case 3:
-					strangepts=GetRandomInt(45, 69);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(5, 6);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(7, 11);
+					else
+						strangepts=GetRandomInt(50, 74);
+				}
 				case 4:
-					strangepts=GetRandomInt(70, 99);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(7, 9);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(12, 19);
+					else
+						strangepts=GetRandomInt(75, 99);
+				}
 				case 5:
-					strangepts=GetRandomInt(100, 134);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(10, 13);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(20, 27);
+					else
+						strangepts=GetRandomInt(100, 134);
+				}
 				case 6:
-					strangepts=GetRandomInt(135, 174);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(14, 17);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(28, 36);
+					else
+						strangepts=GetRandomInt(135, 174);
+				}
 				case 7:
-					strangepts=GetRandomInt(175, 224);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(18, 22);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(37, 46);
+					else
+						strangepts=GetRandomInt(175, 249);
+				}
 				case 8:
-					strangepts=GetRandomInt(225, 274);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(23, 27);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(47, 56);
+					else
+						strangepts=GetRandomInt(250, 374);
+				}
 				case 9:
-					strangepts=GetRandomInt(275, 349);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(28, 34);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(57, 67);
+					else
+						strangepts=GetRandomInt(375, 499);
+				}
 				case 10:
-					strangepts=GetRandomInt(350, 499);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(35, 49);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(68, 78);
+					else
+						strangepts=GetRandomInt(500, 724);
+				}
 				case 11:
 				{
-					if(index==656)	// Holiday Punch is different
-						strangepts=GetRandomInt(500, 748);
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(50, 74);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(79, 90);
 					else
-						strangepts=GetRandomInt(500, 749);
+						strangepts=GetRandomInt(725, 999);
 				}
 				case 12:
 				{
-					if(index==656)
-						strangepts=749;
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(75, 98);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(91, 103);
 					else
-						strangepts=GetRandomInt(750, 998);
+						strangepts=GetRandomInt(1000, 1499);
 				}
 				case 13:
 				{
-					if(index==656)
-						strangepts=GetRandomInt(750, 999);
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=99;
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(104, 119);
 					else
-						strangepts=999;
+						strangepts=GetRandomInt(1500, 1999);
 				}
 				case 14:
-					strangepts=GetRandomInt(1000, 1499);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(100, 149);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(120, 137);
+					else
+						strangepts=GetRandomInt(2000, 2749);
+				}
 				case 15:
-					strangepts=GetRandomInt(1500, 2499);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(150, 249);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(138, 157);
+					else
+						strangepts=GetRandomInt(2750, 3999);
+				}
 				case 16:
-					strangepts=GetRandomInt(2500, 4999);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(250, 499);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(158, 178);
+					else
+						strangepts=GetRandomInt(4000, 5499);
+				}
 				case 17:
-					strangepts=GetRandomInt(5000, 7499);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(500, 749);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(179, 209);
+					else
+						strangepts=GetRandomInt(5500, 7499);
+				}
 				case 18:
 				{
-					if(index==656)
-						strangepts=GetRandomInt(7500, 7922);
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(750, 783);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(210, 249);
 					else
-						strangepts=GetRandomInt(7500, 7615);
+						strangepts=GetRandomInt(7500, 9999);
 				}
 				case 19:
 				{
-					if(index==656)
-						strangepts=GetRandomInt(7923, 8499);
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(784, 849);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(250, 299);
 					else
-						strangepts=GetRandomInt(7616, 8499);
+						strangepts=GetRandomInt(10000, 14999);
 				}
 				case 20:
-					strangepts=GetRandomInt(8500, 9999);
+				{
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(850, 999);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(300, 399);
+					else
+						strangepts=GetRandomInt(15000, 19999);
+				}
 				default:
 				{
-					strangepts=GetRandomInt(0, 9999);
+					if(index==133 || index==444)	// Gunboats or Mantreads
+						strangepts=GetRandomInt(0, 999);
+					else if(index==655)	// Spirit of Giving
+						strangepts=GetRandomInt(0, 399);
+					else
+						strangepts=GetRandomInt(0, 19999);
 					if(!GetConVarBool(cvarStrangeWep) || cosmeticlevel!=-1 || overridecos)
 						strangecos=0;
 				}
@@ -5185,8 +5308,12 @@ EquipBoss(boss)
 				{
 					if(overridecos)
 						Format(attributes, sizeof(attributes), "214 ; %d ; %s", strangepts, attributes);
-					else if(index==57)
+					else if(index==57)	// Razorback
 						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 5 ; %s", strangepts, attributes);
+					else if(index==133 || index==444)	// Gunboats or Mantreads
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 26 ; 388 ; 26 ; %s", strangepts, attributes);
+					else if(index==655)	// Spirit of Giving
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 8 ; 388 ; 64 ; %s", strangepts, attributes);
 					else
 						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64 ; 388 ; 64 ; %s", strangepts, attributes);
 				}
@@ -5194,13 +5321,19 @@ EquipBoss(boss)
 				{
 					if(overridecos)
 						Format(attributes, sizeof(attributes), "214 ; %d", strangepts);
-					else if(index==57)
+					else if(index==57)	// Razorback
 						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 5", strangepts);
+					else if(index==133 || index==444)	// Gunboats or Mantreads
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 26 ; 388 ; 26", strangepts);
+					else if(index==655)	// Spirit of Giving
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 8 ; 388 ; 64", strangepts);
 					else
 						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64 ; 388 ; 64", strangepts);
 				}
 				// Note: 292 and 388's value for comseitcs is either 1115684864 or 64
 				// Razorback's 292 = 1084227584 or 5
+				// Mantreads's 292/388 = 1104150528 or 26
+				// Spirit of Giving's 292 = 1090519040 or 8
 			}
 			else
 			{
