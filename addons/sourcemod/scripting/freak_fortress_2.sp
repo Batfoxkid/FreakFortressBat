@@ -5188,7 +5188,7 @@ EquipBoss(boss)
 					else if(index==57)
 						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 5 ; %s", strangepts, attributes);
 					else
-						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64 ; %s", strangepts, attributes);
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64 ; 388 ; 64 ; %s", strangepts, attributes);
 				}
 				else
 				{
@@ -5197,9 +5197,9 @@ EquipBoss(boss)
 					else if(index==57)
 						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 5", strangepts);
 					else
-						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64", strangepts);
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64 ; 388 ; 64", strangepts);
 				}
-				// Note: 292's value for comseitcs is either 1115684864 or 64
+				// Note: 292 and 388's value for comseitcs is either 1115684864 or 64
 				// Razorback's 292 = 1084227584 or 5
 			}
 			else
@@ -5214,7 +5214,7 @@ EquipBoss(boss)
 				}
 			}
 
-			new cosmetic=SpawnCosmeitc(client, classname, index, cosmeticlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+			new cosmetic=SpawnCosmetic(client, classname, index, cosmeticlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 
 			new rgba[4];
 			rgba[0]=KvGetNum(BossKV[Special[boss]], "alpha", 255);
