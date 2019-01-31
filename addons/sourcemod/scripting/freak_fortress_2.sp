@@ -8103,7 +8103,7 @@ public Action:OnObjectDeflected(Handle:event, const String:name[], bool:dontBroa
 	new boss=GetBossIndex(GetClientOfUserId(GetEventInt(event, "ownerid")));
 	if(boss!=-1 && BossCharge[boss][0]<rageMax[boss])
 	{
-		BossCharge[boss][0]+=(rageMax[boss]*7/rageMin[boss]);  //TODO: Allow this to be customizable
+		BossCharge[boss][0]+=7.0;  //TODO: Allow this to be customizable
 		if(BossCharge[boss][0]>rageMax[boss])
 		{
 			BossCharge[boss][0]=rageMax[boss];
@@ -8650,7 +8650,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							}
 							else
 							{
-								if(index!=230 || BossCharge[boss][0]>(rageMax[client]*90/rageMin[client]))  //Sydney Sleeper
+								if(index!=230 || BossCharge[boss][0]>90.0)  //Sydney Sleeper
 								{
 									damage*=SniperDamage;
 								}
