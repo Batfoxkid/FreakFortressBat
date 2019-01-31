@@ -5086,6 +5086,150 @@ EquipBoss(boss)
 			break;
 		}
 	}
+	for(new i=1; ; i++)
+	{
+		KvRewind(BossKV[Special[boss]]);
+		Format(key, sizeof(key), "cosmetic%i", i);
+		if(KvJumpToKey(BossKV[Special[boss]], key))
+		{
+			KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname), "tf_wearable");
+			KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
+			new strangerank=KvGetNum(BossKV[Special[boss]], "rank", 21);
+			new cosmeticlevel=KvGetNum(BossKV[Special[boss]], "level", -1);
+			new index=KvGetNum(BossKV[Special[boss]], "index");
+			new overridecos=KvGetNum(BossKV[Special[boss]], "override", 0);
+			new strangepts=-1;
+			new strangecos=1;
+			switch(strangerank)	// TODO: Set up the strange points
+			{
+				case 0:
+					strangepts=GetRandomInt(0, 9);
+				case 1:
+					strangepts=GetRandomInt(10, 24);
+				case 2:
+					strangepts=GetRandomInt(25, 44);
+				case 3:
+					strangepts=GetRandomInt(45, 69);
+				case 4:
+					strangepts=GetRandomInt(70, 99);
+				case 5:
+					strangepts=GetRandomInt(100, 134);
+				case 6:
+					strangepts=GetRandomInt(135, 174);
+				case 7:
+					strangepts=GetRandomInt(175, 224);
+				case 8:
+					strangepts=GetRandomInt(225, 274);
+				case 9:
+					strangepts=GetRandomInt(275, 349);
+				case 10:
+					strangepts=GetRandomInt(350, 499);
+				case 11:
+				{
+					if(index==656)	// Holiday Punch is different
+						strangepts=GetRandomInt(500, 748);
+					else
+						strangepts=GetRandomInt(500, 749);
+				}
+				case 12:
+				{
+					if(index==656)
+						strangepts=749;
+					else
+						strangepts=GetRandomInt(750, 998);
+				}
+				case 13:
+				{
+					if(index==656)
+						strangepts=GetRandomInt(750, 999);
+					else
+						strangepts=999;
+				}
+				case 14:
+					strangepts=GetRandomInt(1000, 1499);
+				case 15:
+					strangepts=GetRandomInt(1500, 2499);
+				case 16:
+					strangepts=GetRandomInt(2500, 4999);
+				case 17:
+					strangepts=GetRandomInt(5000, 7499);
+				case 18:
+				{
+					if(index==656)
+						strangepts=GetRandomInt(7500, 7922);
+					else
+						strangepts=GetRandomInt(7500, 7615);
+				}
+				case 19:
+				{
+					if(index==656)
+						strangepts=GetRandomInt(7923, 8499);
+					else
+						strangepts=GetRandomInt(7616, 8499);
+				}
+				case 20:
+					strangepts=GetRandomInt(8500, 9999);
+				default:
+				{
+					strangepts=GetRandomInt(0, 9999);
+					if(!GetConVarBool(cvarStrangeWep) || cosmeticlevel!=-1 || overridecos)
+						strangecos=0;
+				}
+			}
+			if(cosmeticlevel<0)
+				cosmeticlevel=101;
+
+			if(strangecos)
+			{
+				if(attributes[0]!='\0')
+				{
+					if(overridecos)
+						Format(attributes, sizeof(attributes), "214 ; %d ; %s", strangepts, attributes);
+					else if(index==57)
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 5 ; %s", strangepts, attributes);
+					else
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64 ; %s", strangepts, attributes);
+				}
+				else
+				{
+					if(overridecos)
+						Format(attributes, sizeof(attributes), "214 ; %d", strangepts);
+					else if(index==57)
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 5", strangepts);
+					else
+						Format(attributes, sizeof(attributes), "214 ; %d ; 292 ; 64", strangepts);
+				}
+				// Note: 292's value for comseitcs is either 1115684864 or 64
+				// Razorback's 292 = 1084227584 or 5
+			}
+			else
+			{
+				if(attributes[0]!='\0')
+				{
+					Format(attributes, sizeof(attributes), "%s", attributes);
+				}
+				else
+				{
+					Format(attributes, sizeof(attributes), "28 ; 1");	// Does nothing
+				}
+			}
+
+			new cosmetic=SpawnCosmeitc(client, classname, index, cosmeticlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+
+			new rgba[4];
+			rgba[0]=KvGetNum(BossKV[Special[boss]], "alpha", 255);
+			rgba[1]=KvGetNum(BossKV[Special[boss]], "red", 255);
+			rgba[2]=KvGetNum(BossKV[Special[boss]], "green", 255);
+			rgba[3]=KvGetNum(BossKV[Special[boss]], "blue", 255);
+
+			SetEntityRenderMode(cosmetic, RENDER_TRANSCOLOR);
+			SetEntityRenderColor(cosmetic, rgba[1], rgba[2], rgba[3], rgba[0]);
+		}
+		else
+		{
+			break;
+		}
+	}
 
 	KvGoBack(BossKV[Special[boss]]);
 	new TFClassType:class=TFClassType:KvGetNum(BossKV[Special[boss]], "class", 1);
@@ -10277,6 +10421,55 @@ stock SpawnWeapon(client, String:name[], index, level, qual, String:att[])
 
 	new entity=TF2Items_GiveNamedItem(client, hWeapon);
 	CloseHandle(hWeapon);
+	EquipPlayerWeapon(client, entity);
+	return entity;
+}
+
+stock SpawnCosmetic(client, String:name[], index, level, qual, String:att[])
+{
+	new Handle:hCosmetic=TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
+	if(hCosmetic==INVALID_HANDLE)
+	{
+		return -1;
+	}
+
+	TF2Items_SetClassname(hCosmetic, name);
+	TF2Items_SetItemIndex(hCosmetic, index);
+	TF2Items_SetLevel(hCosmetic, level);
+	TF2Items_SetQuality(hCosmetic, qual);
+	new String:atts[32][32];
+	new count=ExplodeString(att, ";", atts, 32, 32);
+
+	if(count % 2)
+	{
+		--count;
+	}
+
+	if(count>0)
+	{
+		TF2Items_SetNumAttributes(hCosmetic, count/2);
+		new i2;
+		for(new i; i<count; i+=2)
+		{
+			new attrib=StringToInt(atts[i]);
+			if(!attrib)
+			{
+				LogError("Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
+				CloseHandle(hCosmetic);
+				return -1;
+			}
+
+			TF2Items_SetAttribute(hCosmetic, i2, attrib, StringToFloat(atts[i+1]));
+			i2++;
+		}
+	}
+	else
+	{
+		TF2Items_SetNumAttributes(hCosmetic, 0);
+	}
+
+	new entity=TF2Items_GiveNamedItem(client, hCosmetic);
+	CloseHandle(hCosmetic);
 	EquipPlayerWeapon(client, entity);
 	return entity;
 }
