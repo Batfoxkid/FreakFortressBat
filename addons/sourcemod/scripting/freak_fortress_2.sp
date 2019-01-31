@@ -74,7 +74,7 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Unofficial"
 
-#define PLUGIN_VERSION FORK_SUB_REVISION..." "FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
+#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
 
 /*
     And now, let's report its version as the latest public FF2 version
@@ -836,7 +836,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 		}
 		case 90:  //1.12.1
 		{
-			DrawPanelText(panel, "1) DEV_REVISION adjusted to not get confused with offical FF2 (Batfoxkid)");
+			DrawPanelText(panel, "1) DEV_REVISION adjusted to not get confused with official FF2 (Batfoxkid)");
 		}
 		case 89:  //1.12.0
 		{
@@ -4760,6 +4760,10 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 {
 	if(preset)
 	{
+		if(!boss && !StrEqual(xIncoming[client], ""))
+		{
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "boss_selection_overridden");
+		}
 		return Plugin_Continue;
 	}
 	
@@ -4774,6 +4778,57 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
+}
+
+stock CreateAttachedAnnotation(client, entity, bool:effect=true, Float:time, String:buffer[], any:...)
+{
+	decl String:message[512];
+	SetGlobalTransTarget(client);
+	VFormat(message, sizeof(message), buffer, 6);
+	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
+	
+	new Handle:event = CreateEvent("show_annotation");
+	if(event == INVALID_HANDLE)
+	{
+		return -1;
+	}
+	SetEventInt(event, "follow_entindex", entity);  
+	SetEventFloat(event, "lifetime", time);
+	SetEventInt(event, "visibilityBitfield", (1<<client));
+	SetEventBool(event,"show_effect", effect);
+	SetEventString(event, "text", message);
+	SetEventInt(event, "id", entity); //What to enter inside? Need a way to identify annotations by entindex!
+	FireEvent(event);
+	return entity;
+}
+
+stock bool ShowGameText(int client, const char[] icon="leaderboard_streak", color=0, const char[] buffer, any ...)
+{
+	Handle bf;
+	if(!client)
+	{
+		bf=StartMessageAll("HudNotifyCustom");
+	}
+	else
+	{
+		bf = StartMessageOne("HudNotifyCustom", client);
+	}
+
+	if(bf==null)
+	{
+		return false;
+	}
+
+	char message[512];
+	SetGlobalTransTarget(client);
+	VFormat(message, sizeof(message), buffer, 5);
+	ReplaceString(message, sizeof(message), "\n", "");
+
+	BfWriteString(bf, message);
+	BfWriteString(bf, icon);
+	BfWriteByte(bf, color);
+	EndMessage();
+	return true;
 }
 
 public Action:Timer_Move(Handle:timer)
@@ -8950,6 +9005,8 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 				}
 
+				new String:spcl[768];
+				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				switch(index)
 				{
 					case 43:  //Killing Gloves of Boxing
@@ -9116,8 +9173,16 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								Marketed[client]++;
 							}
 
-							PrintHintText(attacker, "%t", "Market Gardener");  //You just market-gardened the boss!
-							PrintHintText(client, "%t", "Market Gardened");  //You just got market-gardened!
+							/*if(GetConVarBool(cvarAnnotations))
+							{
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", GetConVarBool(cvarTellName) ? "Market Gardener Player", spcl : "Market Gardener");
+								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", GetConVarBool(cvarTellName) ? "Market Gardened Player", attacker : "Market Gardened");
+							}
+							else
+							{
+								PrintHintText(attacker, "%t", GetConVarBool(cvarTellName) ? "Market Gardener Player", spcl : "Market Gardener");
+								PrintHintText(client, "%t", GetConVarBool(cvarTellName) ? "Market Gardened Player", attacker : "Market Gardened");
+							}*/
 
 							EmitSoundToClient(attacker, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
