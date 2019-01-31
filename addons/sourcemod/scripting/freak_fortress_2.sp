@@ -72,9 +72,9 @@ last time or to encourage others to do the same.
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
 #define FORK_STABLE_REVISION "5"
-#define FORK_SUB_REVISION "Bat's Edit"
+#define FORK_SUB_REVISION "Unofficial"
 
-#define PLUGIN_VERSION FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_SUB_REVISION
+#define PLUGIN_VERSION FORK_SUB_REVISION..." "FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
 
 /*
     And now, let's report its version as the latest public FF2 version
