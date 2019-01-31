@@ -8719,7 +8719,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if(GetEntProp(weapon, Prop_Send, "m_iDetonated") == 0)	// If using ullapool caber, only trigger if bomb hasn't been detonated
                         			{
 							if(GetConVarBool(cvarLowStab))
-								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(2250/float(playing))-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(2250.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
 							else
 								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
 							damagetype|=DMG_CRIT;
@@ -8825,9 +8825,9 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						//if(FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING)
                         			{
 							if(GetConVarBool(cvarLowStab))
-								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(1750/float(playing))-(Marketed[client]/128.0*float(BossHealthMax[boss])))/6;
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
 							else
-								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/6;
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
 							damagetype|=DMG_CRIT;
 
 							if (RemoveCond(attacker, TFCond_Parachute))	// If you parachuted to do this, remove your parachute.
