@@ -346,21 +346,41 @@
 	{
 		"en"	"Surprise! You are now the boss!"
 	}
-	"Backstab"	// Hint
+	"Backstab"	// Hint, Annotation
 	{
 		"en"	"You just backstabbed the boss!"
 	}
-	"Backstabbed"	// Hint
+	"Backstabbed"	// Hint, Annotation
 	{
 		"en"	"You just got backstabbed!"
 	}
-	"Market Gardener"	// Hint
+	"Backstab Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"You backstabbed {1}!"
+	}
+	"Backstabbed Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"
+		"en"	"{1} backstabbed you!"
+	}
+	"Market Gardener"	// Hint, Annotation
 	{
 		"en"	"You just market-gardened the boss!"
 	}
-	"Market Gardened"	// Hint
+	"Market Gardened"	// Hint, Annotation
 	{
 		"en"	"You just got market-gardened!"
+	}
+	"Market Gardener Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"You market-gardened {1}!"
+	}
+	"Market Gardened Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"
+		"en"	"{1} market-gardened you!"
 	}
 	"Detonations Left"	// Deprecated
 	{
@@ -377,13 +397,59 @@
 		"#format"	"{1:i}"
 		"en"		"Damage: {1}"
 	}
-	"Caber"	// Hint
+	"Caber"	// Hint, Annotation
 	{
 		"en"	"You just ullapool caber the boss!"
 	}
-	"Cabered"	// Hint
+	"Cabered"	// Hint, Annotation
 	{
 		"en"	"You just got ullapool cabered!"
+	}
+	"Caber Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"You ullapool caber {1}!"
+	}
+	"Cabered Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"		
+		"en"	"{1} ullapool cabered you!"
+	}
+	"Goomba Stomp"
+	{
+		"en"	"You goomba stomped the boss!"
+	}
+	"Goomba Stomp Boss"
+	{
+		"en"	"You goomba stomped somebody!"
+	}
+	"Goomba Stomped"
+	{		
+		"en"	"Ouch!  Watch your head!"
+	}
+	"Goomba Stomped Boss"
+	{		
+		"en"	"You were just goomba stomped!"
+	}
+	"Goomba Stomp Player"
+	{
+		"#format" "{1:s}"	
+		"en"	"You goomba stomped {1}!"
+	}
+	"Goomba Stomp Boss Player"
+	{
+		"#format" "{1:N}"
+		"en"	"You goomba stomped {1}!"
+	}
+	"Goomba Stomped Player"
+	{
+		"#format" "{1:N}"		
+		"en"	"Ouch! {1} goomba stomped you! Watch your head!"
+	}
+	"Goomba Stomped Boss Player"
+	{
+		"#format" "{1:N}"		
+		"en"	"{1} goomba stomped you!"
 	}
 	"Dead Ringer Ready" // HUD
 	{
