@@ -6823,7 +6823,7 @@ public Action:Command_LoadCharset(client, args)
 		{
 			FF2CharSet=i;
 			LoadCharset=true;
-			if(CheckRoundState()==-1)
+			if(CheckRoundState()==0 || CheckRoundState()==1)
 			{
 				CReplyToCommand(client, "{olive}[FF2]{default} The current character set is set to be switched to %s!", config);
 				return Plugin_Handled;
@@ -8101,12 +8101,13 @@ public Action:OnObjectDeflected(Handle:event, const String:name[], bool:dontBroa
 	}
 
 	new boss=GetBossIndex(GetClientOfUserId(GetEventInt(event, "ownerid")));
-	if(boss!=-1 && BossCharge[boss][0]<rageMax[boss])
+	new client=Boss[boss];
+	if(boss!=-1 && BossCharge[boss][0]<rageMax[client])
 	{
-		BossCharge[boss][0]+=7.0;  //TODO: Allow this to be customizable
-		if(BossCharge[boss][0]>rageMax[boss])
+		BossCharge[boss][0]+=rageMax[client]*7.0/rageMin[client];  //TODO: Allow this to be customizable
+		if(BossCharge[boss][0]>rageMax[client])
 		{
-			BossCharge[boss][0]=rageMax[boss];
+			BossCharge[boss][0]=rageMax[client];
 		}
 	}
 	return Plugin_Continue;
