@@ -451,6 +451,32 @@
 		"#format" "{1:N}"		
 		"en"	"{1} goomba stomped you!"
 	}
+	"Telefrag"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG! You are a pro!"
+	}
+	"Telefraged"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG! Be careful around quantum tunneling devices!"
+	}
+	"Telefrag Assist"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG ASSIST!  Nice job setting it up!"
+	}
+	"Telefrag Global"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG!"
+	}
+	"Telefrag Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"TELEFRAG! You telefraged {1}!"
+	}
+	"Telefraged Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"		
+		"en"	"TELEFRAG! {1} telefraged you!"
+	}
 	"Dead Ringer Ready" // HUD
 	{
 		"en"        "Status: Feign Death Ready"
