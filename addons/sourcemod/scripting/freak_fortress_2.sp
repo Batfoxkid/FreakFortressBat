@@ -71,7 +71,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "5"
+#define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Unofficial"
 
 #define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -224,6 +224,9 @@ new Handle:cvarDuoMin;
 //new Handle:cvarNewDownload;
 new Handle:cvarDuoRestore;
 new Handle:cvarLowStab;
+new Handle:cvarGameText;
+new Handle:cvarAnnotations;
+new Handle:cvarTellName;
 
 new Handle:FF2Cookies;
 
@@ -467,7 +470,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.3",
 	"1.17.4",
 	"1.17.5",
-	"1.17.5"
+	"1.17.5",
+	"1.17.6"
 };
 
 static const String:ff2versiondates[][]=
@@ -604,13 +608,22 @@ static const String:ff2versiondates[][]=
 	"January 22, 2019",		//1.17.3
 	"January 24, 2019",		//1.17.4
 	"January 29, 2019",		//1.17.5
-	"January 29, 2019"		//1.17.5
+	"January 29, 2019",		//1.17.5
+	"February 4, 2019"		//1.17.6
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 133:  //1.17.6
+		{
+			DrawPanelText(panel, "1) Cvar for game_text_tf entities as HUD replacements (SHADoW)");
+			DrawPanelText(panel, "2) Cvar for Annotations as Hint replacements (SHADoW)");
+			DrawPanelText(panel, "3) Cvar to say the player's or boss's name in Hints/Annotations (Batfoxkid/SHADoW)");
+			DrawPanelText(panel, "4) Added cosmetics option for bosses (Batfoxkid)");
+			DrawPanelText(panel, "5) Fixed major and minor issues from previous update (Batfoxkid)");
+		}
 		case 132:  //1.17.5
 		{
 			DrawPanelText(panel, "1) Rages can be set infinitely, disabled, or blocked (Batfoxkid)");
@@ -1729,6 +1742,9 @@ public OnPluginStart()
 	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
 	cvarDuoRestore=CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
 	cvarLowStab=CreateConVar("ff2_low_stab", "0", "0-Disable, 1-Low-player count stabs, market, and caber do more damage", _, true, 0.0, true, 1.0);
+	cvarGameText=CreateConVar("ff2_text_tf_hud", "0", "0-Use HUD texts, 1-Use game_text_tf entities", _, true, 0.0, true, 1.0);
+	cvarAnnotations=CreateConVar("ff2_text_annotations", "0", "0-Use hint texts, 1-Use annotations", _, true, 0.0, true, 1.0);
+	cvarTellName=CreateConVar("ff2_text_names", "0", "0-Don't show player/boss names, 1-Say player/boss names", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1802,6 +1818,9 @@ public OnPluginStart()
 	//HookConVarChange(cvarNewDownload, CvarChange);
 	HookConVarChange(cvarDuoRestore, CvarChange);
 	HookConVarChange(cvarLowStab, CvarChange);
+	HookConVarChange(cvarGameText, CvarChange);
+	HookConVarChange(cvarAnnotations, CvarChange);
+	HookConVarChange(cvarTellName, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -4758,6 +4777,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 
 public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], bool:preset)
 {
+	new client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	if(preset)
 	{
 		if(!boss && !StrEqual(xIncoming[client], ""))
@@ -4767,7 +4787,6 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 		return Plugin_Continue;
 	}
 	
-	new client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	if (!boss && !StrEqual(xIncoming[client], ""))
 	{
 		strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
@@ -7655,6 +7674,10 @@ public Action:ClientTimer(Handle:timer)
 				{
 					addthecrit=false;
 				}
+				else if(index==307)	//Ullapool Caber
+				{
+					addthecrit=GetEntProp(weapon, Prop_Send, "m_iDetonated") ? false : true;
+				}
 			}
 			else if((!StrContains(classname, "tf_weapon_smg") && index!=751) ||  //Cleaner's Carbine
 			         !StrContains(classname, "tf_weapon_compound_bow") ||
@@ -8969,9 +8992,9 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							new Float:time=(GlowTimer[boss]>10 ? 1.0 : 2.0);
 							time+=(GlowTimer[boss]>10 ? (GlowTimer[boss]>20 ? 1.0 : 2.0) : 4.0)*(charge/100.0);
 							SetClientGlow(Boss[boss], time);
-							if(GlowTimer[boss]>20.0)
+							if(GlowTimer[boss]>25.0)
 							{
-								GlowTimer[boss]=20.0;
+								GlowTimer[boss]=25.0;
 							}
 						}
 
@@ -9005,8 +9028,6 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 				}
 
-				new String:spcl[768];
-				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				switch(index)
 				{
 					case 43:  //Killing Gloves of Boxing
@@ -9063,11 +9084,42 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								Cabered[client]++;
 							}
 
-							//SetEntProp(weapon, Prop_Send, "m_bBroken", 0);
-							//SetEntProp(weapon, Prop_Send, "m_iDetonated", 0);
-
-							PrintHintText(attacker, "%t", "Caber");  //You just ullapool cabered the boss!
-							PrintHintText(client, "%t", "Cabered");  //You just got ullapool cabered!
+							if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+							{
+								if(GetConVarBool(cvarTellName))
+								{
+									new String:spcl[768];
+									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", spcl);
+									else
+										PrintHintText(attacker, "%t", "Caber Player", spcl);
+								}
+								else
+								{
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber");
+									else
+										PrintHintText(attacker, "%t", "Caber");
+								}
+							}
+							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+							{
+								if(GetConVarBool(cvarTellName))
+								{
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Cabered Player", attacker);
+									else
+										PrintHintText(client, "%t", "Cabered Player", attacker);
+								}
+								else
+								{
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Cabered");
+									else
+										PrintHintText(client, "%t", "Cabered");
+								}
+							}
 
 							EmitSoundToClient(attacker, "ambient/lightsoff.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "ambient/lightson.wav", _, _, _, _, 0.6, _, _, position, _, false);
@@ -9119,11 +9171,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							new health=GetClientHealth(attacker);
 							new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
 							new newhealth=health+5;
-							if(health<max+30)
+							if(health<max+75)
 							{
-								if(newhealth>max+30)
+								if(newhealth>max+75)
 								{
-									newhealth=max+30;
+									newhealth=max+75;
 								}
 								SetEntityHealth(attacker, newhealth);
 							}
@@ -9131,26 +9183,40 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 357:  //Half-Zatoichi
 					{
+						new health=GetClientHealth(attacker);
+						new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
+						if(GetEntProp(weapon, Prop_Send, "m_bIsBloody")	// Less effective used more than once
+						{
+							new newhealth=health+25;
+							if(health<max*2)
+							{
+								if(newhealth>max*2)
+								{
+									newhealth=max*2;
+								}
+								SetEntityHealth(attacker, newhealth);
+							}
+						}
+						else	// Most effective on first hit
+						{
+							new newhealth=max/2;
+							if(health<max*2)
+							{
+								if(newhealth>max*2)
+								{
+									newhealth=max*2;
+								}
+								SetEntityHealth(attacker, newhealth);
+							}
+							if(TF2_IsPlayerInCondition(attacker, TFCond_OnFire))
+							{
+								TF2_RemoveCondition(attacker, TFCond_OnFire);
+							}
+						}
 						SetEntProp(weapon, Prop_Send, "m_bIsBloody", 1);
 						if(GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy")<1)
 						{
 							SetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy", 1);
-						}
-
-						new health=GetClientHealth(attacker);
-						new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
-						new newhealth=health+50;
-						if(health<max+175)
-						{
-							if(newhealth>max+175)
-							{
-								newhealth=max+175;
-							}
-							SetEntityHealth(attacker, newhealth);
-						}
-						if(TF2_IsPlayerInCondition(attacker, TFCond_OnFire))
-						{
-							TF2_RemoveCondition(attacker, TFCond_OnFire);
 						}
 					}
 					case 416:  //Market Gardener (courtesy of Chdata)
@@ -9173,16 +9239,42 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								Marketed[client]++;
 							}
 
-							/*if(GetConVarBool(cvarAnnotations))
+							if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 							{
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", GetConVarBool(cvarTellName) ? "Market Gardener Player", spcl : "Market Gardener");
-								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", GetConVarBool(cvarTellName) ? "Market Gardened Player", attacker : "Market Gardened");
+								if(GetConVarBool(cvarTellName))
+								{
+									new String:spcl[768];
+									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", spcl);
+									else
+										PrintHintText(attacker, "%t", "Market Gardener Player", spcl);
+								}
+								else
+								{
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener");
+									else
+										PrintHintText(attacker, "%t", "Market Gardener");
+								}
 							}
-							else
+							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
 							{
-								PrintHintText(attacker, "%t", GetConVarBool(cvarTellName) ? "Market Gardener Player", spcl : "Market Gardener");
-								PrintHintText(client, "%t", GetConVarBool(cvarTellName) ? "Market Gardened Player", attacker : "Market Gardened");
-							}*/
+								if(GetConVarBool(cvarTellName))
+								{
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Market Gardened Player", attacker);
+									else
+										PrintHintText(client, "%t", "Market Gardened Player", attacker);
+								}
+								else
+								{
+									if(GetConVarBool(cvarAnnotations))
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Market Gardened");
+									else
+										PrintHintText(client, "%t", "Market Gardened");
+								}
+							}
 
 							EmitSoundToClient(attacker, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
@@ -9304,7 +9396,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						new animation=41;
 						switch(melee)
 						{
-							case 225, 356, 423, 461, 574, 649, 1071:  //Your Eternal Reward, Conniver's Kunai, Saxxy, Wanga Prick, Big Earner, Spy-cicle, Golden Frying Pan
+							case 225, 356, 423, 461, 574, 649, 1071, 30758:  //Your Eternal Reward, Conniver's Kunai, Saxxy, Wanga Prick, Big Earner, Spy-cicle, Golden Frying Pan, Prinny Machete
 							{
 								animation=15;
 							}
@@ -9318,71 +9410,70 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 
 					if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 					{
-						PrintHintText(attacker, "%t", "Backstab");
+						if(GetConVarBool(cvarTellName))
+						{
+							new String:spcl[768];
+							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+							if(GetConVarBool(cvarAnnotations))
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", spcl);
+							else
+								PrintHintText(attacker, "%t", "Backstab Player", spcl);
+						}
+						else
+						{
+							if(GetConVarBool(cvarAnnotations))
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab");
+							else
+								PrintHintText(attacker, "%t", "Backstab");
+						}
 					}
 
+					if(index!=225 && index!=574)  //Your Eternal Reward, Wanga Prick
+					{
+						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+
+						if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+						{
+							if(GetConVarBool(cvarTellName))
+							{
+								if(GetConVarBool(cvarAnnotations))
+									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Backstabed Player", attacker);
+								else
+									PrintHintText(attacker, "%t", "Backstabed Player", attacker);
+							}
+							else
+							{
+								if(GetConVarBool(cvarAnnotations))
+									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Backstabed");
+								else
+									PrintHintText(attacker, "%t", "Backstabed");
+							}
+						}
+
+						decl String:sound[PLATFORM_MAX_PATH];
+						if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
+						{
+							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+						}
+					}
 					if(index==225 || index==574)  //Your Eternal Reward, Wanga Prick
 					{
 						CreateTimer(0.3, Timer_DisguiseBackstab, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
 					}
 					else if(index==356)  //Conniver's Kunai
 					{
-						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 						new health=GetClientHealth(attacker)+200;
 						if(health>600)
 						{
 							health=600;
 						}
-						SetEntityHealth(attacker, health);
-
-						if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
-						{
-							PrintHintText(client, "%t", "Backstabbed");
-						}
-
-						decl String:sound[PLATFORM_MAX_PATH];
-						if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
-						{
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-						}
 					}
 					else if(index==461)  //Big Earner
 					{
-						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 						SetEntPropFloat(attacker, Prop_Send, "m_flCloakMeter", 100.0);  //Full cloak
 						TF2_AddCondition(attacker, TFCond_SpeedBuffAlly, 3.0);  //Speed boost
-
-						if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
-						{
-							PrintHintText(client, "%t", "Backstabbed");
-						}
-
-						decl String:sound[PLATFORM_MAX_PATH];
-						if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
-						{
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-						}
-					}
-					else
-					{
-						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-
-						if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
-						{
-							PrintHintText(client, "%t", "Backstabbed");
-						}
-
-						decl String:sound[PLATFORM_MAX_PATH];
-						if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
-						{
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-						}
 					}
 
 					if(GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Primary)==525)  //Diamondback
@@ -9412,20 +9503,65 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						Damage[teleowner]+=9001*3/5;
 						if(!(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 						{
-							PrintHintText(teleowner, "TELEFRAG ASSIST!  Nice job setting it up!");
+							if(GetConVarBool(cvarAnnotations))
+								CreateAttachedAnnotation(teleowner, client, true, 5.0, "%t", "Telefrag Assist");
+							else
+								PrintHintText(teleowner, "%t", "Telefrag Assist");
 						}
 					}
 
 					if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 					{
-						PrintHintText(attacker, "TELEFRAG! You are a pro!");
+						if(GetConVarBool(cvarTellName))
+						{
+							new String:spcl[768];
+							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+							if(GetConVarBool(cvarAnnotations))
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
+							else
+								PrintHintText(attacker, "%t", "Telefrag Player", spcl);
+						}
+						else
+						{
+							if(GetConVarBool(cvarAnnotations))
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag");
+							else
+								PrintHintText(attacker, "%t", "Telefrag");
+						}
 					}
 
 					if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
 					{
-						PrintHintText(client, "TELEFRAG! Be careful around quantum tunneling devices!");
+						if(GetConVarBool(cvarTellName))
+						{
+							if(GetConVarBool(cvarAnnotations))
+								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged Player", attacker);
+							else
+								PrintHintText(client, "%t", "Telefrged Player", attacker);
+						}
+						else
+						{
+							if(GetConVarBool(cvarAnnotations))
+								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged");
+							else
+								PrintHintText(client, "%t", "Telefraged");
+						}
 					}
-					
+
+					for(new all; all<=MaxClients; all++)
+					{
+						if(IsValidClient(all) && IsPlayerAlive(all))
+						{
+							if(!(FF2flags[all] & FF2FLAG_HUDDISABLED))
+							{
+								if(GetConVarBool(cvarAnnotations))
+									CreateAttachedAnnotation(all, client, true, 5.0, "%t", "Telefrag Global");
+								else
+									PrintHintText(all, "%t", "Telefrag Global");
+							}
+						}
+					}
+
 					decl String:sound[PLATFORM_MAX_PATH];
 					if(RandomSound("sound_telefraged", sound, sizeof(sound)))
 					{
@@ -9556,16 +9692,84 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 		}
 		damageMultiplier=900.0;
 		JumpPower=0.0;
-		PrintHintText(victim, "Ouch!  Watch your head!");
-		PrintHintText(attacker, "You just goomba stomped somebody!");
+		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		{
+			if(GetConVarBool(cvarTellName))
+			{
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss Player", victim);
+				else
+					PrintHintText(attacker, "%t", "Goomba Stomp Boss Player", victim);
+			}
+			else
+			{
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss");
+				else
+					PrintHintText(attacker, "%t", "Goomba Stomp Boss");
+			}
+		}
+		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+		{
+			if(GetConVarBool(cvarTellName))
+			{
+				new String:spcl[768];
+				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
+				else
+					PrintHintText(client, "%t", "Goomba Stomped Player", spcl);
+			}
+			else
+			{
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped");
+				else
+					PrintHintText(victim, "%t", "Goomba Stomped");
+			}
+		}
 		return Plugin_Changed;
 	}
 	else if(IsBoss(victim))
 	{
 		damageMultiplier=GoombaDamage;
 		JumpPower=reboundPower;
-		PrintHintText(victim, "You were just goomba stomped!");
-		PrintHintText(attacker, "You just goomba stomped the boss!");
+		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		{
+			if(GetConVarBool(cvarTellName))
+			{
+				new String:spcl[768];
+				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", spcl);
+				else
+					PrintHintText(attacker, "%t", "Goomba Stomp Player", spcl);
+			}
+			else
+			{
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp");
+				else
+					PrintHintText(attacker, "%t", "Goomba Stomp");
+			}
+		}
+		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+		{
+			if(GetConVarBool(cvarTellName))
+			{
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
+				else
+					PrintHintText(client, "%t", "Goomba Stomped Boss Player", attacker);
+			}
+			else
+			{
+				if(GetConVarBool(cvarAnnotations))
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss");
+				else
+					PrintHintText(victim, "%t", "Goomba Stomped Boss");
+			}
+		}
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
