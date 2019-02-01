@@ -9185,7 +9185,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						new health=GetClientHealth(attacker);
 						new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
-						if(GetEntProp(weapon, Prop_Send, "m_bIsBloody")	// Less effective used more than once
+						if(GetEntProp(weapon, Prop_Send, "m_bIsBloody"))	// Less effective used more than once
 						{
 							new newhealth=health+25;
 							if(health<max*2)
@@ -9683,6 +9683,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 
 	if(IsBoss(attacker))
 	{
+		new boss=GetBossIndex(attacker);
 		if(shield[victim])
 		{
 			new Float:position[3];
@@ -9718,7 +9719,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				if(GetConVarBool(cvarAnnotations))
 					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
 				else
-					PrintHintText(client, "%t", "Goomba Stomped Player", spcl);
+					PrintHintText(victim, "%t", "Goomba Stomped Player", spcl);
 			}
 			else
 			{
@@ -9732,6 +9733,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 	}
 	else if(IsBoss(victim))
 	{
+		new boss=GetBossIndex(victim);
 		damageMultiplier=GoombaDamage;
 		JumpPower=reboundPower;
 		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
@@ -9760,7 +9762,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				if(GetConVarBool(cvarAnnotations))
 					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
 				else
-					PrintHintText(client, "%t", "Goomba Stomped Boss Player", attacker);
+					PrintHintText(victim, "%t", "Goomba Stomped Boss Player", attacker);
 			}
 			else
 			{
