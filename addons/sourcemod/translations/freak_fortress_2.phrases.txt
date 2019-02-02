@@ -477,6 +477,11 @@
 		"#format" "{1:N}"		
 		"en"	"TELEFRAG! {1} telefraged you!"
 	}
+	"Time Left"	// Annotation
+	{
+		"#format" "{1:s}"		
+		"en"	"Time Remaining: {1}"
+	}
 	"Dead Ringer Ready" // HUD
 	{
 		"en"        "Status: Feign Death Ready"
