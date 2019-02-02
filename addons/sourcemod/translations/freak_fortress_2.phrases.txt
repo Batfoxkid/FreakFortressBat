@@ -299,7 +299,7 @@
 	"ff2_last_update"	// Chat
 	{
 		"#format" "{1:s},{2:s}"
-		"en"	"What's new in v{olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
+		"en"	"What's new in {olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
 	}
 	"charge_status"	// HUD
 	{
