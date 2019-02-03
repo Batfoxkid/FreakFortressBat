@@ -1745,7 +1745,7 @@ public OnPluginStart()
 	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
 	cvarDuoRestore=CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
 	cvarLowStab=CreateConVar("ff2_low_stab", "0", "0-Disable, 1-Low-player count stabs, market, and caber do more damage", _, true, 0.0, true, 1.0);
-	cvarGameText=CreateConVar("ff2_text_game", "0", "For game messages: 0-Use HUD texts, 1-Use game_text_tf entities, 2-Include boss intro too", _, true, 0.0, true, 2.0);
+	cvarGameText=CreateConVar("ff2_text_game", "0", "For game messages: 0-Use HUD texts, 1-Use game_text_tf entities, 2-Include boss intro and timer too", _, true, 0.0, true, 2.0);
 	cvarAnnotations=CreateConVar("ff2_text_msg", "0", "For backstabs and such: 0-Use hint texts, 1-Use annotations, 2-Use game_text_tf entities", _, true, 0.0, true, 2.0);
 	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
 	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
@@ -8683,7 +8683,7 @@ public Action:Timer_DrawGame(Handle:timer)
 					ShowGameText(client, "leaderboard_streak", _, "%s | %s", message, timeDisplay);
 				}
 			}
-			else if(!Companions && GetConVarBool(cvarGameText))
+			else if(!Companions && GetConVarInt(cvarGameText)==2)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
