@@ -34,7 +34,13 @@
 	}
 	"uber-charge"	// HUD
 	{
-		"en"	"Ubercharge rate"
+		"#format" "{1:i}"
+		"en"	"Ubercharge rate: {1}"
+	}
+	"Shield HP"
+	{
+		"#format" "{1:i}"
+		"en"	"Shield HP: {1} percent"
 	}
 	"Boss Lives Left"	// HUD
 	{
