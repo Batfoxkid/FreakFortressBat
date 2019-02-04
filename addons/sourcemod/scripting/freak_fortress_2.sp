@@ -7601,8 +7601,8 @@ public Action:ClientTimer(Handle:timer)
 			new index=(validwep ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
 			if(class==TFClass_Medic)
 			{
-				new charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
 				new medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+				new charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
 				decl String:mediclassname[64];
 				if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 				{
@@ -12556,10 +12556,13 @@ stock RemoveShield(client, attacker, Float:position[3])
 	TF2_RemoveWearable(client, shield[client]);
 	EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 	EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-	if(
-	EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-	EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-	TF2_AddCondition(client, TFCond_SpeedBuffAlly, 1.0);
+	if(GetConVarInt(cvarShieldType)!=3)
+	{
+		EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+		EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+	}
+	if(GetConVarInt(cvarShieldType)==3)
+		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 1.0);
 	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
 	shieldHP[client]=0.0;
 	shield[client]=0;
