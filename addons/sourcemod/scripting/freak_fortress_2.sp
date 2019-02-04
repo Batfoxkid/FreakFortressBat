@@ -106,6 +106,8 @@ last time or to encourage others to do the same.
 #define MapCFG "maps.cfg"
 #define WeaponCFG "weapons.cfg"
 
+float shDmgReduction[MAXPLAYERS+1];
+
 #if defined _steamtools_included
 new bool:steamtools=false;
 #endif
@@ -143,6 +145,7 @@ new shield[MAXPLAYERS+1];
 new detonations[MAXPLAYERS+1];
 new bool:playBGM[MAXPLAYERS+1]=true;
 
+new Float:shieldHP[MAXPLAYERS+1];
 new String:currentBGM[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 
 new FF2flags[MAXPLAYERS+1];
@@ -230,6 +233,7 @@ new Handle:cvarGameText;
 new Handle:cvarAnnotations;
 new Handle:cvarTellName;
 new Handle:cvarGhostBoss;
+new Handle:cvarShieldType;
 
 new Handle:FF2Cookies;
 
@@ -474,6 +478,7 @@ static const String:ff2versiontitles[][]=
 	"1.17.4",
 	"1.17.5",
 	"1.17.5",
+	"1.17.6",
 	"1.17.6"
 };
 
@@ -612,6 +617,7 @@ static const String:ff2versiondates[][]=
 	"January 24, 2019",		//1.17.4
 	"January 29, 2019",		//1.17.5
 	"January 29, 2019",		//1.17.5
+	"February 4, 2019",		//1.17.6
 	"February 4, 2019"		//1.17.6
 };
 
@@ -619,57 +625,64 @@ stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 134:  //1.17.6
+		{
+			DrawPanelText(panel, "1) [Gameplay] Cvar for game_text_tf entities as HUD replacements (SHADoW)");
+			DrawPanelText(panel, "2) [Gameplay] Cvar for Annotations or game_text_tf entities as Hint replacements (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "3) [Gameplay] Cvar to say the player's or boss's name in Hints/Annotations (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "4) [Core] Fixed major and minor issues from previous update (Batfoxkid)");
+			DrawPanelText(panel, "5) [Bosses] Added 'ghost' setting for bosses for game_text_tf entities (Batfoxkid)");
+		}
 		case 133:  //1.17.6
 		{
-			DrawPanelText(panel, "1) Cvar for game_text_tf entities as HUD replacements (SHADoW)");
-			DrawPanelText(panel, "2) Cvar for Annotations or game_text_tf entities as Hint replacements (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "3) Cvar to say the player's or boss's name in Hints/Annotations (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "4) Fixed major and minor issues from previous update (Batfoxkid)");
-			DrawPanelText(panel, "5) Added 'ghost' setting for bosses for game_text_tf entities (Batfoxkid)");
+			DrawPanelText(panel, "6) [Players] Shield HP and damage reduction option (SHADoW)");
+			DrawPanelText(panel, "7) [Players] Non-lethal shots don't break and none option (Batfoxkid)");
+			DrawPanelText(panel, "8) [Core] Renamed \"Bat's Edit\" to \"Unofficial\" (Batfoxkid)");
+			DrawPanelText(panel, "9) [Core] Improved some older and all newer changelogs (Batfoxkid from SHADoW)");
 		}
 		case 132:  //1.17.5
 		{
-			DrawPanelText(panel, "1) Rages can be set infinitely, disabled, or blocked (Batfoxkid)");
-			DrawPanelText(panel, "2) Speeds can be set to not handled by FF2 or full stand-still (Batfoxkid)");
-			DrawPanelText(panel, "3) Added minimum, maximum, and mode rage settings (Batfoxkid)");
-			DrawPanelText(panel, "4) Imported official 1.10.15 commits (naydef/Wliu)");
-			DrawPanelText(panel, "5) Control point and round time settings can be done per-boss (Batfoxkid)");
+			DrawPanelText(panel, "1) [Bosses] Rages can be set infinitely, disabled, or blocked (Batfoxkid)");
+			DrawPanelText(panel, "2) [Bosses] Speeds can be set to not handled by FF2 or full stand-still (Batfoxkid)");
+			DrawPanelText(panel, "3) [Bosses] Added minimum, maximum, and mode rage settings (Batfoxkid)");
+			DrawPanelText(panel, "4) [Core] Imported official 1.10.15 commits (naydef/Wliu)");
+			DrawPanelText(panel, "5) [Bosses] Control point and round time settings can be done per-boss (Batfoxkid)");
 		}
 		case 131:  //1.17.5
 		{
-			DrawPanelText(panel, "6) Allowed both ff2_point_time and ff2_point_alive for ff2_point_type (Batfoxkid)");
-			DrawPanelText(panel, "7) Boss weapons can set custom models, clip, ammo, and color (SHADoW)");
-			DrawPanelText(panel, "8) Boss weapons can disable base damage bonus and capture rate (Batfoxkid)");
-			DrawPanelText(panel, "9) Cvar to buff backstab, market garden, and caber for low-player count (Batfoxkid)");
+			DrawPanelText(panel, "6) [Gameplay] Allowed both ff2_point_time and ff2_point_alive for ff2_point_type (Batfoxkid)");
+			DrawPanelText(panel, "7) [Bosses] Boss weapons can set custom models, clip, ammo, and color (SHADoW)");
+			DrawPanelText(panel, "8) [Bosses] Boss weapons can disable base damage bonus and capture rate (Batfoxkid)");
+			DrawPanelText(panel, "9) [Players] Cvar to buff backstab, market garden, and caber for low-player count (Batfoxkid)");
 		}
 		case 130:  //1.17.4
 		{
-			DrawPanelText(panel, "1) Disable boss/companion for a map duration (Batfoxkid)");
-			DrawPanelText(panel, "2) More multi-translation fixes (MAGNAT2645)");
-			DrawPanelText(panel, "3) Option to restore queue points after being a companion (Batfoxkid)");
-			DrawPanelText(panel, "4) Added FF2_GetForkVersion native (Batfoxkid)");
+			DrawPanelText(panel, "1) [Players] Disable boss/companion for a map duration (Batfoxkid)");
+			DrawPanelText(panel, "2) [Core] More multi-translation fixes (MAGNAT2645)");
+			DrawPanelText(panel, "3) [Players] Option to restore queue points after being a companion (Batfoxkid)");
+			DrawPanelText(panel, "4) [Developers] Added FF2_GetForkVersion native (Batfoxkid)");
 		}
 		case 129:  //1.17.3
 		{
-			DrawPanelText(panel, "1) Last player glow cvar is now how many players are left (Batfoxkid)");
-			DrawPanelText(panel, "2) Multi-translation fixes (MAGNAT2645)");
-			DrawPanelText(panel, "3) Added 'sound_ability_serverwide' for serverwide RAGE sound (SHADoW)");
-			DrawPanelText(panel, "4) Allowed 'ragedamage' to be a formula (Batfoxkid)");
+			DrawPanelText(panel, "1) [Gameplay] Last player glow cvar is now how many players are left (Batfoxkid)");
+			DrawPanelText(panel, "2) [Core] Multi-translation fixes (MAGNAT2645)");
+			DrawPanelText(panel, "3) [Bosses] Added 'sound_ability_serverwide' for serverwide RAGE sound (SHADoW)");
+			DrawPanelText(panel, "4) [Bosses] Allowed 'ragedamage' to be a formula (Batfoxkid)");
 		}
 		case 128:  //1.17.2
 		{
-			DrawPanelText(panel, "1) Companion bosses unplayable when less then defined players (Batfoxkid)");
-			DrawPanelText(panel, "2) Cvar to adjust how the companion is choosen (Batfoxkid)");
+			DrawPanelText(panel, "1) [Core] Companion bosses unplayable when less then defined players (Batfoxkid)");
+			DrawPanelText(panel, "2) [Core] Cvar to adjust how the companion is choosen (Batfoxkid)");
 		}
 		case 127:  //1.17.1
 		{
-			DrawPanelText(panel, "1) Skip song doesn't play previous song and added shuffle song (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "2) Selectable theme in track menu (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "1) [Core] Skip song doesn't play previous song and added shuffle song (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "2) [Core] Selectable theme in track menu (Batfoxkid from SHADoW)");
 		}
 		case 126:  //1.17.0
 		{
-			DrawPanelText(panel, "1) Advanced music menu and commands (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "2) Readded and improved ff2_voice (Batfoxkid)");
+			DrawPanelText(panel, "1) [Core] Advanced music menu and commands (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "2) [Core] Readded and improved ff2_voice (Batfoxkid)");
 		}
 		case 125:  //1.16.12
 		{
@@ -1749,6 +1762,7 @@ public OnPluginStart()
 	cvarAnnotations=CreateConVar("ff2_text_msg", "0", "For backstabs and such: 0-Use hint texts, 1-Use annotations, 2-Use game_text_tf entities", _, true, 0.0, true, 2.0);
 	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
 	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
+	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on Melee Hit, 2-Breaks if it'll kill, 3-Breaks if HP is depleted", _, true, 0.0, true, 3.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1826,6 +1840,7 @@ public OnPluginStart()
 	HookConVarChange(cvarAnnotations, CvarChange);
 	HookConVarChange(cvarTellName, CvarChange);
 	HookConVarChange(cvarGhostBoss, CvarChange);
+	HookConVarChange(cvarShieldType, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -6649,7 +6664,6 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	new index=-1;
 	new civilianCheck[MaxClients+1];
 
-	// Why you no compile without this?
 	new weapon=GetPlayerWeaponSlot(client, 4);
 	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60  && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))  //Cloak and Dagger
 	{
@@ -6718,6 +6732,12 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 		{
 			shield[client]=entity;
 		}
+	}
+
+	if(IsValidEntity(shield[client]))
+	{
+		shieldHP[client]=1000.0;
+		shDmgReduction[client]=0.5;
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
@@ -7581,15 +7601,15 @@ public Action:ClientTimer(Handle:timer)
 			new index=(validwep ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
 			if(class==TFClass_Medic)
 			{
+				new charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
+				new medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+				decl String:mediclassname[64];
 				if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 				{
-					new medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-					decl String:mediclassname[64];
 					if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 					{
-						new charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
 						SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-						FF2_ShowSyncHudText(client, jumpHUD, "%T: %i", "uber-charge", client, charge);
+						FF2_ShowSyncHudText(client, jumpHUD, "%T", "uber-charge", client, charge);
 
 						if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 						{
@@ -7598,14 +7618,24 @@ public Action:ClientTimer(Handle:timer)
 						}
 					}
 				}
-				//else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
-				//{
-					//new healtarget=GetHealingTarget(client, true);
-					//if(IsValidClient(healtarget) && TF2_GetPlayerClass(healtarget)==TFClass_Scout)
-					//{
-						//TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.3);
-					//}
-				//}
+				else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
+				{
+					if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+					{
+						if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
+						{
+							FF2flags[client]|=FF2FLAG_UBERREADY;
+						}
+					}
+				}
+			}
+			else if((TF2_GetPlayerClass(client)==TFClass_Sniper || TF2_GetPlayerClass(client)==TFClass_DemoMan) && GetConVarInt(cvarShieldType)==3)
+			{
+				if(shield[client] && shieldHP[client]>0.0)
+				{
+					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
+					FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.1));
+				}
 			}
 			// Chdata's Deadringer Notifier
 			else if(GetConVarBool(cvarDeadRingerHud) && TF2_GetPlayerClass(client)==TFClass_Spy)
@@ -9000,6 +9030,49 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 
 	new Float:position[3];
 	GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
+	if(IsValidClient(attacker) && TF2_GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==3) // Absorbs damage from bosses AND minions
+	{
+		if(!(damagetype & DMG_CLUB) && shieldHP[client]>0.0 && RoundToFloor(damage)<GetClientHealth(client))
+		{
+			damage*=shDmgReduction[client]; // damage resistance on shield
+			
+			shieldHP[client]-=damage;		// take a small portion of shield health away	
+			
+			if(shDmgReduction[client]>=1.0)
+			{
+				shDmgReduction[client]=1.0;
+			}
+			else
+			{
+				shDmgReduction[client]+=0.03;
+			}
+						
+			new String:ric[PLATFORM_MAX_PATH];
+			Format(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
+			EmitSoundToClient(client, ric, _, _, _, _, 0.7, _, _, position, _, false);
+			EmitSoundToClient(attacker, ric, _, _, _, _, 0.7, _, _, position, _, false);
+			return Plugin_Changed;
+		}
+		else
+		{
+			RemoveShield(client, attacker, position);
+			return Plugin_Stop;					
+		}
+	}
+	else if(IsValidClient(attacker) && TF2_GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==2)
+	{
+		new health=GetClientHealth(client);
+		if(health<=damage)
+		{
+			RemoveShield(client, attacker, position);
+			return Plugin_Handled;
+		}
+		else
+		{
+			ScaleVector(damageForce, 9.0);
+			return Plugin_Changed;
+		}
+	}
 	if(IsBoss(attacker))
 	{
 		if(IsValidClient(client) && !IsBoss(client) && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
@@ -9024,7 +9097,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				return Plugin_Changed;
 			}
 
-			if(shield[client] && damage)
+			if(shield[client] && damage && GetConVarInt(cvarShieldType)==1)
 			{
 				RemoveShield(client, attacker, position);
 				return Plugin_Handled;
@@ -12482,10 +12555,13 @@ stock RemoveShield(client, attacker, Float:position[3])
 {
 	TF2_RemoveWearable(client, shield[client]);
 	EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+	EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+	if(
 	EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 	EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
-	EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+	TF2_AddCondition(client, TFCond_SpeedBuffAlly, 1.0);
 	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
+	shieldHP[client]=0.0;
 	shield[client]=0;
 }
 
