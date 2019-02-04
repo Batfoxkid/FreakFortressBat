@@ -12,6 +12,7 @@ env:
     - SMVERSION=1.7 # Legacy
     - SMVERSION=1.8 # Legacy
     - SMVERSION=1.9 # Stable
+    - SMVERSION=1.10 # Unstable
 
 # And compile!
 install:
