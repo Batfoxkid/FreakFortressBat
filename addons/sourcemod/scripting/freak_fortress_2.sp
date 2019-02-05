@@ -617,8 +617,8 @@ static const String:ff2versiondates[][]=
 	"January 24, 2019",		//1.17.4
 	"January 29, 2019",		//1.17.5
 	"January 29, 2019",		//1.17.5
-	"February 4, 2019",		//1.17.6
-	"February 4, 2019"		//1.17.6
+	"February 5, 2019",		//1.17.6
+	"February 5, 2019"		//1.17.6
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
