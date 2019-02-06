@@ -34,7 +34,13 @@
 	}
 	"uber-charge"	// HUD
 	{
-		"en"	"Ubercharge rate"
+		"#format" "{1:i}"
+		"en"	"Ubercharge rate: {1}"
+	}
+	"Shield HP"
+	{
+		"#format" "{1:i}"
+		"en"	"Shield HP: {1} percent"
 	}
 	"Boss Lives Left"	// HUD
 	{
@@ -299,7 +305,7 @@
 	"ff2_last_update"	// Chat
 	{
 		"#format" "{1:s},{2:s}"
-		"en"	"What's new in v{olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
+		"en"	"What's new in {olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
 	}
 	"charge_status"	// HUD
 	{
@@ -346,21 +352,41 @@
 	{
 		"en"	"Surprise! You are now the boss!"
 	}
-	"Backstab"	// Hint
+	"Backstab"	// Hint, Annotation
 	{
 		"en"	"You just backstabbed the boss!"
 	}
-	"Backstabbed"	// Hint
+	"Backstabbed"	// Hint, Annotation
 	{
 		"en"	"You just got backstabbed!"
 	}
-	"Market Gardener"	// Hint
+	"Backstab Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"You backstabbed {1}!"
+	}
+	"Backstabbed Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"
+		"en"	"{1} backstabbed you!"
+	}
+	"Market Gardener"	// Hint, Annotation
 	{
 		"en"	"You just market-gardened the boss!"
 	}
-	"Market Gardened"	// Hint
+	"Market Gardened"	// Hint, Annotation
 	{
 		"en"	"You just got market-gardened!"
+	}
+	"Market Gardener Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"You market-gardened {1}!"
+	}
+	"Market Gardened Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"
+		"en"	"{1} market-gardened you!"
 	}
 	"Detonations Left"	// Deprecated
 	{
@@ -377,13 +403,90 @@
 		"#format"	"{1:i}"
 		"en"		"Damage: {1}"
 	}
-	"Caber"	// Hint
+	"Caber"	// Hint, Annotation
 	{
 		"en"	"You just ullapool caber the boss!"
 	}
-	"Cabered"	// Hint
+	"Cabered"	// Hint, Annotation
 	{
 		"en"	"You just got ullapool cabered!"
+	}
+	"Caber Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"You ullapool caber {1}!"
+	}
+	"Cabered Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"		
+		"en"	"{1} ullapool cabered you!"
+	}
+	"Goomba Stomp"
+	{
+		"en"	"You goomba stomped the boss!"
+	}
+	"Goomba Stomp Boss"
+	{
+		"en"	"You goomba stomped somebody!"
+	}
+	"Goomba Stomped"
+	{		
+		"en"	"Ouch!  Watch your head!"
+	}
+	"Goomba Stomped Boss"
+	{		
+		"en"	"You were just goomba stomped!"
+	}
+	"Goomba Stomp Player"
+	{
+		"#format" "{1:s}"	
+		"en"	"You goomba stomped {1}!"
+	}
+	"Goomba Stomp Boss Player"
+	{
+		"#format" "{1:N}"
+		"en"	"You goomba stomped {1}!"
+	}
+	"Goomba Stomped Player"
+	{
+		"#format" "{1:N}"		
+		"en"	"Ouch! {1} goomba stomped you! Watch your head!"
+	}
+	"Goomba Stomped Boss Player"
+	{
+		"#format" "{1:N}"		
+		"en"	"{1} goomba stomped you!"
+	}
+	"Telefrag"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG! You are a pro!"
+	}
+	"Telefraged"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG! Be careful around quantum tunneling devices!"
+	}
+	"Telefrag Assist"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG ASSIST!  Nice job setting it up!"
+	}
+	"Telefrag Global"	// Hint, Annotation
+	{
+		"en"	"TELEFRAG!"
+	}
+	"Telefrag Player"	// Hint, Annotation
+	{
+		"#format" "{1:s}"
+		"en"	"TELEFRAG! You telefraged {1}!"
+	}
+	"Telefraged Player"	// Hint, Annotation
+	{
+		"#format" "{1:N}"		
+		"en"	"TELEFRAG! {1} telefraged you!"
+	}
+	"Time Left"	// Annotation
+	{
+		"#format" "{1:s}"		
+		"en"	"Time Remaining: {1}"
 	}
 	"Dead Ringer Ready" // HUD
 	{
