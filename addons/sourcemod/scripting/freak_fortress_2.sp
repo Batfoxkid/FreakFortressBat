@@ -627,11 +627,11 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 134:  //1.17.6
 		{
-			DrawPanelText(panel, "1) [Gameplay] Cvar for game_text_tf entities as HUD replacements (SHADoW)");
-			DrawPanelText(panel, "2) [Gameplay] Cvar for Annotations or game_text_tf entities as Hint replacements (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "1) [Gameplay] Cvar for game_text_tf as HUD replacements (SHADoW)");
+			DrawPanelText(panel, "2) [Gameplay] Cvar for Annotations or game_text_tf as Hint replacements (Batfoxkid from SHADoW)");
 			DrawPanelText(panel, "3) [Gameplay] Cvar to say the player's or boss's name in Hints/Annotations (Batfoxkid from SHADoW)");
 			DrawPanelText(panel, "4) [Core] Fixed major and minor issues from previous update (Batfoxkid)");
-			DrawPanelText(panel, "5) [Bosses] Added 'ghost' setting for bosses for game_text_tf entities (Batfoxkid)");
+			DrawPanelText(panel, "5) [Bosses] Added 'ghost' setting for bosses for game_text_tf (Batfoxkid)");
 		}
 		case 133:  //1.17.6
 		{
@@ -639,6 +639,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "7) [Players] Non-lethal shots don't break and none option (Batfoxkid)");
 			DrawPanelText(panel, "8) [Core] Renamed \"Bat's Edit\" to \"Unofficial\" (Batfoxkid)");
 			DrawPanelText(panel, "9) [Core] Improved some older and all newer changelogs (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "10) [Core] Fixed ragedamage formulas and settings (Batfoxkid)");
 		}
 		case 132:  //1.17.5
 		{
@@ -1762,7 +1763,7 @@ public OnPluginStart()
 	cvarAnnotations=CreateConVar("ff2_text_msg", "0", "For backstabs and such: 0-Use hint texts, 1-Use annotations, 2-Use game_text_tf entities", _, true, 0.0, true, 2.0);
 	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
 	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
-	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on Melee Hit, 2-Breaks if it'll kill, 3-Breaks if HP is depleted", _, true, 0.0, true, 3.0);
+	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -5543,13 +5544,13 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		AssignTeam(client, BossTeam);
 	}
 
-	if(BossRageDamage[boss]==0)	// If 0, toggle infinite rage
+	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900)==0)	// If 0, toggle infinite rage
 	{
 		InfiniteRageActive[client]=true;
 		CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 		BossRageDamage[boss]=1;
 	}
-	else if(BossRageDamage[boss]==-1)	// If -1, never rage
+	else if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900)==-1)	// If -1, never rage
 	{
 		BossRageDamage[boss]=99999;
 	}
@@ -6736,8 +6737,16 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 
 	if(IsValidEntity(shield[client]))
 	{
-		shieldHP[client]=1000.0;
-		shDmgReduction[client]=0.5;
+		if(GetConVarInt(cvarShieldType)==4)
+		{
+			shieldHP[client]=500.0;
+			shDmgReduction[client]=0.75;
+		}
+		else
+		{
+			shieldHP[client]=1000.0;
+			shDmgReduction[client]=0.5;
+		}
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
@@ -7629,12 +7638,15 @@ public Action:ClientTimer(Handle:timer)
 					}
 				}
 			}
-			else if((TF2_GetPlayerClass(client)==TFClass_Sniper || TF2_GetPlayerClass(client)==TFClass_DemoMan) && GetConVarInt(cvarShieldType)==3)
+			else if((TF2_GetPlayerClass(client)==TFClass_Sniper || TF2_GetPlayerClass(client)==TFClass_DemoMan) && (GetConVarInt(cvarShieldType)==3 || GetConVarInt(cvarShieldType)==4))
 			{
 				if(shield[client] && shieldHP[client]>0.0)
 				{
 					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
-					FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.1));
+					if(GetConVarInt(cvarShieldType)==4)
+						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.2));
+					else
+						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.1));
 				}
 			}
 			// Chdata's Deadringer Notifier
@@ -7777,30 +7789,33 @@ public Action:ClientTimer(Handle:timer)
 			{
 				case TFClass_Medic:
 				{
+					new medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+					new charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
+					decl String:mediclassname[64];
 					if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 					{
-						new medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-						decl String:mediclassname[64];
 						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
-							SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-							new charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
-							FF2_ShowHudText(client, -1, "%T: %i", "uber-charge", client, charge);
+							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
+							FF2_ShowSyncHudText(client, jumpHUD, "%T", "uber-charge", client, charge);
+
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 							{
-								FakeClientCommand(client, "voicemenu 1 7");  //"I am fully charged!"
-								FF2flags[client]|= FF2FLAG_UBERREADY;
+								FakeClientCommandEx(client, "voicemenu 1 7");
+								FF2flags[client]|=FF2FLAG_UBERREADY;
 							}
 						}
 					}
-					//else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
-					//{
-						//new healtarget=GetHealingTarget(client, true);
-						//if(IsValidClient(healtarget) && TF2_GetPlayerClass(healtarget)==TFClass_Scout)
-						//{
-							//TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.3);
-						//}
-					//}
+					else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
+					{
+						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+						{
+							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
+							{
+								FF2flags[client]|=FF2FLAG_UBERREADY;
+							}
+						}
+					}
 				}
 				case TFClass_DemoMan:
 				{
@@ -9059,6 +9074,35 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 			return Plugin_Stop;					
 		}
 	}
+	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==4)
+	{
+		damage*=shDmgReduction[client]; // damage resistance on shield
+
+		shieldHP[client]-=damage;	// take a small portion of shield health away	
+
+		new health=GetClientHealth(client);
+		if(shieldHP[client]<=0.0 || health<=damage)
+		{
+			RemoveShield(client, attacker, position);
+			return Plugin_Stop;
+		}
+
+		if(shDmgReduction[client]>=1.0)
+		{
+			shDmgReduction[client]=1.0;
+		}
+		else
+		{
+			shDmgReduction[client]+=0.03;
+		}
+
+		new String:ric[PLATFORM_MAX_PATH];
+		Format(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
+		EmitSoundToClient(client, ric, _, _, _, _, 0.7, _, _, position, _, false);
+		EmitSoundToClient(attacker, ric, _, _, _, _, 0.7, _, _, position, _, false);
+
+		return Plugin_Changed;
+	}
 	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==2)
 	{
 		new health=GetClientHealth(client);
@@ -9068,8 +9112,10 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 			return Plugin_Handled;
 		}
 		else
-		{
-			ScaleVector(damageForce, 9.0);
+		{	// Scale Vector on the DefenseBuffed doesn't seem to work
+			damageForce[0]*=0.25;
+			damageForce[1]*=0.25;
+			damageForce[2]*=0.25;
 			return Plugin_Changed;
 		}
 	}
@@ -9392,26 +9438,27 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						new health=GetClientHealth(attacker);
 						new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
+						new max2=RoundToFloor(max*2.0);
 						if(GetEntProp(weapon, Prop_Send, "m_bIsBloody"))	// Less effective used more than once
 						{
 							new newhealth=health+25;
-							if(health<max*2)
+							if(health<max2)
 							{
-								if(newhealth>max*2)
+								if(newhealth>max2)
 								{
-									newhealth=max*2;
+									newhealth=max2;
 								}
 								SetEntityHealth(attacker, newhealth);
 							}
 						}
 						else	// Most effective on first hit
 						{
-							new newhealth=max/2;
-							if(health<max*2)
+							new newhealth=RoundToFloor(max/2.0);
+							if(health<max2)
 							{
-								if(newhealth>max*2)
+								if(newhealth>max2)
 								{
-									newhealth=max*2;
+									newhealth=max2;
 								}
 								SetEntityHealth(attacker, newhealth);
 							}
@@ -11007,18 +11054,24 @@ FindCompanion(boss, players, bool:omit[])
 		new companion=GetRandomValidClient(omit);
 		Boss[companion]=companion;  //Woo boss indexes!
 		omit[companion]=true;
+		new client=Boss[boss];
 		Companions=1;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
-			BossRageDamage[companion]=ParseFormula(companion, "ragedamage", "1900", 1900);
-			/*BossRageDamage[companion]=KvGetNum(BossKV[Special[companion]], "ragedamage", 1900);
-			if(BossRageDamage[companion]<=0)
+			if(BossRageDamage[companion]==0)	// If 0, toggle infinite rage
 			{
-				new String:bossName[64];
-				KvGetString(BossKV[Special[companion]], "name", bossName, sizeof(bossName));
-				LogError("[FF2 Bosses] Warning: Boss %s's rage damage is below 0, setting to 1900", bossName);
-				BossRageDamage[companion]=1900;
-			}*/
+				InfiniteRageActive[client]=true;
+				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+				BossRageDamage[companion]=1;
+			}
+			else if(BossRageDamage[companion]==-1)	// If -1, never rage
+			{
+				BossRageDamage[companion]=99999;
+			}
+			else	// Use formula or straight value
+			{
+				BossRageDamage[companion]=ParseFormula(companion, "ragedamage", "1900", 1900);
+			}
 			BossLivesMax[companion]=KvGetNum(BossKV[Special[companion]], "lives", 1);
 			if(BossLivesMax[companion]<=0)
 			{
