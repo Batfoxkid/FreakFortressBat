@@ -627,10 +627,10 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 134:  //1.17.6
 		{
-			DrawPanelText(panel, "1) [Gameplay] Cvar for game_text_tf as HUD replacements (SHADoW)");
-			DrawPanelText(panel, "2) [Gameplay] Cvar for Annotations or game_text_tf as Hint replacements (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "3) [Gameplay] Cvar to say the player's or boss's name in Hints/Annotations (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "4) [Core] Fixed major and minor issues from previous update (Batfoxkid)");
+			DrawPanelText(panel, "1) [Gameplay] Cvar for game_text_tf entities as HUD replacements (SHADoW)");
+			DrawPanelText(panel, "2) [Gameplay] Cvar for annotations or game_text_tf entities as hint replacements (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "3) [Gameplay] Cvar to say the player's or boss's name in messages (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "4) [Core] Fixed some issues from previous update (Batfoxkid)");
 			DrawPanelText(panel, "5) [Bosses] Added 'ghost' setting for bosses for game_text_tf (Batfoxkid)");
 		}
 		case 133:  //1.17.6
@@ -9453,7 +9453,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						}
 						else	// Most effective on first hit
 						{
-							new newhealth=RoundToFloor(max/2.0);
+							new newhealth=health+RoundToFloor(max/2.0);
 							if(health<max2)
 							{
 								if(newhealth>max2)
