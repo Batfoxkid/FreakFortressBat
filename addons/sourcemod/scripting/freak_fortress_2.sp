@@ -123,6 +123,11 @@ new bool:goomba=false;
 
 new bool:smac=false;
 
+new capTeam;
+new Handle:SDKGetCPPct; 
+new bool:useCPvalue=false;
+new bool:isCapping=false;
+
 new currentBossTeam;
 new bool:blueBoss;
 new OtherTeam=2;
@@ -2014,6 +2019,31 @@ public OnPluginStart()
 	#if defined _tf2attributes_included
 	tf2attributes=LibraryExists("tf2attributes");
 	#endif
+
+	HookEvent("teamplay_point_startcapture", Event_StartCapture);
+	new Handle:hCFG=LoadGameConfigFile("cp_pct");
+	if(hCFG == INVALID_HANDLE)
+	{
+		LogError("Missing gamedata file cp_pct.txt! Will not use CP capture percentage values!");
+		CloseHandle(hCFG);
+		useCPvalue=false;
+		HookEvent("teamplay_capture_broken", Event_BreakCapture);
+		return;
+	}
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(hCFG, SDKConf_Signature, "CTeamControlPoint::GetTeamCapPercentage");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
+	if((SDKGetCPPct = EndPrepSDKCall()) == INVALID_HANDLE)
+	{
+		LogError("Failed to create SDKCall for CTeamControlPoint::GetTeamCapPercentage signature! Will not use CP capture percentage values!");
+		CloseHandle(hCFG);
+		useCPvalue=false;
+		HookEvent("teamplay_capture_broken", Event_BreakCapture);
+		return;
+	}
+	useCPvalue=true;
+	CloseHandle(hCFG);
 }
 
 public Action:Command_SetRage(client, args)
@@ -3308,6 +3338,7 @@ stock bool:CheckToChangeMapDoors()
 
 public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
+	isCapping=false;
 	if(changeGamemode==1)
 	{
 		EnableFF2();
@@ -3712,6 +3743,8 @@ public CheckArena()
 
 public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
+	capTeam=0;
+	roundOvertime=false;
 	RoundCount++;
 	Companions=0;
 	if(HasSwitched)
@@ -5755,6 +5788,23 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		SetClientQueuePoints(client, 0);
 	}
 	return Plugin_Continue;
+}
+
+/*
+    Returns the the TeamNum of an entity.
+    Works for both clients and things like healthpacks.
+    Returns -1 if the entity doesn't have the m_iTeamNum prop.
+    GetEntityTeamNum() doesn't always return properly when tf_arena_use_queue is set to 0
+*/
+
+stock TFTeam GetEntityTeamNum(int iEnt)
+{
+	return view_as<TFTeam>(GetEntProp(iEnt, Prop_Send, "m_iTeamNum"));
+}
+
+stock SetEntityTeamNum(iEnt, iTeam)
+{
+	SetEntProp(iEnt, Prop_Send, "m_iTeamNum", iTeam);
 }
 
 public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefinitionIndex, &Handle:item)
@@ -8424,6 +8474,122 @@ public Action:OnJoinTeam(client, const String:command[], args)
 	return Plugin_Handled;
 }
 
+public Action:Event_StartCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
+{
+	if(useCPvalue)
+	{
+		capTeam=GetEventInt(event, "capteam");
+		return;
+	}
+
+	if(!isCapping && GetEventInt(event, "capteam")>1)
+	{	
+		isCapping=true;
+	}
+}
+
+public Action:Event_BreakCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
+{
+	if(!GetEventFloat(event, "time_remaining") && isCapping)
+	{
+		capTeam=0;
+		isCapping=false;
+	}
+}
+
+public EndBossRound()
+{
+	if(!GetConVarBool(cvarCountdownResult))
+	{
+		for(new client=1; client<=MaxClients; client++)  //Thx MasterOfTheXP
+		{
+			if(IsClientInGame(client) && IsPlayerAlive(client))
+			{
+				ForcePlayerSuicide(client);
+			}
+		}
+	}
+	else
+	{
+		ForceTeamWin(0);  //Stalemate
+	}
+}
+
+public Action:OverTimeAlert(Handle:timer)
+{
+	static OTCount=0;
+	if(CheckRoundState()!=1)
+	{
+		OTCount=0;
+		return Plugin_Stop;
+	}
+
+	decl String:HUDTextOT[768];
+	if(useCPvalue && capTeam>1)
+	{
+		/*new Float:captureValue;
+		new cp = -1; 
+		while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1) 
+		{ 
+			captureValue=SDKCall(SDKGetCPPct, cp, capTeam);
+			SetHudTextParams(-1.0, 0.17, 1.1, capTeam==2 ? 191 : capTeam==3 ? 90 : 0, capTeam==2 ? 57 : capTeam==3 ? 140 : 0, capTeam==2 ? 28 : capTeam==3 ? 173 : 0, 255);
+			Format(HUDTextOT, sizeof(HUDTextOT), "OVERTIME! CONTROL POINT IS %i PERCENT CAPTURED!", RoundFloat(captureValue*100));
+			for(new client; client<=MaxClients; client++)
+			{
+				if(IsValidClient(client))
+				{
+					ShowSyncHudText(client, timeleftHUD, HUDTextOT);
+				}
+			}
+		}*/
+
+		if(captureValue<=0.0)
+		{
+			EndBossRound();
+			OTCount=0;
+			capTeam=0;
+			return Plugin_Stop;
+		}
+	}
+	else
+	{
+		/*SetHudTextParams(-1.0, 0.17, 1.1, GetRandomInt(0,255), GetRandomInt(0,255), GetRandomInt(0,255), 255);
+		Format(HUDTextOT, sizeof(HUDTextOT), "OVERTIME!");
+		for(new client; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client))
+			{
+				ShowSyncHudText(client, timeleftHUD, HUDTextOT);
+			}
+		}*/
+
+		if(!isCapping)
+		{
+			EndBossRound();
+			OTCount=0;
+			return Plugin_Stop;
+		}
+	}
+
+	switch(OTCount)
+	{
+		case 0,1,2,3,4:
+		{
+			new String:OTAlerting[PLATFORM_MAX_PATH];
+			strcopy(OTAlerting, sizeof(OTAlerting), OTVoice[GetRandomInt(0, sizeof(OTVoice)-1)]);	
+			EmitSoundToAll(OTAlerting);
+		}
+		case 10:
+		{
+			OTCount=0;
+			return Plugin_Continue;
+		}
+	}
+
+	OTCount++;
+	return Plugin_Continue;
+}
+
 public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBroadcast)
 {
 	if(!Enabled || CheckRoundState()!=1)
@@ -8761,13 +8927,17 @@ public Action:Timer_DrawGame(Handle:timer)
 				{
 					ShowGameText(client, "ico_notify_sixty_seconds", _, "%s | %s", message, timeDisplay);
 				}
-				else if(timeleft>=countdownTime/6 && timeleft<countdownTime/2)
+				else if(timeleft<countdownTime/2 && timeleft>=countdownTime/6)
 				{
 					ShowGameText(client, "ico_notify_thirty_seconds", _, "%s | %s", message, timeDisplay);
 				}
-				else if(timeleft<countdownTime/6)
+				else if(timeleft<countdownTime/6 && timeleft>=0)
 				{
 					ShowGameText(client, "ico_notify_ten_seconds", _, "%s | %s", message, timeDisplay);
+				}
+				else if(timeleft<0 && roundOvertime)
+				{
+					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
 				}
 				else if(GhostBoss)
 				{
@@ -8784,13 +8954,17 @@ public Action:Timer_DrawGame(Handle:timer)
 				{
 					ShowGameText(client, "ico_notify_sixty_seconds", _, "%t", "Time Left", timeDisplay);
 				}
-				else if(timeleft>=countdownTime/6 && timeleft<countdownTime/2)
+				else if(timeleft<countdownTime/2 && timeleft>=countdownTime/6)
 				{
 					ShowGameText(client, "ico_notify_thirty_seconds", _, "%t", "Time Left", timeDisplay);
 				}
-				else if(timeleft<countdownTime/6)
+				else if(timeleft<countdownTime/6 && timeleft>=0)
 				{
 					ShowGameText(client, "ico_notify_ten_seconds", _, "%t", "Time Left", timeDisplay);
+				}
+				else if(timeleft<0 && roundOvertime)
+				{
+					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
 				}
 				else if(GhostBoss)
 				{
@@ -8800,6 +8974,10 @@ public Action:Timer_DrawGame(Handle:timer)
 				{
 					ShowGameText(client, "leaderboard_streak", _, timeDisplay);
 				}
+			}
+			else if(roundOvertime)
+			{
+				FF2_ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
 			}
 			else
 			{
@@ -8842,36 +9020,24 @@ public Action:Timer_DrawGame(Handle:timer)
 			{
 				if(useCPvalue && capTeam>1)
 				{
-					int cp = -1; 
+					new cp = -1; 
 					while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1)
 					{ 
 						if(SDKCall(SDKGetCPPct, cp, capTeam)<=0.0)
 						{
 							EndBossRound();
 							DrawGameTimerAt = INACTIVE;
-							return;
+							return Plugin_Stop;
 						}
 					}
 				}
 				roundOvertime=true;
 				CreateTimer(1.0, OverTimeAlert, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 				DrawGameTimerAt = INACTIVE;
-				return;
+				return Plugin_Stop;
 			}
-			if(!GetConVarBool(cvarCountdownResult))
-			{
-				for(new client=1; client<=MaxClients; client++)  //Thx MasterOfTheXP
-				{
-					if(IsClientInGame(client) && IsPlayerAlive(client))
-					{
-						ForcePlayerSuicide(client);
-					}
-				}
-			}
-			else
-			{
-				ForceTeamWin(0);  //Stalemate
-			}
+			EndBossRound();
+			DrawGameTimerAt = INACTIVE;
 			return Plugin_Stop;
 		}
 	}
