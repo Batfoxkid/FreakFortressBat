@@ -168,6 +168,7 @@ new Float:KSpreeTimer[MAXPLAYERS+1];
 new KSpreeCount[MAXPLAYERS+1];
 new Float:GlowTimer[MAXPLAYERS+1];
 new shortname[MAXPLAYERS+1];
+new bool:roundOvertime=false;
 new bool:emitRageSound[MAXPLAYERS+1];
 new bool:bossHasReloadAbility[MAXPLAYERS+1];
 new bool:bossHasRightMouseAbility[MAXPLAYERS+1];
@@ -237,6 +238,7 @@ new Handle:cvarAnnotations;
 new Handle:cvarTellName;
 new Handle:cvarGhostBoss;
 new Handle:cvarShieldType;
+new Handle:cvarCountdownOvertime;
 
 new Handle:FF2Cookies;
 
@@ -328,6 +330,13 @@ new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
 new bool:selfKnockback[MAXPLAYERS+1];
 new bool:randomCrits[MAXPLAYERS+1];
+
+static const char OTVoice[][] = {
+    "vo/announcer_overtime.mp3",
+    "vo/announcer_overtime2.mp3",
+    "vo/announcer_overtime3.mp3",
+    "vo/announcer_overtime4.mp3"
+};
 
 enum WorldModelType
 {
@@ -631,14 +640,15 @@ stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 135:  //1.17.6
+		case 135:  //1.17.7
 		{
 			DrawPanelText(panel, "1) [Bosses] Added 'bossteam' to allow specific bosses to use a specific team (SHADoW)");
+			DrawPanelText(panel, "2) [Gameplay] Cvar for overtime mode activates if countdown timer expires while capping a point (SHADoW)");
 		}
 		case 134:  //1.17.6
 		{
 			DrawPanelText(panel, "1) [Gameplay] Cvar for game_text_tf entities as HUD replacements (SHADoW)");
-			DrawPanelText(panel, "2) [Gameplay] Cvar for annotations or game_text_tf entities as hint replacements (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "2) [Gameplay] Cvar for annotations or game_text_tf entities as hint replacements (Batfoxkid/SHADoW)");
 			DrawPanelText(panel, "3) [Gameplay] Cvar to say the player's or boss's name in messages (Batfoxkid from SHADoW)");
 			DrawPanelText(panel, "4) [Core] Fixed some issues from previous update (Batfoxkid)");
 			DrawPanelText(panel, "5) [Bosses] Added 'ghost' setting for bosses for game_text_tf (Batfoxkid)");
@@ -1774,6 +1784,7 @@ public OnPluginStart()
 	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
 	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
+	cvarCountdownOverTime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1852,6 +1863,7 @@ public OnPluginStart()
 	HookConVarChange(cvarTellName, CvarChange);
 	HookConVarChange(cvarGhostBoss, CvarChange);
 	HookConVarChange(cvarShieldType, CvarChange);
+	HookConVarChange(cvarCountdownOvertime, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -8826,6 +8838,26 @@ public Action:Timer_DrawGame(Handle:timer)
 		}
 		case 0:
 		{
+			if(GetConVarBool(cvarCountdownOverTime) && (isCapping || useCPvalue))
+			{
+				if(useCPvalue && capTeam>1)
+				{
+					int cp = -1; 
+					while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1)
+					{ 
+						if(SDKCall(SDKGetCPPct, cp, capTeam)<=0.0)
+						{
+							EndBossRound();
+							DrawGameTimerAt = INACTIVE;
+							return;
+						}
+					}
+				}
+				roundOvertime=true;
+				CreateTimer(1.0, OverTimeAlert, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+				DrawGameTimerAt = INACTIVE;
+				return;
+			}
 			if(!GetConVarBool(cvarCountdownResult))
 			{
 				for(new client=1; client<=MaxClients; client++)  //Thx MasterOfTheXP
@@ -9357,7 +9389,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if(GetEntProp(weapon, Prop_Send, "m_iDetonated") == 0)	// If using ullapool caber, only trigger if bomb hasn't been detonated
                         			{
 							if(GetConVarBool(cvarLowStab))
-								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(2250.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
+								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
 							else
 								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/6;
 							damagetype|=DMG_CRIT;
@@ -9677,7 +9709,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				if(bIsBackstab)
 				{
 					if(GetConVarBool(cvarLowStab))
-						damage=(BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(2000/float(playing)))/3;
+						damage=(BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/3;
 					else
 						damage=BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 					damagetype|=DMG_CRIT;
