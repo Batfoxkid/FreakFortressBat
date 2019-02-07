@@ -1789,7 +1789,7 @@ public OnPluginStart()
 	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
 	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
-	cvarCountdownOverTime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
+	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -8524,11 +8524,11 @@ public Action:OverTimeAlert(Handle:timer)
 		return Plugin_Stop;
 	}
 
-	decl String:HUDTextOT[768];
+	//decl String:HUDTextOT[768];
 	if(useCPvalue && capTeam>1)
 	{
-		/*new Float:captureValue;
-		new cp = -1; 
+		new Float:captureValue;
+		/*new cp = -1; 
 		while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1) 
 		{ 
 			captureValue=SDKCall(SDKGetCPPct, cp, capTeam);
@@ -9016,7 +9016,7 @@ public Action:Timer_DrawGame(Handle:timer)
 		}
 		case 0:
 		{
-			if(GetConVarBool(cvarCountdownOverTime) && (isCapping || useCPvalue))
+			if(GetConVarBool(cvarCountdownOvertime) && (isCapping || useCPvalue))
 			{
 				if(useCPvalue && capTeam>1)
 				{
@@ -9026,18 +9026,15 @@ public Action:Timer_DrawGame(Handle:timer)
 						if(SDKCall(SDKGetCPPct, cp, capTeam)<=0.0)
 						{
 							EndBossRound();
-							DrawGameTimerAt = INACTIVE;
 							return Plugin_Stop;
 						}
 					}
 				}
 				roundOvertime=true;
 				CreateTimer(1.0, OverTimeAlert, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-				DrawGameTimerAt = INACTIVE;
 				return Plugin_Stop;
 			}
 			EndBossRound();
-			DrawGameTimerAt = INACTIVE;
 			return Plugin_Stop;
 		}
 	}
