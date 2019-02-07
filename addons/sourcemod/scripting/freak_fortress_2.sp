@@ -2039,7 +2039,7 @@ public OnPluginStart()
 	new Handle:hCFG=LoadGameConfigFile("cp_pct");
 	if(hCFG == INVALID_HANDLE)
 	{
-		LogError("Missing gamedata file cp_pct.txt! Will not use CP capture percentage values!");
+		LogError("[FF2] Missing gamedata file cp_pct.txt! Will not use CP capture percentage values!");
 		CloseHandle(hCFG);
 		useCPvalue=false;
 		HookEvent("teamplay_capture_broken", Event_BreakCapture);
@@ -2051,7 +2051,7 @@ public OnPluginStart()
 	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
 	if((SDKGetCPPct = EndPrepSDKCall()) == INVALID_HANDLE)
 	{
-		LogError("Failed to create SDKCall for CTeamControlPoint::GetTeamCapPercentage signature! Will not use CP capture percentage values!");
+		LogError("[FF2] Failed to create SDKCall for CTeamControlPoint::GetTeamCapPercentage signature! Will not use CP capture percentage values!");
 		CloseHandle(hCFG);
 		useCPvalue=false;
 		HookEvent("teamplay_capture_broken", Event_BreakCapture);
@@ -2291,6 +2291,7 @@ public Action:Timer_InfiniteRage(Handle:timer, any:client)
 	
 	if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || !InfiniteRageActive[client] || CheckRoundState()!=1)
 	{
+		DebugMsg(0, "Timer_InfiniteRage Stopped");
 		return Plugin_Stop;
 	}
 	BossCharge[Boss[client]][0]=rageMax[client];
@@ -2362,6 +2363,7 @@ public OnLibraryRemoved(const String:name[])
 	if(!strcmp(name, "SteamTools", false))
 	{
 		steamtools=false;
+		DebugMsg(1, "SteamTools removed");
 	}
 	#endif
 
@@ -2369,6 +2371,7 @@ public OnLibraryRemoved(const String:name[])
 	if(!strcmp(name, "tf2attributes", false))
 	{
 		tf2attributes=false;
+		DebugMsg(1, "tf2attributes removed");
 	}
 	#endif
 
@@ -2376,18 +2379,21 @@ public OnLibraryRemoved(const String:name[])
 	if(!strcmp(name, "goomba", false))
 	{
 		goomba=false;
+		DebugMsg(1, "goomba removed");
 	}
 	#endif
 
 	if(!strcmp(name, "smac", false))
 	{
 		smac=false;
+		DebugMsg(0, "smac removed");
 	}
 
 	#if defined _updater_included
 	if(StrEqual(name, "updater"))
 	{
 		Updater_RemovePlugin();
+		DebugMsg(0, "updater removed");
 	}
 	#endif
 }
@@ -2458,6 +2464,7 @@ public OnPluginEnd()
 	{
 		ForceTeamWin(0);
 		CPrintToChatAll("{olive}[FF2]{default} The plugin has been unexpectedly unloaded!");
+		DebugMsg(2, "Plugin reloaded mid-round");
 	}
 }
 
@@ -2465,6 +2472,7 @@ public EnableFF2()
 {
 	Enabled=true;
 	Enabled2=true;
+	DebugMsg(0, "EnableFF2");
 
 	//Cache cvars
 	SetConVarString(FindConVar("ff2_version"), PLUGIN_VERSION);
@@ -2541,6 +2549,7 @@ public DisableFF2()
 {
 	Enabled=false;
 	Enabled2=false;
+	DebugMsg(0, "DisableFF2");
 
 	DisableSubPlugins();
 
@@ -2610,6 +2619,7 @@ public CacheWeapons()
 	if(!FileExists(config))
 	{
 		LogError("[FF2] Freak Fortress 2 disabled-can not find '%s'!", WeaponCFG);
+		DebugMsg(4, "%s is missing", WeaponCFG);
 		Enabled2=false;
 		return;
 	}
@@ -2618,6 +2628,7 @@ public CacheWeapons()
 	if(!FileToKeyValues(kvWeaponMods, config))
 	{
 		LogError("[FF2] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
+		DebugMsg(4, "%s has invaild format", WeeaponCFG);
 		Enabled2=false;
 		return;
 	}
@@ -2715,6 +2726,7 @@ public FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextKey
 		if(amount % 2)
 		{
 			LogError("[FF2 Bosses] Invalid chances string, disregarding chances");
+			DebugMsg(2, "Character set has invaild chance strings");
 			strcopy(ChancesString, sizeof(ChancesString), "");
 			amount=0;
 		}
@@ -2728,6 +2740,7 @@ public FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextKey
 				if(StringToInt(stringChances[chancesIndex])<=0)
 				{
 					LogError("[FF2 Bosses] Character %i cannot have a zero or negative chance, disregarding chances", chancesIndex-1);
+					DebugMsg(2, "Character set has invaild chance strings");
 					strcopy(ChancesString, sizeof(ChancesString), "");
 					break;
 				}
@@ -2768,6 +2781,7 @@ EnableSubPlugins(bool:force=false)
 	}
 
 	areSubPluginsEnabled=true;
+	DebugMsg(0, "Loading sub-plugins");
 	decl String:path[PLATFORM_MAX_PATH], String:filename[PLATFORM_MAX_PATH], String:filename_old[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, path, sizeof(path), "plugins/freaks");
 	new FileType:filetype;
@@ -2814,6 +2828,7 @@ DisableSubPlugins(bool:force=false)
 	}
 	ServerExecute();
 	areSubPluginsEnabled=false;
+	DebugMsg(0, "Unloaded sub-plugins");
 }
 
 public LoadCharacter(const String:character[])
@@ -2835,6 +2850,7 @@ public LoadCharacter(const String:character[])
 	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
 		LogError("[FF2 Bosses] Character %s is only compatible with FF2 v%i!", character, version);
+		DebugMsg(2, "%s is only allowed under version %i", character, version);
 		return;
 	}
 
@@ -2849,6 +2865,7 @@ public LoadCharacter(const String:character[])
 			if(!FileExists(config))
 			{
 				LogError("[FF2 Bosses] Character %s needs plugin %s!", character, plugin_name);
+				DebugMsg(2, "%s is missing for %s", plugin_name, character);
 				return;
 			}
 		}
@@ -2888,6 +2905,7 @@ public LoadCharacter(const String:character[])
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, config);
+					DebugMsg(2, "%s is missing file %s", character, config);
 				}
 			}
 		}
@@ -2914,6 +2932,7 @@ public LoadCharacter(const String:character[])
 						if(StrContains(key, ".phy")==-1)
 						{
 							LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+							DebugMsg(2, "%s is missing file %s", character, key);
 						}
 					}
 				}
@@ -2937,6 +2956,7 @@ public LoadCharacter(const String:character[])
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+					DebugMsg(2, "%s is missing file %s", character, key);
 				}
 				Format(key, sizeof(key), "%s.vmt", config);
 				if(FileExists(key, true))
@@ -2946,6 +2966,7 @@ public LoadCharacter(const String:character[])
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+					DebugMsg(2, "%s is missing file %s", character, key);
 				}
 			}
 		}
@@ -3003,6 +3024,7 @@ public PrecacheCharacter(characterIndex)
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
+					DebugMsg(2, "%s is missing file %s in %s", bossName, filePath, section);
 				}
 			}
 		}
@@ -3026,6 +3048,7 @@ public PrecacheCharacter(characterIndex)
 					else
 					{
 						LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
+						DebugMsg(2, "%s is missing file %s in %s", bossName, filePath, section);
 					}
 				}
 				else
@@ -3038,6 +3061,7 @@ public PrecacheCharacter(characterIndex)
 					else
 					{
 						LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
+						DebugMsg(2, "%s is missing file %s in %s", bossName, filePath, section);
 					}
 				}
 			}
@@ -3172,49 +3196,59 @@ public Action:Timer_Announce(Handle:timer)
 	{
 		switch(announcecount)
 		{
-			case 0:
-			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ServerAd");
-			}
 			case 1:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
+				DebugMsg(0, "ServerAd Announcement %i", announcecount);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ServerAd");
 			}
 			case 2:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ClassicAd");
+				DebugMsg(0, "ff2_last_update Announcement %i", announcecount);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
 			}
 			case 3:
 			{
+				DebugMsg(0, "ClassicAd Announcement %i", announcecount);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ClassicAd");
+			}
+			case 4:
+			{
 				if(GetConVarBool(cvarToggleBoss))	// Toggle Command?
 				{
+					DebugMsg(0, "FF2 Toggle Command Announcement %i", announcecount);
 					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Toggle Command");
 				}
 				else					// Guess not, play the 4th thing and next is 5
 				{
+					DebugMsg(0, "DevAd Announcement %i", announcecount);
 					announcecount=5;
 					CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
+					DebugMsg(0, "Changed Announcement %i", announcecount);
 				}
-			}
-			case 4:
-			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
 			}
 			case 5:
 			{
+				DebugMsg(0, "DevAd Announcement %i", announcecount);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
+			}
+			case 6:
+			{
 				if(GetConVarBool(cvarDuoBoss))		// Companion Toggle?
 				{
+					DebugMsg(0, "FF2 Companion Command Announcement %i", announcecount);
 					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Companion Command");
 				}
 				else					// Guess not either, play the last thing and next is 0
 				{
 					announcecount=0;
+					DebugMsg(0, "type_ff2_to_open_menu Announcement %i", announcecount);
 					CPrintToChatAll("{olive}[FF2]{default} %t", "type_ff2_to_open_menu");
 				}
 			}
 			default:
 			{
 				announcecount=0;
+				DebugMsg(0, "type_ff2_to_open_menu Announcement %i", announcecount);
 				CPrintToChatAll("{olive}[FF2]{default} %t", "type_ff2_to_open_menu");
 			}
 		}
@@ -3235,9 +3269,15 @@ stock bool:IsFF2Map()
 	{
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, MapCFG);
 		if(FileExists(config))
+		{
 			LogError("[FF2] Please move '%s' from '%s' to '%s'! Disabling Plugin!", MapCFG, ConfigPath, DataPath);
+			DebugMsg(4, "%s is in %s and not %s", MapCFG, ConfigPath, DataPath);
+		}
 		else
+		{
 			LogError("[FF2] Unable to find %s, disabling plugin.", config);
+			DebugMsg(4, "Could not find %s", config);
+		}
 		return false;
 	}
 
@@ -3245,6 +3285,7 @@ stock bool:IsFF2Map()
 	if(file==INVALID_HANDLE)
 	{
 		LogError("[FF2] Error reading maps from %s, disabling plugin.", config);
+		DebugMsg(4, "Could not read %s", config);
 		return false;
 	}
 
@@ -3255,6 +3296,7 @@ stock bool:IsFF2Map()
 		if(tries==100)
 		{
 			LogError("[FF2] Breaking infinite loop when trying to check the map.");
+			DebugMsg(4, "An infinite loop occured when trying to check the map");
 			return false;
 		}
 
@@ -3293,6 +3335,7 @@ stock bool:MapHasMusic(bool:forceRecalc=false)  //SAAAAAARGE
 			GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
 			if(!strcmp(name, "hale_no_music", false) || !strncmp(currentmap, "vsh_megaman", 15, false))
 			{
+				DebugMsg(0, "Detected Map Music");
 				hasMusic=true;
 			}
 		}
@@ -3315,7 +3358,10 @@ stock bool:CheckToChangeMapDoors()
 	{
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, DoorCFG);
 		if(FileExists(config))
+		{
 			LogError("[FF2] Please move '%s' from '%s' to '%s'!", DoorCFG, ConfigPath, DataPath);
+			DebugMsg(4, "%s is in %s and not %s", DoorCFG, ConfigPath, DataPath);
+		}
 		if(!strncmp(currentmap, "vsh_lolcano_pb1", 15, false))
 		{
 			checkDoors=true;
@@ -3354,6 +3400,7 @@ stock bool:CheckToChangeMapDoors()
 public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	isCapping=false;
+	DebugMsg(0, "Round %i:", RoundCount);
 	if(changeGamemode==1)
 	{
 		EnableFF2();
@@ -3391,14 +3438,17 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		case 1:
 		{
 			blueBoss=bool:GetRandomInt(0, 1);
+			DebugMsg(0, "Random blueBoss");
 		}
 		case 2:
 		{
 			blueBoss=false;
+			DebugMsg(0, "False blueBoss");
 		}
 		default:
 		{
 			blueBoss=true;
+			DebugMsg(0, "True blueBoss");
 		}
 	}
 
@@ -3428,14 +3478,17 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 			playing++;
 		}
 	}
+	DebugMsg(0, "%i players playing", playing);
 
 	if(playing>=GetConVarInt(cvarDuoMin))  // Check if theres enough players for companions
 	{
 		DuoMin=true;
+		DebugMsg(0, "Duos Enabled");
 	}
 	else
 	{
 		DuoMin=false;
+		DebugMsg(0, "Duos Disabled");
 	}
 
 	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
@@ -3445,6 +3498,8 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		Enabled=false;
 		DisableSubPlugins();
 		SetControlPoint(true);
+		DebugMsg(0, "Not enough players");
+		DebugMsg(0, "Renamed server to %s", oldName);
 		return Plugin_Continue;
 	}
 	else if(RoundCount<arenaRounds)  //We're still in arena mode
@@ -3474,6 +3529,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 				toRed=!toRed;
 			}
 		}
+		DebugMsg(0, "Arena round");
 		return Plugin_Continue;
 	}
 
@@ -3533,6 +3589,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 	if((Special[0]<0) || !BossKV[Special[0]])
 	{
 		LogError("[FF2 Bosses] Couldn't find a boss!");
+		DebugMsg(3, "Could not find a boss");
 		return Plugin_Continue;
 	}
 
@@ -3651,6 +3708,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		KvGetString(BossKV[Special[0]], "name", bossName, sizeof(bossName));
 		Format(newName, sizeof(newName), "%s | %s", oldName, bossName);
 		SetConVarString(hostName, newName);
+		DebugMsg(0, "Renamed server to %s", newName);
 	}
 
 	healthcheckused=0;
@@ -3663,6 +3721,7 @@ public Action:Timer_EnableCap(Handle:timer)
 	if((Enabled || Enabled2) && CheckRoundState()==-1)
 	{
 		SetControlPoint(true);
+		DebugMsg(0, "Enabled Control Point");
 		if(checkDoors)
 		{
 			new ent=-1;
@@ -3684,6 +3743,7 @@ public Action:BossInfoTimer_Begin(Handle:timer, any:boss)
 {
 	BossInfoTimer[boss][0]=INVALID_HANDLE;
 	BossInfoTimer[boss][1]=CreateTimer(0.2, BossInfoTimer_ShowInfo, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	DebugMsg(0, "Boss Info Begin");
 	return Plugin_Continue;
 }
 
@@ -3692,6 +3752,7 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 	if(!IsValidClient(Boss[boss]))
 	{
 		BossInfoTimer[boss][1]=INVALID_HANDLE;
+		DebugMsg(0, "Boss Info Stopped");
 		return Plugin_Stop;
 	}
 
@@ -3753,6 +3814,7 @@ public CheckArena()
 	else
 	{
 		SetArenaCapEnableTime(PointTotal);
+		DebugMsg(0, "Set Point Timer");
 	}
 }
 
@@ -3760,6 +3822,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	capTeam=0;
 	roundOvertime=false;
+	DebugMsg(0, "Round %i End", RoundCount);
 	RoundCount++;
 	Companions=0;
 	if(HasSwitched)
@@ -3770,19 +3833,22 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	if(ReloadFF2)
 	{
 		ServerCommand("sm plugins reload freak_fortress_2");
+		DebugMsg(3, "Reloaded FF2");
 	}
 
 	if(LoadCharset)
 	{
 		LoadCharset=false;
 		FindCharacters();
-		strcopy(FF2CharSetString, 2, "");		
+		strcopy(FF2CharSetString, 2, "");	
+		DebugMsg(0, "Reloaded Charset");
 	}
 
 	if(ReloadWeapons)
 	{
 		CacheWeapons();
 		ReloadWeapons=false;
+		DebugMsg(0, "Reloaded Weapons");
 	}
 
 	if(ReloadConfigs)
@@ -3791,6 +3857,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		CheckToChangeMapDoors();
 		FindCharacters();
 		ReloadConfigs=false;
+		DebugMsg(1, "Reloaded Configs");
 	}
 
 	if(!Enabled)
@@ -3814,6 +3881,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 
 	StopMusic();
 	DrawGameTimer=INVALID_HANDLE;
+	DebugMsg(0, "Stopped Music");
 
 	new bool:isBossAlive;
 	for(new boss; boss<=MaxClients; boss++)
@@ -3978,6 +4046,7 @@ public Action:BossMenuTimer(Handle:timer, any:clientpack)
 	{
 		BossMenu(clientId, 0);
 	}
+	DebugMsg(0, "Forced Boss Toggle");
 }
 
 // Companion Menu
@@ -4005,6 +4074,7 @@ public Action:CompanionMenu(client, args)
 		SetMenuExitButton(menu, true);
 
 		DisplayMenu(menu, client, 20);
+		DebugMsg(0, "Showed Companion Toggle");
 	}
 	return Plugin_Handled;
 }
@@ -4033,6 +4103,7 @@ public MenuHandlerCompanion(Handle:menu, MenuAction:action, param1, param2)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
 		}
+		DebugMsg(0, "Choice: %i", choice);
 	}
 	else if(action == MenuAction_End)
 	{
@@ -4064,6 +4135,7 @@ public Action:BossMenu(client, args)
 		SetMenuExitButton(menu, true);
 
 		DisplayMenu(menu, client, 20);
+		DebugMsg(0, "Showed Boss Toggle");
 	}
 	return Plugin_Handled;
 }
@@ -4092,6 +4164,7 @@ public MenuHandlerBoss(Handle:menu, MenuAction:action, param1, param2)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 		}
+		DebugMsg(0, "Choice: %i", choice);
 	} 
 	else if(action == MenuAction_End)
 	{
@@ -4134,6 +4207,7 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 	botqueuepoints+=5;
 	new add_points[MaxClients+1];
 	new add_points2[MaxClients+1];
+	DebugMsg(0, "Queue points set");
 	for(new client=1; client<=MaxClients; client++)
 	{
 		if((ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Do not give queue points to those who have ff2 bosses disabled
@@ -4244,12 +4318,14 @@ public Action:StartResponseTimer(Handle:timer)
 		EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 	}
+	DebugMsg(0, "Start Response");
 	return Plugin_Continue;
 }
 
 public Action:StartBossTimer(Handle:timer)
 {
 	CreateTimer(0.1, Timer_Move, _, TIMER_FLAG_NO_MAPCHANGE);
+	DebugMsg(0, "Start Boss Timer");
 	new bool:isBossAlive;
 	for(new boss; boss<=MaxClients; boss++)
 	{
@@ -4299,6 +4375,7 @@ public Action:Timer_PrepareBGM(Handle:timer, any:userid)
 		MusicTimer[client]=INVALID_HANDLE;
 		return;
 	}
+	DebugMsg(0, "Prepare BGM");
 
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
@@ -4349,6 +4426,7 @@ public Action:Timer_PrepareBGM(Handle:timer, any:userid)
 
 PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char[] artist="")
 {
+	DebugMsg(0, "Play BGM");
 	new Action:action;
 	Call_StartForward(OnMusic);
 	char temp[3][PLATFORM_MAX_PATH];
@@ -4425,6 +4503,7 @@ StartMusic(client=0)
 {
 	if(client<=0)  //Start music for all clients
 	{
+		DebugMsg(0, "Start Music All);
 		StopMusic();
 		for(new target; target<=MaxClients; target++)
 		{
@@ -4434,6 +4513,7 @@ StartMusic(client=0)
 	}
 	else
 	{
+		DebugMsg(0, "Start Music %N", client);
 		StopMusic(client);
 		playBGM[client]=true;
 		CreateTimer(0.1, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
@@ -4444,6 +4524,7 @@ StopMusic(client=0, bool:permanent=false)
 {
 	if(client<=0)  //Stop music for all clients
 	{
+		DebugMsg(0, "Stop Music All");
 		if(permanent)
 		{
 			playBGM[0]=false;
@@ -4471,6 +4552,7 @@ StopMusic(client=0, bool:permanent=false)
 	}
 	else
 	{
+		DebugMsg(0, "Stop Music %N", client);
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 
@@ -4647,6 +4729,7 @@ public Action:Command_SetMyBoss(client, args)
 		ReplyToCommand(client, "%t", "No Access");
 		return Plugin_Handled;
 	}
+	DebugMsg(0, "Set Boss Comamnd");
 
 	if(args)
 	{
@@ -4880,6 +4963,7 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 		if(!boss && !StrEqual(xIncoming[client], ""))
 		{
 			CPrintToChat(client, "{olive}[FF2]{default} %t", "boss_selection_overridden");
+			DebugMsg(0, "Override Boss");
 		}
 		return Plugin_Continue;
 	}
@@ -4890,6 +4974,7 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 		if(!GetConVarBool(cvarKeepBoss) || !GetConVarBool(cvarSelectBoss))
 		{
 			xIncoming[client] = "";
+			DebugMsg(0, "Reset Boss Selection %N", client);
 		}
 		return Plugin_Changed;
 	}
@@ -4915,6 +5000,7 @@ stock CreateAttachedAnnotation(client, entity, bool:effect=true, Float:time, Str
 	SetEventString(event, "text", message);
 	SetEventInt(event, "id", entity); //What to enter inside? Need a way to identify annotations by entindex!
 	FireEvent(event);
+	DebugMsg(0, "Annotation For %N on %s", client, entity);
 	return entity;
 }
 
@@ -4924,10 +5010,12 @@ stock bool ShowGameText(int client, const char[] icon="leaderboard_streak", colo
 	if(!client)
 	{
 		bf=StartMessageAll("HudNotifyCustom");
+		DebugMsg(0, "game_text_tf For All");
 	}
 	else
 	{
 		bf = StartMessageOne("HudNotifyCustom", client);
+		DebugMsg(0, "game_text_tf For %N", client);
 	}
 
 	if(bf==null)
@@ -4954,6 +5042,7 @@ public Action:Timer_Move(Handle:timer)
 		if(IsValidClient(client) && IsPlayerAlive(client))
 		{
 			SetEntityMoveType(client, MOVETYPE_WALK);
+			DebugMsg(0, "Allowed Boss Movement");
 		}
 	}
 }
@@ -5055,6 +5144,7 @@ public Action:MessageTimer(Handle:timer)
 			}
 		}
 	}
+	DebugMsg(0, "Showed Boss Msg");
 	return Plugin_Continue;
 }
 
@@ -5068,6 +5158,7 @@ public Action:MakeModelTimer(Handle:timer, any:client)
 		SetVariantString(model);
 		AcceptEntityInput(Boss[client], "SetCustomModel");
 		SetEntProp(Boss[client], Prop_Send, "m_bUseClassAnimations", 1);
+		DebugMsg(0, "Made Model");
 		return Plugin_Continue;
 	}
 	return Plugin_Stop;
@@ -5552,6 +5643,7 @@ EquipBoss(boss)
 	{
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 	}
+	DebugMsg(0, "Equipped and Set Boss Class");
 }
 
 stock bool ConfigureWorldModelOverride(int entity, int index, const char[] model, WorldModelType type, bool wearable=false)
@@ -5618,11 +5710,12 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		AssignTeam(client, BossTeam);
 	}
 
-	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900)==0)	// If 0, toggle infinite rage
+	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900)==1)	// If 1, toggle infinite rage
 	{
 		InfiniteRageActive[client]=true;
 		CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 		BossRageDamage[boss]=1;
+		DebugMsg(0, "Started Infinite Rage");
 	}
 	else if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900)==-1)	// If -1, never rage
 	{
@@ -5752,7 +5845,8 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 				SwitchTeams((blueBoss) ? (_:TFTeam_Blue) : (_:TFTeam_Red), (blueBoss) ? (_:TFTeam_Red) : (_:TFTeam_Blue), true);
 			}
 		}
-		HasSwitched=true;	
+		HasSwitched=true;
+		DebugMsg(0, "Has Switched");
 	}
 
 	CreateTimer(0.2, MakeModelTimer, boss, TIMER_FLAG_NO_MAPCHANGE);
@@ -6785,6 +6879,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	{
 		TF2_RemoveWeaponSlot(client, 4);
 		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
+		DebugMsg(0, "Replaced Cloak & Dagger");
 	}
 
 	if(bMedieval)
@@ -6797,6 +6892,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	{
 		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
 		SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
+		DebugMsg(0, "Replced Bazzar Baggen (yes spelling, kill me)");
 	}
 	else
 	{
@@ -6812,6 +6908,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 			{
 				SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
 				SetEntityRenderColor(weapon, 255, 255, 255, 75);
+				DebugMsg(0, "Reduced Alpha For Gunslinger Medic");
 			}
 		}
 	}
@@ -6825,6 +6922,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	if(IsValidEntity(FindPlayerBack(client, 642)))  //Cozy Camper
 	{
 		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 1.0 ; 15 ; 0.0 ; 1 ; 0.85");
+		DebugMsg(0, "Given Cozy Camper SMG");
 	}
 
 	#if defined _tf2attributes_included
@@ -6847,6 +6945,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 		{
 			shield[client]=entity;
+			DebugMsg(0, "Enabled Shield For %N", client);
 		}
 	}
 
@@ -6884,7 +6983,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	if(civilianCheck[client]==3)
 	{
 		civilianCheck[client]=0;
-		Debug("Respawning %N to avoid civilian bug", client);
+		DebugMsg(2, "Respawning %N to avoid civilian bug", client);
 		TF2_RespawnPlayer(client);
 	}
 	civilianCheck[client]=0;
@@ -6902,6 +7001,7 @@ stock RemovePlayerTarge(client)
 			if(index==131 || index==406 || index==1099 || index==1144)  //Chargin' Targe, Splendid Screen, Tide Turner, Festive Chargin' Targe
 			{
 				TF2_RemoveWearable(client, entity);
+				DebugMsg(0, "Removed Targe");
 			}
 		}
 	}
@@ -6928,6 +7028,7 @@ stock RemovePlayerBack(client, indices[], length)
 					if(index==indices[i])
 					{
 						TF2_RemoveWearable(client, entity);
+						DebugMsg(0, "Removed Razorback");
 					}
 				}
 			}
@@ -6963,6 +7064,7 @@ public Action:OnObjectDestroyed(Handle:event, const String:name[], bool:dontBroa
 				EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 			}
 		}
+		DebugMsg(0, "Destoryed Building");
 	}
 	return Plugin_Continue;
 }
@@ -6979,12 +7081,14 @@ public Action:OnUberDeployed(Handle:event, const String:name[], bool:dontBroadca
 			GetEntityClassname(medigun, classname, sizeof(classname));
 			if(StrEqual(classname, "tf_weapon_medigun"))
 			{
+				DebugMsg(0, "Gave Medic %N Crit Boost", client);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
 				new target=GetHealingTarget(client);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
 					uberTarget[client]=target;
+					DebugMsg(0, "Gave Heal %N Crit Boost", traget);
 				}
 				else
 				{
@@ -7009,11 +7113,13 @@ public Action:Timer_Uber(Handle:timer, any:medigunid)
 			new target=GetHealingTarget(client);
 			if(charge>0.05)
 			{
+				DebugMsg(0, "Gave Medic %N Crit Boost", client);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5);
 					uberTarget[client]=target;
+					DebugMsg(0, "Gave Heal %N Crit Boost", trget);
 				}
 				else
 				{
@@ -7096,6 +7202,7 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 			healthcheckused++;
 			HPTime=GetGameTime()+(healthcheckused<3 ? 20.0 : 80.0);
 		}
+		DebugMsg(0, "Showed Boss HP");
 		return Plugin_Continue;
 	}
 
@@ -7110,6 +7217,7 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 			}
 		}
 		CPrintToChat(client, "{olive}[FF2]{default} %t", "wait_hp", RoundFloat(HPTime-GetGameTime()), waitTime);
+		DebugMsg(0, "Blocked Showing Boss HP");
 	}
 	return Plugin_Continue;
 }
