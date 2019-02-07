@@ -124,6 +124,7 @@ new bool:goomba=false;
 new bool:smac=false;
 
 new currentBossTeam;
+new bool:blueBoss;
 new OtherTeam=2;
 new BossTeam=3;
 new playing;
@@ -630,7 +631,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 134:  //1.17.6
+		case 135:  //1.17.6
 		{
 			DrawPanelText(panel, "1) [Bosses] Added 'bossteam' to allow specific bosses to use a specific team (SHADoW)");
 		}
@@ -3326,7 +3327,6 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		DeleteFile("bNextMapToFF2");
 	}
 
-	new bool:blueBoss;
 	currentBossTeam=GetRandomInt(1,2);
 	switch(GetConVarInt(cvarForceBossTeam))
 	{
