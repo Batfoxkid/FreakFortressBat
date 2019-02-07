@@ -485,8 +485,12 @@
 	}
 	"Time Left"	// Annotation
 	{
-		"#format" "{1:s}"		
+		"#format" "{1:s}"
 		"en"	"Time Remaining: {1}"
+	}
+	"Overtime"	// HUD, Annotation
+	{
+		"en"	"OVERTIME!"
 	}
 	"Dead Ringer Ready" // HUD
 	{
