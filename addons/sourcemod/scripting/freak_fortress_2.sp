@@ -1,5 +1,6 @@
 /*
                 << Freak Fortress 2 >>
+                    < Unofficial >
 
      Original Author of VSH and FF2, Rainbolt Dash
         Programmer, modeller, mapper, painter
@@ -71,7 +72,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "6"
+#define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Unofficial"
 
 #define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -122,6 +123,7 @@ new bool:goomba=false;
 
 new bool:smac=false;
 
+new currentBossTeam;
 new OtherTeam=2;
 new BossTeam=3;
 new playing;
@@ -314,6 +316,7 @@ static bool:ReloadFF2=false;
 static bool:ReloadWeapons=false;
 static bool:ReloadConfigs=false;
 new bool:LoadCharset=false;
+static bool:HasSwitched=false;
 
 new Handle:hostName;
 new String:oldName[256];
@@ -479,7 +482,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.5",
 	"1.17.5",
 	"1.17.6",
-	"1.17.6"
+	"1.17.6",
+	"1.17.7"
 };
 
 static const String:ff2versiondates[][]=
@@ -618,13 +622,18 @@ static const String:ff2versiondates[][]=
 	"January 29, 2019",		//1.17.5
 	"January 29, 2019",		//1.17.5
 	"February 5, 2019",		//1.17.6
-	"February 5, 2019"		//1.17.6
+	"February 5, 2019",		//1.17.6
+	"February 10, 2019"		//1.17.7
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 134:  //1.17.6
+		{
+			DrawPanelText(panel, "1) [Bosses] Added 'bossteam' to allow specific bosses to use a specific team (SHADoW)");
+		}
 		case 134:  //1.17.6
 		{
 			DrawPanelText(panel, "1) [Gameplay] Cvar for game_text_tf entities as HUD replacements (SHADoW)");
@@ -3318,6 +3327,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 	}
 
 	new bool:blueBoss;
+	currentBossTeam=GetRandomInt(1,2);
 	switch(GetConVarInt(cvarForceBossTeam))
 	{
 		case 1:
@@ -3692,6 +3702,10 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	RoundCount++;
 	Companions=0;
+	if(HasSwitched)
+	{
+		HasSwitched=false;
+	}
 
 	if(ReloadFF2)
 	{
@@ -5655,6 +5669,30 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		{
 			FF2flags[client]|=FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
 		}
+	}
+
+	if(!HasSwitched)
+	{
+		switch(KvGetNum(BossKV[Special[boss]], "bossteam", 0))
+		{
+			case 1: // Always Random
+			{			
+				SwitchTeams((currentBossTeam==1) ? (_:TFTeam_Blue) : (_:TFTeam_Red) , (currentBossTeam==1) ? (_:TFTeam_Red) : (_:TFTeam_Blue), true);
+			}
+			case 2: // RED Boss
+			{
+				SwitchTeams(_:TFTeam_Red, _:TFTeam_Blue, true);
+			}
+			case 3: // BLU Boss
+			{
+				SwitchTeams(_:TFTeam_Blue, _:TFTeam_Red, true);
+			}
+			default: // Determined by "ff2_force_team" ConVar
+			{
+				SwitchTeams((blueBoss) ? (_:TFTeam_Blue) : (_:TFTeam_Red), (blueBoss) ? (_:TFTeam_Red) : (_:TFTeam_Blue), true);
+			}
+		}
+		HasSwitched=true;	
 	}
 
 	CreateTimer(0.2, MakeModelTimer, boss, TIMER_FLAG_NO_MAPCHANGE);
@@ -12598,6 +12636,46 @@ bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, s
 	}
 	return true;
 }
+
+stock SwitchEntityTeams(String:entityname[], bossteam, otherteam)
+{
+	new ent=-1;
+	while((ent=FindEntityByClassname2(ent, entityname))!=-1)
+	{
+		SetEntityTeamNum(ent, _:GetEntityTeamNum(ent)==otherteam ? bossteam : otherteam);
+	}
+}
+
+public SwitchTeams(bossteam, otherteam, bool:respawn)
+{
+	SetTeamScore(bossteam, GetTeamScore(bossteam));
+	SetTeamScore(otherteam, GetTeamScore(otherteam));
+	OtherTeam=otherteam;
+	BossTeam=bossteam;
+	
+	if(Enabled)
+	{
+		if(bossteam==_:TFTeam_Red && otherteam==_:TFTeam_Blue)
+		{
+			SwitchEntityTeams("info_player_teamspawn", bossteam, otherteam);
+			SwitchEntityTeams("obj_sentrygun", bossteam, otherteam);
+			SwitchEntityTeams("obj_dispenser", bossteam, otherteam);
+			SwitchEntityTeams("obj_teleporter", bossteam, otherteam);
+			SwitchEntityTeams("filter_activator_tfteam", bossteam, otherteam);
+
+			if(respawn)
+			{
+				for(new client=1;client<=MaxClients;client++)
+				{
+					if(!IsValidClient(client) || GetClientTeam(client)<=_:TFTeam_Spectator || TF2_GetPlayerClass(client)==TFClass_Unknown)
+						continue;
+					TF2_RespawnPlayer(client);
+				}
+			}
+		}
+	}
+}
+
 
 public Action:Timer_UseBossCharge(Handle:timer, Handle:data)
 {
