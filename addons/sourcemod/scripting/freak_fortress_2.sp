@@ -99,15 +99,18 @@ last time or to encourage others to do the same.
 #define HEALTHBAR_MAX 255
 #define MONOCULUS "eyeball_boss"
 
-// Config file paths
+// File paths
 #define ConfigPath "configs/freak_fortress_2"
 #define DataPath "data/freak_fortress_2"
+#define LogPath "logs/freak_fortress_2"
 #define CharsetCFG "characters.cfg"
+#define DebugLog "debug.log"
 #define DoorCFG "doors.cfg"
 #define MapCFG "maps.cfg"
 #define WeaponCFG "weapons.cfg"
 
 float shDmgReduction[MAXPLAYERS+1];
+char dLog[256];
 
 #if defined _steamtools_included
 new bool:steamtools=false;
@@ -210,6 +213,7 @@ new Handle:cvarBossRTD;
 new Handle:cvarDeadRingerHud;
 new Handle:cvarUpdater;
 new Handle:cvarDebug;
+new Handle:cvarDebugMsg;
 new Handle:cvarPreroundBossDisconnect;
 new Handle:cvarDmg2KStreak;
 new Handle:cvarSniperDamage;
@@ -649,6 +653,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 		{
 			DrawPanelText(panel, "1) [Bosses] Added 'bossteam' to allow specific bosses to use a specific team (SHADoW)");
 			DrawPanelText(panel, "2) [Gameplay] Cvar for overtime mode activates if countdown timer expires while capping a point (SHADoW)");
+			DrawPanelText(panel, "3) [Core] Added new debug logging system (Batfoxkid)");
 		}
 		case 134:  //1.17.6
 		{
@@ -1726,6 +1731,13 @@ public OnPluginStart()
 {
 	LogMessage("===Freak Fortress 2 Initializing-v%s===", PLUGIN_VERSION);
 
+	// Log for Debug
+	BuildPath(Path_SM, dLog, sizeof(dLog), "%s/%s", LogPath, DebugLog);
+	if(!FileExists(dLog))
+	{
+		OpenFile(dLog, "a+");
+	}
+
 	cvarVersion=CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
 	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
 	cvarPointDelay=CreateConVar("ff2_point_delay", "6", "Seconds to add to ff2_point_time per player");
@@ -1756,6 +1768,7 @@ public OnPluginStart()
 	cvarDeadRingerHud=CreateConVar("ff2_deadringer_hud", "1", "Dead Ringer indicator? 0 to disable, 1 to enable", _, true, 0.0, true, 1.0);
 	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
+	cvarDebugMsg=CreateConVar("ff2_debug_msg", "0", "1-Chat to players, 2-Chat to ff2_debuger perms, 4-Console, 8-Custom log", _, true, 0.0, true, 15.0);
 	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "195", "Minimum damage to increase killstreak count", _, true, 0.0);
 	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
 	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
@@ -1837,6 +1850,8 @@ public OnPluginStart()
 	HookConVarChange(cvarGoombaRebound, CvarChange);
 	HookConVarChange(cvarBossRTD, CvarChange);
 	HookConVarChange(cvarUpdater, CvarChange);
+	HookConVarChange(cvarDebug, CvarChange);
+	HookConVarChange(cvarDebugMsg, CvarChange);
 	HookConVarChange(cvarDeadRingerHud, CvarChange);
 	HookConVarChange(cvarNextmap=FindConVar("sm_nextmap"), CvarChangeNextmap);
 	HookConVarChange(cvarDmg2KStreak, CvarChange);
@@ -12893,6 +12908,131 @@ stock RemoveShield(client, attacker, Float:position[3])
 	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
 	shieldHP[client]=0.0;
 	shield[client]=0;
+}
+
+stock DebugMsg(priority=0, String:buffer[], any:...)
+{
+	if(!GetConVarBool(cvarDebug) || GetConVarInt(cvarDebugMsg)<1)
+	{
+		return Plugin_Continue;
+	}
+
+	decl String:prefix[64];
+	switch(priority)
+	{
+		case 1:
+			Format(prefix, sizeof(prefix), "{yellow}[!]{default} ");
+		case 2:
+			Format(prefix, sizeof(prefix), "{orange}[!!]{default} ");
+		case 3:
+			Format(prefix, sizeof(prefix), "{red}[!!!]{default} ");
+		case 4:
+			Format(prefix, sizeof(prefix), "{darkred}[Critical]{default} ");
+		default:
+			Format(prefix, sizeof(prefix), "");
+	}
+	decl String:prefixcon[64];
+	switch(priority)
+	{
+		case 1:
+			Format(prefixcon, sizeof(prefixcon), "[!] ");
+		case 2:
+			Format(prefixcon, sizeof(prefixcon), "[!!] ");
+		case 3:
+			Format(prefixcon, sizeof(prefixcon), "[!!!] ");
+		case 4:
+			Format(prefixcon, sizeof(prefixcon), "[Critical] ");
+		default:
+			Format(prefixcon, sizeof(prefixcon), "");
+	}
+	decl String:message[512];
+	VFormat(message, sizeof(message), buffer, 6);
+	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
+
+	/*new clients[MaxClients], total;
+	for(new client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client) && IsClientInGame(client))
+		{
+			if(CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true) && (GetConVarInt(cvarDebugMsg)==2 || GetConVarInt(cvarDebugMsg)==6 || GetConVarInt(cvarDebugMsg)==10))
+			{
+				clients[total++]=client;
+			}
+			else if(!CheckCommandAccess(client, "ff2_debuger", ADMFLAG_RCON, true) && (GetConVarInt(cvarDebugMsg)==1 || GetConVarInt(cvarDebugMsg)==5 || GetConVarInt(cvarDebugMsg)==9))
+			{
+				clients[total++]=client;
+			}
+		}
+	}*/
+
+	switch(GetConVarInt(cvarDebugMsg))
+	{
+		case 1:
+			CPrintToChatAllEx(CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+		case 2:
+			CPrintToChatAllEx(!CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+		case 3:
+			CPrintToChatAll("%s%s", prefix, message);
+		case 4:
+			PrintToServer("%s%s", prefixcon, message);
+		case 5:
+		{
+			CPrintToChatAllEx(CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+			PrintToServer("%s%s", prefixcon, message);
+		}
+		case 6:
+		{
+			CPrintToChatAllEx(!CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+			PrintToServer("%s%s", prefixcon, message);
+		}
+		case 7:
+		{
+			CPrintToChatAll("%s%s", prefix, message);
+			PrintToServer("%s%s", prefixcon, message);
+		}
+		case 8:
+		{
+			PrintToServer("%s%s", prefixcon, message);
+		}
+		case 9:
+		{
+			CPrintToChatAllEx(CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+			LogToFile(dLog, "%s%s", prefixcon, message);
+		}
+		case 10:
+		{
+			CPrintToChatAllEx(!CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+			LogToFile(dLog, "%s%s", prefixcon, message);
+		}
+		case 11:
+		{
+			CPrintToChatAll("%s%s", prefix, message);
+			LogToFile(dLog, "%s%s", prefixcon, message);
+		}
+		case 12:
+		{
+			PrintToServer("%s%s", prefixcon, message);
+			LogToFile(dLog, "%s%s", prefixcon, message);
+		}
+		case 13:
+		{
+			CPrintToChatAllEx(CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+			PrintToServer("%s%s", prefixcon, message);
+			LogToFile(dLog, "%s%s", prefixcon, message);
+		}
+		case 14:
+		{
+			CPrintToChatAllEx(!CheckCommandAccess(client, "ff2_debuer", ADMFLAG_RCON, true), "%s%s", prefix, message);
+			PrintToServer("%s%s", prefixcon, message);
+			LogToFile(dLog, "%s%s", prefixcon, message);
+		}
+		case 15:
+		{
+			CPrintToChatAll("%s%s", prefix, message);
+			PrintToServer("%s%s", prefixcon, message);
+			LogToFile(dLog, "%s%s", prefixcon, message);
+		}
+	}
 }
 
 public Native_IsEnabled(Handle:plugin, numParams)
