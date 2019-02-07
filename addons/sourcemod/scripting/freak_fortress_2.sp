@@ -9739,6 +9739,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						{
 							health=600;
 						}
+						SetEntityHealth(attacker, health);
 					}
 					else if(index==461)  //Big Earner
 					{
