@@ -515,6 +515,6 @@
 	"DevAd"	// Chat
 	{
 		"#format" "{1:s}"
-		"en"	"v{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
+		"en"	"{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
 	}
 }
