@@ -176,7 +176,6 @@ new Float:KSpreeTimer[MAXPLAYERS+1];
 new KSpreeCount[MAXPLAYERS+1];
 new Float:GlowTimer[MAXPLAYERS+1];
 new shortname[MAXPLAYERS+1];
-new bool:roundOvertime=false;
 new bool:emitRageSound[MAXPLAYERS+1];
 new bool:bossHasReloadAbility[MAXPLAYERS+1];
 new bool:bossHasRightMouseAbility[MAXPLAYERS+1];
@@ -3821,7 +3820,6 @@ public CheckArena()
 public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	capTeam=0;
-	roundOvertime=false;
 	DebugMsg(0, "Round %i End", RoundCount);
 	RoundCount++;
 	Companions=0;
@@ -8706,19 +8704,16 @@ public Action:OverTimeAlert(Handle:timer)
 		}
 	}
 
-	switch(OTCount)
+	if(OTCount>0)
 	{
-		case 0,1,2,3,4:
+		new String:OTAlerting[PLATFORM_MAX_PATH];
+		strcopy(OTAlerting, sizeof(OTAlerting), OTVoice[GetRandomInt(0, sizeof(OTVoice)-1)]);	
+		EmitSoundToAll(OTAlerting);
+		if(GetConVarInt(FindConVar("tf_overtime_nag")))
 		{
-			new String:OTAlerting[PLATFORM_MAX_PATH];
-			strcopy(OTAlerting, sizeof(OTAlerting), OTVoice[GetRandomInt(0, sizeof(OTVoice)-1)]);	
-			EmitSoundToAll(OTAlerting);
+			OTCount=GetRandomInt(-3, 0);
 		}
-		case 10:
-		{
-			OTCount=0;
-			return Plugin_Continue;
-		}
+		return Plugin_Continue;
 	}
 
 	OTCount++;
@@ -9073,9 +9068,9 @@ public Action:Timer_DrawGame(Handle:timer)
 				{
 					ShowGameText(client, "ico_notify_ten_seconds", _, "%s | %s", message, timeDisplay);
 				}
-				else if(timeleft<0 && roundOvertime)
+				else if(isCapping)
 				{
-					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
+					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%s | %t", message, "Overtime");
 				}
 				else if(GhostBoss)
 				{
@@ -9100,7 +9095,7 @@ public Action:Timer_DrawGame(Handle:timer)
 				{
 					ShowGameText(client, "ico_notify_ten_seconds", _, "%t", "Time Left", timeDisplay);
 				}
-				else if(timeleft<0 && roundOvertime)
+				else if(isCapping)
 				{
 					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
 				}
@@ -9113,7 +9108,7 @@ public Action:Timer_DrawGame(Handle:timer)
 					ShowGameText(client, "leaderboard_streak", _, timeDisplay);
 				}
 			}
-			else if(roundOvertime)
+			else if(isCapping)
 			{
 				FF2_ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
 			}
@@ -9175,12 +9170,13 @@ public Action:Timer_DrawGame(Handle:timer)
 						}
 					}
 				}
-				roundOvertime=true;
 				CreateTimer(1.0, OverTimeAlert, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+			}
+			else
+			{
+				EndBossRound();
 				return Plugin_Stop;
 			}
-			EndBossRound();
-			return Plugin_Stop;
 		}
 	}
 	return Plugin_Continue;
