@@ -104,7 +104,7 @@ last time or to encourage others to do the same.
 #define DataPath "data/freak_fortress_2"
 #define LogPath "logs/freak_fortress_2"
 #define CharsetCFG "characters.cfg"
-#define DebugLog "debug.log"
+#define DebugLog "ff2_debug.log"
 #define DoorCFG "doors.cfg"
 #define MapCFG "maps.cfg"
 #define WeaponCFG "weapons.cfg"
@@ -278,6 +278,7 @@ new shieldCrits;
 new Float:GoombaDamage=0.05;
 new Float:reboundPower=300.0;
 new bool:canBossRTD;
+new DebugMsgFreeze;
 new Float:SniperDamage=2.5;
 new Float:SniperMiniDamage=2.1;
 new Float:BowDamage=1.25;
@@ -2618,7 +2619,7 @@ public CacheWeapons()
 	if(!FileExists(config))
 	{
 		LogError("[FF2] Freak Fortress 2 disabled-can not find '%s'!", WeaponCFG);
-		DebugMsg(4, "%s is missing", WeaponCFG);
+		DebugMsg(4, "WeaponCFG is missing");
 		Enabled2=false;
 		return;
 	}
@@ -2627,7 +2628,7 @@ public CacheWeapons()
 	if(!FileToKeyValues(kvWeaponMods, config))
 	{
 		LogError("[FF2] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
-		DebugMsg(4, "%s has invaild format", WeaponCFG);
+		DebugMsg(4, "WeaponCFG has invaild format");
 		Enabled2=false;
 		return;
 	}
@@ -2849,7 +2850,6 @@ public LoadCharacter(const String:character[])
 	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
 		LogError("[FF2 Bosses] Character %s is only compatible with FF2 v%i!", character, version);
-		DebugMsg(2, "%s is only allowed under version %i", character, version);
 		return;
 	}
 
@@ -2864,7 +2864,6 @@ public LoadCharacter(const String:character[])
 			if(!FileExists(config))
 			{
 				LogError("[FF2 Bosses] Character %s needs plugin %s!", character, plugin_name);
-				DebugMsg(2, "%s is missing for %s", plugin_name, character);
 				return;
 			}
 		}
@@ -2904,7 +2903,6 @@ public LoadCharacter(const String:character[])
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, config);
-					DebugMsg(2, "%s is missing file %s", character, config);
 				}
 			}
 		}
@@ -2931,7 +2929,6 @@ public LoadCharacter(const String:character[])
 						if(StrContains(key, ".phy")==-1)
 						{
 							LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
-							DebugMsg(2, "%s is missing file %s", character, key);
 						}
 					}
 				}
@@ -2955,7 +2952,6 @@ public LoadCharacter(const String:character[])
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
-					DebugMsg(2, "%s is missing file %s", character, key);
 				}
 				Format(key, sizeof(key), "%s.vmt", config);
 				if(FileExists(key, true))
@@ -2965,7 +2961,6 @@ public LoadCharacter(const String:character[])
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
-					DebugMsg(2, "%s is missing file %s", character, key);
 				}
 			}
 		}
@@ -3023,7 +3018,6 @@ public PrecacheCharacter(characterIndex)
 				else
 				{
 					LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
-					DebugMsg(2, "%s is missing file %s in %s", bossName, filePath, section);
 				}
 			}
 		}
@@ -3047,7 +3041,6 @@ public PrecacheCharacter(characterIndex)
 					else
 					{
 						LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
-						DebugMsg(2, "%s is missing file %s in %s", bossName, filePath, section);
 					}
 				}
 				else
@@ -3060,7 +3053,6 @@ public PrecacheCharacter(characterIndex)
 					else
 					{
 						LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
-						DebugMsg(2, "%s is missing file %s in %s", bossName, filePath, section);
 					}
 				}
 			}
@@ -3270,12 +3262,12 @@ stock bool:IsFF2Map()
 		if(FileExists(config))
 		{
 			LogError("[FF2] Please move '%s' from '%s' to '%s'! Disabling Plugin!", MapCFG, ConfigPath, DataPath);
-			DebugMsg(4, "%s is in %s and not %s", MapCFG, ConfigPath, DataPath);
+			DebugMsg(4, "MapCFG is in ConfigPath and not DataPath");
 		}
 		else
 		{
 			LogError("[FF2] Unable to find %s, disabling plugin.", config);
-			DebugMsg(4, "Could not find %s", config);
+			DebugMsg(4, "Could not find MapCFG");
 		}
 		return false;
 	}
@@ -3284,7 +3276,7 @@ stock bool:IsFF2Map()
 	if(file==INVALID_HANDLE)
 	{
 		LogError("[FF2] Error reading maps from %s, disabling plugin.", config);
-		DebugMsg(4, "Could not read %s", config);
+		DebugMsg(4, "Could not read MapCFG");
 		return false;
 	}
 
@@ -3359,7 +3351,7 @@ stock bool:CheckToChangeMapDoors()
 		if(FileExists(config))
 		{
 			LogError("[FF2] Please move '%s' from '%s' to '%s'!", DoorCFG, ConfigPath, DataPath);
-			DebugMsg(4, "%s is in %s and not %s", DoorCFG, ConfigPath, DataPath);
+			DebugMsg(4, "DoorCFG is in ConfigPath and not DataPath");
 		}
 		if(!strncmp(currentmap, "vsh_lolcano_pb1", 15, false))
 		{
@@ -3399,7 +3391,6 @@ stock bool:CheckToChangeMapDoors()
 public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	isCapping=false;
-	DebugMsg(0, "Round %i:", RoundCount);
 	if(changeGamemode==1)
 	{
 		EnableFF2();
@@ -3477,7 +3468,6 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 			playing++;
 		}
 	}
-	DebugMsg(0, "%i players playing", playing);
 
 	if(playing>=GetConVarInt(cvarDuoMin))  // Check if theres enough players for companions
 	{
@@ -3820,7 +3810,6 @@ public CheckArena()
 public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	capTeam=0;
-	DebugMsg(0, "Round %i End", RoundCount);
 	RoundCount++;
 	Companions=0;
 	if(HasSwitched)
@@ -4101,7 +4090,6 @@ public MenuHandlerCompanion(Handle:menu, MenuAction:action, param1, param2)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
 		}
-		DebugMsg(0, "Choice: %i", choice);
 	}
 	else if(action == MenuAction_End)
 	{
@@ -4162,7 +4150,6 @@ public MenuHandlerBoss(Handle:menu, MenuAction:action, param1, param2)
 		{
 			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 		}
-		DebugMsg(0, "Choice: %i", choice);
 	} 
 	else if(action == MenuAction_End)
 	{
@@ -4511,7 +4498,7 @@ StartMusic(client=0)
 	}
 	else
 	{
-		DebugMsg(0, "Start Music %N", client);
+		DebugMsg(0, "Start Music");
 		StopMusic(client);
 		playBGM[client]=true;
 		CreateTimer(0.1, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
@@ -4550,7 +4537,7 @@ StopMusic(client=0, bool:permanent=false)
 	}
 	else
 	{
-		DebugMsg(0, "Stop Music %N", client);
+		DebugMsg(0, "Stop Music");
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 
@@ -4972,7 +4959,7 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 		if(!GetConVarBool(cvarKeepBoss) || !GetConVarBool(cvarSelectBoss))
 		{
 			xIncoming[client] = "";
-			DebugMsg(0, "Reset Boss Selection %N", client);
+			DebugMsg(0, "Reset Boss Selection");
 		}
 		return Plugin_Changed;
 	}
@@ -4998,7 +4985,6 @@ stock CreateAttachedAnnotation(client, entity, bool:effect=true, Float:time, Str
 	SetEventString(event, "text", message);
 	SetEventInt(event, "id", entity); //What to enter inside? Need a way to identify annotations by entindex!
 	FireEvent(event);
-	DebugMsg(0, "Annotation For %N on %s", client, entity);
 	return entity;
 }
 
@@ -5008,12 +4994,10 @@ stock bool ShowGameText(int client, const char[] icon="leaderboard_streak", colo
 	if(!client)
 	{
 		bf=StartMessageAll("HudNotifyCustom");
-		DebugMsg(0, "game_text_tf For All");
 	}
 	else
 	{
 		bf = StartMessageOne("HudNotifyCustom", client);
-		DebugMsg(0, "game_text_tf For %N", client);
 	}
 
 	if(bf==null)
@@ -6890,7 +6874,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	{
 		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
 		SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
-		DebugMsg(0, "Replaced Bazaar Bargain (yes spelling, kill me)");
+		DebugMsg(0, "Replaced Bazaar Bargain");
 	}
 	else
 	{
@@ -6943,7 +6927,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 		{
 			shield[client]=entity;
-			DebugMsg(0, "Enabled Shield For %N", client);
+			DebugMsg(0, "Enabled Shield");
 		}
 	}
 
@@ -6981,7 +6965,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	if(civilianCheck[client]==3)
 	{
 		civilianCheck[client]=0;
-		DebugMsg(2, "Respawning %N to avoid civilian bug", client);
+		DebugMsg(2, "Respawning player to avoid civilian bug");
 		TF2_RespawnPlayer(client);
 	}
 	civilianCheck[client]=0;
@@ -6999,7 +6983,7 @@ stock RemovePlayerTarge(client)
 			if(index==131 || index==406 || index==1099 || index==1144)  //Chargin' Targe, Splendid Screen, Tide Turner, Festive Chargin' Targe
 			{
 				TF2_RemoveWearable(client, entity);
-				DebugMsg(0, "Removed Targe from %N", client);
+				DebugMsg(0, "Removed Targe");
 			}
 		}
 	}
@@ -7026,7 +7010,7 @@ stock RemovePlayerBack(client, indices[], length)
 					if(index==indices[i])
 					{
 						TF2_RemoveWearable(client, entity);
-						DebugMsg(0, "Removed Razorback from %N", client);
+						DebugMsg(0, "Removed Razorback");
 					}
 				}
 			}
@@ -7079,14 +7063,12 @@ public Action:OnUberDeployed(Handle:event, const String:name[], bool:dontBroadca
 			GetEntityClassname(medigun, classname, sizeof(classname));
 			if(StrEqual(classname, "tf_weapon_medigun"))
 			{
-				DebugMsg(0, "Gave Medic %N Crit Boost", client);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
 				new target=GetHealingTarget(client);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
 					uberTarget[client]=target;
-					DebugMsg(0, "Gave Heal %N Crit Boost", target);
 				}
 				else
 				{
@@ -7111,13 +7093,11 @@ public Action:Timer_Uber(Handle:timer, any:medigunid)
 			new target=GetHealingTarget(client);
 			if(charge>0.05)
 			{
-				DebugMsg(0, "Gave Medic %N Crit Boost", client);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5);
 					uberTarget[client]=target;
-					DebugMsg(0, "Gave Heal %N Crit Boost", target);
 				}
 				else
 				{
@@ -7602,7 +7582,7 @@ stock SetControlPoint(bool:enable)
 			AcceptEntityInput(controlPoint, (enable ? "ShowModel" : "HideModel"));
 			SetVariantInt(enable ? 0 : 1);
 			AcceptEntityInput(controlPoint, "SetLocked");
-			DebugMsg(0, "Control Point is %t", enable ? "On" : "Off");
+			DebugMsg(0, "Control Point is toggled");
 		}
 	}
 }
@@ -8365,12 +8345,12 @@ public TF2_OnConditionAdded(client, TFCond:condition)
 		if(IsBoss(client) && (condition==TFCond_Jarated || condition==TFCond_MarkedForDeath || (condition==TFCond_Dazed && TF2_IsPlayerInCondition(client, TFCond:42))))
 		{
 			TF2_RemoveCondition(client, condition);
-			DebugMsg(0, "Removed Condition %s from %N", condition, client);
+			DebugMsg(0, "Removed Condition");
 		}
 		else if(!IsBoss(client) && condition==TFCond_BlastJumping)
 		{
 			FF2flags[client]|=FF2FLAG_ROCKET_JUMPING;
-			DebugMsg(0, "%N is rocket jumping", client);
+			DebugMsg(0, "Player rocket jumping");
 		}
 	}
 }
@@ -8382,12 +8362,12 @@ public TF2_OnConditionRemoved(client, TFCond:condition)
 		if(TF2_GetPlayerClass(client)==TFClass_Scout && condition==TFCond_CritHype)
 		{
 			TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.01);
-			DebugMsg(0, "%N crit hype ended", client);
+			DebugMsg(0, "Crit hype ended");
 		}
 		else if(!IsBoss(client) && condition==TFCond_BlastJumping)
 		{
 			FF2flags[client]&=~FF2FLAG_ROCKET_JUMPING;
-			DebugMsg(0, "%N is no longer rocket jumping", client);
+			DebugMsg(0, "No longer rocket jumping");
 		}
 	}
 }
@@ -8496,7 +8476,7 @@ public Action:OnSuicide(client, const String:command[], args)
 	if(Enabled && IsBoss(client) && (canBossSuicide ? !CheckRoundState() : true) && CheckRoundState()!=2)
 	{
 		CPrintToChat(client, "{olive}[FF2]{default} %t", canBossSuicide ? "Boss Suicide Pre-round" : "Boss Suicide Denied");
-		DebugMsg(0, "Boss %N suicide blocked", client);
+		DebugMsg(0, "Boss suicide blocked");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -8513,7 +8493,7 @@ public Action:OnChangeClass(client, const String:command[], args)
 		{
 			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", TF2_GetClass(class));
 		}
-		DebugMsg(0, "Boss %N class change blocked", client);
+		DebugMsg(0, "Boss class change blocked");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -8900,7 +8880,7 @@ public Action:OnObjectDeflected(Handle:event, const String:name[], bool:dontBroa
 		{
 			BossCharge[boss][0]=rageMax[client];
 		}
-		DebugMsg(0, "Airblasted boss %N", client);
+		DebugMsg(0, "Airblasted boss");
 	}
 	return Plugin_Continue;
 }
@@ -9423,7 +9403,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	{
 		if(!(damagetype & DMG_CLUB) && shieldHP[client]>0.0 && RoundToFloor(damage)<GetClientHealth(client))
 		{
-			DebugMsg(0, "Reducted Damage On %N from %N", client, attacker);
+			DebugMsg(0, "Reducted Shield Damage");
 			
 			damage*=shDmgReduction[client]; // damage resistance on shield
 			
@@ -9452,7 +9432,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	}
 	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==4)
 	{
-		DebugMsg(0, "Reducted Damage On %N from %N", client, attacker);
+		DebugMsg(0, "Reducted Shield Damage");
 
 		damage*=shDmgReduction[client]; // damage resistance on shield
 
@@ -10012,11 +9992,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 
 				static Float:kStreakCount;
 				kStreakCount+=damage;
-				if(kStreakCount>=GetConVarFloat(cvarDmg2KStreak))
+				if((kStreakCount>=GetConVarFloat(cvarDmg2KStreak)) && GetConVarFloat(cvarDmg2KStreak)>0)
 				{
 					SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
 					kStreakCount-=GetConVarFloat(cvarDmg2KStreak);
-					DebugMsg(0, "Increased Kill Streak For %N", attacker);
+					DebugMsg(0, "Increased Kill Streak");
 				}
 
 				if(bIsBackstab)
@@ -10405,6 +10385,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 					PrintHintText(victim, "%t", "Goomba Stomped");
 			}
 		}
+		DebugMsg(0, "Goomba On %N from %N", victim, attacker);
 		return Plugin_Changed;
 	}
 	else if(IsBoss(victim))
@@ -10456,9 +10437,9 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 					PrintHintText(victim, "%t", "Goomba Stomped Boss");
 			}
 		}
+		DebugMsg(0, "Goomba On %N from %N", victim, attacker);
 		return Plugin_Changed;
 	}
-	DebugMsg(0, "Goomba On %N from %N", victim, attacker);
 	return Plugin_Continue;
 }
 
@@ -10474,7 +10455,7 @@ public Action:RTD_CanRollDice(client)
 {
 	if(Enabled && IsBoss(client) && !canBossRTD)
 	{
-		DebugMsg(0, "Blocked boss %N RTD", client);
+		DebugMsg(0, "Blocked boss RTD");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -10484,7 +10465,7 @@ public Action RTD2_CanRollDice(int client)
 {
 	if(Enabled && IsBoss(client) && !canBossRTD)
 	{
-		DebugMsg(0, "Blocked boss %N RTD", client);
+		DebugMsg(0, "Blocked boss RTD");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -10543,7 +10524,7 @@ stock SpawnSmallHealthPackAt(client, team=0)
 		new Float:velocity[3];//={float(GetRandomInt(-10, 10)), float(GetRandomInt(-10, 10)), 50.0};  //Q_Q
 		velocity[0]=float(GetRandomInt(-10, 10)), velocity[1]=float(GetRandomInt(-10, 10)), velocity[2]=50.0;  //I did this because setting it on the creation of the vel variable was creating a compiler error for me.
 		TeleportEntity(healthpack, position, NULL_VECTOR, velocity);
-		DebugMsg(0, "Spawned health kit from %N", client);
+		DebugMsg(0, "Spawned health kit");
 	}
 }
 
@@ -10559,7 +10540,7 @@ stock IncrementHeadCount(client)
 	SetEntProp(client, Prop_Send, "m_iDecapitations", decapitations+1);
 	SetEntityHealth(client, health+15);
 	TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.01);
-	DebugMsg(0, "Increased head count for %N", client);
+	DebugMsg(0, "Increased head count");
 }
 
 stock FindTeleOwner(client)
@@ -10593,7 +10574,7 @@ public Action:Timer_DisguiseBackstab(Handle:timer, any:userid)
 	if(IsValidClient(client, false))
 	{
 		RandomlyDisguise(client);
-		DebugMsg(0, "Forced Disguise on %N", client);
+		DebugMsg(0, "Forced Disguise");
 	}
 	return Plugin_Continue;
 }
@@ -10602,14 +10583,14 @@ stock AssignTeam(client, team)
 {
 	if(!GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass"))  //Living spectator check: 0 means that no class is selected
 	{
-		DebugMsg(2, "%N does not have a desired class", client);
+		DebugMsg(2, "Player does not have a desired class");
 		if(IsBoss(client))
 		{
 			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", KvGetNum(BossKV[Special[Boss[client]]], "class", 1));  //So we assign one to prevent living spectators
 		}
 		else
 		{
-			DebugMsg(3, "%N was not a boss and did not have a desired class", client);
+			DebugMsg(3, "Player was not a boss and did not have a desired class");
 		}
 	}
 
@@ -10619,14 +10600,14 @@ stock AssignTeam(client, team)
 
 	if(GetEntProp(client, Prop_Send, "m_iObserverMode") && IsPlayerAlive(client))  //Welp
 	{
-		DebugMsg(3, "%N is a living spectator", client);
+		DebugMsg(3, "A player is a living spectator");
 		if(IsBoss(client))
 		{
 			TF2_SetPlayerClass(client, TFClassType:KvGetNum(BossKV[Special[Boss[client]]], "class", 1));
 		}
 		else
 		{
-			DebugMsg(1, "Additional information: %N was not a boss", client);
+			DebugMsg(1, "Additional information: Player was not a boss");
 			TF2_SetPlayerClass(client, TFClass_Scout);
 		}
 		TF2_RespawnPlayer(client);
@@ -10693,7 +10674,7 @@ public Action:TF2_CalcIsAttackCritical(client, weapon, String:weaponname[], &boo
 		if (!StrContains(weaponname, "tf_weapon_club"))
 		{
 			SickleClimbWalls(client, weapon);
-			DebugMsg(0, "Player Climb on %N with %s", client, weapon);
+			DebugMsg(0, "Player Climb");
 		}
 	}
 	return Plugin_Continue;
@@ -11026,7 +11007,7 @@ stock ParseFormula(boss, const String:key[], const String:defaultFormula[], defa
 	if(result<=0)
 	{
 		LogError("[FF2] %s has an invalid %s formula, using default!", bossName, key);
-		DebugMsg(2, "%s has an invalid %s formula", bossName, key);
+		DebugMsg(2, "Boss has an invalid formula");
 		return defaultValue;
 	}
 
@@ -12993,7 +12974,6 @@ bool:UseAbility(const String:ability_name[], const String:plugin_name[], boss, s
 			Call_Finish(action);
 		}
 	}
-	DebugMsg(0, "%N used %s from %s on %i with button %i", client, ability_name, plugin_name, slot, buttonMode);
 	return true;
 }
 
@@ -13058,12 +13038,12 @@ stock RemoveShield(client, attacker, Float:position[3])
 	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
 	shieldHP[client]=0.0;
 	shield[client]=0;
-	DebugMsg(0, "Removed %N shield from %N", client, attacker);
+	DebugMsg(0, "Removed shield");
 }
 
-stock DebugMsg(priority=0, String:buffer[], any:...)
+public DebugMsg(priority, String:buffer[], any:...)
 {
-	if(!GetConVarBool(cvarDebug) || GetConVarInt(cvarDebugMsg)<1)
+	if(!GetConVarBool(cvarDebug) || GetConVarInt(cvarDebugMsg)<1 || DebugMsgFreeze>8)
 	{
 		return;
 	}
@@ -13096,9 +13076,11 @@ stock DebugMsg(priority=0, String:buffer[], any:...)
 		default:
 			Format(prefixcon, sizeof(prefixcon), "");
 	}
-	decl String:message[512];
-	VFormat(message, sizeof(message), buffer, 6);
+	new String:message[512], String:messagecon[512];
+	Format(message, sizeof(message), "%s%s", prefix, buffer);
+	Format(messagecon, sizeof(messagecon), "%s%s", prefixcon, buffer);
 	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
+	ReplaceString(messagecon, sizeof(messagecon), "\n", "");  //Get rid of newlines
 
 	for(new client=1; client<=MaxClients; client++)
 	{
@@ -13106,25 +13088,32 @@ stock DebugMsg(priority=0, String:buffer[], any:...)
 		{
 			if(CheckCommandAccess(client, "ff2_debuger", ADMFLAG_RCON, true) && (GetConVarInt(cvarDebugMsg)==2 || GetConVarInt(cvarDebugMsg)==6 || GetConVarInt(cvarDebugMsg)==10 || GetConVarInt(cvarDebugMsg)==14))
 			{
-				CPrintToChat(client, "%s%s", prefix, message);
+				CPrintToChat(client, "%s", message);
 			}
 			else if(!CheckCommandAccess(client, "ff2_debuger", ADMFLAG_RCON, true) && (GetConVarInt(cvarDebugMsg)==1 || GetConVarInt(cvarDebugMsg)==5 || GetConVarInt(cvarDebugMsg)==9 || GetConVarInt(cvarDebugMsg)==13))
 			{
-				CPrintToChat(client, "%s%s", prefix, message);
+				CPrintToChat(client, "%s", message);
 			}
 		}
 	}
 
 	// Very confusing flags...
 	if(GetConVarInt(cvarDebugMsg)==3 || GetConVarInt(cvarDebugMsg)==7 || GetConVarInt(cvarDebugMsg)==11 || GetConVarInt(cvarDebugMsg)==15)
-		CPrintToChatAll("%s%s", prefix, message);
+		CPrintToChatAll("%s", message);
 
 	if((GetConVarInt(cvarDebugMsg)<=7 && GetConVarInt(cvarDebugMsg)>=4) || GetConVarInt(cvarDebugMsg)>=12)
-		PrintToServer("%s%s", prefixcon, message);
+		PrintToServer("%s", messagecon);
 
 	if(GetConVarInt(cvarDebugMsg)>=8)
-		LogToFile(dLog, "%s%s", prefixcon, message);
-	//return true;
+		LogToFile(dLog, "%s", messagecon);
+
+	DebugMsgFreeze++;
+	CreateTimer(0.1, Timer_DebugMsg, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action:Timer_DebugMsg(Handle:timer)
+{
+	DebugMsgFreeze=0;
 }
 
 public Native_IsEnabled(Handle:plugin, numParams)
