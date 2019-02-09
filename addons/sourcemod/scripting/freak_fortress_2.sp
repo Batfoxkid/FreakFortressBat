@@ -218,6 +218,8 @@ new Handle:cvarDmg2KStreak;
 new Handle:cvarSniperDamage;
 new Handle:cvarSniperMiniDamage;
 new Handle:cvarBowDamage;
+new Handle:cvarBowDamageNon;
+new Handle:cvarBowDamageMini;
 new Handle:cvarSniperClimbDamage;
 new Handle:cvarSniperClimbDelay;
 new Handle:cvarStrangeWep;
@@ -282,6 +284,8 @@ new DebugMsgFreeze;
 new Float:SniperDamage=2.5;
 new Float:SniperMiniDamage=2.1;
 new Float:BowDamage=1.25;
+new Float:BowDamageNon=0.0;
+new Float:BowDamageMini=0.0;
 new Float:SniperClimbDamage=15.0;
 new Float:SniperClimbDelay=1.56;
 new QualityWep=5;
@@ -654,6 +658,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "1) [Bosses] Added 'bossteam' to allow specific bosses to use a specific team (SHADoW)");
 			DrawPanelText(panel, "2) [Gameplay] Cvar for overtime mode activates if countdown timer expires while capping a point (SHADoW)");
 			DrawPanelText(panel, "3) [Core] Added new debug logging system (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Cvar for Huntsman being crit boosted and it's damage (Batfoxkid)");
 		}
 		case 134:  //1.17.6
 		{
@@ -1773,6 +1778,8 @@ public OnPluginStart()
 	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
 	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
 	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier", _, true, 0.0);
+	cvarBowDamageNon=CreateConVar("ff2_bow_dmg_non", "0.0", "If not zero Huntsman has no crit boost, Huntsman normal non-crit multiplier", _, true, 0.0);
+	cvarBowDamageMini=CreateConVar("ff2_bow_dmg_mini", "0.0", "If not zero Huntsman is mini-crit boosted, Huntsman normal mini-crit multiplier", _, true, 0.0);
 	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb", _, true, 0.0);
 	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs", _, true, 0.0);
 	cvarStrangeWep=CreateConVar("ff2_strangewep", "1", "0-Disable Boss Weapon Stranges, 1-Enable Boss Weapon Stranges", _, true, 0.0, true, 1.0);
@@ -1858,6 +1865,8 @@ public OnPluginStart()
 	HookConVarChange(cvarSniperDamage, CvarChange);
 	HookConVarChange(cvarSniperMiniDamage, CvarChange);
 	HookConVarChange(cvarBowDamage, CvarChange);
+	HookConVarChange(cvarBowDamageNon, CvarChange);
+	HookConVarChange(cvarBowDamageMini, CvarChange);
 	HookConVarChange(cvarSniperClimbDamage, CvarChange);
 	HookConVarChange(cvarSniperClimbDelay, CvarChange);
 	HookConVarChange(cvarStrangeWep, CvarChange);
@@ -2484,6 +2493,8 @@ public EnableFF2()
 	SniperDamage=GetConVarFloat(cvarSniperDamage);
 	SniperMiniDamage=GetConVarFloat(cvarSniperMiniDamage);
 	BowDamage=GetConVarFloat(cvarBowDamage);
+	BowDamageNon=GetConVarFloat(cvarBowDamageNon);
+	BowDamageMini=GetConVarFloat(cvarBowDamageMini);
 	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
 	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
 	QualityWep=GetConVarInt(cvarQualityWep);
@@ -3113,6 +3124,14 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	else if(convar==cvarBowDamage)
 	{
 		BowDamage=StringToFloat(newValue);
+	}
+	else if(convar==cvarBowDamageNon)
+	{
+		BowDamageNon=StringToFloat(newValue);
+	}
+	else if(convar==cvarBowDamageMini)
+	{
+		BowDamageMini=StringToFloat(newValue);
 	}
 	else if(convar==cvarSniperClimbDamage)
 	{
@@ -7980,6 +7999,14 @@ public Action:ClientTimer(Handle:timer)
 				{
 					addthecrit=false;
 				}
+				if(class==TFClass_Sniper && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_compound_bow") && BowDamageNon>0.0)
+				{
+					addthecrit=false;
+				}
+				else if(class==TFClass_Sniper && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_compound_bow") && BowDamageMini>0.0)
+				{
+					cond=TFCond_Buffed;
+				}
 			}
 
 			if(index==16 && IsValidEntity(FindPlayerBack(client, 642)))  //SMG, Cozy Camper
@@ -9626,7 +9653,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				{
 					if(CheckRoundState()!=2)
 					{
-						damage*=BowDamage;
+						if((damagetype & DMG_CRIT))
+						{
+							damage*=BowDamage;
+						}
+						else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed))
+						{
+							damage*=BowDamageMini;
+						}
+						else
+						{
+							damage*=BowDamageNon;
+						}
 						return Plugin_Changed;
 					}
 				}
