@@ -1,0 +1,16 @@
+"Games"
+{
+	"tf"
+	{
+		"Signatures"
+		{
+			"CTeamControlPoint::GetTeamCapPercentage"	//CTeamControlPoint::GetTeamCapPercentage(CTeamControlPoint *this, int) team_control_point entindex, player team
+			{
+				"library"		"server"
+				"windows"		"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x8B\x86\x6C\x05\x00\x00"
+				"linux"		"@_ZN17CTeamControlPoint20GetTeamCapPercentageEi"
+				"mac"		"@_ZN17CTeamControlPoint20GetTeamCapPercentageEi"
+			}
+		}
+	}
+}
