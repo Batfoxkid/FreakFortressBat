@@ -272,6 +272,7 @@ new Float:circuitStun;
 new countdownPlayers=1;
 new countdownTime=120;
 new countdownHealth=2000;
+new bool:countdownOvertime=false;
 new bool:SpecForceBoss;
 new lastPlayerGlow=1;
 new bool:bossTeleportation=true;
@@ -2510,6 +2511,7 @@ public EnableFF2()
 	countdownHealth=GetConVarInt(cvarCountdownHealth);
 	countdownPlayers=GetConVarInt(cvarCountdownPlayers);
 	countdownTime=GetConVarInt(cvarCountdownTime);
+	countdownOvertime=GetConVarBool(cvarCountdownOvertime);
 	lastPlayerGlow=GetConVarInt(cvarLastPlayerGlow);
 	bossTeleportation=GetConVarBool(cvarBossTeleporter);
 	shieldCrits=GetConVarInt(cvarShieldCrits);
@@ -5802,6 +5804,11 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		countdownTime=KvGetNum(BossKV[Special[boss]], "countdowntime", -1);
 	else
 		countdownTime=GetConVarInt(cvarCountdownTime);
+
+	if(KvGetNum(BossKV[Special[boss]], "countdownovertime", -1)>=0)	// OVERTIME!
+		countdownOvertime=bool:KvGetNum(BossKV[Special[boss]], "countdownovertime", -1);
+	else
+		countdownOvertime=GetConVarBool(cvarCountdownOvertime);
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
@@ -9163,7 +9170,7 @@ public Action:Timer_DrawGame(Handle:timer)
 		case 0:
 		{
 			DebugMsg(0, "0 sec");
-			if(GetConVarBool(cvarCountdownOvertime) && (isCapping || useCPvalue))
+			if(countdownOvertime && (isCapping || useCPvalue))
 			{
 				if(useCPvalue && capTeam>1)
 				{
