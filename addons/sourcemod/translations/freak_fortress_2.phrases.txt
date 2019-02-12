@@ -263,7 +263,7 @@
 	{
 		"#format"	"{1:s},{2:N},{3:i},{4:i},{5:s}"
 		"en"		"{1} ({2}) won with {3} out of {4}{5} hp left."
-		"ru"		"{1} становится\n {2}\n с {3}{4} ОЗ"
+		"ru"		"{1} ({2}) выиграл с {3} из {4}{5} ОЗ."
 	}
 	"select_charset"	// Menu
 	{
@@ -378,7 +378,7 @@
 	"charge_status"	// HUD
 	{
 		"#format"	"{1:i}"
-		"en"		"Charge is ready. %.0f percent charged."
+		"en"		"Charge is ready. {1} percent charged."
 		"en"		"Заряд: {1}%% готово"
 	}
 	"nextmap_charset"	// Chat
@@ -390,12 +390,12 @@
 	"ff2_buttons_reload"	// HUD
 	{
 		"en"		"Press RELOAD button to use an ability!"
-		"ru"		"Нажми ПЕРЕЗАРЯДКУ для использования способности!"
+		"ru"		"Нажми ПЕРЕЗАРЯДКУ для исп-ния способности!"
 	}
 	"ff2_buttons_rmb"	// HUD
 	{
-		"en"		"Press right mouse button to use an ability!"
-		"ru"		"Нажми ПКМ для использования способности!"
+		"en"		"Press ALT-FIRE button to use an ability!"
+		"ru"		"Нажми ПКМ для исп-ния способности!"
 	}
 	"ff2_lives_left"	// HUD
 	{
