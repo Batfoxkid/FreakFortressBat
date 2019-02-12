@@ -3679,11 +3679,11 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 				}
 				if (index > 0)
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %T", "FF2 Toggle Queue Notification", client, index, ClientPoint[index]);
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Queue Notification", index, ClientPoint[index]);
 				}
 				else
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %T", "FF2 Toggle Enabled Notification", client);
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
    				}
 			}
 			else if (ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP)
@@ -3693,11 +3693,11 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 				GetClientName(client, nick, sizeof(nick));
 				if(ClientCookie[client] == TOGGLE_OFF)
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %T", "FF2 Toggle Disabled Notification", client);
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
 				}
 				else
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %T", "FF2 Toggle Disabled Notification For Map", client);
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 				}
 			}
 			else if (ClientCookie[client] == TOGGLE_UNDEF || !ClientCookie[client])
@@ -3940,7 +3940,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 				BossLives[boss]>1 ? Format(lives, sizeof(lives), "x%i", BossLives[boss]) : strcopy(lives, 2, "");
-				Format(text, sizeof(text), "%s\n%t", text, "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				Format(text, sizeof(text), "%s\n%T", text, "ff2_alive", target, bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 			}
 		}
@@ -4062,7 +4062,7 @@ public Action:CompanionMenu(client, args)
 {
 	if (IsValidClient(client) && GetConVarBool(cvarDuoBoss))
 	{
-		CPrintToChat(client, "{olive}[FF2]{default} %T", "FF2 Companion Toggle Menu Title", client, ClientCookie2[client]);
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Companion Toggle Menu Title", ClientCookie2[client]);
 
 		decl String:sEnabled[2];
 		GetClientCookie(client, CompanionCookie, sEnabled, sizeof(sEnabled));
@@ -4072,11 +4072,11 @@ public Action:CompanionMenu(client, args)
 		SetMenuTitle(menu, "%T", "FF2 Companion Toggle Menu Title", client, ClientCookie2[client]);
 
 		new String:menuoption[128];
-		Format(menuoption,sizeof(menuoption),"%T","Enable Companion Selection",client);
+		Format(menuoption, sizeof(menuoption), "%T", "Enable Companion Selection", client);
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
-		Format(menuoption,sizeof(menuoption),"%T","Disable Companion Selection",client);
+		Format(menuoption, sizeof(menuoption), "%T", "Disable Companion Selection", client);
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
-		Format(menuoption,sizeof(menuoption),"%T","Disable Companion Selection For Map",client);
+		Format(menuoption, sizeof(menuoption), "%T", "Disable Companion Selection For Map", client);
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
 
 		SetMenuExitButton(menu, true);
@@ -4101,15 +4101,15 @@ public MenuHandlerCompanion(Handle:menu, MenuAction:action, param1, param2)
 
 		if(1 == choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %T", param1, "FF2 Companion Enabled");
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Enabled");
 		}
 		else if(2 == choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %T", param1, "FF2 Companion Disabled");
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled");
 		}
 		else if(3 == choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %T", param1, "FF2 Companion Disabled For Map");
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
 		}
 	}
 	else if(action == MenuAction_End)
@@ -4123,7 +4123,7 @@ public Action:BossMenu(client, args)
 {
 	if (IsValidClient(client) && GetConVarBool(cvarToggleBoss))
 	{
-		CPrintToChat(client, "{olive}[FF2]{default} %T", "FF2 Toggle Menu Title", client, ClientCookie[client]);
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Menu Title", ClientCookie[client]);
 		decl String:sEnabled[2];
 		GetClientCookie(client, BossCookie, sEnabled, sizeof(sEnabled));
 		ClientCookie[client] = StringToInt(sEnabled);
@@ -4132,11 +4132,11 @@ public Action:BossMenu(client, args)
 		SetMenuTitle(menu, "%T", "FF2 Toggle Menu Title", client, ClientCookie[client]);
 
 		new String:menuoption[128];
-		Format(menuoption,sizeof(menuoption),"%T","Enable Queue Points",client);
+		Format(menuoption, sizeof(menuoption), "%T", "Enable Queue Points", client);
 		AddMenuItem(menu, "Boss Toggle", menuoption);
-		Format(menuoption,sizeof(menuoption),"%T","Disable Queue Points",client);
+		Format(menuoption, sizeof(menuoption), "%T", "Disable Queue Points", client);
 		AddMenuItem(menu, "Boss Toggle", menuoption);
-		Format(menuoption,sizeof(menuoption),"%T","Disable Queue Points For This Map",client);
+		Format(menuoption, sizeof(menuoption), "%T", "Disable Queue Points For This Map", client);
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 
 		SetMenuExitButton(menu, true);
@@ -4161,15 +4161,15 @@ public MenuHandlerBoss(Handle:menu, MenuAction:action, param1, param2)
 		
 		if(1 == choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %T", param1, "FF2 Toggle Enabled Notification");
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
 		}
 		else if(2 == choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %T", param1, "FF2 Toggle Disabled Notification");
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
 		}
 		else if(3 == choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %T", param1, "FF2 Toggle Disabled Notification For Map");
+			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 		}
 	} 
 	else if(action == MenuAction_End)
@@ -4293,7 +4293,7 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 				{
 					if(add_points2[client]>0)
 					{
-						CPrintToChat(client, "{olive}[FF2]{default} %T", "add_points", client, add_points2[client]);
+						CPrintToChat(client, "{olive}[FF2]{default} %t", "add_points", add_points2[client]);
 					}
 					SetClientQueuePoints(client, GetClientQueuePoints(client)+add_points2[client]);
 				}
@@ -4307,7 +4307,7 @@ public Action:Timer_CalcQueuePoints(Handle:timer)
 				{
 					if(add_points[client]>0)
 					{
-						CPrintToChat(client, "{olive}[FF2]{default} %T", "add_points", client, add_points[client]);
+						CPrintToChat(client, "{olive}[FF2]{default} %t", "add_points", add_points[client]);
 					}
 					SetClientQueuePoints(client, GetClientQueuePoints(client)+add_points[client]);
 				}
@@ -4493,7 +4493,7 @@ PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char
 		}
 		if((GetConVarInt(cvarSongInfo) == 1) || (unknown1 && unknown2 && loop && (GetConVarInt(cvarSongInfo) == 0)))
 		{ 
-			CPrintToChat(client, "{olive}[FF2]{default} %T", "track_info", client, artist, name);
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "track_info", artist, name);
 		}
 	}
 	else
@@ -4732,7 +4732,7 @@ public Action:Command_SetMyBoss(client, args)
 	
 	if (!CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
-		ReplyToCommand(client, "%T", "No Access", client);
+		ReplyToCommand(client, "%t", "No Access");
 		return Plugin_Handled;
 	}
 	DebugMsg(0, "Set Boss Comamnd");
@@ -4758,7 +4758,7 @@ public Action:Command_SetMyBoss(client, args)
 			{
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-				CReplyToCommand(client, "%T", "to0_boss_selected", client, boss);
+				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
 
@@ -4768,7 +4768,7 @@ public Action:Command_SetMyBoss(client, args)
 				IsBossSelected[client]=true;
 				KvGetString(BossKV[config], "name", boss, sizeof(boss));
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-				CReplyToCommand(client, "%T", "to0_boss_selected", client, boss);
+				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
 		}
@@ -4851,14 +4851,14 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						IsBossSelected[param1]=true;
 						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%T", param1, "to0_comfirmrandom");
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
 						return;
 					}
 					default:
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%T", param1, "to0_boss_selected", xIncoming[param1]);
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 				}
 			}
@@ -4881,7 +4881,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						IsBossSelected[param1]=true;
 						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%T", param1, "to0_comfirmrandom");
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
 						return;
 					}
 					case 1: CompanionMenu(param1, 0);
@@ -4889,7 +4889,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%T", param1, "to0_boss_selected", xIncoming[param1]);
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 				}
 			}
@@ -4912,7 +4912,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						IsBossSelected[param1]=true;
 						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%T", param1, "to0_comfirmrandom");
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
 						return;
 					}
 					case 1: BossMenu(param1, 0);
@@ -4920,7 +4920,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%T", param1, "to0_boss_selected", xIncoming[param1]);
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 				}
 			}
@@ -4943,7 +4943,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						IsBossSelected[param1]=true;
 						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%T", param1, "to0_comfirmrandom");
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
 						return;
 					}
 					case 1: BossMenu(param1, 0);
@@ -4952,7 +4952,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%T", param1, "to0_boss_selected", xIncoming[param1]);
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 				}
 			}
@@ -4968,7 +4968,7 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 	{
 		if(!boss && !StrEqual(xIncoming[client], ""))
 		{
-			CPrintToChat(client, "{olive}[FF2]{default} %T", client, "boss_selection_overridden");
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "boss_selection_overridden");
 			DebugMsg(0, "Override Boss");
 		}
 		return Plugin_Continue;
@@ -5071,7 +5071,7 @@ public Action:Timer_NextBossPanel(Handle:timer)
 
 		if(!IsBoss(client))
 		{
-			CPrintToChat(client, "{olive}[FF2]{default} %T", client, "to0_near");  //"You will become the Boss soon. Type {olive}/ff2next{default} to make sure."
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "to0_near");  //"You will become the Boss soon. Type {olive}/ff2next{default} to make sure."
 			clients++;
 		}
 		added[client]=true;
@@ -7220,7 +7220,7 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 				Format(waitTime, sizeof(waitTime), "%s %i,", waitTime, BossHealthLast[Boss[target]]);
 			}
 		}
-		CPrintToChat(client, "{olive}[FF2]{default} %T", "wait_hp", client, RoundFloat(HPTime-GetGameTime()), waitTime);
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "wait_hp", RoundFloat(HPTime-GetGameTime()), waitTime);
 		DebugMsg(0, "Blocked Showing Boss HP");
 	}
 	return Plugin_Continue;
@@ -7710,7 +7710,7 @@ public OnClientDisconnect(client)
 			if(Boss[boss])
 			{
 				CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
-				CPrintToChat(Boss[boss], "{olive}[FF2]{default} %T", Boss[boss], "Replace Disconnected Boss");
+				CPrintToChat(Boss[boss], "{olive}[FF2]{default} %t", "Replace Disconnected Boss");
 				CPrintToChatAll("{olive}[FF2]{default} %t", "Boss Disconnected", client, Boss[boss]);
 			}
 		}
@@ -8509,10 +8509,7 @@ public Action:OnSuicide(client, const String:command[], args)
 	new bool:canBossSuicide=GetConVarBool(cvarBossSuicide);
 	if(Enabled && IsBoss(client) && (canBossSuicide ? !CheckRoundState() : true) && CheckRoundState()!=2)
 	{	
-		if(canBossSuicide)
-			CPrintToChat(client, "{olive}[FF2]{default} %T", "Boss Suicide Pre-round", client);
-		else
-			CPrintToChat(client, "{olive}[FF2]{default} %T", "Boss Suicide Denied", client);
+		CPrintToChat(client, "{olive}[FF2]{default} %t", canBossSuicide ? "Boss Suicide Pre-round" : "Boss Suicide Denied");
 		DebugMsg(0, "Boss suicide blocked");
 		return Plugin_Handled;
 	}
@@ -8896,7 +8893,7 @@ public Action:Timer_Damage(Handle:timer, any:userid)
 	new client=GetClientOfUserId(userid);
 	if(IsValidClient(client, false))
 	{
-		CPrintToChat(client, "{olive}[FF2] %T. %T{default}", "damage", client, Damage[client], "scores", client, RoundFloat(Damage[client]/PointsInterval2));
+		CPrintToChat(client, "{olive}[FF2] %t. %t{default}", "damage", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 	}
 	return Plugin_Continue;
 }
@@ -8987,7 +8984,7 @@ public Action:Timer_CheckAlivePlayers(Handle:timer)
 				}
 				else
 				{
-					PrintHintText(client, "%T", "point_enable", client, AliveToEnable);
+					PrintHintText(client, "%t", "point_enable", AliveToEnable);
 				}
 			}
 		}
@@ -9321,7 +9318,7 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 					}
 					else
 					{
-						PrintCenterText(target, "%T", target, ability, bossName, BossLives[boss]);
+						PrintCenterText(target, "%t", ability, bossName, BossLives[boss]);
 					}
 				}
 			}
@@ -9752,7 +9749,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Caber Player", attacker, spcl);
 									else
-										PrintHintText(attacker, "%T", "Caber Player", attacker, spcl);
+										PrintHintText(attacker, "%t", "Caber Player", spcl);
 								}
 								else
 								{
@@ -9761,7 +9758,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Caber", attacker);
 									else
-										PrintHintText(attacker, "%T", "Caber", attacker);
+										PrintHintText(attacker, "%t", "Caber");
 								}
 							}
 							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
@@ -9773,7 +9770,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Cabered Player", client, attacker);
 									else
-										PrintHintText(client, "%T", "Cabered Player", client, attacker);
+										PrintHintText(client, "%t", "Cabered Player", attacker);
 								}
 								else
 								{
@@ -9782,7 +9779,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Cabered", client);
 									else
-										PrintHintText(client, "%T", "Cabered", client);
+										PrintHintText(client, "%t", "Cabered");
 								}
 							}
 
@@ -9917,7 +9914,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Market Gardener Player", attacker, spcl);
 									else
-										PrintHintText(attacker, "%T", "Market Gardener Player", attacker, spcl);
+										PrintHintText(attacker, "%t", "Market Gardener Player", spcl);
 								}
 								else
 								{
@@ -9926,7 +9923,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Market Gardener", attacker);
 									else
-										PrintHintText(attacker, "%T", "Market Gardener", attacker);
+										PrintHintText(attacker, "%t", "Market Gardener");
 								}
 							}
 							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
@@ -9938,7 +9935,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Market Gardened Player", client, attacker);
 									else
-										PrintHintText(client, "%T", "Market Gardened Player", client, attacker);
+										PrintHintText(client, "%t", "Market Gardened Player", attacker);
 								}
 								else
 								{
@@ -9947,7 +9944,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									else if(GetConVarInt(cvarAnnotations)==2)
 										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Market Gardened", client);
 									else
-										PrintHintText(client, "%T", "Market Gardened", client);
+										PrintHintText(client, "%t", "Market Gardened");
 								}
 							}
 
@@ -10098,7 +10095,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							else if(GetConVarInt(cvarAnnotations)==2)
 								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Backstab Player", attacker, spcl);
 							else
-								PrintHintText(attacker, "%T", "Backstab Player", attacker, spcl);
+								PrintHintText(attacker, "%t", "Backstab Player", spcl);
 						}
 						else
 						{
@@ -10107,7 +10104,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							else if(GetConVarInt(cvarAnnotations)==2)
 								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Backstab", attacker);
 							else
-								PrintHintText(attacker, "%T", "Backstab", attacker);
+								PrintHintText(attacker, "%t", "Backstab");
 						}
 					}
 
@@ -10125,7 +10122,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								else if(GetConVarInt(cvarAnnotations)==2)
 									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Backstabbed Player", client, attacker);
 								else
-									PrintHintText(client, "%T", "Backstabed Player", client, attacker);
+									PrintHintText(client, "%t", "Backstabed Player", attacker);
 							}
 							else
 							{
@@ -10134,7 +10131,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								else if(GetConVarInt(cvarAnnotations)==2)
 									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Backstabbed", client);
 								else
-									PrintHintText(client, "%T", "Backstabed", client);
+									PrintHintText(client, "%t", "Backstabed");
 							}
 						}
 
@@ -10197,7 +10194,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								else if(GetConVarInt(cvarAnnotations)==2)
 									ShowGameText(all, "ico_notify_flag_moving_alt", _, "%T", "Telefrag Global", all);
 								else
-									PrintHintText(all, "%T", "Telefrag Global", all);
+									PrintHintText(all, "%t", "Telefrag Global");
 							}
 						}
 					}
@@ -10213,7 +10210,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							else if(GetConVarInt(cvarAnnotations)==2)
 								ShowGameText(teleowner, "ico_notify_flag_moving_alt", _, "%T", "Telefrag Assist", teleowner);
 							else
-								PrintHintText(teleowner, "%T", "Telefrag Assist", teleowner);
+								PrintHintText(teleowner, "%t", "Telefrag Assist");
 						}
 					}
 
@@ -10228,7 +10225,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							else if(GetConVarInt(cvarAnnotations)==2)
 								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Telefrag Player", attacker, spcl);
 							else
-								PrintHintText(attacker, "%T", "Telefrag Player", attacker, spcl);
+								PrintHintText(attacker, "%t", "Telefrag Player", spcl);
 						}
 						else
 						{
@@ -10237,7 +10234,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							else if(GetConVarInt(cvarAnnotations)==2)
 								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Telefrag", attacker);
 							else
-								PrintHintText(attacker, "%T", "Telefrag", attacker);
+								PrintHintText(attacker, "%t", "Telefrag");
 						}
 					}
 
@@ -10250,7 +10247,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							else if(GetConVarInt(cvarAnnotations)==2)
 								ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Telefraged Player", client, attacker);
 							else
-								PrintHintText(client, "%T", "Telefrged Player", client, attacker);
+								PrintHintText(client, "%t", "Telefrged Player", attacker);
 						}
 						else
 						{
@@ -10259,7 +10256,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							else if(GetConVarInt(cvarAnnotations)==2)
 								ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Telefraged", client);
 							else
-								PrintHintText(client, "%T", "Telefraged", client);
+								PrintHintText(client, "%t", "Telefraged");
 						}
 					}
 
@@ -10404,7 +10401,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp Boss Player", attacker, victim);
 				else
-					PrintHintText(attacker, "%T", "Goomba Stomp Boss Player", attacker, victim);
+					PrintHintText(attacker, "%t", "Goomba Stomp Boss Player", victim);
 			}
 			else
 			{
@@ -10413,7 +10410,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp Boss", attacker);
 				else
-					PrintHintText(attacker, "%T", "Goomba Stomp Boss", attacker);
+					PrintHintText(attacker, "%t", "Goomba Stomp Boss");
 			}
 		}
 		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
@@ -10427,7 +10424,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped Player", victim, spcl);
 				else
-					PrintHintText(victim, "%T", "Goomba Stomped Player", victim, spcl);
+					PrintHintText(victim, "%t", "Goomba Stomped Player", spcl);
 			}
 			else
 			{
@@ -10436,7 +10433,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped", victim);
 				else
-					PrintHintText(victim, "%T", "Goomba Stomped", victim);
+					PrintHintText(victim, "%t", "Goomba Stomped");
 			}
 		}
 		DebugMsg(0, "Goomba On %N from %N", victim, attacker);
@@ -10458,7 +10455,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp Player", attacker, spcl);
 				else
-					PrintHintText(attacker, "%T", "Goomba Stomp Player", attacker, spcl);
+					PrintHintText(attacker, "%t", "Goomba Stomp Player", spcl);
 			}
 			else
 			{
@@ -10467,7 +10464,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp", attacker);
 				else
-					PrintHintText(attacker, "%T", "Goomba Stomp", attacker);
+					PrintHintText(attacker, "%t", "Goomba Stomp");
 			}
 		}
 		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
@@ -10479,7 +10476,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped Boss Player", victim, attacker);
 				else
-					PrintHintText(victim, "%T", "Goomba Stomped Boss Player", victim, attacker);
+					PrintHintText(victim, "%t", "Goomba Stomped Boss Player", attacker);
 			}
 			else
 			{
@@ -10488,7 +10485,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				else if(GetConVarInt(cvarAnnotations)==2)
 					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped Boss", victim);
 				else
-					PrintHintText(victim, "%T", "Goomba Stomped Boss", victim);
+					PrintHintText(victim, "%t", "Goomba Stomped Boss");
 			}
 		}
 		DebugMsg(0, "Goomba On %N from %N", victim, attacker);
@@ -11755,12 +11752,12 @@ public TurnToZeroPanelH(Handle:menu, MenuAction:action, client, position)
 	{
 		if(shortname[client]==client)
 		{
-			CPrintToChat(client,"{olive}[FF2]{default} %T", "to0_done", client);  //Your queue points have been reset to {olive}0{default}
+			CPrintToChat(client,"{olive}[FF2]{default} %t", "to0_done");  //Your queue points have been reset to {olive}0{default}
 		}
 		else
 		{
-			CPrintToChat(client, "{olive}[FF2]{default} %T", "to0_done_admin", client, shortname[client]);  //{olive}{1}{default}'s queue points have been reset to {olive}0{default}
-			CPrintToChat(shortname[client], "{olive}[FF2]{default} %T", "to0_done_by_admin", shortname[client], client);  //{olive}{1}{default} reset your queue points to {olive}0{default}
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "to0_done_admin", shortname[client]);  //{olive}{1}{default}'s queue points have been reset to {olive}0{default}
+			CPrintToChat(shortname[client], "{olive}[FF2]{default} %t", "to0_done_by_admin", client);  //{olive}{1}{default} reset your queue points to {olive}0{default}
 			LogAction(client, shortname[client], "\"%L\" reset \"%L\"'s queue points to 0", client, shortname[client]);
 		}
 		SetClientQueuePoints(shortname[client], 0);
@@ -12073,7 +12070,7 @@ public ClassInfoTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 				Format(cookies, sizeof(cookies), "%s %s %s 1 %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
 			}
 			SetClientCookie(client, FF2Cookies, cookies);
-			CPrintToChat(client, "{olive}[FF2]{default} %T", "ff2_classinfo", client, selection==2 ? "off" : "on");
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_classinfo", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		}
 	}
 }
@@ -12215,7 +12212,7 @@ public Action:MusicTogglePanelCmd(client, args)
 			}
 			ToggleBGM(client, true);
 		}
-		CPrintToChat(client, "{olive}[FF2]{default} %T", "ff2_music", client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");	// TODO: Make this more multi-language friendly
 		return Plugin_Handled;
 	}
 
@@ -12288,7 +12285,7 @@ public MusicTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 					StartMusic(client);
 				}
 			}
-			CPrintToChat(client, "{olive}[FF2]{default} %T", "ff2_music", client, selection==2 ? "off" : "on");
+			CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		}
 		else
 		{
@@ -12297,7 +12294,7 @@ public MusicTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 				case 0:
 				{
 					ToggleBGM(client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? false : true);               
-					CPrintToChat(client, "{olive}[FF2]{default} %T", "ff2_music", client, !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");
+					CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");	// And here too
 				}
 				case 1: Command_SkipSong(client, 0);
 				case 2: Command_ShuffleSong(client, 0);
@@ -12331,17 +12328,17 @@ public Action Command_SkipSong(int client, int args)
 
 	if(!Enabled || CheckRoundState()!=1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %T", "ff2_please wait", client);
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
 		return Plugin_Handled;
 	}
 
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true)|| !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %T", "ff2_music_disabled", client);
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
 		return Plugin_Handled;
 	}
 
-    	CReplyToCommand(client, "{olive}[FF2]{default} %T", "track_skipped", client);
+    	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_skipped");
 
 	StopMusic(client, true);
 	
@@ -12405,13 +12402,13 @@ public Action Command_ShuffleSong(int client, int args)
 
 	if(!Enabled || CheckRoundState()!=1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %T", "ff2_please wait", client);
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
 		return Plugin_Handled;
 	}
 
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true)|| !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %T", "ff2_music_disabled", client);
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
 		return Plugin_Handled;
 	}
 
@@ -12420,7 +12417,7 @@ public Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	CReplyToCommand(client, "{olive}[FF2]{default} %T", "track_shuffle", client);
+	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_shuffle");
 	StartMusic(client);
 	return Plugin_Handled;
 }
@@ -12435,13 +12432,13 @@ public Action Command_Tracklist(int client, int args)
 
 	if(!Enabled || CheckRoundState()!=1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %T", "ff2_please wait", client);
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
 		return Plugin_Handled;
 	}
 
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %T", "ff2_music_disabled", client);
+		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
 		return Plugin_Handled;
 	}
 
@@ -12467,7 +12464,7 @@ public Action Command_Tracklist(int client, int args)
 
 		if(!index)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %T", "ff2_no_music", client);		
+			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");		
 			return Plugin_Handled;		
 		}
 
@@ -12616,7 +12613,7 @@ public Action:VoiceTogglePanelCmd(client, args)
 	else
 	{
 		ToggleVoice(client, CheckSoundException(client, SOUNDEXCEPT_VOICE) ? false : true);               
-		CPrintToChat(client, "{olive}[FF2]{default} %T", "ff2_voice", client, !CheckSoundException(client, SOUNDEXCEPT_VOICE) ? "off" : "on");
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_voice", !CheckSoundException(client, SOUNDEXCEPT_VOICE) ? "off" : "on");	// TODO: Make this more multi-language friendly
 	}
 	return Plugin_Handled;
 }
@@ -12650,10 +12647,10 @@ public VoiceTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 			SetClientSoundOptions(client, SOUNDEXCEPT_VOICE, true);
 		}
 
-		CPrintToChat(client, "{olive}[FF2]{default} %T", "ff2_voice", client, selection==2 ? "off" : "on");
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_voice", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		if(selection==2)
 		{
-			CPrintToChat(client, "%T", "ff2_voice2", client);
+			CPrintToChat(client, "%t", "ff2_voice2");
 		}
 	}
 }
@@ -12874,7 +12871,7 @@ public Action:Command_Nextmap(client, args)
 	{
 		decl String:nextmap[42];
 		GetConVarString(cvarNextmap, nextmap, sizeof(nextmap));
-		CPrintToChat(client, "{olive}[FF2]{default} %T", "nextmap_charset", client, nextmap, FF2CharSetString);
+		CPrintToChat(client, "{olive}[FF2]{default} %t", "nextmap_charset", nextmap, FF2CharSetString);
 	}
 	return Plugin_Handled;
 }
