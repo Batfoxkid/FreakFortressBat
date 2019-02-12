@@ -72,7 +72,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "7"
+#define FORK_STABLE_REVISION "8*"
 #define FORK_SUB_REVISION "Unofficial"
 
 #define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -103,6 +103,7 @@ last time or to encourage others to do the same.
 #define ConfigPath "configs/freak_fortress_2"
 #define DataPath "data/freak_fortress_2"
 #define LogPath "logs/freak_fortress_2"
+#define BossLogPath "logs/freak_fortress_2/bosses"
 #define CharsetCFG "characters.cfg"
 #define DebugLog "ff2_debug.log"
 #define DoorCFG "doors.cfg"
@@ -249,6 +250,7 @@ new Handle:cvarTellName;
 new Handle:cvarGhostBoss;
 new Handle:cvarShieldType;
 new Handle:cvarCountdownOvertime;
+new Handle:cvarBossLog;
 
 new Handle:FF2Cookies;
 
@@ -507,7 +509,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.5",
 	"1.17.6",
 	"1.17.6",
-	"1.17.7"
+	"1.17.7",
+	"1.17.8"
 };
 
 static const String:ff2versiondates[][]=
@@ -647,13 +650,19 @@ static const String:ff2versiondates[][]=
 	"January 29, 2019",		//1.17.5
 	"February 5, 2019",		//1.17.6
 	"February 5, 2019",		//1.17.6
-	"February 10, 2019"		//1.17.7
+	"February 10, 2019",		//1.17.7
+	"No Release Date Yet"		//1.17.8
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 136:  //1.17.8
+		{
+			DrawPanelText(panel, "1) [Core] Added Russian core translations (MAGNAT2645)");
+			DrawPanelText(panel, "2) [Core] Cvar to record boss wins/losses in a log (Batfoxkid)");
+		}
 		case 135:  //1.17.7
 		{
 			DrawPanelText(panel, "1) [Bosses] Added 'bossteam' to allow specific bosses to use a specific team (SHADoW)");
@@ -1733,16 +1742,27 @@ new ClientQueue[MAXPLAYERS+1][2];
 new Handle:cvarFF2TogglePrefDelay = INVALID_HANDLE;
 new bool:InfiniteRageActive[MAXPLAYERS+1]=false;
 
+// Boss Log
+char bLog[PLATFORM_MAX_PATH];
+char pLog[PLATFORM_MAX_PATH];
+
 public OnPluginStart()
 {
 	LogMessage("===Freak Fortress 2 Initializing-v%s===", PLUGIN_VERSION);
 
-	// Log for Debug
+	// Logs
+	BuildPath(Path_SM, pLog, sizeof(pLog), BossLogPath);
+	if(!DirExists(pLog))
+	{
+		CreateDirectory(pLog, 511);
+		
+		if (!DirExists(pLog))
+			LogError("Failed to create directory at %s", pLog);
+	}
+
 	BuildPath(Path_SM, dLog, sizeof(dLog), "%s/%s", LogPath, DebugLog);
 	if(!FileExists(dLog))
-	{
 		OpenFile(dLog, "a+");
-	}
 
 	cvarVersion=CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
 	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
@@ -1811,6 +1831,7 @@ public OnPluginStart()
 	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
+	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1894,6 +1915,7 @@ public OnPluginStart()
 	HookConVarChange(cvarGhostBoss, CvarChange);
 	HookConVarChange(cvarShieldType, CvarChange);
 	HookConVarChange(cvarCountdownOvertime, CvarChange);
+	HookConVarChange(cvarBossLog, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -3834,8 +3856,51 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	RoundCount++;
 	Companions=0;
 	if(HasSwitched)
-	{
 		HasSwitched=false;
+
+	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
+	{
+		// Variables
+		decl String:bossName[64];
+		char FormatedTime[64];
+		char MapName[64];
+		char Result[64];
+		char PlayerName[64];
+		char Authid[64];
+
+		// Set variables
+		int CurrentTime = GetTime();
+		FormatTime(FormatedTime, 100, "%X", CurrentTime);
+		GetCurrentMap(MapName, sizeof(MapName));
+		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+		for(new client; client<=MaxClients; client++)
+		{
+			if(IsBoss(client))
+			{
+				new boss=Boss[client];
+				if(!IsFakeClient(client))
+				{
+					GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+					GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
+				}
+				else
+				{
+					Format(PlayerName, sizeof(PlayerName), "Bot");
+					Format(Authid, sizeof(Authid), "Bot");
+				}
+				KvRewind(BossKV[Special[boss]]);
+				KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+			}
+		}
+
+		// Write
+		Handle bLog = OpenFile(bLog, "a+");
+
+		WriteFileLine(adminHandle, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+		WriteFileLine(adminHandle, "");
+		CloseHandle(adminHandle);
+		DebugMsg(0, "Writing Boss Log");
 	}
 
 	if(ReloadFF2)
