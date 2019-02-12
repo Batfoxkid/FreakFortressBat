@@ -127,9 +127,6 @@ new bool:goomba=false;
 
 new bool:smac=false;
 
-new capTeam;
-new Handle:SDKGetCPPct; 
-new bool:useCPvalue=false;
 new bool:isCapping=false;
 
 new currentBossTeam;
@@ -1840,6 +1837,8 @@ public OnPluginStart()
 	HookEvent("teamplay_round_start", OnRoundStart);
 	HookEvent("teamplay_round_win", OnRoundEnd);
 	HookEvent("teamplay_broadcast_audio", OnBroadcast, EventHookMode_Pre);
+	HookEvent("teamplay_point_startcapture", OnStartCapture);
+	HookEvent("teamplay_capture_broken", OnBreakCapture);
 	HookEvent("player_spawn", OnPlayerSpawn, EventHookMode_Pre);
 	HookEvent("post_inventory_application", OnPostInventoryApplication, EventHookMode_Pre);
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
@@ -2066,31 +2065,6 @@ public OnPluginStart()
 	#if defined _tf2attributes_included
 	tf2attributes=LibraryExists("tf2attributes");
 	#endif
-
-	HookEvent("teamplay_point_startcapture", Event_StartCapture);
-	new Handle:hCFG=LoadGameConfigFile("cp_pct");
-	if(hCFG == INVALID_HANDLE)
-	{
-		LogError("[FF2] Missing gamedata file cp_pct.txt! Will not use CP capture percentage values!");
-		CloseHandle(hCFG);
-		useCPvalue=false;
-		HookEvent("teamplay_capture_broken", Event_BreakCapture);
-		return;
-	}
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hCFG, SDKConf_Signature, "CTeamControlPoint::GetTeamCapPercentage");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
-	if((SDKGetCPPct = EndPrepSDKCall()) == INVALID_HANDLE)
-	{
-		LogError("[FF2] Failed to create SDKCall for CTeamControlPoint::GetTeamCapPercentage signature! Will not use CP capture percentage values!");
-		CloseHandle(hCFG);
-		useCPvalue=false;
-		HookEvent("teamplay_capture_broken", Event_BreakCapture);
-		return;
-	}
-	useCPvalue=true;
-	CloseHandle(hCFG);
 }
 
 public Action:Command_SetRage(client, args)
@@ -3852,7 +3826,6 @@ public CheckArena()
 
 public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	capTeam=0;
 	RoundCount++;
 	Companions=0;
 	if(HasSwitched)
@@ -8682,26 +8655,19 @@ public Action:OnJoinTeam(client, const String:command[], args)
 	return Plugin_Handled;
 }
 
-public Action:Event_StartCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
+public Action:OnStartCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
 {
-	if(useCPvalue)
-	{
-		capTeam=GetEventInt(event, "capteam");
-		return;
-	}
-
-	if(!isCapping && GetEventInt(event, "capteam")>1)
+	if(!isCapping)
 	{
 		DebugMsg(0, "Started Capping");
 		isCapping=true;
 	}
 }
 
-public Action:Event_BreakCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
+public Action:OnBreakCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
 {
 	if(!GetEventFloat(event, "time_remaining") && isCapping)
 	{
-		capTeam=0;
 		DebugMsg(0, "Stopped Capping");
 		isCapping=false;
 	}
@@ -8736,51 +8702,11 @@ public Action:OverTimeAlert(Handle:timer)
 		return Plugin_Stop;
 	}
 
-	//decl String:HUDTextOT[768];
-	if(useCPvalue && capTeam>1)
+	if(!isCapping)
 	{
-		new Float:captureValue;
-		/*new cp = -1; 
-		while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1) 
-		{ 
-			captureValue=SDKCall(SDKGetCPPct, cp, capTeam);
-			SetHudTextParams(-1.0, 0.17, 1.1, capTeam==2 ? 191 : capTeam==3 ? 90 : 0, capTeam==2 ? 57 : capTeam==3 ? 140 : 0, capTeam==2 ? 28 : capTeam==3 ? 173 : 0, 255);
-			Format(HUDTextOT, sizeof(HUDTextOT), "OVERTIME! CONTROL POINT IS %i PERCENT CAPTURED!", RoundFloat(captureValue*100));
-			for(new client; client<=MaxClients; client++)
-			{
-				if(IsValidClient(client))
-				{
-					ShowSyncHudText(client, timeleftHUD, HUDTextOT);
-				}
-			}
-		}*/
-
-		if(captureValue<=0.0)
-		{
-			EndBossRound();
-			OTCount=0;
-			capTeam=0;
-			return Plugin_Stop;
-		}
-	}
-	else
-	{
-		/*SetHudTextParams(-1.0, 0.17, 1.1, GetRandomInt(0,255), GetRandomInt(0,255), GetRandomInt(0,255), 255);
-		Format(HUDTextOT, sizeof(HUDTextOT), "OVERTIME!");
-		for(new client; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client))
-			{
-				ShowSyncHudText(client, timeleftHUD, HUDTextOT);
-			}
-		}*/
-
-		if(!isCapping)
-		{
-			EndBossRound();
-			OTCount=0;
-			return Plugin_Stop;
-		}
+		EndBossRound();
+		OTCount=0;
+		return Plugin_Stop;
 	}
 
 	if(OTCount>0)
@@ -9241,20 +9167,8 @@ public Action:Timer_DrawGame(Handle:timer)
 		case 0:
 		{
 			DebugMsg(0, "0 sec");
-			if(countdownOvertime && (isCapping || useCPvalue))
+			if(countdownOvertime && isCapping)
 			{
-				if(useCPvalue && capTeam>1)
-				{
-					new cp = -1; 
-					while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1)
-					{ 
-						if(SDKCall(SDKGetCPPct, cp, capTeam)<=0.0)
-						{
-							EndBossRound();
-							return Plugin_Stop;
-						}
-					}
-				}
 				CreateTimer(1.0, OverTimeAlert, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			}
 			else
