@@ -3895,11 +3895,11 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		}
 
 		// Write
-		Handle bLog = OpenFile(bLog, "a+");
+		Handle bossLog = OpenFile(bLog, "a+");
 
-		WriteFileLine(adminHandle, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
-		WriteFileLine(adminHandle, "");
-		CloseHandle(adminHandle);
+		WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+		WriteFileLine(bossLog, "");
+		CloseHandle(bossLog);
 		DebugMsg(0, "Writing Boss Log");
 	}
 
