@@ -379,7 +379,7 @@
 	{
 		"#format"	"{1:i}"
 		"en"		"Charge is ready. {1} percent charged."
-		"en"		"Заряд: {1}%% готово"
+		"ru"		"Заряд: {1}%% готово"
 	}
 	"nextmap_charset"	// Chat
 	{
