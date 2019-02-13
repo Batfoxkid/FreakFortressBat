@@ -659,6 +659,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 		{
 			DrawPanelText(panel, "1) [Core] Added Russian core translations (MAGNAT2645)");
 			DrawPanelText(panel, "2) [Core] Cvar to record boss wins/losses in a log (Batfoxkid)");
+			DrawPanelText(panel, "3) [Bosses] Added sound_intromusic and sound_outtromusic (Batfoxkid from SHADoW)");
 		}
 		case 135:  //1.17.7
 		{
@@ -3610,10 +3611,10 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		{
 			CreateTimer(0.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 			BossInfoTimer[boss][0]=CreateTimer(30.2, BossInfoTimer_Begin, boss, TIMER_FLAG_NO_MAPCHANGE);
-			CreateTimer(9.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 
+	CreateTimer(0.4, StartIntroMusicTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(3.5, StartResponseTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(9.1, StartBossTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(9.6, MessageTimer, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -3923,11 +3924,44 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
+		if(RandomSound("sound_outtromusic_win", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+	}
+	else if((GetEventInt(event, "team")==OtherTeam))
+	{
+		if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+	}
+	else
+	{
+		if(RandomSound("sound_outtromusic_stalemate", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
 	}
 
 	StopMusic();
 	DrawGameTimer=INVALID_HANDLE;
-	DebugMsg(0, "Stopped Music");
 
 	new bool:isBossAlive;
 	for(new boss; boss<=MaxClients; boss++)
@@ -4366,6 +4400,18 @@ public Action:StartResponseTimer(Handle:timer)
 	return Plugin_Continue;
 }
 
+public Action:StartIntroMusicTimer(Handle:timer)
+{
+	decl String:sound[PLATFORM_MAX_PATH];
+	if(RandomSound("sound_intromusic", sound, sizeof(sound)))
+	{
+		EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+	}
+	DebugMsg(0, "Start Intro Music");
+	return Plugin_Continue;
+}
+
 public Action:StartBossTimer(Handle:timer)
 {
 	CreateTimer(0.1, Timer_Move, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -4396,6 +4442,17 @@ public Action:StartBossTimer(Handle:timer)
 				playing++;
 				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
 			}
+		}
+	}
+
+	new playing2=playing+1;
+	for(new boss; boss<=MaxClients; boss++)
+	{
+		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+		{
+			BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing2))*(float(playing2)-1.0), 1.0341)+2046.0));
+			BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
+			BossHealthLast[boss]=BossHealth[boss];
 		}
 	}
 
@@ -5775,8 +5832,7 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		PrintToServer("[FF2 Bosses] Warning: Boss %s has an invalid amount of lives, setting to 1", bossName);
 		BossLivesMax[boss]=1;
 	}
-	new playing2 = playing + 1;
-	BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing2))*(float(playing2)-1.0), 1.0341)+2046.0));
+	BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing))*(float(playing)-1.0), 1.0341)+2046.0));
 	BossLives[boss]=BossLivesMax[boss];
 	BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss]=BossHealth[boss];
@@ -9293,7 +9349,7 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 				{
 					if(!Companions && GetConVarBool(cvarGameText))
 					{
-						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%T", target, ability, bossName, BossLives[boss]);
+						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, bossName, BossLives[boss]);
 					}
 					else
 					{
@@ -10925,7 +10981,7 @@ stock ParseFormula(boss, const String:key[], const String:defaultFormula[], defa
 	KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
-	new playing2 = playing + 1;
+	new playing2=playing + 1;
 	new size=1;
 	new matchingBrackets;
 	for(new i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
