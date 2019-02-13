@@ -9314,7 +9314,7 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 				{
 					if(!Companions && GetConVarBool(cvarGameText))
 					{
-						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%T", target, ability, bossName, BossLives[boss]);
+						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, bossName, BossLives[boss]);
 					}
 					else
 					{
