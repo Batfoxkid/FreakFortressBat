@@ -63,7 +63,7 @@ last time or to encourage others to do the same.
 #tryinclude <rtd>
 #tryinclude <rtd2>
 #tryinclude <tf2attributes>
-//#tryinclude <updater>
+#tryinclude <updater>
 #define REQUIRE_PLUGIN
 
 /*
@@ -72,10 +72,17 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "8*"
+#define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
+#defined FORK_DEV_REVISION "Dev"
 
-#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
+#if !defined FORK_DEV_REVISION
+	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
+#else
+	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION
+#endif
+
+#define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
 /*
     And now, let's report its version as the latest public FF2 version
@@ -84,8 +91,6 @@ last time or to encourage others to do the same.
 #define MAJOR_REVISION "1"
 #define MINOR_REVISION "10"
 #define STABLE_REVISION "15"
-
-#define UPDATE_URL ""
 
 #define MAXENTITIES 2048
 #define MAXSPECIALS 150
@@ -2357,7 +2362,7 @@ public OnLibraryAdded(const String:name[])
 		smac=true;
 	}
 
-	#if defined _updater_included && !defined DEV_REVISION
+	#if defined _updater_included && !defined FORK_DEV_REVISION
 	if(StrEqual(name, "updater") && GetConVarBool(cvarUpdater))
 	{
 		Updater_AddPlugin(UPDATE_URL);
@@ -2425,7 +2430,7 @@ public OnConfigsExecuted()
 		DisableFF2();
 	}
 
-	#if defined _updater_included && !defined DEV_REVISION
+	#if defined _updater_included && !defined FORK_DEV_REVISION
 	if(LibraryExists("updater") && GetConVarBool(cvarUpdater))
 	{
 		Updater_AddPlugin(UPDATE_URL);
@@ -3168,7 +3173,7 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	}
 	else if(convar==cvarUpdater)
 	{
-		#if defined _updater_included && !defined DEV_REVISION
+		#if defined _updater_included && !defined FORK_DEV_REVISION
 		GetConVarInt(cvarUpdater) ? Updater_AddPlugin(UPDATE_URL) : Updater_RemovePlugin();
 		#endif
 	}
