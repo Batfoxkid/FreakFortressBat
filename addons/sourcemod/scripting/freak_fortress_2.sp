@@ -74,7 +74,7 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "17"
 #define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
-#defined FORK_DEV_REVISION "Dev"
+#define FORK_DEV_REVISION "Dev"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
