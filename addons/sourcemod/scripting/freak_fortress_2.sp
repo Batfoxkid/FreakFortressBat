@@ -10154,7 +10154,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								else if(GetConVarInt(cvarAnnotations)==2)
 									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed Player", attacker);
 								else
-									PrintHintText(client, "%t", "Backstabed Player", attacker);
+									PrintHintText(client, "%t", "Backstabbed Player", attacker);
 							}
 							else
 							{
@@ -10163,7 +10163,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								else if(GetConVarInt(cvarAnnotations)==2)
 									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed");
 								else
-									PrintHintText(client, "%t", "Backstabed");
+									PrintHintText(client, "%t", "Backstabbed");
 							}
 						}
 
