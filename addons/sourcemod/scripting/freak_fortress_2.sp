@@ -2291,17 +2291,18 @@ public Action:Command_SetInfiniteRage(client, args)
 
 public Action:Timer_InfiniteRage(Handle:timer, any:client)
 {
-	if(InfiniteRageActive[client] && CheckRoundState()!=1)
-	{
+	if(InfiniteRageActive[client] && (CheckRoundState()==2 || CheckRoundState()==-1))
 		InfiniteRageActive[client]=false;
-	}
 	
-	if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || !InfiniteRageActive[client] || CheckRoundState()!=1)
+	if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || !InfiniteRageActive[client])
 	{
 		DebugMsg(0, "Timer_InfiniteRage Stopped");
 		return Plugin_Stop;
 	}
-	BossCharge[Boss[client]][0]=rageMax[client];
+
+	if(CheckRoundState()==1)
+		BossCharge[Boss[client]][0]=rageMax[client];
+
 	return Plugin_Continue;
 }
 
