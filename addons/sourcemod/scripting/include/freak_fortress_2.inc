@@ -530,6 +530,7 @@ stock FF2_ShowSyncHudText(client, Handle:sync, const String:buffer[], any:...)
 	{
 		decl String:message[256];
 		VFormat(message, sizeof(message), buffer, 4);
+		SetGlobalTransTarget(client);
 		ShowSyncHudText(client, sync, message);
 	}
 }
@@ -546,6 +547,7 @@ stock FF2_ShowHudText(client, channel, const String:buffer[], any:...)
 	{
 		decl String:message[256];
 		VFormat(message, sizeof(message), buffer, 4);
+		SetGlobalTransTarget(client);
 		ShowHudText(client, channel, message);
 	}
 }

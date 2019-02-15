@@ -63,7 +63,7 @@ last time or to encourage others to do the same.
 #tryinclude <rtd>
 #tryinclude <rtd2>
 #tryinclude <tf2attributes>
-//#tryinclude <updater>
+#tryinclude <updater>
 #define REQUIRE_PLUGIN
 
 /*
@@ -72,10 +72,17 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "7"
+#define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
+#define FORK_DEV_REVISION "Dev"
 
-#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
+#if !defined FORK_DEV_REVISION
+	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
+#else
+	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION
+#endif
+
+#define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
 /*
     And now, let's report its version as the latest public FF2 version
@@ -84,8 +91,6 @@ last time or to encourage others to do the same.
 #define MAJOR_REVISION "1"
 #define MINOR_REVISION "10"
 #define STABLE_REVISION "15"
-
-#define UPDATE_URL ""
 
 #define MAXENTITIES 2048
 #define MAXSPECIALS 150
@@ -103,6 +108,7 @@ last time or to encourage others to do the same.
 #define ConfigPath "configs/freak_fortress_2"
 #define DataPath "data/freak_fortress_2"
 #define LogPath "logs/freak_fortress_2"
+#define BossLogPath "logs/freak_fortress_2/bosses"
 #define CharsetCFG "characters.cfg"
 #define DebugLog "ff2_debug.log"
 #define DoorCFG "doors.cfg"
@@ -126,9 +132,6 @@ new bool:goomba=false;
 
 new bool:smac=false;
 
-new capTeam;
-new Handle:SDKGetCPPct; 
-new bool:useCPvalue=false;
 new bool:isCapping=false;
 
 new currentBossTeam;
@@ -249,6 +252,7 @@ new Handle:cvarTellName;
 new Handle:cvarGhostBoss;
 new Handle:cvarShieldType;
 new Handle:cvarCountdownOvertime;
+new Handle:cvarBossLog;
 
 new Handle:FF2Cookies;
 
@@ -507,7 +511,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.5",
 	"1.17.6",
 	"1.17.6",
-	"1.17.7"
+	"1.17.7",
+	"1.17.8"
 };
 
 static const String:ff2versiondates[][]=
@@ -647,13 +652,20 @@ static const String:ff2versiondates[][]=
 	"January 29, 2019",		//1.17.5
 	"February 5, 2019",		//1.17.6
 	"February 5, 2019",		//1.17.6
-	"February 10, 2019"		//1.17.7
+	"February 10, 2019",		//1.17.7
+	"No Release Date Yet"		//1.17.8
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 136:  //1.17.8
+		{
+			DrawPanelText(panel, "1) [Core] Added Russian core translations (MAGNAT2645)");
+			DrawPanelText(panel, "2) [Core] Cvar to record boss wins/losses in a log (Batfoxkid)");
+			DrawPanelText(panel, "3) [Bosses] Added sound_intromusic and sound_outtromusic (Batfoxkid from SHADoW)");
+		}
 		case 135:  //1.17.7
 		{
 			DrawPanelText(panel, "1) [Bosses] Added 'bossteam' to allow specific bosses to use a specific team (SHADoW)");
@@ -1733,16 +1745,27 @@ new ClientQueue[MAXPLAYERS+1][2];
 new Handle:cvarFF2TogglePrefDelay = INVALID_HANDLE;
 new bool:InfiniteRageActive[MAXPLAYERS+1]=false;
 
+// Boss Log
+char bLog[PLATFORM_MAX_PATH];
+char pLog[PLATFORM_MAX_PATH];
+
 public OnPluginStart()
 {
 	LogMessage("===Freak Fortress 2 Initializing-v%s===", PLUGIN_VERSION);
 
-	// Log for Debug
+	// Logs
+	BuildPath(Path_SM, pLog, sizeof(pLog), BossLogPath);
+	if(!DirExists(pLog))
+	{
+		CreateDirectory(pLog, 511);
+		
+		if (!DirExists(pLog))
+			LogError("Failed to create directory at %s", pLog);
+	}
+
 	BuildPath(Path_SM, dLog, sizeof(dLog), "%s/%s", LogPath, DebugLog);
 	if(!FileExists(dLog))
-	{
 		OpenFile(dLog, "a+");
-	}
 
 	cvarVersion=CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
 	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
@@ -1811,6 +1834,7 @@ public OnPluginStart()
 	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
+	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1819,6 +1843,8 @@ public OnPluginStart()
 	HookEvent("teamplay_round_start", OnRoundStart);
 	HookEvent("teamplay_round_win", OnRoundEnd);
 	HookEvent("teamplay_broadcast_audio", OnBroadcast, EventHookMode_Pre);
+	HookEvent("teamplay_point_startcapture", OnStartCapture);
+	HookEvent("teamplay_capture_broken", OnBreakCapture);
 	HookEvent("player_spawn", OnPlayerSpawn, EventHookMode_Pre);
 	HookEvent("post_inventory_application", OnPostInventoryApplication, EventHookMode_Pre);
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
@@ -1894,6 +1920,7 @@ public OnPluginStart()
 	HookConVarChange(cvarGhostBoss, CvarChange);
 	HookConVarChange(cvarShieldType, CvarChange);
 	HookConVarChange(cvarCountdownOvertime, CvarChange);
+	HookConVarChange(cvarBossLog, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -2044,31 +2071,6 @@ public OnPluginStart()
 	#if defined _tf2attributes_included
 	tf2attributes=LibraryExists("tf2attributes");
 	#endif
-
-	HookEvent("teamplay_point_startcapture", Event_StartCapture);
-	new Handle:hCFG=LoadGameConfigFile("cp_pct");
-	if(hCFG == INVALID_HANDLE)
-	{
-		LogError("[FF2] Missing gamedata file cp_pct.txt! Will not use CP capture percentage values!");
-		CloseHandle(hCFG);
-		useCPvalue=false;
-		HookEvent("teamplay_capture_broken", Event_BreakCapture);
-		return;
-	}
-	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(hCFG, SDKConf_Signature, "CTeamControlPoint::GetTeamCapPercentage");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
-	if((SDKGetCPPct = EndPrepSDKCall()) == INVALID_HANDLE)
-	{
-		LogError("[FF2] Failed to create SDKCall for CTeamControlPoint::GetTeamCapPercentage signature! Will not use CP capture percentage values!");
-		CloseHandle(hCFG);
-		useCPvalue=false;
-		HookEvent("teamplay_capture_broken", Event_BreakCapture);
-		return;
-	}
-	useCPvalue=true;
-	CloseHandle(hCFG);
 }
 
 public Action:Command_SetRage(client, args)
@@ -2294,17 +2296,18 @@ public Action:Command_SetInfiniteRage(client, args)
 
 public Action:Timer_InfiniteRage(Handle:timer, any:client)
 {
-	if(InfiniteRageActive[client] && CheckRoundState()!=1)
-	{
+	if(InfiniteRageActive[client] && (CheckRoundState()==2 || CheckRoundState()==-1))
 		InfiniteRageActive[client]=false;
-	}
 	
-	if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || !InfiniteRageActive[client] || CheckRoundState()!=1)
+	if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || !InfiniteRageActive[client])
 	{
 		DebugMsg(0, "Timer_InfiniteRage Stopped");
 		return Plugin_Stop;
 	}
-	BossCharge[Boss[client]][0]=rageMax[client];
+
+	if(CheckRoundState()==1)
+		BossCharge[Boss[client]][0]=rageMax[client];
+
 	return Plugin_Continue;
 }
 
@@ -2359,7 +2362,7 @@ public OnLibraryAdded(const String:name[])
 		smac=true;
 	}
 
-	#if defined _updater_included && !defined DEV_REVISION
+	#if defined _updater_included && !defined FORK_DEV_REVISION
 	if(StrEqual(name, "updater") && GetConVarBool(cvarUpdater))
 	{
 		Updater_AddPlugin(UPDATE_URL);
@@ -2427,7 +2430,7 @@ public OnConfigsExecuted()
 		DisableFF2();
 	}
 
-	#if defined _updater_included && !defined DEV_REVISION
+	#if defined _updater_included && !defined FORK_DEV_REVISION
 	if(LibraryExists("updater") && GetConVarBool(cvarUpdater))
 	{
 		Updater_AddPlugin(UPDATE_URL);
@@ -3170,7 +3173,7 @@ public CvarChange(Handle:convar, const String:oldValue[], const String:newValue[
 	}
 	else if(convar==cvarUpdater)
 	{
-		#if defined _updater_included && !defined DEV_REVISION
+		#if defined _updater_included && !defined FORK_DEV_REVISION
 		GetConVarInt(cvarUpdater) ? Updater_AddPlugin(UPDATE_URL) : Updater_RemovePlugin();
 		#endif
 	}
@@ -3614,10 +3617,10 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 		{
 			CreateTimer(0.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 			BossInfoTimer[boss][0]=CreateTimer(30.2, BossInfoTimer_Begin, boss, TIMER_FLAG_NO_MAPCHANGE);
-			CreateTimer(9.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 
+	CreateTimer(0.4, StartIntroMusicTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(3.5, StartResponseTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(9.1, StartBossTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(9.6, MessageTimer, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -3771,17 +3774,17 @@ public Action:BossInfoTimer_ShowInfo(Handle:timer, any:boss)
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
 		if(bossHasRightMouseAbility[boss])
 		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T\n%T", "ff2_buttons_reload", Boss[boss], "ff2_buttons_rmb", Boss[boss]);
+			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t\n%t", "ff2_buttons_reload", "ff2_buttons_rmb");
 		}
 		else
 		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_reload", Boss[boss]);
+			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_reload");
 		}
 	}
 	else if(bossHasRightMouseAbility[boss])
 	{
 		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
-		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%T", "ff2_buttons_rmb", Boss[boss]);
+		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_rmb");
 	}
 	else
 	{
@@ -3830,12 +3833,54 @@ public CheckArena()
 
 public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	capTeam=0;
 	RoundCount++;
 	Companions=0;
 	if(HasSwitched)
-	{
 		HasSwitched=false;
+
+	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
+	{
+		// Variables
+		decl String:bossName[64];
+		char FormatedTime[64];
+		char MapName[64];
+		char Result[64];
+		char PlayerName[64];
+		char Authid[64];
+
+		// Set variables
+		int CurrentTime = GetTime();
+		FormatTime(FormatedTime, 100, "%X", CurrentTime);
+		GetCurrentMap(MapName, sizeof(MapName));
+		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+		for(new client; client<=MaxClients; client++)
+		{
+			if(IsBoss(client))
+			{
+				new boss=Boss[client];
+				if(!IsFakeClient(client))
+				{
+					GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+					GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
+				}
+				else
+				{
+					Format(PlayerName, sizeof(PlayerName), "Bot");
+					Format(Authid, sizeof(Authid), "Bot");
+				}
+				KvRewind(BossKV[Special[boss]]);
+				KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+			}
+		}
+
+		// Write
+		Handle bossLog = OpenFile(bLog, "a+");
+
+		WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+		WriteFileLine(bossLog, "");
+		CloseHandle(bossLog);
+		DebugMsg(0, "Writing Boss Log");
 	}
 
 	if(ReloadFF2)
@@ -3885,11 +3930,44 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
+		if(RandomSound("sound_outtromusic_win", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+	}
+	else if((GetEventInt(event, "team")==OtherTeam))
+	{
+		if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+	}
+	else
+	{
+		if(RandomSound("sound_outtromusic_stalemate", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
+		{
+			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		}
 	}
 
 	StopMusic();
 	DrawGameTimer=INVALID_HANDLE;
-	DebugMsg(0, "Stopped Music");
 
 	new bool:isBossAlive;
 	for(new boss; boss<=MaxClients; boss++)
@@ -3940,7 +4018,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 				BossLives[boss]>1 ? Format(lives, sizeof(lives), "x%i", BossLives[boss]) : strcopy(lives, 2, "");
-				Format(text, sizeof(text), "%s\n%T", text, "ff2_alive", target, bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				Format(text, sizeof(text), "%s\n%t", text, "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 			}
 		}
@@ -4017,11 +4095,11 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			//TODO:  Clear HUD text here
 			if(IsBoss(client))
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin ? "boss_win" : "boss_lose"), client);
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin ? "boss_win" : "boss_lose"));
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%T:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%T\n%T", text, "top_3", client, Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", client, Damage[client], "scores", client, RoundFloat(Damage[client]/PointsInterval2));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
 	}
@@ -4328,6 +4406,18 @@ public Action:StartResponseTimer(Handle:timer)
 	return Plugin_Continue;
 }
 
+public Action:StartIntroMusicTimer(Handle:timer)
+{
+	decl String:sound[PLATFORM_MAX_PATH];
+	if(RandomSound("sound_intromusic", sound, sizeof(sound)))
+	{
+		EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+		EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
+	}
+	DebugMsg(0, "Start Intro Music");
+	return Plugin_Continue;
+}
+
 public Action:StartBossTimer(Handle:timer)
 {
 	CreateTimer(0.1, Timer_Move, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -4358,6 +4448,17 @@ public Action:StartBossTimer(Handle:timer)
 				playing++;
 				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
 			}
+		}
+	}
+
+	new playing2=playing+1;
+	for(new boss; boss<=MaxClients; boss++)
+	{
+		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+		{
+			BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing2))*(float(playing2)-1.0), 1.0341)+2046.0));
+			BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
+			BossHealthLast[boss]=BossHealth[boss];
 		}
 	}
 
@@ -5121,7 +5222,7 @@ public Action:MessageTimer(Handle:timer)
 				lives[0]='\0';
 			}
 
-			Format(text, sizeof(text), "%s\n%T", text, "ff2_start", client, Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+			Format(text, sizeof(text), "%s\n%t", text, "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 			Format(textChat, sizeof(textChat), "{olive}[FF2]{default} %t!", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 			ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
 			CPrintToChatAll("%s", textChat);
@@ -5142,7 +5243,6 @@ public Action:MessageTimer(Handle:timer)
 			}
 			else
 			{
-				SetGlobalTransTarget(client);
 				FF2_ShowSyncHudText(client, infoHUD, text);
 			}
 		}
@@ -5737,8 +5837,7 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		PrintToServer("[FF2 Bosses] Warning: Boss %s has an invalid amount of lives, setting to 1", bossName);
 		BossLivesMax[boss]=1;
 	}
-	new playing2 = playing + 1;
-	BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing2))*(float(playing2)-1.0), 1.0341)+2046.0));
+	BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing))*(float(playing)-1.0), 1.0341)+2046.0));
 	BossLives[boss]=BossLivesMax[boss];
 	BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss]=BossHealth[boss];
@@ -7175,7 +7274,7 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 				{
 					lives[0]='\0';
 				}
-				Format(text, sizeof(text), "%s\n%T", text, "ff2_hp", client, name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				BossHealthLast[boss]=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 			}
@@ -7195,7 +7294,6 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 				}
 				else
 				{
-					SetGlobalTransTarget(target);
 					PrintCenterText(target, text);
 				}
 			}
@@ -7817,15 +7915,15 @@ public Action:ClientTimer(Handle:timer)
 				new observer=GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 				if(IsValidClient(observer) && !IsBoss(observer) && observer!=client)
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "%T", "Damage Spectate", client, Damage[client], observer, Damage[observer]);
+					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Spectate", Damage[client], observer, Damage[observer]);
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "%T", "Damage Self", client, Damage[client]);
+					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
 				}
 				continue;
 			}
-			FF2_ShowSyncHudText(client, rageHUD, "%T", "Damage Self", client, Damage[client]);
+			FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
 
 			new TFClassType:class=TF2_GetPlayerClass(client);
 			new weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -7846,7 +7944,7 @@ public Action:ClientTimer(Handle:timer)
 					if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 					{
 						SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-						FF2_ShowSyncHudText(client, jumpHUD, "%T", "uber-charge", client, charge);
+						FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
 
 						if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 						{
@@ -7872,9 +7970,9 @@ public Action:ClientTimer(Handle:timer)
 				{
 					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
 					if(GetConVarInt(cvarShieldType)==4)
-						FF2_ShowHudText(client, -1, "%T", "Shield HP", client, RoundToFloor(shieldHP[client]*0.2));
+						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.2));
 					else
-						FF2_ShowHudText(client, -1, "%T", "Shield HP", client, RoundToFloor(shieldHP[client]*0.1));
+						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.1));
 				}
 			}
 			// Chdata's Deadringer Notifier
@@ -7891,17 +7989,17 @@ public Action:ClientTimer(Handle:timer)
 						case 1:
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 90, 255, 90, 255, 0, 0.0, 0.0, 0.0);
-							Format(s, sizeof(s), "%T", "Dead Ringer Ready", client);
+							Format(s, sizeof(s), "%t", "Dead Ringer Ready");
 						}
 						case 2:
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 255, 64, 64, 255, 0, 0.0, 0.0, 0.0);
-							Format(s, sizeof(s), "%T", "Dead Ringer Active", client);
+							Format(s, sizeof(s), "%t", "Dead Ringer Active");
 						}
 						default:
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.0, 0.0, 0.0);
-							Format(s, sizeof(s), "%T", "Dead Ringer Inactive", client);
+							Format(s, sizeof(s), "%t", "Dead Ringer Inactive");
 						}
 					}
 
@@ -8033,7 +8131,7 @@ public Action:ClientTimer(Handle:timer)
 						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-							FF2_ShowSyncHudText(client, jumpHUD, "%T", "uber-charge", client, charge);
+							FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
 
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 							{
@@ -8164,7 +8262,7 @@ public Action:BossTimer(Handle:timer)
 		if(BossLivesMax[boss]>1)
 		{
 			SetHudTextParams(-1.0, 0.77, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, livesHUD, "%T", "Boss Lives Left", client, BossLives[boss], BossLivesMax[boss]);
+			FF2_ShowSyncHudText(client, livesHUD, "%t", "Boss Lives Left", BossLives[boss], BossLivesMax[boss]);
 		}
 
 		if((RoundFloat(BossCharge[boss][0])>=rageMin[client] && BossRageDamage[0]>1 && BossRageDamage[0]<99999) || BossRageDamage[0]==1)	// ragedamage above 1 and below 99999 and full rage, or ragedamage is 1
@@ -8177,7 +8275,7 @@ public Action:BossTimer(Handle:timer)
 			else
 			{
 				SetHudTextParams(-1.0, 0.83, 0.15, 255, 64, 64, 255);
-				FF2_ShowSyncHudText(client, rageHUD, "%T", "do_rage", client);
+				FF2_ShowSyncHudText(client, rageHUD, "%t", "do_rage");
 
 				decl String:sound[PLATFORM_MAX_PATH];
 				if(RandomSound("sound_full_rage", sound, sizeof(sound), boss) && emitRageSound[boss])
@@ -8205,7 +8303,7 @@ public Action:BossTimer(Handle:timer)
 		else if(BossRageDamage[0]<99999)	// ragedamage below 999999
 		{
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, rageHUD, "%T", "rage_meter", client, RoundFloat(BossCharge[boss][0]));
+			FF2_ShowSyncHudText(client, rageHUD, "%t", "rage_meter", RoundFloat(BossCharge[boss][0]));
 		}
 		SetHudTextParams(-1.0, 0.88, 0.15, 255, 255, 255, 255);
 
@@ -8281,7 +8379,7 @@ public Action:BossTimer(Handle:timer)
 					{
 						Format(bossLives, sizeof(bossLives), "");
 					}
-					Format(message, sizeof(message), "%s\n%T", message, "ff2_hp", client, name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+					Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 				}
 			}
 
@@ -8299,7 +8397,6 @@ public Action:BossTimer(Handle:timer)
 					}
 					else
 					{
-						SetGlobalTransTarget(target);
 						PrintCenterText(target, message);
 					}
 				}
@@ -8617,26 +8714,19 @@ public Action:OnJoinTeam(client, const String:command[], args)
 	return Plugin_Handled;
 }
 
-public Action:Event_StartCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
+public Action:OnStartCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
 {
-	if(useCPvalue)
-	{
-		capTeam=GetEventInt(event, "capteam");
-		return;
-	}
-
-	if(!isCapping && GetEventInt(event, "capteam")>1)
+	if(!isCapping)
 	{
 		DebugMsg(0, "Started Capping");
 		isCapping=true;
 	}
 }
 
-public Action:Event_BreakCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
+public Action:OnBreakCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
 {
 	if(!GetEventFloat(event, "time_remaining") && isCapping)
 	{
-		capTeam=0;
 		DebugMsg(0, "Stopped Capping");
 		isCapping=false;
 	}
@@ -8671,51 +8761,11 @@ public Action:OverTimeAlert(Handle:timer)
 		return Plugin_Stop;
 	}
 
-	//decl String:HUDTextOT[768];
-	if(useCPvalue && capTeam>1)
+	if(!isCapping)
 	{
-		new Float:captureValue;
-		/*new cp = -1; 
-		while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1) 
-		{ 
-			captureValue=SDKCall(SDKGetCPPct, cp, capTeam);
-			SetHudTextParams(-1.0, 0.17, 1.1, capTeam==2 ? 191 : capTeam==3 ? 90 : 0, capTeam==2 ? 57 : capTeam==3 ? 140 : 0, capTeam==2 ? 28 : capTeam==3 ? 173 : 0, 255);
-			Format(HUDTextOT, sizeof(HUDTextOT), "OVERTIME! CONTROL POINT IS %i PERCENT CAPTURED!", RoundFloat(captureValue*100));
-			for(new client; client<=MaxClients; client++)
-			{
-				if(IsValidClient(client))
-				{
-					ShowSyncHudText(client, timeleftHUD, HUDTextOT);
-				}
-			}
-		}*/
-
-		if(captureValue<=0.0)
-		{
-			EndBossRound();
-			OTCount=0;
-			capTeam=0;
-			return Plugin_Stop;
-		}
-	}
-	else
-	{
-		/*SetHudTextParams(-1.0, 0.17, 1.1, GetRandomInt(0,255), GetRandomInt(0,255), GetRandomInt(0,255), 255);
-		Format(HUDTextOT, sizeof(HUDTextOT), "OVERTIME!");
-		for(new client; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client))
-			{
-				ShowSyncHudText(client, timeleftHUD, HUDTextOT);
-			}
-		}*/
-
-		if(!isCapping)
-		{
-			EndBossRound();
-			OTCount=0;
-			return Plugin_Stop;
-		}
+		EndBossRound();
+		OTCount=0;
+		return Plugin_Stop;
 	}
 
 	if(OTCount>0)
@@ -8980,7 +9030,7 @@ public Action:Timer_CheckAlivePlayers(Handle:timer)
 			{
 				if(RedAlivePlayers>1 && GetConVarBool(cvarGameText))
 				{
-					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "point_enable", client, AliveToEnable);
+					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "point_enable", AliveToEnable);
 				}
 				else
 				{
@@ -9067,7 +9117,7 @@ public Action:Timer_DrawGame(Handle:timer)
 			{
 				Format(bossLives, sizeof(bossLives), "");
 			}
-			Format(message, sizeof(message), "%s\n%T", message, "ff2_hp", client, name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+			Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 		}
 	}
 	for(new client; client<=MaxClients; client++)
@@ -9090,7 +9140,7 @@ public Action:Timer_DrawGame(Handle:timer)
 				}
 				else if(isCapping)
 				{
-					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%s | %T", message, "Overtime", client);
+					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%s | %t", message, "Overtime");
 				}
 				else if(GhostBoss)
 				{
@@ -9105,19 +9155,19 @@ public Action:Timer_DrawGame(Handle:timer)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
-					ShowGameText(client, "ico_notify_sixty_seconds", _, "%T", "Time Left", client, timeDisplay);
+					ShowGameText(client, "ico_notify_sixty_seconds", _, "%t", "Time Left", timeDisplay);
 				}
 				else if(timeleft<countdownTime/2 && timeleft>=countdownTime/6)
 				{
-					ShowGameText(client, "ico_notify_thirty_seconds", _, "%T", "Time Left", client, timeDisplay);
+					ShowGameText(client, "ico_notify_thirty_seconds", _, "%t", "Time Left", timeDisplay);
 				}
 				else if(timeleft<countdownTime/6 && timeleft>=0)
 				{
-					ShowGameText(client, "ico_notify_ten_seconds", _, "%T", "Time Left", client, timeDisplay);
+					ShowGameText(client, "ico_notify_ten_seconds", _, "%t", "Time Left", timeDisplay);
 				}
 				else if(isCapping)
 				{
-					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Overtime", client);
+					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
 				}
 				else if(GhostBoss)
 				{
@@ -9130,7 +9180,7 @@ public Action:Timer_DrawGame(Handle:timer)
 			}
 			else if(isCapping)
 			{
-				FF2_ShowSyncHudText(client, timeleftHUD, "%T", "Overtime", client);
+				FF2_ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
 			}
 			else
 			{
@@ -9176,20 +9226,8 @@ public Action:Timer_DrawGame(Handle:timer)
 		case 0:
 		{
 			DebugMsg(0, "0 sec");
-			if(countdownOvertime && (isCapping || useCPvalue))
+			if(countdownOvertime && isCapping)
 			{
-				if(useCPvalue && capTeam>1)
-				{
-					new cp = -1; 
-					while ((cp = FindEntityByClassname(cp, "team_control_point")) != -1)
-					{ 
-						if(SDKCall(SDKGetCPPct, cp, capTeam)<=0.0)
-						{
-							EndBossRound();
-							return Plugin_Stop;
-						}
-					}
-				}
 				CreateTimer(1.0, OverTimeAlert, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			}
 			else
@@ -9745,18 +9783,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									new String:spcl[768];
 									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Caber Player", attacker, spcl);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", spcl);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Caber Player", attacker, spcl);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber Player", spcl);
 									else
 										PrintHintText(attacker, "%t", "Caber Player", spcl);
 								}
 								else
 								{
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Caber", attacker);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber");
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Caber", attacker);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber");
 									else
 										PrintHintText(attacker, "%t", "Caber");
 								}
@@ -9766,18 +9804,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								if(GetConVarBool(cvarTellName))
 								{
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Cabered Player", client, attacker);
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Cabered Player", attacker);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Cabered Player", client, attacker);
+										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Cabered Player", attacker);
 									else
 										PrintHintText(client, "%t", "Cabered Player", attacker);
 								}
 								else
 								{
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Cabered", client);
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Cabered");
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Cabered", client);
+										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Cabered");
 									else
 										PrintHintText(client, "%t", "Cabered");
 								}
@@ -9910,18 +9948,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 									new String:spcl[768];
 									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Market Gardener Player", attacker, spcl);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", spcl);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Market Gardener Player", attacker, spcl);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Market Gardener Player", spcl);
 									else
 										PrintHintText(attacker, "%t", "Market Gardener Player", spcl);
 								}
 								else
 								{
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Market Gardener", attacker);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener");
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Market Gardener", attacker);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Market Gardener");
 									else
 										PrintHintText(attacker, "%t", "Market Gardener");
 								}
@@ -9931,18 +9969,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								if(GetConVarBool(cvarTellName))
 								{
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Market Gardened Player", client, attacker);
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Market Gardened Player", attacker);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Market Gardened Player", client, attacker);
+										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Market Gardened Player", attacker);
 									else
 										PrintHintText(client, "%t", "Market Gardened Player", attacker);
 								}
 								else
 								{
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Market Gardened", client);
+										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Market Gardened");
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Market Gardened", client);
+										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Market Gardened");
 									else
 										PrintHintText(client, "%t", "Market Gardened");
 								}
@@ -10091,18 +10129,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							new String:spcl[768];
 							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Backstab Player", attacker, spcl);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", spcl);
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Backstab Player", attacker, spcl);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab Player", spcl);
 							else
 								PrintHintText(attacker, "%t", "Backstab Player", spcl);
 						}
 						else
 						{
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Backstab", attacker);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab");
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Backstab", attacker);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab");
 							else
 								PrintHintText(attacker, "%t", "Backstab");
 						}
@@ -10118,18 +10156,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							if(GetConVarBool(cvarTellName))
 							{
 								if(GetConVarInt(cvarAnnotations)==1)
-									CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Backstabbed Player", client, attacker);
+									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Backstabbed Player", attacker);
 								else if(GetConVarInt(cvarAnnotations)==2)
-									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Backstabbed Player", client, attacker);
+									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed Player", attacker);
 								else
 									PrintHintText(client, "%t", "Backstabbed Player", attacker);
 							}
 							else
 							{
 								if(GetConVarInt(cvarAnnotations)==1)
-									CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Backstabbed", client);
+									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Backstabbed");
 								else if(GetConVarInt(cvarAnnotations)==2)
-									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Backstabbed", client);
+									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed");
 								else
 									PrintHintText(client, "%t", "Backstabbed");
 							}
@@ -10190,9 +10228,9 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							if(!(FF2flags[all] & FF2FLAG_HUDDISABLED))
 							{
 								if(GetConVarInt(cvarAnnotations)==1)
-									CreateAttachedAnnotation(all, client, true, 5.0, "%T", "Telefrag Global", all);
+									CreateAttachedAnnotation(all, client, true, 5.0, "%t", "Telefrag Global");
 								else if(GetConVarInt(cvarAnnotations)==2)
-									ShowGameText(all, "ico_notify_flag_moving_alt", _, "%T", "Telefrag Global", all);
+									ShowGameText(all, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Global");
 								else
 									PrintHintText(all, "%t", "Telefrag Global");
 							}
@@ -10206,9 +10244,9 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if(!(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 						{
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(teleowner, client, true, 5.0, "%T", "Telefrag Assist", teleowner);
+								CreateAttachedAnnotation(teleowner, client, true, 5.0, "%t", "Telefrag Assist");
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(teleowner, "ico_notify_flag_moving_alt", _, "%T", "Telefrag Assist", teleowner);
+								ShowGameText(teleowner, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Assist");
 							else
 								PrintHintText(teleowner, "%t", "Telefrag Assist");
 						}
@@ -10221,18 +10259,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							new String:spcl[768];
 							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Telefrag Player", attacker, spcl);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Telefrag Player", attacker, spcl);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Player", spcl);
 							else
 								PrintHintText(attacker, "%t", "Telefrag Player", spcl);
 						}
 						else
 						{
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%T", "Telefrag", attacker);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag");
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Telefrag", attacker);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag");
 							else
 								PrintHintText(attacker, "%t", "Telefrag");
 						}
@@ -10243,18 +10281,18 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if(GetConVarBool(cvarTellName))
 						{
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Telefraged Player", client, attacker);
+								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged Player", attacker);
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Telefraged Player", client, attacker);
+								ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged Player", attacker);
 							else
 								PrintHintText(client, "%t", "Telefrged Player", attacker);
 						}
 						else
 						{
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(client, attacker, true, 5.0, "%T", "Telefraged", client);
+								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged");
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(client, "ico_notify_flag_moving_alt", _, "%T", "Telefraged", client);
+								ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged");
 							else
 								PrintHintText(client, "%t", "Telefraged");
 						}
@@ -10397,18 +10435,18 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 			if(GetConVarBool(cvarTellName))
 			{
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%T", "Goomba Stomp Boss Player", attacker, victim);
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss Player", victim);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp Boss Player", attacker, victim);
+					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Boss Player", victim);
 				else
 					PrintHintText(attacker, "%t", "Goomba Stomp Boss Player", victim);
 			}
 			else
 			{
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%T", "Goomba Stomp Boss", attacker);
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss");
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp Boss", attacker);
+					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Boss");
 				else
 					PrintHintText(attacker, "%t", "Goomba Stomp Boss");
 			}
@@ -10420,18 +10458,18 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				new String:spcl[768];
 				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%T", "Goomba Stomped Player", victim, spcl);
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped Player", victim, spcl);
+					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", spcl);
 				else
 					PrintHintText(victim, "%t", "Goomba Stomped Player", spcl);
 			}
 			else
 			{
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%T", "Goomba Stomped", victim);
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped");
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped", victim);
+					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped");
 				else
 					PrintHintText(victim, "%t", "Goomba Stomped");
 			}
@@ -10451,18 +10489,18 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 				new String:spcl[768];
 				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%T", "Goomba Stomp Player", attacker, spcl);
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", spcl);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp Player", attacker, spcl);
+					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Player", spcl);
 				else
 					PrintHintText(attacker, "%t", "Goomba Stomp Player", spcl);
 			}
 			else
 			{
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%T", "Goomba Stomp", attacker);
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp");
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomp", attacker);
+					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp");
 				else
 					PrintHintText(attacker, "%t", "Goomba Stomp");
 			}
@@ -10472,18 +10510,18 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 			if(GetConVarBool(cvarTellName))
 			{
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%T", "Goomba Stomped Boss Player", victim, attacker);
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped Boss Player", victim, attacker);
+					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss Player", attacker);
 				else
 					PrintHintText(victim, "%t", "Goomba Stomped Boss Player", attacker);
 			}
 			else
 			{
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%T", "Goomba Stomped Boss", victim);
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss");
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%T", "Goomba Stomped Boss", victim);
+					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss");
 				else
 					PrintHintText(victim, "%t", "Goomba Stomped Boss");
 			}
@@ -10946,7 +10984,7 @@ stock ParseFormula(boss, const String:key[], const String:defaultFormula[], defa
 	KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
-	new playing2 = playing + 1;
+	new playing2=playing + 1;
 	new size=1;
 	new matchingBrackets;
 	for(new i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
