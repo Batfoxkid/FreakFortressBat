@@ -74,7 +74,7 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "17"
 #define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "Dev"
+//#define FORK_DEV_REVISION "Dev"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -653,7 +653,7 @@ static const String:ff2versiondates[][]=
 	"February 5, 2019",		//1.17.6
 	"February 5, 2019",		//1.17.6
 	"February 10, 2019",		//1.17.7
-	"No Release Date Yet"		//1.17.8
+	"February 15, 2019"		//1.17.8
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
