@@ -4,26 +4,26 @@
 	{
 		"Version"
 		{
-			"Latest"	"1.17.7"
-			"Previous"	"1.17.6"
+			"Latest"	"1.17.8 Unofficial"
+			"Previous"	"1.17.7 Unofficial"
 		}
 
-		"Notes"			"Added 'bossteam' to allow specific bosses to use a specific team"
-		"Notes"			"Cvar for overtime mode activates if countdown timer expires while capping a point"
-		"Notes"			"Added new debug logging system"
-		"Notes"			"Cvar for Huntsman being crit boosted and it's damage"
+		"Notes"			"Added Russian core translations"
+		"Notes"			"Cvar to record boss wins/losses in a log"
+		"Notes"			"Added sound_intromusic and sound_outtromusic"
 	}
 
 	"Files"
 	{
 		"Patch"
 		{
-			//"Plugin"	"Path_SM/plugins/freak_fortress_2.smx"
+			"Plugin"	"Path_SM/plugins/freak_fortress_2.smx"
 			"Source"	"Path_SM/scripting/freak_fortress_2.sp"
+			"Source"	"Path_SM/scripting/include/freak_fortress_2.inc"
 			"Plugin"	"Path_SM/translations/freak_fortress_2.phrases.txt"
 		}
 
-		//"Plugin"		"Path_SM/plugins/freak_fortress_2.smx"
+		"Plugin"		"Path_SM/plugins/freak_fortress_2.smx"
 		"Source"		"Path_SM/scripting/freak_fortress_2.sp"
 		"Source"		"Path_SM/scripting/include/freak_fortress_2.inc"
 		"Source"		"Path_SM/scripting/include/freak_fortress_2_subplugin.inc"
