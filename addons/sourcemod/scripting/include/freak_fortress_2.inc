@@ -529,6 +529,7 @@ stock FF2_ShowSyncHudText(client, Handle:sync, const String:buffer[], any:...)
 	if(!(FF2_GetFF2flags(client) & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
 	{
 		decl String:message[256];
+		SetGlobalTransTarget(client);
 		VFormat(message, sizeof(message), buffer, 4);
 		ShowSyncHudText(client, sync, message);
 	}
@@ -545,6 +546,7 @@ stock FF2_ShowHudText(client, channel, const String:buffer[], any:...)
 	if(!(FF2_GetFF2flags(client) & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
 	{
 		decl String:message[256];
+		SetGlobalTransTarget(client);
 		VFormat(message, sizeof(message), buffer, 4);
 		ShowHudText(client, channel, message);
 	}

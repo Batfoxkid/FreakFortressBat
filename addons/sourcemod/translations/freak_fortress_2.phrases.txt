@@ -2,519 +2,634 @@
 {
 	"needmoreplayers"	// Chat
 	{
-		"en"	"The server does not have bots spawning."
+		"en"		"The server does not have bots spawning."
+		"ru"		"На сервере нет спавна ботов."
 	}
 	"type_ff2_to_open_menu"	// Chat
 	{
-		"en"	"Type {olive}/ff2{default} in chat to open the menu"
+		"en"		"Type {olive}/ff2{default} in chat to open the menu"
+		"ru"		"Введи {olive}/ff2{default} в чате, чтобы открыть меню"
 	}
 	"nextmap_ff2"	// Deprecated
 	{
-		"#format" "{1:s}"
-		"en"	"The gamemode will be {olive}Freak Fortress 2{default} on {olive}{1}{default}"
+		"#format"	"{1:s}"
+		"en"		"The gamemode will be {olive}Freak Fortress 2{default} on {olive}{1}{default}"
+		"ru"		"{olive}Freak Fortress 2{default} будет запущен на карте {olive}{1}{default}"
 	}
 	"wait_hp"	// Chat
 	{
-		"#format" "{1:i},{2:s}"
-		"en"  "You cannot check the boss' hp right now. Wait {1} more second(s). Last known hp value was {2}"
+		"#format"	"{1:i},{2:s}"
+		"en"		"You cannot check the boss' hp right now. Wait {1} more second(s). Last known hp value was {2}"
+		"ru"		"Ты не можешь проверить ОЗ босса прямо сейчас. Подожди ещё {1} сек. Последнее известное - {2}"
 	}
 	"damage"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Damage dealt by you - {1}"
+		"#format"	"{1:i}"
+		"en"		"Damage dealt by you - {1}"
+		"ru"		"Твой урон - {1}"
 	}
 	"point_enable"	// Hint
 	{
-		"#format" "{1:i}"
-		"en"  "Only {1} player(s) left, the control point has been unlocked!"
+		"#format"	"{1:i}"
+		"en"		"Only {1} player(s) left, the control point has been unlocked!"
+		"ru"		"Осталось {1} живых игроков, Контрольная Точка разблокирована!"
 	}
 	"top_3"	// HUD
 	{
-		"en"	"Most damage dealt by"
+		"en"		"Most damage dealt by"
+		"ru"		"Наибольший урон"
 	}
 	"uber-charge"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Ubercharge rate: {1}"
+		"#format"	"{1:i}"
+		"en"		"Ubercharge rate: {1}"
+		"ru"		"Убер-заряд: {1}"
 	}
-	"Shield HP"
+	"Shield HP"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Shield HP: {1} percent"
+		"#format"	"{1:i}"
+		"en"		"Shield HP: {1} percent"
+		"ru"		"ОЗ Щита: {1}%%"
 	}
 	"Boss Lives Left"	// HUD
 	{
-		"#format" "{1:i},{2:i}"
-		"en"	"{1} out of {2} lives left"
+		"#format"	"{1:i},{2:i}"
+		"en"		"{1} out of {2} lives left"
+		"ru"		"осталось {1} из {2} жизней"
 	}
 	"Boss Life"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"{1} Lives"
+		"#format"	"{1:i}"
+		"en"		"{1} Lives"
+		"ru"		"{1} Жизней"
 	}
 	"do_rage"	// HUD
 	{
-		"en"	"Call for medic to activate your \"RAGE\" ability!"
+		"en"		"Call for medic to activate your \"RAGE\" ability!"
+		"ru"		"Позови медика, чтобы активировать \"ЯРОСТЬ\"!"
 	}
 	"rage_meter"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Rage is {1} percent ready"
+		"#format"	"{1:i}"
+		"en"		"Rage is {1} percent ready"
+		"ru"		"Ярость: {1}%% готово"
 	}
 	"super_duper_jump"	// HUD
 	{
-		"en"	"Super DUPER Jump ready!"
+		"en"		"Super DUPER Jump ready!"
+		"ru"		"Супер Дупер прыжок готов!"
 	}
 	"teleport_status"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Teleport is ready. {1} percent charged."
+		"#format"	"{1:i}"
+		"en"		"Teleport is ready. {1} percent charged."
+		"ru"		"Телепорт: {1}%% готово"
 	}
 	"jump_status"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Super Jump is ready. {1} percent charged."
+		"#format"	"{1:i}"
+		"en"		"Super Jump is ready. {1} percent charged."
+		"ru"		"Прыжок: {1}%% готово"
 	}
 	"teleport_status_2"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Teleport is not ready. {1} seconds remaining."
+		"#format"	"{1:i}"
+		"en"		"Teleport is not ready. {1} seconds remaining."
+		"ru"		"Телепорт снова будет доступен через {1} сек."
 	}
 	"jump_status_2"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Super Jump is not ready. {1} seconds remaining."
+		"#format"	"{1:i}"
+		"en"		"Super Jump is not ready. {1} seconds remaining."
+		"ru"		"Супер Прыжок снова будет доступен через {1} сек."
 	}
 	"help_scout"	// Menu
 	{
-		"en"	"Baby Face's Blaster drains boost.\nStock pistol always mini-crit.\nAll bleed damage is crit-boosted.\nCandy Cane drops a health pack on hit.\nFan O' War gives a slight speed boost, faster fire rate,\nbut lower damage and disables double jump."
+		"en"		"Baby Face's Blaster drains boost.\nStock pistol always mini-crit.\nAll bleed damage is crit-boosted.\nCandy Cane drops a health pack on hit.\nFan O' War gives a slight speed boost, faster fire rate,\nbut lower damage and disables double jump."
+		"ru"		"Обрез малыша ускоряет.\nПистолет даёт мини-криты.\nКровоточащий урон критует.\nКарамельная трость выбивает аптечку.\nВеер Войны слегка ускоряет бег и скорострельность,\nно понижает урон и отменяет двойной прыжок."
 	}
 	"help_soldier"	// Menu
 	{
-		"en"	"Airstrike gains a head on hit.\nBattalion's Backup heavily reduces damage to nearby players while active.\nBoth boots reduce fall damage but mantreads create greater rocketjumps.\nPain Train acts like a Boston Basher."
+		"en"		"Airstrike gains a head on hit.\nBattalion's Backup heavily reduces damage to nearby players while active.\nBoth boots reduce fall damage but Mantreads create greater rocketjumps.\nPain Train acts like a Boston Basher."
+		"ru"		"Авиаудар считывает головы за удар.\nПоддержка батальона сильно снижает урон по ближайшим игрокам.\nОба предмета снижают урон от падения, а Людодавы улучшают ракетный прыжок.\nКостыль действует как Бостонский раздолбай."
 	}
 	"help_pyro"	// Menu
 	{
-		"en"	"Airblasting causes the boss to build rage.\nThe Detonator has increased push force.\nGas Passer explodes the boss if hit.\nHomewrecker and Maul applies more knockback.\nThird Degree gives Uber on hit to the medic healing you.\nNeon Annihilator slows shortly on hit.\nSharpened Volcano Fragment removes your flamethrower."
+		"en"		"Airblasting causes the boss to build rage.\nThe Detonator has increased push force.\nGas Passer explodes the boss if hit.\nHomewrecker and Maul applies more knockback.\nThird Degree gives Uber on hit to the medic healing you.\nNeon Annihilator slows shortly on hit.\nSharpened Volcano Fragment removes your flamethrower."
+		"ru"		"Отталкивание босса заполняет ему шкалу ярости.\nУ Детонатора увеличена толкающая сила.\nЗапасной бак подрывает босса при ударе.\nКрушитель и Молот сильнее отбрасывают.\nТретья степень даёт Убер при ударе по лечащему вас медику.\nНеоновый аннигилятор ненадолго замедляет при ударе.\nЗаострённый осколок вулкана удаляет огнемёт."
 	}
 	"help_demo"	// Menu
 	{
-		"en"	"All shields block one hit from the Boss.\nChargin' Targe gives faster melee swing.\nEyelander and reskins gain heads on hit.\nUllapool Caber explosion has increased damage.\nPain Train acts like a Boston Basher."
+		"en"		"All shields block one hit from the Boss.\nChargin' Targe gives faster melee swing.\nEyelander and reskins gain heads on hit.\nUllapool Caber explosion has increased damage.\nPain Train acts like a Boston Basher."
+		"ru"		"Все щиты блокируют 1 удар босса.\nШтурмовой щит ускоряет размах рукопашного оружия.\nОдноглазый горец и рескины считывают головы при ударе.\nУ взрыва Аллапульского бревна увеличен урон.\nКостыль действует как Бостонский раздолбай."
 	}
 	"help_heavy"	// Menu
 	{
-		"en"	"Natascha gives faster movement speed while deployed.\nHuo-Long Heater fires flares instead of bullets.\nKilling Gloves of Boxing makes you a melee tank.\nGloves of Running Urently gives massive speed but decays health.\nEviction Notice gives a passive speed boost.\nHoliday Punch gives you faster weapon switch."
+		"en"		"Natascha gives faster movement speed while deployed.\nHuo-Long Heater fires flares instead of bullets.\nK.G.B. makes you a melee tank.\nGloves of Running Urently gives massive speed but decays HP.\nEviction Notice gives a passive speed boost.\nHoliday Punch gives you faster weapon switch."
+		"ru"		"Наташа ускоряет передвижение при раскрутке.\nОгненный дракон стреляет огнём вместо пуль.\nК.Г.Б. превращают тебя в рукопашного танка.\nГ.Р.У. сильно ускоряют, но отнимают ОЗ.\nУведомление о выселении даёт пассивное ускорение.\nПраздничный удар ускоряет смену оружия."
 	}
 	"help_eggineer"	// Menu
 	{
-		"en"	"Frontier Justice gains crits while your sentry is attacking.\nWrangler slows you down while deployed.\nPomson 6000 and Short Circuit slows on hit.\nEureka Effect has bi-teleporters but can't self-teleport."
+		"en"		"Frontier Justice gains crits while your sentry is attacking.\nWrangler slows you down while deployed.\nPomson 6000 and Short Circuit slows on hit.\nEureka Effect has bi-teleporters but can't self-teleport."
+		"ru"		"Самосуд даёт криты, если турель видит босса.\nПоводырь замедляет бег при использовании.\nПомсон 6000 и Короткое замыкание замедляют при ударе.\nОзарение имеет би-телепорты, но нельзя телепортировать себя."
 	}
 	"help_medic"	// Menu
 	{
-		"en"	"Medi Guns give Uber, Crits, and no knockback on use.\nCan overheal to twice the max HP.\nSyringe Gun and Crossbow give ubercharge on hit."
+		"en"		"Medi Guns give Uber, Crits, and no knockback on use.\nCan overheal to twice the max HP.\nSyringe Gun and Crossbow give ubercharge on hit."
+		"ru"		"Лечебные пушки дают Убер, криты, и имуннитет к отбрасыванию.\nСверхлечение дважды увеличивает ОЗ от макс.\nШприцемёт и Арбалет дают убер-заряд при ударе."
 	}
 	"help_sniper"	// Menu
 	{
-		"en"	"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nRazorback blocks a hit from the boss.\nDarwin's Danger Shield gives you +85 HP.\nCozy Camper gives you a modified SMG.\nAll melees can wall climb at the cost of 15 HP."
+		"en"		"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nRazorback blocks a hit from the boss.\nDarwin's Danger Shield gives you +85 HP.\nCozy Camper gives you a modified SMG.\nAll melees can wall climb at the cost of 15 HP."
+		"ru"		"Обычные винтовки подсвечивают босса, основываясь на заряд.\nВместо Банкате бросается бомба.\nБронепанцирь блокирует 1 удар босса.\nДарвинистский щит даёт +85 ОЗ.\nНабор для кемпинга даёт ППМ.\nРукопашное оружие позволяет лазить по стенам, но стоит 15 ОЗ."
 		// Remove wall climb if your not using it
 	}
 	"help_spie"	// Menu
 	{
-		"en"	"All revolvers minicrit while not disguised.\nBut Enforcer deals crits while disguised.\nEnfocer, Ambassador, and Diamondback crits deal more damage.\nBackstabs does about 10%% of the boss's max health.\nYour Eternal Reward/Wanga Prick backstabs disguise you instantly and silently.\nKunai backstabs will give you a health bonus.\nBig Earner gives you full cloak and speed on backstab."
+		"en"		"All revolvers minicrit while not disguised.\nBut Enforcer deals crits while disguised.\nEnfocer, Ambassador, and Diamondback crits deal more damage.\nBackstabs does about 10%% of the boss's max HP.\nYour Eternal Reward/Wanga Prick backstabs disguise you instantly and silently.\nKunai backstabs will give you a health bonus.\nBig Earner gives you full cloak and speed on backstab."
+		"ru"		"Все револьверы мини-критуют вне маскировки.\nНо Принудитель критует в маскировке.\nКриты Принудителя, Амбассадора, и Алмазного змея усилены.\nУдары в спину сносят ~10%% от макс. ОЗ босса.\nУдар в спину Вечным Покоем/Иголкой Вуду замаскирует тебя.\nУдар в спину Кунаем даёт прирост ОЗ.\nУдар в спину Главным Дельцом даёт полный запас часов и скорость."
 	}
 	"help_melee"	// Menu
 	{
-		"en"	"See the Steam group for more weapon stats.\nUse /ff2 menu to disable this notifications."
-		// Edit this too to whereever you have yours
+		"en"		"Most of melee weapons (except the Spy knives) deal critical hits.\nUse /ff2 menu to disable this notifications."
+		"ru"		"Многие рукопашные оружия (кроме ножей шпионов) наносят криты.\nДанное уведомление отключается в меню /ff2."
 	}
 	"thequeue"	// Menu
 	{
-		"en"	"Boss Queue"
+		"en"		"Boss Queue"
+		"ru"		"Очередь на босса"
 	}
 	"menu_1"	// Menu
 	{
-		"en"	"What's up?"
+		"en"		"What's up?"
+		"ru"		"Что случилось?"
 	}
 	"menu_2"	// Menu
 	{
-		"en"	"Investigate the boss's current health level (/ff2hp)"
+		"en"		"Investigate the boss's current health level (/ff2hp)"
+		"ru"		"Хочу узнать текущие ОЗ босса (/ff2hp)"
 	}
 	"menu_3"	// Deprecated
 	{
-		"en"	"Help about FF2 (/ff2help)."  //ff2help doesn't exist in the code, so...
+		"en"		"Help about FF2 (/ff2help)"  //ff2help doesn't exist in the code, so...
+		"ru"		"Справка по FF2 (/ff2help)"  //ff2help doesn't exist in the code, so...
 	}
 	"menu_4"	// Menu
 	{
-		"en"	"What's new? (/ff2new)."
+		"en"		"What's new? (/ff2new)"
+		"ru"		"Что нового? (/ff2new)"
 	}
 	"menu_5"	// Menu
 	{
-		"en"	"Queue points"
+		"en"		"Queue points"
+		"ru"		"Очки очереди"
 	}
 	"menu_6"	// Menu
 	{
-		"en"	"Exit"
+		"en"		"Exit"
+		"ru"		"Закрыть"
 	}
 	"whatsnew"	// Menu
 	{
-		"#format" "{1:s},{2:s}"
-		"en"	"What's new in v{1} from {2}"
+		"#format"	"{1:s},{2:s}"
+		"en"		"What's new in {1} from {2}"
+		"ru"		"Новое в {1} от {2}"
 	}
 	"help_mode"	// Deprecated
 	{
-		"en"	"===Freak Fortress 2===\nOne (or more) players become one of the Bosses.\nWhile the other players have to defeat them."
+		"en"		"===Freak Fortress 2===\nOne (or more) players become one of the Bosses.\nWhile the other players have to defeat them."
+		"ru"		"===Freak Fortress 2===\nКто-то из игроков становится одним из боссов.\nДругие игроки должны его убить."
 	}
 	"older"	// Menu
 	{
-		"en"	"Display older"
+		"en"		"Display older"
+		"ru"		"Ранее"
 	}
 	"noolder"	// Menu
 	{
-		"en"	"No older versions available"
+		"en"		"No older versions available"
+		"ru"		"Первая версия"
 	}
 	"newer"	// Menu
 	{
-		"en"	"Display newer"
+		"en"		"Display newer"
+		"ru"		"Новее"
 	}
 	"nonewer"	// Menu
 	{
-		"en"	"No newer versions available"
+		"en"		"No newer versions available"
+		"ru"		"Последняя версия"
 	}
 	"menu_7"	// Menu
 	{
-		"en"	"Changes to my class in FF2 (/ff2classinfo)"
+		"en"		"Changes to my class in FF2 (/ff2classinfo)"
+		"ru"		"Изменения текущего класса в FF2 (/ff2classinfo)"
 	}
 	"damage_fx"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"You dealt {1} damage in this round"
+		"#format"	"{1:i}"
+		"en"		"You dealt {1} damage in this round"
+		"ru"		"Твой урон за раунд: {1}"
 	}
 	"scores"	// Chat, HUD
 	{
-		"#format" "{1:i}"
-		"en"	"You earned {1} points in this round"
+		"#format"	"{1:i}"
+		"en"		"You earned {1} points in this round"
+		"ru"		"Очков очереди за раунд: {1}"
 	}
 	"boss_win"	// HUD
 	{
-		"en"	"Congratulations!  You won!"
+		"en"		"Congratulations!  You won!"
+		"ru"		"Поздравляем!  Ты победил!"
 	}
 	"boss_lose"	// HUD
 	{
-		"en"	"Oh no, you lost!  Don't worry, there's always next time"
+		"en"		"Oh no, you lost!  Don't worry, there's always next time"
+		"ru"		"О нет, ты проиграл!  Не волнуйся, повезёт в другой раз!"
 	}
 	"ff2_start"	// Chat, HUD
 	{
-		"#format" "{1:N},{2:s},{3:i},{4:s}"
-		"en"	"{1} became\n {2}\n with {3}{4} hp"
+		"#format"	"{1:N},{2:s},{3:i},{4:s}"
+		"en"		"{1} became\n {2}\n with {3}{4} hp"
+		"ru"		"{1} становится\n {2}\n с {3}{4} ОЗ"
 	}
 	"ff2_hp"	// Chat, HUD
 	{
-		"#format" "{1:s},{2:i},{3:i},{4:s}"
-		"en"	"{1}'s HP: {2} of {3}{4}"
+		"#format"	"{1:s},{2:i},{3:i},{4:s}"
+		"en"		"{1}'s HP: {2} of {3}{4}"
+		"ru"		"Текущие ОЗ {1}: {2} из {3}{4}"
 	}
 	"ff2_alive"	// Chat, HUD
 	{
-		"#format" "{1:s},{2:N},{3:i},{4:i},{5:s}"
-		"en"	"{1} ({2}) won with {3} out of {4}{5} hp left."
+		"#format"	"{1:s},{2:N},{3:i},{4:i},{5:s}"
+		"en"		"{1} ({2}) won with {3} out of {4}{5} hp left."
+		"ru"		"{1} ({2}) выиграл с {3} из {4}{5} ОЗ."
 	}
 	"select_charset"	// Menu
 	{
-		"en"    "Please vote for the boss pack for the next map."
+		"en"		"Please vote for the boss pack for the next map."
+		"ru"		"Какой выбрать набор персонажей на следующей карте."
 	}
 	"your_points"	// Menu
 	{
-		"#format" "{1:i}"
-		"en"    "Your queue point(s) is {1}."
+		"#format"	"{1:i}"
+		"en"		"Your queue point(s) is {1}."
+		"ru"		"Твои очки очереди: {1}."
 	}
 	"add_points"	// Chat
 	{
-		"#format" "{1:i}"
-		"en"    "You earned {1} queue point(s)."
+		"#format"	"{1:i}"
+		"en"		"You earned {1} queue point(s)."
+		"ru"		"Ты получил {1} очков очереди."
 	}
 	"to0"	// HUD
 	{
-		"en"	"set to 0"
+		"en"		"set to 0"
+		"ru"		"обнулить"
 	}
 	"to0_title"	// Menu
 	{
-		"en"	"Do you really want to set your queue points to 0?"
+		"en"		"Do you really want to set your queue points to 0?"
+		"ru"		"Ты действительно хочешь обнулить свои очки очереди?"
 	}
 	"to0_title_admin"	// Menu
 	{
-		"#format" "{1:N}"
-		"en"	"Do you really want to set {1}'s queue points to 0?"
+		"#format"	"{1:N}"
+		"en"		"Do you really want to set {1}'s queue points to 0?"
+		"ru"		"Ты действительно хочешь обнулить очки очереди игрока {1}?"
 	}
 	"to0_done"	// Chat
 	{
-		"en"	"Your queue points have been reset to {olive}0{default}"
+		"en"		"Your queue points have been reset to {olive}0{default}"
+		"ru"		"Теперь у тебя {olive}0{default} очков очереди"
 	}
 	"to0_done_admin"	// Chat
 	{
-		"#format" "{1:N}"
-		"en"	"{olive}{1}{default}'s queue points have been reset to {olive}0{default}"
+		"#format"	"{1:N}"
+		"en"		"{olive}{1}{default}'s queue points have been reset to {olive}0{default}"
+		"ru"		"Теперь у {olive}{1}{default} 0 очков очереди"
 	}
 	"to0_done_by_admin"	// Chat
 	{
-		"#format" "{1:N}"
-		"en"	"{olive}{1}{default} reset your queue points to {olive}0{default}"
+		"#format"	"{1:N}"
+		"en"		"{olive}{1}{default} reset your queue points to {olive}0{default}"
+		"ru"		"{olive}{1}{default} обнулил твои очки очереди"
 	}
 	"to0_near"	// Chat
 	{
-		"en"	"You will become the boss soon. Type {olive}/ff2boss{default} to select a boss."
+		"en"		"You will become the boss soon. Type {olive}/ff2boss{default} to select a boss."
+		"ru"		"Ты скоро станешь Боссом. Введи {olive}/ff2next{default}, чтобы убедиться в этом."
 	}
 	"arena_round"	// Chat
 	{
 		"#format"	"{1:i}"
 		"en"		"Waiting for players to finish loading.  FF2 will start in {1} more round"
+		"ru"		"Ожидание игроков для завершения загрузки.  FF2 начнётся через {1} раундов"
 	}
 	"used_weighdown"	// Deprecated
 	{
-		"en"	"You have used weighdown!"
+		"en"		"You have used weighdown!"
+		"ru"		"Ты использовал супер-падение!"
 	}
 	"ff2_music"	// Chat
 	{
-		"#format" "{1:s}"
-		"en"	"Freak Fortress 2 Boss's music is {1} now"
+		"#format"	"{1:s}"
+		"en"		"Boss's music is {1} now"
+		"ru"		"Музыка боссов: {1}"
 	}
 	"ff2_voice"	// Chat
 	{
-		"#format" "{1:s}"
-		"en"	"Freak Fortress 2 Boss's voices is {1} now."
+		"#format"	"{1:s}"
+		"en"		"Boss's voices is {1} now."
+		"ru"		"Монологи боссов: {1}"
 	}
 	"ff2_voice2"	// Chat
 	{
-		"en"	"Custom boss plugin sounds may still play."
+		"en"		"Custom boss plugin sounds may still play."
+		"ru"		"Звуки из других плагинов всё ещё могут воспроизводится."
 	}
 	"menu_8"	// Menu
 	{
-		"en"	"Toggle music (/ff2music)"
+		"en"		"Toggle music (/ff2music)"
+		"ru"		"Переключить музыку (/ff2music)"
 	}
 	"menu_9"	// Menu
 	{
-		"en"	"Toggle monologues (/ff2voice)"
+		"en"		"Toggle monologues (/ff2voice)"
+		"ru"		"Переключить монологи боссов (/ff2voice)"
 	}
 	"menu_9a"	// Menu
 	{
-		"en"	"Toggle info about changes of classes in FF2"
+		"en"		"Toggle info about changes of classes in FF2"
+		"ru"		"Переключить отображение изменений классов в FF2"
 	}
 	"ff2_classinfo"	// Chat
 	{
-		"#format" "{1:s}"
-		"en"	"Info about changes of classes in FF2: {1}"
+		"#format"	"{1:s}"
+		"en"		"Info about changes of classes in FF2: {1}"
+		"ru"		"Информация об изменениях классов: {1}"
 	}
 	"ff2_last_update"	// Chat
 	{
-		"#format" "{1:s},{2:s}"
-		"en"	"What's new in {olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
+		"#format"	"{1:s},{2:s}"
+		"en"		"What's new in {olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
+		"ru"		"Что нового в {olive}{1}{default} ({olive}{2}{default})? Введи {olive}/ff2new{default}."
 	}
 	"charge_status"	// HUD
 	{
-		"#format" "{1:i}"
-		"en"	"Charge is ready. %.0f percent charged."
+		"#format"	"{1:i}"
+		"en"		"Charge is ready. {1} percent charged."
+		"ru"		"Заряд: {1}%% готово"
 	}
 	"nextmap_charset"	// Chat
 	{
-		"#format" "{1:s},{2:s}"
-		"en"	"The character set for {1} will be {2}."
+		"#format"	"{1:s},{2:s}"
+		"en"		"The character set for {1} will be {2}."
+		"ru"		"На карте {1} будет набор персонажей {2}."
 	}
 	"ff2_buttons_reload"	// HUD
 	{
-		"en"	"Press RELOAD button to use an ability!"
+		"en"		"Press RELOAD button to use an ability!"
+		"ru"		"Нажми ПЕРЕЗАРЯДКУ для исп-ния способности!"
 	}
 	"ff2_buttons_rmb"	// HUD
 	{
-		"en"	"Press right mouse button to use an ability!"
+		"en"		"Press ALT-FIRE button to use an ability!"
+		"ru"		"Нажми ПКМ для исп-ния способности!"
 	}
 	"ff2_lives_left"	// HUD
 	{
-		"#format" "{1:s},{2:i}"
-		"en"	"{1} lost a life! There are {2} more!"
+		"#format"	"{1:s},{2:i}"
+		"en"		"{1} lost a life! There are {2} more!"
+		"ru"		"{1} теряет жизнь! Но впереди ещё {2}!"
 	}
 	"ff2_life_left"	// HUD
 	{
-		"#format" "{1:s}"
-		"en"	"{1} lost a life! There is 1 more!"
+		"#format"	"{1:s}"
+		"en"		"{1} lost a life! There is 1 more!"
+		"ru"		"{1} теряет жизнь! Остался последний шанс!"
 	}
 	"Boss Suicide Denied"	// Chat
 	{
 		"en"	"You are not allowed to suicide as the boss!"
+		"ru"		"Ты не можешь покончить с собой будучи играя за босса!"
 	}
 	"Boss Suicide Pre-round"	// Chat
 	{
-		"en"	"You are not allowed to suicide before the round starts!"
+		"en"		"You are not allowed to suicide before the round starts!"
+		"ru"		"Ты не можешь покончить с собой перед началом раунда!"
 	}
 	"Boss Disconnected"	// Chat
 	{
-		"#format" "{1:N},{2:N}"
-		"en"	"{1} has disconnected and now {2} is the new boss!"
+		"#format"	"{1:N},{2:N}"
+		"en"		"{1} has disconnected and now {2} is the new boss!"
+		"ru"		"{1} отключился и теперь {2} - новый босс!"
 	}
 	"Replace Disconnected Boss"	// Chat
 	{
-		"en"	"Surprise! You are now the boss!"
+		"en"		"Surprise! You are now the boss!"
+		"ru"		"Сюрприз! Теперь ты - босс!"
 	}
 	"Backstab"	// Hint, Annotation
 	{
-		"en"	"You just backstabbed the boss!"
+		"en"		"You just backstabbed the boss!"
+		"ru"		"Ты нанёс боссу удар в спину!"
 	}
 	"Backstabbed"	// Hint, Annotation
 	{
-		"en"	"You just got backstabbed!"
+		"en"		"You just got backstabbed!"
+		"ru"		"Тебе нанесли удар в спину!"
 	}
 	"Backstab Player"	// Hint, Annotation
 	{
-		"#format" "{1:s}"
-		"en"	"You backstabbed {1}!"
+		"#format"	"{1:s}"
+		"en"		"You backstabbed {1}!"
+		"ru"		"Ты нанёс удар в спину боссу {1}!"
 	}
 	"Backstabbed Player"	// Hint, Annotation
 	{
-		"#format" "{1:N}"
-		"en"	"{1} backstabbed you!"
+		"#format"	"{1:N}"
+		"en"		"{1} backstabbed you!"
+		"ru"		"{1} нанёс тебе удар в спину!"
 	}
 	"Market Gardener"	// Hint, Annotation
 	{
-		"en"	"You just market-gardened the boss!"
+		"en"		"You just market-gardened the boss!"
+		"ru"		"Ты ударил босса Землекопом в полёте!"
 	}
 	"Market Gardened"	// Hint, Annotation
 	{
-		"en"	"You just got market-gardened!"
+		"en"		"You just got market-gardened!"
+		"ru"		"Тебя ударили Землекопом в полёте!"
 	}
 	"Market Gardener Player"	// Hint, Annotation
 	{
-		"#format" "{1:s}"
-		"en"	"You market-gardened {1}!"
+		"#format"	"{1:s}"
+		"en"		"You market-gardened {1}!"
+		"ru"		"Ты нанёс удар Землекопом в полёте по боссу {1}!"
 	}
 	"Market Gardened Player"	// Hint, Annotation
 	{
-		"#format" "{1:N}"
-		"en"	"{1} market-gardened you!"
+		"#format"	"{1:N}"
+		"en"		"{1} market-gardened you!"
+		"ru"		"{1} нанёс тебе удар Землекопом в полёте!"
 	}
 	"Detonations Left"	// Deprecated
 	{
 		"#format"	"{1:i}"
 		"en"		"You have {1} detonations left!"
+		"ru"		"У тебя осталось {1} детонаций!"
 	}
 	"Damage Spectate"	// HUD
 	{
 		"#format"	"{1:i},{2:N},{3:i}"
-		"en"		"Damage: {1}-{2}'s Damage: {3}"
+		"en"		"Damage: {1} | {2}'s Damage: {3}"
+		"ru"		"Урон: {1} | Урон {2}: {3}"
 	}
 	"Damage Self"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Damage: {1}"
+		"ru"		"Урон: {1}"
 	}
 	"Caber"	// Hint, Annotation
 	{
-		"en"	"You just ullapool caber the boss!"
+		"en"		"You just ullapool caber the boss!"
+		"ru"		"Ты подорвал босса!"
 	}
 	"Cabered"	// Hint, Annotation
 	{
-		"en"	"You just got ullapool cabered!"
+		"en"		"You just got ullapool cabered!"
+		"ru"		"Тебя подорвали!"
 	}
 	"Caber Player"	// Hint, Annotation
 	{
-		"#format" "{1:s}"
-		"en"	"You ullapool caber {1}!"
+		"#format"	"{1:s}"
+		"en"		"You ullapool caber {1}!"
+		"ru"		"Ты подорвал босса {1}!"
 	}
 	"Cabered Player"	// Hint, Annotation
 	{
-		"#format" "{1:N}"		
-		"en"	"{1} ullapool cabered you!"
+		"#format"	"{1:N}"		
+		"en"		"{1} ullapool cabered you!"
+		"ru"		"{1} подорвал тебя!"
 	}
-	"Goomba Stomp"
+	"Goomba Stomp"	// Hint, Annotation
 	{
-		"en"	"You goomba stomped the boss!"
+		"en"		"You goomba stomped the boss!"
+		"ru"		"Ты раздавил босса!"
 	}
-	"Goomba Stomp Boss"
+	"Goomba Stomp Boss"	// Hint, Annotation
 	{
-		"en"	"You goomba stomped somebody!"
+		"en"		"You goomba stomped somebody!"
+		"ru"		"Ты раздавил кого-то!"
 	}
-	"Goomba Stomped"
+	"Goomba Stomped"	// Hint, Annotation
 	{		
-		"en"	"Ouch!  Watch your head!"
+		"en"		"Ouch!  Watch your head!"
+		"ru"		"Ай!  Береги голову!"
 	}
-	"Goomba Stomped Boss"
+	"Goomba Stomped Boss"	// Hint, Annotation
 	{		
-		"en"	"You were just goomba stomped!"
+		"en"		"You were just goomba stomped!"
+		"ru"		"Тебя раздавили!"
 	}
-	"Goomba Stomp Player"
+	"Goomba Stomp Player"	// Hint, Annotation
 	{
-		"#format" "{1:s}"	
-		"en"	"You goomba stomped {1}!"
+		"#format"	"{1:s}"	
+		"en"		"You goomba stomped {1}!"
+		"ru"		"Ты раздавил босса {1}!"
 	}
-	"Goomba Stomp Boss Player"
+	"Goomba Stomp Boss Player"	// Hint, Annotation
 	{
-		"#format" "{1:N}"
-		"en"	"You goomba stomped {1}!"
+		"#format"	"{1:N}"
+		"en"		"You goomba stomped {1}!"
+		"ru"		"Ты раздавил игрока {1}!"
 	}
-	"Goomba Stomped Player"
+	"Goomba Stomped Player"	// Hint, Annotation
 	{
-		"#format" "{1:N}"		
-		"en"	"Ouch! {1} goomba stomped you! Watch your head!"
+		"#format"	"{1:N}"		
+		"en"		"Ouch! {1} goomba stomped you! Watch your head!"
+		"ru"		"Ай! {1} раздавил тебя! Береги голову!"
 	}
-	"Goomba Stomped Boss Player"
+	"Goomba Stomped Boss Player"	// Hint, Annotation
 	{
-		"#format" "{1:N}"		
-		"en"	"{1} goomba stomped you!"
+		"#format"	"{1:N}"		
+		"en"		"{1} goomba stomped you!"
+		"ru"		"{1} раздавил тебя!"
 	}
 	"Telefrag"	// Hint, Annotation
 	{
-		"en"	"TELEFRAG! You are a pro!"
+		"en"		"TELEFRAG! You are a pro!"
+		"ru"		"ТЕЛЕФРАГ! Ты профессионал!"
 	}
 	"Telefraged"	// Hint, Annotation
 	{
-		"en"	"TELEFRAG! Be careful around quantum tunneling devices!"
+		"en"		"TELEFRAG! Be careful around quantum tunneling devices!"
+		"ru"		"ТЕЛЕФРАГ! Будь осторожен с квантовыми туннельными устройствами!"
 	}
 	"Telefrag Assist"	// Hint, Annotation
 	{
-		"en"	"TELEFRAG ASSIST!  Nice job setting it up!"
+		"en"		"TELEFRAG ASSIST!  Nice job setting it up!"
+		"ru"		"ПОМОЩЬ ТЕЛЕФРАГУ!  Хорошая работа по установке!"
 	}
 	"Telefrag Global"	// Hint, Annotation
 	{
-		"en"	"TELEFRAG!"
+		"en"		"TELEFRAG!"
+		"ru"		"ТЕЛЕФРАГ!"
 	}
 	"Telefrag Player"	// Hint, Annotation
 	{
-		"#format" "{1:s}"
-		"en"	"TELEFRAG! You telefraged {1}!"
+		"#format"	"{1:s}"
+		"en"		"TELEFRAG! You telefraged {1}!"
+		"ru"		"ТЕЛЕФРАГ! Ты ранил босса {1}!"
 	}
 	"Telefraged Player"	// Hint, Annotation
 	{
-		"#format" "{1:N}"		
-		"en"	"TELEFRAG! {1} telefraged you!"
+		"#format"	"{1:N}"		
+		"en"		"TELEFRAG! {1} telefraged you!"
+		"ru"		"ТЕЛЕФРАГ! {1} ранил тебя!"
 	}
 	"Time Left"	// Annotation
 	{
-		"#format" "{1:s}"
-		"en"	"Time Remaining: {1}"
+		"#format"	"{1:s}"
+		"en"		"Time Remaining: {1}"
+		"ru"		"Осталось времени: {1}"
 	}
 	"Overtime"	// HUD, Annotation
 	{
-		"en"	"OVERTIME!"
+		"en"		"OVERTIME!"
+		"ru"		"ДОБАВОЧНОЕ ВРЕМЯ!"
 	}
-	"Dead Ringer Ready" // HUD
+	"Dead Ringer Ready"	// HUD
 	{
-		"en"        "Status: Feign Death Ready"
+		"en"		"Status: Feign Death Ready"
+		"ru"		"Статус: Симуляция смерти готова"
 	}
-	"Dead Ringer Inactive" // HUD
+	"Dead Ringer Inactive"	// HUD
 	{
-		"en"        "Status: Inactive"
+		"en"		"Status: Inactive"
+		"ru"		"Статус: Неактивно"
 	}
-	"Dead Ringer Active" // HUD
+	"Dead Ringer Active"	// HUD
 	{
-		"en"        "Status: Active"
+		"en"		"Status: Active"
+		"ru"		"Статус: Активно"
 	}
 	"ServerAd"	// Chat
 	{
-		"en"	"Gamers Freak Fortress group: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
+		"en"		"Gamers Freak Fortress group: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
+		"ru"		"Группа Gamers Freak Fortress: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
 	}
 	"ClassicAd"	// Chat
 	{
-		"en"	"Freak Fortress 2 is based on VS Saxton Hale Mode by {olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, and {blue}Chdata{default}"
+		"en"		"Freak Fortress 2 is based on VS Saxton Hale Mode by {olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, and {blue}Chdata{default}"
+		"ru"		"Freak Fortress 2 основан на VS Saxton Hale Mode от {olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, и {blue}Chdata{default}"
 	}
 	"DevAd"	// Chat
 	{
-		"#format" "{1:s}"
-		"en"	"{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
+		"#format"	"{1:s}"
+		"en"		"{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
+		"ru"		"{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
 	}
 }
