@@ -9707,16 +9707,21 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if((damagetype & DMG_CRIT))
 						{
 							damage*=BowDamage;
+							return Plugin_Changed;
 						}
 						else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed))
 						{
-							damage*=BowDamageMini;
+							if(BowDamageMini>0)
+							{
+								damage*=BowDamageMini;
+								return Plugin_Changed;
+							}
 						}
-						else
+						else if(BowDamageNon>0)
 						{
 							damage*=BowDamageNon;
+							return Plugin_Changed;
 						}
-						return Plugin_Changed;
 					}
 				}
 
