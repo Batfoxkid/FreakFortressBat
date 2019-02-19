@@ -11523,7 +11523,7 @@ FindCompanion(boss, players, bool:omit[])
 		Companions=1;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
-			if(BossRageDamage[companion]==0)	// If 0, toggle infinite rage
+			if(BossRageDamage[companion]==1)	// If 1, toggle infinite rage
 			{
 				InfiniteRageActive[client]=true;
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
