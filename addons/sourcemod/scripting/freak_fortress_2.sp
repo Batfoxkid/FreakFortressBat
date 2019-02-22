@@ -72,9 +72,9 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "8"
+#define FORK_STABLE_REVISION "9"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Dev"
+#define FORK_DEV_REVISION "Dev"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -253,6 +253,7 @@ new Handle:cvarGhostBoss;
 new Handle:cvarShieldType;
 new Handle:cvarCountdownOvertime;
 new Handle:cvarBossLog;
+new Handle:cvarBossDesc;
 
 new Handle:FF2Cookies;
 
@@ -512,7 +513,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.6",
 	"1.17.6",
 	"1.17.7",
-	"1.17.8"
+	"1.17.8",
+	"1.17.9"
 };
 
 static const String:ff2versiondates[][]=
@@ -653,13 +655,18 @@ static const String:ff2versiondates[][]=
 	"February 5, 2019",		//1.17.6
 	"February 5, 2019",		//1.17.6
 	"February 10, 2019",		//1.17.7
-	"February 15, 2019"		//1.17.8
+	"February 15, 2019",		//1.17.8
+	"No Release Date Yet"		//1.17.9
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 137:  //1.17.9
+		{
+			DrawPanelText(panel, "1) [Core] Cvar to show boss description before selecting the boss (Batfoxkid)");
+		}
 		case 136:  //1.17.8
 		{
 			DrawPanelText(panel, "1) [Core] Added Russian core translations (MAGNAT2645)");
@@ -1727,6 +1734,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 // Boss Selection
 new String:xIncoming[MAXPLAYERS+1][700];
+new String:cIncoming[MAXPLAYERS+1][700];
 
 // Boss Toggle
 #define TOGGLE_UNDEF -1
@@ -1835,6 +1843,8 @@ public OnPluginStart()
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
+	cvarBossDesc=CreateConVar("ff2_boss_desc", "0", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
+
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1864,17 +1874,8 @@ public OnPluginStart()
 	AddCommandListener(OnChangeClass, "joinclass");     //Used to make sure bosses don't change class
 
 	HookConVarChange(cvarEnabled, CvarChange);
-	HookConVarChange(cvarPointDelay, CvarChange);
 	HookConVarChange(cvarAnnounce, CvarChange);
-	HookConVarChange(cvarPointType, CvarChange);
-	HookConVarChange(cvarPointTime, CvarChange);
-	HookConVarChange(cvarAliveToEnable, CvarChange);
-	HookConVarChange(cvarCrits, CvarChange);
 	HookConVarChange(cvarCircuitStun, CvarChange);
-	HookConVarChange(cvarHealthBar, HealthbarEnableChanged);
-	HookConVarChange(cvarCountdownPlayers, CvarChange);
-	HookConVarChange(cvarCountdownTime, CvarChange);
-	HookConVarChange(cvarCountdownHealth, CvarChange);
 	HookConVarChange(cvarLastPlayerGlow, CvarChange);
 	HookConVarChange(cvarSpecForceBoss, CvarChange);
 	HookConVarChange(cvarBossTeleporter, CvarChange);
@@ -1884,11 +1885,7 @@ public OnPluginStart()
 	HookConVarChange(cvarGoombaRebound, CvarChange);
 	HookConVarChange(cvarBossRTD, CvarChange);
 	HookConVarChange(cvarUpdater, CvarChange);
-	HookConVarChange(cvarDebug, CvarChange);
-	HookConVarChange(cvarDebugMsg, CvarChange);
-	HookConVarChange(cvarDeadRingerHud, CvarChange);
 	HookConVarChange(cvarNextmap=FindConVar("sm_nextmap"), CvarChangeNextmap);
-	HookConVarChange(cvarDmg2KStreak, CvarChange);
 	HookConVarChange(cvarSniperDamage, CvarChange);
 	HookConVarChange(cvarSniperMiniDamage, CvarChange);
 	HookConVarChange(cvarBowDamage, CvarChange);
@@ -1896,31 +1893,11 @@ public OnPluginStart()
 	HookConVarChange(cvarBowDamageMini, CvarChange);
 	HookConVarChange(cvarSniperClimbDamage, CvarChange);
 	HookConVarChange(cvarSniperClimbDelay, CvarChange);
-	HookConVarChange(cvarStrangeWep, CvarChange);
 	HookConVarChange(cvarQualityWep, CvarChange);
-	HookConVarChange(cvarTripleWep, CvarChange);
-	HookConVarChange(cvarHardcodeWep, CvarChange);
-	HookConVarChange(cvarSelfKnockback, CvarChange);
-	HookConVarChange(cvarFF2TogglePrefDelay, CvarChange);
-	HookConVarChange(cvarKeepBoss, CvarChange);
 	HookConVarChange(cvarPointsInterval, CvarChange);
 	HookConVarChange(cvarPointsDamage, CvarChange);
 	HookConVarChange(cvarPointsMin, CvarChange);
 	HookConVarChange(cvarPointsExtra, CvarChange);
-	HookConVarChange(cvarAdvancedMusic, CvarChange);
-	HookConVarChange(cvarSongInfo, CvarChange);
-	HookConVarChange(cvarDuoRandom, CvarChange);
-	HookConVarChange(cvarDuoMin, CvarChange);
-	//HookConVarChange(cvarNewDownload, CvarChange);
-	HookConVarChange(cvarDuoRestore, CvarChange);
-	HookConVarChange(cvarLowStab, CvarChange);
-	HookConVarChange(cvarGameText, CvarChange);
-	HookConVarChange(cvarAnnotations, CvarChange);
-	HookConVarChange(cvarTellName, CvarChange);
-	HookConVarChange(cvarGhostBoss, CvarChange);
-	HookConVarChange(cvarShieldType, CvarChange);
-	HookConVarChange(cvarCountdownOvertime, CvarChange);
-	HookConVarChange(cvarBossLog, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel);
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
@@ -4859,6 +4836,7 @@ public Action:Command_SetMyBoss(client, args)
 			{
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
+				strcopy(cIncoming[client], sizeof(cIncoming[]), boss);
 				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
@@ -4869,6 +4847,7 @@ public Action:Command_SetMyBoss(client, args)
 				IsBossSelected[client]=true;
 				KvGetString(BossKV[config], "name", boss, sizeof(boss));
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
+				strcopy(cIncoming[client], sizeof(cIncoming[]), boss);
 				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
@@ -4957,15 +4936,23 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					}
 					default:
 					{
-						IsBossSelected[param1]=true;
-						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						if(!GetConVarBool(cvarBossDesc))
+						{
+							IsBossSelected[param1]=true;
+							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						}
+						else
+						{
+							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+							ConfirmBoss(param1);
+						}
 					}
 				}
 			}
 		}
 	}
-	else if (!GetConVarBool(cvarToggleBoss))
+	else if (!GetConVarBool(cvarToggleBoss) || !GetConVarBool(cvarDuoBoss))
 	{
 		switch(action)
 		{
@@ -4985,43 +4972,26 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
 						return;
 					}
-					case 1: CompanionMenu(param1, 0);
+					case 1:
+					{
+						if(GetConVarBool(cvarToggleBoss))
+							BossMenu(param1, 0);
+						else
+							CompanionMenu(param1, 0);
+					}
 					default:
 					{
-						IsBossSelected[param1]=true;
-						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
-					}
-				}
-			}
-		}
-	}
-	else if (!GetConVarBool(cvarDuoBoss))
-	{
-		switch(action)
-		{
-			case MenuAction_End:
-			{
-				CloseHandle(menu);
-			}
-			
-			case MenuAction_Select:
-			{
-				switch(param2)
-				{
-					case 0: 
-					{
-						IsBossSelected[param1]=true;
-						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
-						return;
-					}
-					case 1: BossMenu(param1, 0);
-					default:
-					{
-						IsBossSelected[param1]=true;
-						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						if(!GetConVarBool(cvarBossDesc))
+						{
+							IsBossSelected[param1]=true;
+							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						}
+						else
+						{
+							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+							ConfirmBoss(param1);
+						}
 					}
 				}
 			}
@@ -5051,10 +5021,96 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					case 2: CompanionMenu(param1, 0);
 					default:
 					{
-						IsBossSelected[param1]=true;
-						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						if(!GetConVarBool(cvarBossDesc))
+						{
+							IsBossSelected[param1]=true;
+							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						}
+						else
+						{
+							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+							ConfirmBoss(param1);
+						}
 					}
+				}
+			}
+		}
+	}
+	return;
+}
+
+public Action:ConfirmBoss(client)
+{
+	if(!GetConVarBool(cvarBossDesc))
+	{
+		return Plugin_Handled;
+	}
+
+	decl String:text[512], String:language[20], String:name[64];
+	GetLanguageInfo(GetClientLanguage(client), language, 8, text, 8);
+	Format(language, sizeof(language), "description_%s", language);
+	name=cIncoming[client];
+		
+	for(new config; config<Specials; config++)
+	{
+		KvRewind(BossKV[config]);
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		if(StrContains(boss, name, false)!=-1)
+		{
+			KvRewind(BossKV[config]);
+			//KvSetEscapeSequences(BossKV[config], true);  //Not working
+			KvGetString(BossKV[config], language, text, sizeof(text));
+			if(!text[0])
+			{
+				KvGetString(BossKV[config], "description_en", text, sizeof(text));  //Default to English if their language isn't available
+				if(!text[0])
+				{
+					Format(text, sizeof(text), "%T", "to0_nodesc", client);
+				}
+			}
+			ReplaceString(text, sizeof(text), "\\n", "\n");
+			//KvSetEscapeSequences(BossKV[config], false);  //We don't want to interfere with the download paths
+			return Plugin_Handled;
+		}
+	}
+
+	new Handle:dMenu = CreateMenu(ConfirmBossH);
+	SetMenuTitle(dMenu, text);
+
+	Format(text, sizeof(text), "%T", "to0_confirm", client, name);
+	AddMenuItem(dMenu, text, text);
+
+	Format(text, sizeof(text), "%T", "to0_cancel", client);
+	AddMenuItem(dMenu, text, text);
+
+	SetMenuExitButton(dMenu, false);
+	DisplayMenu(dMenu, client, 20);
+	return Plugin_Handled;
+}
+
+public ConfrimBossH(Handle:menu, MenuAction:action, param1, param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		
+		case MenuAction_Select:
+		{
+			switch(param2)
+			{
+				case 0: 
+				{
+					IsBossSelected[param1]=true;
+					xIncoming[param1]=cIncoming[param1];
+					CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+				}
+				default:
+				{
+					Command_SetMyBoss(param1, 0);
 				}
 			}
 		}
@@ -5078,7 +5134,7 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 	if (!boss && !StrEqual(xIncoming[client], ""))
 	{
 		strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
-		if(!GetConVarBool(cvarKeepBoss) || !GetConVarBool(cvarSelectBoss))
+		if(!GetConVarBool(cvarKeepBoss) || !GetConVarBool(cvarSelectBoss) || IsFakeClient(client))
 		{
 			xIncoming[client] = "";
 			DebugMsg(0, "Reset Boss Selection");
