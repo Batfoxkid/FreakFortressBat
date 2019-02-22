@@ -5047,7 +5047,7 @@ public Action:ConfirmBoss(client)
 		return Plugin_Handled;
 	}
 
-	decl String:text[512], String:language[20], String:name[64];
+	decl String:text[512], String:language[20], String:name[64], String:boss[64];
 	GetLanguageInfo(GetClientLanguage(client), language, 8, text, 8);
 	Format(language, sizeof(language), "description_%s", language);
 	name=cIncoming[client];
