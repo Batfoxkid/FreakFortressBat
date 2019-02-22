@@ -5047,10 +5047,10 @@ public Action:ConfirmBoss(client)
 		return Plugin_Handled;
 	}
 
-	decl String:text[512], String:language[20], String:name[64], String:boss[64];
+	decl String:text[512], String:language[20], String:boss[64];
+	decl String:name[700]=cIncoming[client];
 	GetLanguageInfo(GetClientLanguage(client), language, 8, text, 8);
 	Format(language, sizeof(language), "description_%s", language);
-	name=cIncoming[client];
 		
 	for(new config; config<Specials; config++)
 	{
@@ -5089,7 +5089,7 @@ public Action:ConfirmBoss(client)
 	return Plugin_Handled;
 }
 
-public ConfrimBossH(Handle:menu, MenuAction:action, param1, param2)
+public ConfirmBossH(Handle:menu, MenuAction:action, param1, param2)
 {
 	switch(action)
 	{
