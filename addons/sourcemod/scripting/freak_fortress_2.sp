@@ -5048,7 +5048,6 @@ public Action:ConfirmBoss(client)
 	}
 
 	decl String:text[512], String:language[20], String:boss[64];
-	decl String:name[700]=cIncoming[client];
 	GetLanguageInfo(GetClientLanguage(client), language, 8, text, 8);
 	Format(language, sizeof(language), "description_%s", language);
 		
@@ -5056,7 +5055,7 @@ public Action:ConfirmBoss(client)
 	{
 		KvRewind(BossKV[config]);
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
-		if(StrContains(boss, name, false)!=-1)
+		if(StrContains(boss, cIncoming[client], false)!=-1)
 		{
 			KvRewind(BossKV[config]);
 			//KvSetEscapeSequences(BossKV[config], true);  //Not working
@@ -5078,7 +5077,7 @@ public Action:ConfirmBoss(client)
 	new Handle:dMenu = CreateMenu(ConfirmBossH);
 	SetMenuTitle(dMenu, text);
 
-	Format(text, sizeof(text), "%T", "to0_confirm", client, name);
+	Format(text, sizeof(text), "%T", "to0_confirm", client, cIncoming[client]);
 	AddMenuItem(dMenu, text, text);
 
 	Format(text, sizeof(text), "%T", "to0_cancel", client);
