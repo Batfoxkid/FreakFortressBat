@@ -666,6 +666,8 @@ stock FindVersionData(Handle:panel, versionIndex)
 		case 137:  //1.17.9
 		{
 			DrawPanelText(panel, "1) [Core] Cvar to show boss description before selecting the boss (Batfoxkid)");
+			DrawPanelText(panel, "2) [Core] Adjusted some hardcoded weapons (Batfoxkid)");
+			DrawPanelText(panel, "3) [Core] Fixed pickups when FF2 is disabled (Batfoxkid)");
 		}
 		case 136:  //1.17.8
 		{
@@ -5070,7 +5072,6 @@ public Action:ConfirmBoss(client)
 			}
 			ReplaceString(text, sizeof(text), "\\n", "\n");
 			//KvSetEscapeSequences(BossKV[config], false);  //We don't want to interfere with the download paths
-			return Plugin_Handled;
 		}
 	}
 
@@ -6122,8 +6123,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 224:  //L'etranger
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 7.5");
-					//166: +7.5% cloak on hit
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
+					//166: +5% cloak on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6164,16 +6165,15 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 43:  //Killing Gloves of Boxing
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "16 ; 10 ; 69 ; 0 ; 77 ; 0 ; 109 ; 0.5 ; 177 ; 2.5 ; 180 ; 15 ; 205 ; 0.7 ; 206 ; 0.7 ; 239 ; 0 ; 442 ; 1.35 ; 443 ; 1.1 ; 800 ; 0");
-				// 16: +10 HP on hit
-				// 69: -100% health from healers
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.15 ; 77 ; 0 ; 109 ; 0.5 ; 177 ; 2 ; 205 ; 0.7 ; 206 ; 0.7 ; 239 ; 0.25 ; 442 ; 1.35 ; 443 ; 1.1 ; 800 ; 0");
+				// 16: +50 HP on hit
+				// 69: -85% health from healers
 				// 77: -100% max primary ammo
 				// 109: -50% health from packs
-				// 177: -150% weapon switch speed
-				// 180: +15 HP on kill
+				// 177: -100% weapon switch speed
 				// 205: -30% damage from ranged while active
 				// 206: -30% damage from melee while active
-				// 239: -100% uber for healer
+				// 239: -75% uber for healer
 				// 442: +35% speed
 				// 443: +10% jump
 				// 800: -100% max overheal
@@ -6213,7 +6213,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 128:  //Equalizer
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "69 ; 0 ; 239 ; 0.5");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "740 ; 0 ; 239 ; 0.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6339,7 +6339,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 305, 1079:  //Crusader's Crossbow, Festive Crusader's Crossbow
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.15");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.2");
 					//17: +20% uber on hit
 				if(itemOverride!=INVALID_HANDLE)
 				{
@@ -6349,7 +6349,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 312:  //Brass Beast
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "206 ; 1.35 ; 421 ; 1");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "206 ; 1.35");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6358,7 +6358,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 317:  //Candy Cane
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "740 ; 0.5", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "740 ; 0.5 ; 239 ; 0.75", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6397,15 +6397,15 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 348:  //Sharpened Volcano Fragment
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "16 ; 25 ; 69 ; 0 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.75 ; 180 ; 15 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
-				// 16: +25 HP on hit
-				// 69: -100% health from healers
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.25 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
+				// 16: +50 HP on hit
+				// 69: -66% health from healers
 				// 77: -100% max primary ammo
 				// 109: -50% health from packs
-				// 773: -75% deploy speed
+				// 773: -50% deploy speed
 				// 205: -20% damage from ranged while active
 				// 206: -40% damage from melee while active
-				// 239: -100% uber for healer
+				// 239: -75% uber for healer
 				// 442: +15% speed
 				// 443: +15% jump
 				// 800: -66% max overheal
@@ -6417,7 +6417,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 349:  //Sun-on-a-Stick
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "795 ; 2");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.75 ; 795 ; 2", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6435,16 +6435,16 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 404:  //Persian Persuader
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "772 ; 1.1 ; 249 ; 0.6 ; 781 ; 1 ; 778 ; 0.5 ; 782 ; 1", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "772 ; 1.15 ; 249 ; 0.6 ; 781 ; 1 ; 778 ; 0.5 ; 782 ; 1", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
 					return Plugin_Changed;
 				}
 			}
-			case 405:  //Ali Baba's Wee Booties
+			case 405, 608:  //Ali Baba's Wee Booties, Bootlegger
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "26 ; 40 ; 246 ; 8 ; 107 ; 1.15", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "26 ; 25 ; 246 ; 3 ; 107 ; 1.10", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6535,15 +6535,6 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 					return Plugin_Changed;
 				}
 			}
-			case 460:  //Enforcer
-			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "157 ; 1");
-				if(itemOverride!=INVALID_HANDLE)
-				{
-					item=itemOverride;
-					return Plugin_Changed;
-				}
-			}
 			case 528:  //Short Circuit
 			{
 				new Handle:itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 182 ; 2 ; 408 ; 1");
@@ -6576,16 +6567,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 595:  //Manmelter
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "6 ; 0.4 ; 104 ; 0.5");
-				if(itemOverride!=INVALID_HANDLE)
-				{
-					item=itemOverride;
-					return Plugin_Changed;
-				}
-			}
-			case 608:  //Bootlegger
-			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "26 ; 60 ; 246 ; 8 ; 107 ; 1.08 ; 249 ; 1.15", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "6 ; 0.35");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6622,7 +6604,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 772:  //Baby Face's Blaster
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "532 ; 1.25");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "532 ; 1.2");
 					//532: Hype decays
 				if(itemOverride!=INVALID_HANDLE)
 				{
@@ -6632,7 +6614,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 775:  //Escape Plan
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "69 ; 0 ; 206 ; 2 ; 239 ; 0.5");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "740 ; 0 ; 206 ; 2 ; 239 ; 0.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6641,7 +6623,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 811, 832:  //Huo-Long Heater
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "280 ; 6 ; 104 ; 0.25 ; 5 ; 3 ; 2 ; 4", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "71 ; 2.75");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6696,7 +6678,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 1180:  //Gas Passer
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "874 ; 0.6 ; 875 ; 1 ; 2059 ; 1500");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "801 ; 40 ; 856 ; 3 ; 879 ; 1 ; 2059 ; 1500 ; 875 ; 1", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6705,7 +6687,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 1181:  //Hot Hand
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "877 ; 2.5");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "877 ; 2");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6768,7 +6750,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			else if(iItemDefinitionIndex==998)  //Vaccinator
 			{
-				itemOverride=PrepareItemHandle(item, _, _, "10 ; 2.5 ; 11 ; 1.5 ; 199 ; 0.75 ; 314 ; -3 ; 479 ; 0.34 ; 499 ; 1 ; 547 ; 0.75 ; 739 ; 0.1", true);
+				itemOverride=PrepareItemHandle(item, _, _, "10 ; 2.5 ; 11 ; 1.5 ; 199 ; 0.75 ; 314 ; -3 ; 479 ; 0.34 ; 499 ; 1 ; 547 ; 0.75 ; 739 ; 0.34", true);
 				//10: +150% faster charge rate
 				//11: +50% overheal bonus
 				//199: Deploys 25% faster
@@ -6776,7 +6758,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				//479: -66% overheal build rate
 				//499: Projectile sheild level 1
 				//547: Holsters 25% faster
-				//739: -90% uber rate when overhealing
+				//739: -66% uber rate when overhealing
 			}
 			else
 			{
@@ -7040,7 +7022,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60  && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))  //Cloak and Dagger
 	{
 		TF2_RemoveWeaponSlot(client, 4);
-		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 2 ; 728 ; 1 ; 729 ; 0.65");
+		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 1.65 ; 728 ; 1 ; 729 ; 0.65");
 		DebugMsg(0, "Replaced Cloak & Dagger");
 	}
 
@@ -7083,7 +7065,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	shield[client]=IsValidEntity(playerBack) ? playerBack : 0;
 	if(IsValidEntity(FindPlayerBack(client, 642)))  //Cozy Camper
 	{
-		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 1.0 ; 15 ; 0.0 ; 1 ; 0.85");
+		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 2.0 ; 15 ; 0.0 ; 1 ; 0.75");
 		DebugMsg(0, "Given Cozy Camper SMG");
 	}
 
@@ -8169,7 +8151,7 @@ public Action:ClientTimer(Handle:timer)
 				}
 			}
 
-			if(index==16 && IsValidEntity(FindPlayerBack(client, 642)))  //SMG, Cozy Camper
+			if(index==16 && IsValidEntity(FindPlayerBack(client, 642)) && SniperClimbDelay!=0)  //SMG, Cozy Camper
 			{
 				addthecrit=false;
 			}
@@ -9782,18 +9764,6 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 
 				switch(index)
 				{
-					case 43:  //Killing Gloves of Boxing
-					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
-						{
-							new health=GetClientHealth(attacker);
-							new newhealth=health+40;
-							if(newhealth<=GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
-							{
-								SetEntityHealth(attacker, newhealth);
-							}
-						}
-					}
 					case 61, 1006:  //Ambassador, Festive Ambassador
 					{
 						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
@@ -9932,11 +9902,11 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							new health=GetClientHealth(attacker);
 							new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
 							new newhealth=health+5;
-							if(health<max+75)
+							if(health<max+60)
 							{
-								if(newhealth>max+75)
+								if(newhealth>max+60)
 								{
-									newhealth=max+75;
+									newhealth=max+60;
 								}
 								SetEntityHealth(attacker, newhealth);
 							}
@@ -13808,7 +13778,7 @@ public OnItemSpawned(entity)
 
 public Action:OnPickup(entity, client)  //Thanks friagram!
 {
-	if(IsBoss(client))
+	if(IsBoss(client) && Enabled) // Can leak when FF2 is disabled
 	{
 		decl String:classname[32];
 		GetEntityClassname(entity, classname, sizeof(classname));
