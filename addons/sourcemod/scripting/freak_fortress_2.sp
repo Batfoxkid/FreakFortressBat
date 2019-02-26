@@ -134,6 +134,7 @@ new bool:smac=false;
 
 new bool:isCapping=false;
 
+new RPSWinner;
 new currentBossTeam;
 new bool:blueBoss;
 new OtherTeam=2;
@@ -179,6 +180,9 @@ new Float:KSpreeTimer[MAXPLAYERS+1];
 new KSpreeCount[MAXPLAYERS+1];
 new Float:GlowTimer[MAXPLAYERS+1];
 new shortname[MAXPLAYERS+1];
+new Float:RPSLoser[MAXPLAYERS+1];
+new RPSLosses[MAXPLAYERS+1];
+new RPSHealth[MAXPLAYERS+1];
 new bool:emitRageSound[MAXPLAYERS+1];
 new bool:bossHasReloadAbility[MAXPLAYERS+1];
 new bool:bossHasRightMouseAbility[MAXPLAYERS+1];
@@ -254,6 +258,9 @@ new Handle:cvarShieldType;
 new Handle:cvarCountdownOvertime;
 new Handle:cvarBossLog;
 new Handle:cvarBossDesc;
+new Handle:cvarRPSPoints;
+new Handle:cvarRPSLimit;
+new Handle:cvarRPSDivide;
 
 new Handle:FF2Cookies;
 
@@ -1847,6 +1854,9 @@ public OnPluginStart()
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
 	cvarBossDesc=CreateConVar("ff2_boss_desc", "0", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
 
+	cvarRPSPoints=CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
+	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
+	cvarRPSDivide=CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1866,6 +1876,7 @@ public OnPluginStart()
 	HookEvent("object_destroyed", OnObjectDestroyed, EventHookMode_Pre);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Pre);
 	HookEvent("deploy_buff_banner", OnDeployBackup);
+	HookEvent("rps_taunt_event", OnRPS, EventHookMode_Post);
 
 	AddCommandListener(OnCallForMedic, "voicemenu");    //Used to activate rages
 	AddCommandListener(OnSuicide, "explode");           //Used to stop boss from suiciding
@@ -2428,6 +2439,10 @@ public OnMapStart()
 		FF2flags[client]=0;
 		Incoming[client]=-1;
 		MusicTimer[client]=INVALID_HANDLE;
+		RPSHealth[client]=-1;
+		RPSLosses[client]=0;
+		RPSHealth[client]=0;
+		RPSLoser[client]=-1.0;
 	}
 
 	for(new specials; specials<MAXSPECIALS; specials++)
@@ -4080,6 +4095,10 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			{
 				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
+			RPSHealth[client]=-1;
+			RPSLosses[client]=0;
+			RPSHealth[client]=0;
+			RPSLoser[client]=-1.0;
 		}
 	}
 
@@ -8461,6 +8480,52 @@ public Action:BossTimer(Handle:timer)
 			{
 				KSpreeTimer[client2]-=0.2;
 			}
+			if(RPSLoser[client2]>0)
+			{
+				RPSLoser[client2]-=0.2;
+			}
+			else if(RPSLoser[client2]>-1)
+			{
+				if(IsPlayerAlive(client2) && GetBossIndex(client2)>=0)
+				{
+					decl ApplyDamage;
+					RPSLosses[client2]++;
+					DebugMsg(0, "RPS: Excuted");
+
+					if(GetConVarInt(cvarRPSDivide))
+						ApplyDamage=1349*GetConVarInt(cvarRPSLimit);
+					else
+						ApplyDamage=-1;
+
+					if(RPSHealth[client2]==-1)
+					{
+						RPSHealth[client2]=FF2_GetBossHealth(GetBossIndex(client2));
+					}
+
+					if(RPSLosses[client2]>=GetConVarInt(cvarRPSLimit) && FF2_GetBossHealth(GetBossIndex(client2))>ApplyDamage)
+					{
+						if(IsValidClient(RPSWinner))
+						{
+							SDKHooks_TakeDamage(client2, RPSWinner, RPSWinner, float(FF2_GetBossHealth(GetBossIndex(client2))), DMG_GENERIC, -1);
+							DebugMsg(0, "RPS: Dealt Full Damage");
+						}
+						else // Winner disconnects?
+						{
+							ForcePlayerSuicide(client2);
+							DebugMsg(0, "RPS: Forced Suicide");
+						}
+					}
+					else if(FF2_GetBossHealth(GetBossIndex(client2))>ApplyDamage && ApplyDamage>0)
+					{
+						if(IsValidClient(RPSWinner))
+						{
+							SDKHooks_TakeDamage(client2, RPSWinner, RPSWinner, float((RPSHealth[client2]/GetConVarInt(cvarRPSLimit))-1349), DMG_GENERIC, -1);
+							DebugMsg(0, "RPS: Dealt Partial Damage");
+						}
+					}
+				}
+				RPSLoser[client2]=-1.0;
+			}
 		}
 	}
 
@@ -8749,6 +8814,36 @@ public Action:OnJoinTeam(client, const String:command[], args)
 		}
 	}
 	return Plugin_Handled;
+}
+
+public Action:OnRPS(Handle:event, const String:eventName[], bool:dontBroadcast)
+{
+	new winner = GetEventInt(event, "winner");
+	new loser = GetEventInt(event, "loser");
+
+	if(!IsValidClient(winner) || !IsValidClient(loser)) // Check for valid clients
+	{
+		return;
+	}
+
+	if(!IsBoss(winner) && IsBoss(loser) && GetBossIndex(loser)>=0 && GetConVarInt(cvarRPSLimit)>0)	// Boss Loses on RPS?
+	{
+		DebugMsg(0, "RPS: Started Damage Timer");
+		RPSWinner=winner;
+		TF2_AddCondition(RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not
+		RPSLoser[loser]=GetGameTime()+3.1;
+		return;
+	}
+
+	if(ClientCookie[winner]!=TOGGLE_OFF && ClientCookie[loser]!=TOGGLE_OFF && !IsBoss(winner) && !IsBoss(loser) && GetClientQueuePoints(loser)>=GetConVarInt(cvarRPSPoints) && GetConVarInt(cvarRPSPoints)>0)	// Teammate or Minion loses?
+	{
+		DebugMsg(0, "RPS: Exchanged Queue Points");
+		CPrintToChat(winner, "{olive}[FF2]{default} %t", "rps_won", GetConVarInt(cvarRPSPoints), loser);
+		SetClientQueuePoints(winner, GetClientQueuePoints(winner)+GetConVarInt(cvarRPSPoints));
+
+		CPrintToChat(loser, "{olive}[FF2]{default} %t", "rps_lost", GetConVarInt(cvarRPSPoints), winner);
+		SetClientQueuePoints(loser, GetClientQueuePoints(loser)-GetConVarInt(cvarRPSPoints));
+	}
 }
 
 public Action:OnStartCapture(Handle:event, const String:eventName[], bool:dontBroadcast)
