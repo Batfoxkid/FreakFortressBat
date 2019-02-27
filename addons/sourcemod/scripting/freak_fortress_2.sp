@@ -257,6 +257,7 @@ new Handle:cvarGhostBoss;
 new Handle:cvarShieldType;
 new Handle:cvarCountdownOvertime;
 new Handle:cvarBossLog;
+new Handle:cvarBossLogBots;
 new Handle:cvarBossDesc;
 new Handle:cvarRPSPoints;
 new Handle:cvarRPSLimit;
@@ -676,6 +677,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "2) [Core] Adjusted some hardcoded weapons (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Fixed pickups when FF2 is disabled (Batfoxkid)");
 			DrawPanelText(panel, "4) [Gameplay] RPS queue point betting and boss limiter (Batfoxkid/SHADoW)");
+			DrawPanelText(panel, "5) [Core] Check for bots before logging boss win/losses (Batfoxkid)");
 		}
 		case 136:  //1.17.8
 		{
@@ -1853,6 +1855,7 @@ public OnPluginStart()
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
+	cvarBossLogBots=CreateConVar("ff2_boss_log_bots", "0", "-1-Don't log if any bots, 0-ff2_boss_log excludes bots, 1-ff2_boss_log includes bots", _, true, -1.0, true, 1.0);
 	cvarBossDesc=CreateConVar("ff2_boss_desc", "0", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
 	cvarRPSPoints=CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
 	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
@@ -3841,14 +3844,19 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		char Result[64];
 		char PlayerName[64];
 		char Authid[64];
+		new Bots;
+		new HumanPlayers;
 
 		// Set variables
 		int CurrentTime = GetTime();
-		FormatTime(FormatedTime, 100, "%X", CurrentTime);
+		FormatTime(FormatedTime, 100, "%Y %m %d - %X", CurrentTime);
 		GetCurrentMap(MapName, sizeof(MapName));
 		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
 		for(new client; client<=MaxClients; client++)
 		{
+			if(IsFakeClient(client))
+				Bots++;
+
 			if(IsBoss(client))
 			{
 				new boss=Boss[client];
@@ -3867,14 +3875,23 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
 			}
 		}
+		if(GetConVarInt(cvarBossLogBots)==0)
+			HumanPlayers=playing-Bots;
+		else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
+			HumanPlayers=0;
+		else
+			HumanPlayers=35;
 
 		// Write
-		Handle bossLog = OpenFile(bLog, "a+");
+		if(HumanPlayers>GetConVarInt(cvarBossLog))
+		{
+			Handle bossLog = OpenFile(bLog, "a+");
 
-		WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
-		WriteFileLine(bossLog, "");
-		CloseHandle(bossLog);
-		DebugMsg(0, "Writing Boss Log");
+			WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+			WriteFileLine(bossLog, "");
+			CloseHandle(bossLog);
+			DebugMsg(0, "Writing Boss Log");
+		}
 	}
 
 	if(ReloadFF2)
