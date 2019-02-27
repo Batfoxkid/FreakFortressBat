@@ -675,6 +675,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "1) [Core] Cvar to show boss description before selecting the boss (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] Adjusted some hardcoded weapons (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Fixed pickups when FF2 is disabled (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] RPS queue point betting and boss limiter (Batfoxkid/SHADoW)");
 		}
 		case 136:  //1.17.8
 		{
@@ -1853,7 +1854,6 @@ public OnPluginStart()
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
 	cvarBossDesc=CreateConVar("ff2_boss_desc", "0", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
-
 	cvarRPSPoints=CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
 	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
 	cvarRPSDivide=CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
@@ -6416,8 +6416,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 348:  //Sharpened Volcano Fragment
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.25 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
-				// 16: +50 HP on hit
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "16 ; 35 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.25 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
+				// 16: +35 HP on hit
 				// 69: -66% health from healers
 				// 77: -100% max primary ammo
 				// 109: -50% health from packs
@@ -6697,7 +6697,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 1180:  //Gas Passer
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "801 ; 40 ; 856 ; 3 ; 879 ; 1 ; 2059 ; 1500 ; 875 ; 1", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "874 ; 0.6 ; 875 ; 1");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7074,6 +7074,13 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 				DebugMsg(0, "Reduced Alpha For Gunslinger Medic");
 			}
 		}
+		#if defined _tf2attributes_included
+		if(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1180 && tf2attributes)	//Gas Passer
+		{
+			TF2Attrib_RemoveByDefIndex(weapon, 2059);
+			TF2Attrib_SetByDefIndex(weapon, 2059, 1500.0);
+		}
+		#endif
 	}
 	else
 	{
@@ -8480,52 +8487,6 @@ public Action:BossTimer(Handle:timer)
 			{
 				KSpreeTimer[client2]-=0.2;
 			}
-			if(RPSLoser[client2]>0)
-			{
-				RPSLoser[client2]-=0.2;
-			}
-			else if(RPSLoser[client2]>-1)
-			{
-				if(IsPlayerAlive(client2) && GetBossIndex(client2)>=0)
-				{
-					decl ApplyDamage;
-					RPSLosses[client2]++;
-					DebugMsg(0, "RPS: Excuted");
-
-					if(GetConVarInt(cvarRPSDivide))
-						ApplyDamage=1349*GetConVarInt(cvarRPSLimit);
-					else
-						ApplyDamage=-1;
-
-					if(RPSHealth[client2]==-1)
-					{
-						RPSHealth[client2]=FF2_GetBossHealth(GetBossIndex(client2));
-					}
-
-					if(RPSLosses[client2]>=GetConVarInt(cvarRPSLimit) && FF2_GetBossHealth(GetBossIndex(client2))>ApplyDamage)
-					{
-						if(IsValidClient(RPSWinner))
-						{
-							SDKHooks_TakeDamage(client2, RPSWinner, RPSWinner, float(FF2_GetBossHealth(GetBossIndex(client2))), DMG_GENERIC, -1);
-							DebugMsg(0, "RPS: Dealt Full Damage");
-						}
-						else // Winner disconnects?
-						{
-							ForcePlayerSuicide(client2);
-							DebugMsg(0, "RPS: Forced Suicide");
-						}
-					}
-					else if(FF2_GetBossHealth(GetBossIndex(client2))>ApplyDamage && ApplyDamage>0)
-					{
-						if(IsValidClient(RPSWinner))
-						{
-							SDKHooks_TakeDamage(client2, RPSWinner, RPSWinner, float((RPSHealth[client2]/GetConVarInt(cvarRPSLimit))-1349), DMG_GENERIC, -1);
-							DebugMsg(0, "RPS: Dealt Partial Damage");
-						}
-					}
-				}
-				RPSLoser[client2]=-1.0;
-			}
 		}
 	}
 
@@ -8534,6 +8495,52 @@ public Action:BossTimer(Handle:timer)
 		return Plugin_Stop;
 	}
 	return Plugin_Continue;
+}
+
+public Action:Timer_RPS(Handle:timer, any:userid)
+{
+	new boss=GetClientOfUserId(userid);
+	if(IsPlayerAlive(boss) && GetBossIndex(boss)>=0)
+	{
+		decl ApplyDamage;
+		RPSLosses[boss]++;
+		DebugMsg(0, "RPS: Excuted");
+
+		if(GetConVarInt(cvarRPSDivide))
+			ApplyDamage=1349*GetConVarInt(cvarRPSLimit);
+		else
+			ApplyDamage=-1;
+
+		if(RPSLosses[boss]<0)
+			RPSLosses[boss]=0;
+
+		if(RPSHealth[boss]==-1)
+		{
+			RPSHealth[boss]=FF2_GetBossHealth(GetBossIndex(boss));
+		}
+
+		if(RPSLosses[boss]>=GetConVarInt(cvarRPSLimit) && FF2_GetBossHealth(GetBossIndex(boss))>ApplyDamage)
+		{
+			if(IsValidClient(RPSWinner))
+			{
+				SDKHooks_TakeDamage(boss, RPSWinner, RPSWinner, float(FF2_GetBossHealth(GetBossIndex(boss))), DMG_GENERIC, -1);
+				DebugMsg(0, "RPS: Dealt Full Damage");
+			}
+			else // Winner disconnects?
+			{
+				ForcePlayerSuicide(boss);
+				DebugMsg(0, "RPS: Forced Suicide");
+			}
+		}
+		else if(FF2_GetBossHealth(GetBossIndex(boss))>ApplyDamage && ApplyDamage>0)
+		{
+			if(IsValidClient(RPSWinner))
+			{
+				SDKHooks_TakeDamage(boss, RPSWinner, RPSWinner, float((RPSHealth[boss]/GetConVarInt(cvarRPSLimit))-1349), DMG_GENERIC, -1);
+				DebugMsg(0, "RPS: Dealt Partial Damage");
+			}
+		}
+	}
 }
 
 public Action:Timer_BotRage(Handle:timer, any:bot)
@@ -8831,7 +8838,7 @@ public Action:OnRPS(Handle:event, const String:eventName[], bool:dontBroadcast)
 		DebugMsg(0, "RPS: Started Damage Timer");
 		RPSWinner=winner;
 		TF2_AddCondition(RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not
-		RPSLoser[loser]=GetGameTime()+3.1;
+		CreateTimer(3.1, Timer_RPS, GetClientOfUserId(loser), TIMER_FLAG_NO_MAPCHANGE);
 		return;
 	}
 
