@@ -183,6 +183,8 @@ new shortname[MAXPLAYERS+1];
 new Float:RPSLoser[MAXPLAYERS+1];
 new RPSLosses[MAXPLAYERS+1];
 new RPSHealth[MAXPLAYERS+1];
+new Float:AirstrikeDamage[MAXPLAYERS+1];
+new Float:KillstreakDamage[MAXPLAYERS+1];
 new bool:emitRageSound[MAXPLAYERS+1];
 new bool:bossHasReloadAbility[MAXPLAYERS+1];
 new bool:bossHasRightMouseAbility[MAXPLAYERS+1];
@@ -222,6 +224,7 @@ new Handle:cvarDebug;
 new Handle:cvarDebugMsg;
 new Handle:cvarPreroundBossDisconnect;
 new Handle:cvarDmg2KStreak;
+new Handle:cvarAirStrike;
 new Handle:cvarSniperDamage;
 new Handle:cvarSniperMiniDamage;
 new Handle:cvarBowDamage;
@@ -1818,7 +1821,8 @@ public OnPluginStart()
 	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
 	cvarDebugMsg=CreateConVar("ff2_debug_msg", "0", "1-Chat to players, 2-Chat to ff2_debuger perms, 4-Console, 8-Custom log", _, true, 0.0, true, 15.0);
-	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "195", "Minimum damage to increase killstreak count", _, true, 0.0);
+	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "300", "Minimum damage to increase killstreak count", _, true, 0.0);
+	cvarAirStrike=CreateConVar("ff2_dmg_airstrike", "300", "Minimum damage to increase head count for the Air-Strike", _, true, 0.0);
 	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
 	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
 	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier", _, true, 0.0);
@@ -3835,65 +3839,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	if(HasSwitched)
 		HasSwitched=false;
 
-	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
-	{
-		// Variables
-		decl String:bossName[64];
-		char FormatedTime[64];
-		char MapName[64];
-		char Result[64];
-		char PlayerName[64];
-		char Authid[64];
-		new Bots;
-		new HumanPlayers;
-
-		// Set variables
-		int CurrentTime = GetTime();
-		FormatTime(FormatedTime, 100, "%Y %m %d - %X", CurrentTime);
-		GetCurrentMap(MapName, sizeof(MapName));
-		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
-		for(new client; client<=MaxClients; client++)
-		{
-			if(IsFakeClient(client))
-				Bots++;
-
-			if(IsBoss(client))
-			{
-				new boss=Boss[client];
-				if(!IsFakeClient(client))
-				{
-					GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
-					GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
-				}
-				else
-				{
-					Format(PlayerName, sizeof(PlayerName), "Bot");
-					Format(Authid, sizeof(Authid), "Bot");
-				}
-				KvRewind(BossKV[Special[boss]]);
-				KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
-				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
-			}
-		}
-		if(GetConVarInt(cvarBossLogBots)==0)
-			HumanPlayers=playing-Bots;
-		else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
-			HumanPlayers=0;
-		else
-			HumanPlayers=35;
-
-		// Write
-		if(HumanPlayers>GetConVarInt(cvarBossLog))
-		{
-			Handle bossLog = OpenFile(bLog, "a+");
-
-			WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
-			WriteFileLine(bossLog, "");
-			CloseHandle(bossLog);
-			DebugMsg(0, "Writing Boss Log");
-		}
-	}
-
 	if(ReloadFF2)
 	{
 		ServerCommand("sm plugins reload freak_fortress_2");
@@ -4017,10 +3962,11 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	}
 
 	new boss;
+	decl String:bossName[64];
 	if(isBossAlive)
 	{
 		new String:text[128];  //Do not decl this
-		decl String:bossName[64], String:lives[8];
+		decl String:lives[8];
 		for(new target; target<=MaxClients; target++)
 		{
 			if(IsBoss(target))
@@ -4112,17 +4058,13 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			{
 				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
-			RPSHealth[client]=-1;
-			RPSLosses[client]=0;
-			RPSHealth[client]=0;
-			RPSLoser[client]=-1.0;
 		}
 	}
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
 
-	for(new client=0;client<=MaxClients;client++)
+	/*for(new client=0;client<=MaxClients;client++)
 	{
 		if (client>0 && IsValidEntity(client) && IsClientConnected(client))
 		{
@@ -4132,6 +4074,68 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
     				decl String:nick[64]; 
     				GetClientName(client, nick, sizeof(nick));
 			}
+		}
+	}*/
+
+	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
+	{
+		new HumanPlayers=35;
+		if(GetConVarInt(cvarBossLogBots)<1)
+		{
+			new Bots;
+			for(new client; client<=MaxClients; client++)
+			{
+				if(IsVaildClient(client) && IsFakeClient(client))
+					Bots++;
+			}
+			if(GetConVarInt(cvarBossLogBots)==0)
+				HumanPlayers=playing-Bots;
+			else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
+				HumanPlayers=0;
+		}
+		if(HumanPlayers>GetConVarInt(cvarBossLog))
+		{
+			// Variables
+			//char FormatedTime[64];
+			char MapName[64];
+			char Result[64];
+			char PlayerName[64];
+			char Authid[64];
+
+			// Set variables
+			//int CurrentTime = GetTime();
+			//FormatTime(FormatedTime, 100, "%y %m %d - %X", CurrentTime);
+			GetCurrentMap(MapName, sizeof(MapName));
+			Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+			for(new client; client<=MaxClients; client++)
+			{
+				if(IsBoss(client))
+				{
+					new boss=Boss[client];
+					if(!IsFakeClient(client))
+					{
+						GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
+					}
+					else
+					{
+						Format(PlayerName, sizeof(PlayerName), "Bot");
+						Format(Authid, sizeof(Authid), "Bot");
+					}
+					KvRewind(BossKV[Special[boss]]);
+					KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+					BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+				}
+			}
+
+			// Write
+			Handle bossLog = OpenFile(bLog, "a+");
+
+			//WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+			WriteFileLine(bossLog, "%s - %s <%s> has %s", MapName, PlayerName, Authid, Result);
+			WriteFileLine(bossLog, "");
+			CloseHandle(bossLog);
+			DebugMsg(0, "Writing Boss Log");
 		}
 	}
 	return Plugin_Continue;
@@ -6090,6 +6094,10 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 	EquipBoss(boss);
 	KSpreeCount[boss]=0;
 	BossCharge[boss][0]=0.0;
+	RPSHealth[boss]=-1;
+	RPSLosses[boss]=0;
+	RPSHealth[boss]=0;
+	RPSLoser[boss]=-1.0;
 	//CPrintToChatAll("%s Index: %d", client, GetBossIndex(client));
 	if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 	{
@@ -9563,10 +9571,10 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
-	if(IsValidClient(attacker))
+	/*if(IsValidClient(attacker))
 	{
 		new weapon=GetPlayerWeaponSlot(attacker, TFWeaponSlot_Primary);
-		if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104)  //Air Strike-moved from OTD
+		if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104)  //Air Strike moved back to OnTakeDamage
 		{
 			static airStrikeDamage;
 			airStrikeDamage+=damage;
@@ -9576,7 +9584,7 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 				airStrikeDamage-=200;
 			}
 		}
-	}
+	}*/
 
 	if(BossCharge[boss][0]>rageMax[client])
 	{
@@ -10216,24 +10224,23 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							}
 						}
 					}
-					/*case 1104:  //Air Strike-moved to OnPlayerHurt for now since OTD doesn't display the actual damage :/
+					case 1104:  //Air-Strike
 					{
-						static Float:airStrikeDamage;
-						airStrikeDamage+=damage;
-						if(airStrikeDamage>=200.0)
+						AirstrikeDamage[attacker]+=damage;
+						if(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && GetConVarFloat(cvarAirStrike)>0)
 						{
 							SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-							airStrikeDamage-=200.0;
+							AirstrikeDamage[attacker]-=GetConVarFloat(cvarAirStrike);
+							DebugMsg(0, "Increased Air-Strike Heads");
 						}
-					}*/
+					}
 				}
 
-				static Float:kStreakCount;
-				kStreakCount+=damage;
-				if((kStreakCount>=GetConVarFloat(cvarDmg2KStreak)) && GetConVarFloat(cvarDmg2KStreak)>0)
+				KillstreakDamage[attacker]+=damage;
+				if(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && GetConVarFloat(cvarDmg2KStreak)>0)
 				{
 					SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
-					kStreakCount-=GetConVarFloat(cvarDmg2KStreak);
+					KillstreakDamage-=GetConVarFloat(cvarDmg2KStreak);
 					DebugMsg(0, "Increased Kill Streak");
 				}
 
