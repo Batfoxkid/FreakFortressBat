@@ -360,6 +360,7 @@ new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
 new bool:selfKnockback[MAXPLAYERS+1];
 new bool:randomCrits[MAXPLAYERS+1];
+new String:currentName[MAXPLAYERS+1];
 
 static const char OTVoice[][] = {
     "vo/announcer_overtime.mp3",
@@ -525,6 +526,7 @@ static const String:ff2versiontitles[][]=
 	"1.17.6",
 	"1.17.7",
 	"1.17.8",
+	"1.17.9",
 	"1.17.9"
 };
 
@@ -667,20 +669,25 @@ static const String:ff2versiondates[][]=
 	"February 5, 2019",		//1.17.6
 	"February 10, 2019",		//1.17.7
 	"February 15, 2019",		//1.17.8
-	"No Release Date Yet"		//1.17.9
+	"March 2, 2019",		//1.17.9
+	"March 2, 2019"			//1.17.9
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 137:  //1.17.9
+		case 138:  //1.17.9
 		{
 			DrawPanelText(panel, "1) [Core] Cvar to show boss description before selecting the boss (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] Adjusted some hardcoded weapons (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Fixed pickups when FF2 is disabled (Batfoxkid)");
-			DrawPanelText(panel, "4) [Gameplay] RPS queue point betting and boss limiter (Batfoxkid/SHADoW)");
-			DrawPanelText(panel, "5) [Core] Check for bots before logging boss win/losses (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Cvar for RPS queue point betting and boss limiter (Batfoxkid/SHADoW)");
+		}
+		case 137:  //1.17.9
+		{
+			DrawPanelText(panel, "5) [Core] Cvar to check for bots before logging boss win/losses (Batfoxkid)");
+			DrawPanelText(panel, "6) [Core] Added natives for setting tripling, knockback, crits, and boss name (Batfoxkid)");
 		}
 		case 136:  //1.17.8
 		{
@@ -1701,6 +1708,14 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	CreateNative("FF2_SetBossCharge", Native_SetBossCharge);
 	CreateNative("FF2_GetBossRageDamage", Native_GetBossRageDamage);
 	CreateNative("FF2_SetBossRageDamage", Native_SetBossRageDamage);
+	CreateNative("FF2_GetBossTriple", Native_GetBossTriple);
+	CreateNative("FF2_SetBossTriple", Native_SetBossTriple);
+	CreateNative("FF2_GetBossKnockback", Native_GetBossKnockback);
+	CreateNative("FF2_SetBossKnockback", Native_SetBossKnockback);
+	CreateNative("FF2_GetBossCrits", Native_GetBossCrits);
+	CreateNative("FF2_SetBossCrits", Native_SetBossCrits);
+	CreateNative("FF2_GetBossName", Native_GetBossName);
+	CreateNative("FF2_SetBossName", Native_SetBossName);
 	CreateNative("FF2_GetClientDamage", Native_GetDamage);
 	CreateNative("FF2_GetRoundState", Native_GetRoundState);
 	CreateNative("FF2_GetSpecialKV", Native_GetSpecialKV);
@@ -3858,7 +3873,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		if(HumanPlayers>=GetConVarInt(cvarBossLog))
 		{
 			// Variables
-			decl bossName[64];
+			decl String:bossName[64];
 			//char FormatedTime[64];
 			char MapName[64];
 			char Result[64];
@@ -5992,6 +6007,9 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 	else
 		countdownOvertime=GetConVarBool(cvarCountdownOvertime);
 
+	// String settings
+	currentName[client]=KvGetString(BossKV[Special[boss]], "name", "=Failed name=");
+
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
 	TF2_RemovePlayerDisguise(client);
@@ -7339,8 +7357,8 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 			if(IsBoss(target))
 			{
 				new boss=Boss[target];
-				KvRewind(BossKV[Special[boss]]);
-				KvGetString(BossKV[Special[boss]], "name", name, sizeof(name), "=Failed name=");
+				//KvRewind(BossKV[Special[boss]]);
+				name=currentName[target];
 				if(BossLives[boss]>1)
 				{
 					Format(lives, sizeof(lives), "x%i", BossLives[boss]);
@@ -8442,8 +8460,8 @@ public Action:BossTimer(Handle:timer)
 				if(IsBoss(target))
 				{
 					new boss2=GetBossIndex(target);
-					KvRewind(BossKV[Special[boss2]]);
-					KvGetString(BossKV[Special[boss2]], "name", name, sizeof(name), "=Failed name=");
+					//KvRewind(BossKV[Special[boss2]]);
+					name=currentName[target];
 					//Format(bossLives, sizeof(bossLives), ((BossLives[boss2]>1) ? ("x%i", BossLives[boss2]) : ("")));
 					decl String:bossLives[10];
 					if(BossLives[boss2]>1)
@@ -9257,8 +9275,8 @@ public Action:Timer_DrawGame(Handle:timer)
 		if(IsBoss(client))
 		{
 			new boss2=GetBossIndex(client);
-			KvRewind(BossKV[Special[boss2]]);
-			KvGetString(BossKV[Special[boss2]], "name", name, sizeof(name), "=Failed name=");
+			//KvRewind(BossKV[Special[boss2]]);
+			name=currentName[client];
 			decl String:bossLives[10];
 			if(BossLives[boss2]>1)
 			{
@@ -9493,8 +9511,8 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 			BossLives[boss]=lives;
 
 			decl String:bossName[64];
-			KvRewind(BossKV[Special[boss]]);
-			KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
+			//KvRewind(BossKV[Special[boss]]);
+			bossName=currentName[client];
 
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(new target=1; target<=MaxClients; target++)
@@ -9925,7 +9943,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								if(GetConVarBool(cvarTellName))
 								{
 									new String:spcl[768];
-									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+									spcl=currentName[client];
 									if(GetConVarInt(cvarAnnotations)==1)
 										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", spcl);
 									else if(GetConVarInt(cvarAnnotations)==2)
@@ -10090,7 +10108,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								if(GetConVarBool(cvarTellName))
 								{
 									new String:spcl[768];
-									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+									spcl=currentName[client];
 									if(GetConVarInt(cvarAnnotations)==1)
 										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", spcl);
 									else if(GetConVarInt(cvarAnnotations)==2)
@@ -10276,7 +10294,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if(GetConVarBool(cvarTellName))
 						{
 							new String:spcl[768];
-							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+							spcl=currentName[client];
 							if(GetConVarInt(cvarAnnotations)==1)
 								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", spcl);
 							else if(GetConVarInt(cvarAnnotations)==2)
@@ -10406,7 +10424,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						if(GetConVarBool(cvarTellName))
 						{
 							new String:spcl[768];
-							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+							spcl=currentName[client];
 							if(GetConVarInt(cvarAnnotations)==1)
 								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
 							else if(GetConVarInt(cvarAnnotations)==2)
@@ -10605,7 +10623,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 			if(GetConVarBool(cvarTellName))
 			{
 				new String:spcl[768];
-				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+				spcl=currentName[client];
 				if(GetConVarInt(cvarAnnotations)==1)
 					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
 				else if(GetConVarInt(cvarAnnotations)==2)
@@ -10636,7 +10654,7 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 			if(GetConVarBool(cvarTellName))
 			{
 				new String:spcl[768];
-				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+				spcl=currentName[client];
 				if(GetConVarInt(cvarAnnotations)==1)
 					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", spcl);
 				else if(GetConVarInt(cvarAnnotations)==2)
@@ -13503,6 +13521,46 @@ public Native_GetBossRageDamage(Handle:plugin, numParams)
 public Native_SetBossRageDamage(Handle:plugin, numParams)
 {
 	BossRageDamage[GetNativeCell(1)]=GetNativeCell(2);
+}
+
+public Native_GetBossTriple(Handle:plugin, numParams)
+{
+	return dmgTriple[GetNativeCell(1)];
+}
+
+public Native_SetBossTriple(Handle:plugin, numParams)
+{
+	dmgTriple[GetNativeCell(1)]=GetNativeCell(2);
+}
+
+public Native_GetBossKnockback(Handle:plugin, numParams)
+{
+	return selfKnockback[GetNativeCell(1)];
+}
+
+public Native_SetBossKnockback(Handle:plugin, numParams)
+{
+	selfKnockback[GetNativeCell(1)]=GetNativeCell(2);
+}
+
+public Native_GetBossCrits(Handle:plugin, numParams)
+{
+	return randomCrits[GetNativeCell(1)];
+}
+
+public Native_SetBossCrits(Handle:plugin, numParams)
+{
+	randomCrits[GetNativeCell(1)]=GetNativeCell(2);
+}
+
+public Native_GetBossName(Handle:plugin, numParams)
+{
+	return currentName[GetNativeCell(1)];
+}
+
+public Native_SetBossName(Handle:plugin, numParams)
+{
+	currentName[GetNativeCell(1)]=GetNativeCell(2);
 }
 
 public Native_GetRoundState(Handle:plugin, numParams)
