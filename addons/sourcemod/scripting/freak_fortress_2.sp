@@ -3839,6 +3839,69 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	if(HasSwitched)
 		HasSwitched=false;
 
+	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
+	{
+		new HumanPlayers=35;
+		if(GetConVarInt(cvarBossLogBots)<1)
+		{
+			new Bots;
+			for(new client; client<=MaxClients; client++)
+			{
+				if(IsValidClient(client) && IsFakeClient(client))
+					Bots++;
+			}
+			if(GetConVarInt(cvarBossLogBots)==0)
+				HumanPlayers=playing-Bots;
+			else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
+				HumanPlayers=0;
+		}
+		if(HumanPlayers>=GetConVarInt(cvarBossLog))
+		{
+			// Variables
+			decl bossName[64];
+			//char FormatedTime[64];
+			char MapName[64];
+			char Result[64];
+			char PlayerName[64];
+			char Authid[64];
+
+			// Set variables
+			//int CurrentTime = GetTime();
+			//FormatTime(FormatedTime, 100, "%y %m %d - %X", CurrentTime);
+			GetCurrentMap(MapName, sizeof(MapName));
+			Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+			for(new client; client<=MaxClients; client++)
+			{
+				if(IsBoss(client))
+				{
+					new boss=Boss[client];
+					if(!IsFakeClient(client))
+					{
+						GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
+					}
+					else
+					{
+						Format(PlayerName, sizeof(PlayerName), "Bot");
+						Format(Authid, sizeof(Authid), "Bot");
+					}
+					KvRewind(BossKV[Special[boss]]);
+					KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+					BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+				}
+			}
+
+			// Write
+			Handle bossLog = OpenFile(bLog, "a+");
+
+			//WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+			WriteFileLine(bossLog, "%s - %s <%s> has %s", MapName, PlayerName, Authid, Result);
+			WriteFileLine(bossLog, "");
+			CloseHandle(bossLog);
+			DebugMsg(0, "Writing Boss Log");
+		}
+	}
+
 	if(ReloadFF2)
 	{
 		ServerCommand("sm plugins reload freak_fortress_2");
@@ -4062,88 +4125,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
-	LogBosses();
-
-	/*for(new client=0;client<=MaxClients;client++)
-	{
-		if (client>0 && IsValidEntity(client) && IsClientConnected(client))
-		{
-			if ((ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss))
-			{
-				//FF2_SetQueuePoints(client,((FF2_GetQueuePoints(client))-FF2_GetQueuePoints(client))-15);
-    				decl String:nick[64]; 
-    				GetClientName(client, nick, sizeof(nick));
-			}
-		}
-	}*/
 	return Plugin_Continue;
-}
-
-public LogBosses()
-{
-	if(GetConVarInt(cvarBossLog)<=0 && GetConVarInt(cvarBossLog)>playing)
-		return;
-
-	new HumanPlayers=35;
-	if(GetConVarInt(cvarBossLogBots)<1)
-	{
-		new Bots;
-		for(new client; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client) && IsFakeClient(client))
-				Bots++;
-		}
-		if(GetConVarInt(cvarBossLogBots)==0)
-			HumanPlayers=playing-Bots;
-		else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
-			HumanPlayers=0;
-	}
-	if(HumanPlayers>GetConVarInt(cvarBossLog))
-	{
-		// Variables
-		decl String:bossName[64];
-		//char FormatedTime[64];
-		char MapName[64];
-		char Result[64];
-		char PlayerName[64];
-		char Authid[64];
-
-		// Set variables
-		//int CurrentTime = GetTime();
-		//FormatTime(FormatedTime, 100, "%y %m %d - %X", CurrentTime);
-		GetCurrentMap(MapName, sizeof(MapName));
-		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
-		for(new client; client<=MaxClients; client++)
-		{
-			if(IsBoss(client))
-			{
-					new boss=Boss[client];
-					if(!IsFakeClient(client))
-					{
-						GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
-						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
-					}
-					else
-					{
-						Format(PlayerName, sizeof(PlayerName), "Bot");
-						Format(Authid, sizeof(Authid), "Bot");
-					}
-					KvRewind(BossKV[Special[boss]]);
-					KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
-					BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
-				}
-			}
-
-			// Write
-			Handle bossLog = OpenFile(bLog, "a+");
-
-			//WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
-			WriteFileLine(bossLog, "%s - %s <%s> has %s", MapName, PlayerName, Authid, Result);
-			WriteFileLine(bossLog, "");
-			CloseHandle(bossLog);
-			DebugMsg(0, "Writing Boss Log");
-		}
-	}
 }
 
 public Action:BossMenuTimer(Handle:timer, any:clientpack)
