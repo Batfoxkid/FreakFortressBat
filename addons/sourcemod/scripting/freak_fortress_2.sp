@@ -3962,11 +3962,10 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	}
 
 	new boss;
-	decl String:bossName[64];
 	if(isBossAlive)
 	{
 		new String:text[128];  //Do not decl this
-		decl String:lives[8];
+		decl String:bossName[64], String:lives[8];
 		for(new target; target<=MaxClients; target++)
 		{
 			if(IsBoss(target))
@@ -4063,6 +4062,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
+	LogBosses();
 
 	/*for(new client=0;client<=MaxClients;client++)
 	{
@@ -4076,41 +4076,47 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			}
 		}
 	}*/
+	return Plugin_Continue;
+}
 
-	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
+public LogBosses()
+{
+	if(GetConVarInt(cvarBossLog)<=0 && GetConVarInt(cvarBossLog)>playing)
+		return;
+
+	new HumanPlayers=35;
+	if(GetConVarInt(cvarBossLogBots)<1)
 	{
-		new HumanPlayers=35;
-		if(GetConVarInt(cvarBossLogBots)<1)
+		new Bots;
+		for(new client; client<=MaxClients; client++)
 		{
-			new Bots;
-			for(new client; client<=MaxClients; client++)
-			{
-				if(IsVaildClient(client) && IsFakeClient(client))
-					Bots++;
-			}
-			if(GetConVarInt(cvarBossLogBots)==0)
-				HumanPlayers=playing-Bots;
-			else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
-				HumanPlayers=0;
+			if(IsValidClient(client) && IsFakeClient(client))
+				Bots++;
 		}
-		if(HumanPlayers>GetConVarInt(cvarBossLog))
-		{
-			// Variables
-			//char FormatedTime[64];
-			char MapName[64];
-			char Result[64];
-			char PlayerName[64];
-			char Authid[64];
+		if(GetConVarInt(cvarBossLogBots)==0)
+			HumanPlayers=playing-Bots;
+		else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
+			HumanPlayers=0;
+	}
+	if(HumanPlayers>GetConVarInt(cvarBossLog))
+	{
+		// Variables
+		decl String:bossName[64];
+		//char FormatedTime[64];
+		char MapName[64];
+		char Result[64];
+		char PlayerName[64];
+		char Authid[64];
 
-			// Set variables
-			//int CurrentTime = GetTime();
-			//FormatTime(FormatedTime, 100, "%y %m %d - %X", CurrentTime);
-			GetCurrentMap(MapName, sizeof(MapName));
-			Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
-			for(new client; client<=MaxClients; client++)
+		// Set variables
+		//int CurrentTime = GetTime();
+		//FormatTime(FormatedTime, 100, "%y %m %d - %X", CurrentTime);
+		GetCurrentMap(MapName, sizeof(MapName));
+		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+		for(new client; client<=MaxClients; client++)
+		{
+			if(IsBoss(client))
 			{
-				if(IsBoss(client))
-				{
 					new boss=Boss[client];
 					if(!IsFakeClient(client))
 					{
@@ -4138,7 +4144,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			DebugMsg(0, "Writing Boss Log");
 		}
 	}
-	return Plugin_Continue;
 }
 
 public Action:BossMenuTimer(Handle:timer, any:clientpack)
@@ -10226,22 +10231,28 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 1104:  //Air-Strike
 					{
-						AirstrikeDamage[attacker]+=damage;
-						if(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && GetConVarFloat(cvarAirStrike)>0)
+						if(GetConVarFloat(cvarAirStrike)>0)
 						{
-							SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-							AirstrikeDamage[attacker]-=GetConVarFloat(cvarAirStrike);
-							DebugMsg(0, "Increased Air-Strike Heads");
+							AirstrikeDamage[attacker]+=damage;
+							if(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike))
+							{
+								SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
+								AirstrikeDamage[attacker]-=GetConVarFloat(cvarAirStrike);
+								DebugMsg(0, "Increased Air-Strike Heads");
+							}
 						}
 					}
 				}
 
-				KillstreakDamage[attacker]+=damage;
-				if(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && GetConVarFloat(cvarDmg2KStreak)>0)
+				if(GetConVarFloat(cvarDmg2KStreak)>0)
 				{
-					SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
-					KillstreakDamage-=GetConVarFloat(cvarDmg2KStreak);
-					DebugMsg(0, "Increased Kill Streak");
+					KillstreakDamage[attacker]+=damage;
+					if(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak))
+					{
+						SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
+						KillstreakDamage[attacker]-=GetConVarFloat(cvarDmg2KStreak);
+						DebugMsg(0, "Increased Kill Streak");
+					}
 				}
 
 				if(bIsBackstab)
