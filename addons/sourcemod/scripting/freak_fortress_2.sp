@@ -360,7 +360,7 @@ new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
 new bool:selfKnockback[MAXPLAYERS+1];
 new bool:randomCrits[MAXPLAYERS+1];
-new String:currentName[MAXPLAYERS+1];
+new String:currentName[MAXPLAYERS+1][64];
 
 static const char OTVoice[][] = {
     "vo/announcer_overtime.mp3",
@@ -4592,10 +4592,10 @@ PlayBGM(client, String:music[], Float:time, bool:loop=true, char[] name="", char
 		{
 			strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
 
-			// EmitSoundToClient is ok
-			// 'playgamesound' works great but doesn't stop previous BGM
-			// 'play' also works but clients use 'play' in console to stop BGMs
-			// # effects music slider but sometimes doesn't stop previous BGMs of all the above
+			// EmitSoundToClient can sometimes not loop correctly
+			// 'playgamesound' can rarely not stop correctly
+			// 'play' can be stopped or interrupted by other things
+			// # before filepath effects music slider but can't stop correctly most of the time
 
 			ClientCommand(client, "playgamesound \"%s\"", music);
 			if(time>1)
@@ -6008,7 +6008,7 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 		countdownOvertime=GetConVarBool(cvarCountdownOvertime);
 
 	// String settings
-	currentName[client]=KvGetString(BossKV[Special[boss]], "name", "=Failed name=");
+	KvGetString(BossKV[Special[boss]], "name", currentName[client], sizeof(currentName[]), "=Failed name=");
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
@@ -7351,14 +7351,13 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 	if(IsBoss(client) || GetGameTime()>=HPTime)
 	{
 		new String:text[512];  //Do not decl this
-		decl String:lives[8], String:name[64];
+		decl String:lives[8];
 		for(new target; target<=MaxClients; target++)
 		{
 			if(IsBoss(target))
 			{
 				new boss=Boss[target];
 				//KvRewind(BossKV[Special[boss]]);
-				name=currentName[target];
 				if(BossLives[boss]>1)
 				{
 					Format(lives, sizeof(lives), "x%i", BossLives[boss]);
@@ -7367,8 +7366,8 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 				{
 					lives[0]='\0';
 				}
-				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", currentName[target], BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", currentName[target], BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				BossHealthLast[boss]=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 			}
 		}
@@ -8454,14 +8453,12 @@ public Action:BossTimer(Handle:timer)
 		if(RedAlivePlayers==1 && !executed2)
 		{
 			new String:message[512];  //Do not decl this
-			decl String:name[64];
 			for(new target; target<=MaxClients; target++)  //TODO: Why is this for loop needed when we're already in a boss for loop
 			{
 				if(IsBoss(target))
 				{
 					new boss2=GetBossIndex(target);
 					//KvRewind(BossKV[Special[boss2]]);
-					name=currentName[target];
 					//Format(bossLives, sizeof(bossLives), ((BossLives[boss2]>1) ? ("x%i", BossLives[boss2]) : ("")));
 					decl String:bossLives[10];
 					if(BossLives[boss2]>1)
@@ -8472,7 +8469,7 @@ public Action:BossTimer(Handle:timer)
 					{
 						Format(bossLives, sizeof(bossLives), "");
 					}
-					Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+					Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", currentName[target], BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 				}
 			}
 
@@ -9269,14 +9266,12 @@ public Action:Timer_DrawGame(Handle:timer)
 	SetHudTextParams(-1.0, 0.17, 1.1, 255, 255, 255, 255);
 
 	new String:message[512];  //Do not decl this
-	decl String:name[64];
 	for(new client; client<=MaxClients; client++)
 	{
 		if(IsBoss(client))
 		{
 			new boss2=GetBossIndex(client);
 			//KvRewind(BossKV[Special[boss2]]);
-			name=currentName[client];
 			decl String:bossLives[10];
 			if(BossLives[boss2]>1)
 			{
@@ -9286,7 +9281,7 @@ public Action:Timer_DrawGame(Handle:timer)
 			{
 				Format(bossLives, sizeof(bossLives), "");
 			}
-			Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+			Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", currentName[client], BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 		}
 	}
 	for(new client; client<=MaxClients; client++)
@@ -9510,9 +9505,7 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 			}
 			BossLives[boss]=lives;
 
-			decl String:bossName[64];
 			//KvRewind(BossKV[Special[boss]]);
-			bossName=currentName[client];
 
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(new target=1; target<=MaxClients; target++)
@@ -9521,11 +9514,11 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 				{
 					if(!Companions && GetConVarBool(cvarGameText))
 					{
-						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, bossName, BossLives[boss]);
+						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, currentName[client], BossLives[boss]);
 					}
 					else
 					{
-						PrintCenterText(target, "%t", ability, bossName, BossLives[boss]);
+						PrintCenterText(target, "%t", ability, currentName[client], BossLives[boss]);
 					}
 				}
 			}
@@ -9942,14 +9935,12 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							{
 								if(GetConVarBool(cvarTellName))
 								{
-									new String:spcl[768];
-									spcl=currentName[client];
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", spcl);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", currentName[client]);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber Player", spcl);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber Player", currentName[client]);
 									else
-										PrintHintText(attacker, "%t", "Caber Player", spcl);
+										PrintHintText(attacker, "%t", "Caber Player", currentName[client]);
 								}
 								else
 								{
@@ -10107,14 +10098,12 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							{
 								if(GetConVarBool(cvarTellName))
 								{
-									new String:spcl[768];
-									spcl=currentName[client];
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", spcl);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", currentName[client]);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Market Gardener Player", spcl);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Market Gardener Player", currentName[client]);
 									else
-										PrintHintText(attacker, "%t", "Market Gardener Player", spcl);
+										PrintHintText(attacker, "%t", "Market Gardener Player", currentName[client]);
 								}
 								else
 								{
@@ -10293,14 +10282,12 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						if(GetConVarBool(cvarTellName))
 						{
-							new String:spcl[768];
-							spcl=currentName[client];
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", spcl);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", currentName[client]);
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab Player", spcl);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab Player", currentName[client]);
 							else
-								PrintHintText(attacker, "%t", "Backstab Player", spcl);
+								PrintHintText(attacker, "%t", "Backstab Player", currentName[client]);
 						}
 						else
 						{
@@ -10423,14 +10410,12 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						if(GetConVarBool(cvarTellName))
 						{
-							new String:spcl[768];
-							spcl=currentName[client];
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", currentName[client]);
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Player", spcl);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Player", currentName[client]);
 							else
-								PrintHintText(attacker, "%t", "Telefrag Player", spcl);
+								PrintHintText(attacker, "%t", "Telefrag Player", currentName[client]);
 						}
 						else
 						{
@@ -10621,15 +10606,13 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
 			if(GetConVarBool(cvarTellName))
-			{
-				new String:spcl[768];
-				spcl=currentName[client];
+			
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", currentName[attacker]);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", spcl);
+					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", currentName[attacker]);
 				else
-					PrintHintText(victim, "%t", "Goomba Stomped Player", spcl);
+					PrintHintText(victim, "%t", "Goomba Stomped Player", currentName[attacker]);
 			}
 			else
 			{
@@ -10653,14 +10636,12 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 		{
 			if(GetConVarBool(cvarTellName))
 			{
-				new String:spcl[768];
-				spcl=currentName[client];
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", spcl);
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", currentName[victim]);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Player", spcl);
+					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Player", currentName[victim]);
 				else
-					PrintHintText(attacker, "%t", "Goomba Stomp Player", spcl);
+					PrintHintText(attacker, "%t", "Goomba Stomp Player", currentName[victim]);
 			}
 			else
 			{
