@@ -202,6 +202,74 @@ native FF2_GetBossRageDamage(boss);
 native FF2_SetBossRageDamage(boss, damage);
 
 /**
+ * Gets if the current boss has tripling damage when inital damage is less than 160
+ *
+ * @param boss		Boss index
+ * @return		True if enabled, False if disabled
+ */
+native FF2_GetBossTriple(boss);
+
+/**
+ * Sets if the current boss has tripling damage when inital damage is less than 160
+ *
+ * @param boss		Boss index
+ * @param triple	New true or false value
+ * @noreturn
+ */
+native FF2_SetBossTriple(boss, triple);
+
+/**
+ * Gets if the current boss is allowed to inflict self knockback
+ *
+ * @param boss		Boss index
+ * @return		True if enabled, False if disabled
+ */
+native FF2_GetBossKnockback(boss);
+
+/**
+ * Sets if the current boss is allowed to inflict self knockback
+ *
+ * @param boss		Boss index
+ * @param knockback	New true or false value
+ * @noreturn
+ */
+native FF2_SetBossKnockback(boss, knockback);
+
+/**
+ * Gets if the current boss is allowed deal random critical hits
+ *
+ * @param boss		Boss index
+ * @return		True if enabled, False if disabled
+ */
+native FF2_GetBossCrits(boss);
+
+/**
+ * Sets if the current boss is allowed deal random critical hits
+ *
+ * @param boss		Boss index
+ * @param crits		New true or false value
+ * @noreturn
+ */
+native FF2_SetBossCrits(boss, crits);
+
+/**
+ * Gets the current boss's display name
+ *
+ * @param boss		Boss index
+ * @return		String of the boss display name
+ */
+native FF2_GetBossName(boss);
+
+/**
+ * Sets the current boss's display name
+ *
+ * @param boss		Boss index
+ * @param name		New display name string
+ * @noreturn
+ */
+native FF2_SetBossName(boss, name);
+
+/**
  * Gets damage dealt by this client
  *
  * @param client 	Client's index
