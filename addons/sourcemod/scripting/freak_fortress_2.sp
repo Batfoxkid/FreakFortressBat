@@ -12071,21 +12071,25 @@ public FF2PanelH(Handle:menu, MenuAction:action, client, selection)
 			}
 			case 2:
 			{
-				HelpPanelClass(client);
+				Command_SetMyBoss(client);
 			}
 			case 3:
 			{
-				NewPanel(client, maxVersion);
+				HelpPanelClass(client);
 			}
 			case 4:
 			{
-				QueuePanelCmd(client, 0);
+				NewPanel(client, maxVersion);
 			}
 			case 5:
 			{
-				MusicTogglePanel(client);
+				QueuePanelCmd(client, 0);
 			}
 			case 6:
+			{
+				MusicTogglePanel(client);
+			}
+			case 7:
 			{
 				HelpPanel3(client);
 			}
@@ -12108,8 +12112,8 @@ public Action:FF2Panel(client, args)  //._.
 		SetPanelTitle(panel, text);
 		Format(text, sizeof(text), "%T", "menu_2", client);  //Investigate the boss's current health level (/ff2hp)
 		DrawPanelItem(panel, text);
-		//Format(text, sizeof(text), "%T", "menu_3", client);  //Help about FF2 (/ff2help).
-		//DrawPanelItem(panel, text);
+		Format(text, sizeof(text), "%T", "menu_3", client);  //Boss Preferences (/ff2boss)
+		DrawPanelItem(panel, text);
 		Format(text, sizeof(text), "%T", "menu_7", client);  //Changes to my class in FF2 (/ff2classinfo)
 		DrawPanelItem(panel, text);
 		Format(text, sizeof(text), "%T", "menu_4", client);  //What's new? (/ff2new).
