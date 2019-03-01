@@ -13285,7 +13285,7 @@ stock RemoveShield(client, attacker, Float:position[3])
 	DebugMsg(0, "Removed shield");
 }
 
-public DebugMsg(priority, String:buffer[], any:...)
+public DebugMsg(priority, String:dmessage[], any:...)
 {
 	if(!GetConVarBool(cvarDebug) || GetConVarInt(cvarDebugMsg)<1 || DebugMsgFreeze>8)
 	{
@@ -13321,8 +13321,8 @@ public DebugMsg(priority, String:buffer[], any:...)
 			Format(prefixcon, sizeof(prefixcon), "");
 	}
 	new String:message[512], String:messagecon[512];
-	Format(message, sizeof(message), "%s%s", prefix, buffer);
-	Format(messagecon, sizeof(messagecon), "%s%s", prefixcon, buffer);
+	Format(message, sizeof(message), "%s%s", prefix, dmessage);
+	Format(messagecon, sizeof(messagecon), "%s%s", prefixcon, dmessage);
 	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
 	ReplaceString(messagecon, sizeof(messagecon), "\n", "");  //Get rid of newlines
 
