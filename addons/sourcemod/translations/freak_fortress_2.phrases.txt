@@ -169,10 +169,10 @@
 		"en"		"Investigate the boss's current health level (/ff2hp)"
 		"ru"		"Хочу узнать текущие ОЗ босса (/ff2hp)"
 	}
-	"menu_3"	// Deprecated
+	"menu_3"	// Menu
 	{
-		"en"		"Help about FF2 (/ff2help)"  //ff2help doesn't exist in the code, so...
-		"ru"		"Справка по FF2 (/ff2help)"  //ff2help doesn't exist in the code, so...
+		"en"		"Boss Preferences (/ff2boss)"
+		"ru"		"Boss Preferences (/ff2boss)"
 	}
 	"menu_4"	// Menu
 	{
