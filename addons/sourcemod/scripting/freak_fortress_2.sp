@@ -260,7 +260,6 @@ new Handle:cvarGhostBoss;
 new Handle:cvarShieldType;
 new Handle:cvarCountdownOvertime;
 new Handle:cvarBossLog;
-new Handle:cvarBossLogBots;
 new Handle:cvarBossDesc;
 new Handle:cvarRPSPoints;
 new Handle:cvarRPSLimit;
@@ -360,7 +359,6 @@ new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
 new bool:selfKnockback[MAXPLAYERS+1];
 new bool:randomCrits[MAXPLAYERS+1];
-new String:currentName[MAXPLAYERS+1][64];
 
 static const char OTVoice[][] = {
     "vo/announcer_overtime.mp3",
@@ -526,7 +524,6 @@ static const String:ff2versiontitles[][]=
 	"1.17.6",
 	"1.17.7",
 	"1.17.8",
-	"1.17.9",
 	"1.17.9"
 };
 
@@ -669,7 +666,6 @@ static const String:ff2versiondates[][]=
 	"February 5, 2019",		//1.17.6
 	"February 10, 2019",		//1.17.7
 	"February 15, 2019",		//1.17.8
-	"March 2, 2019",		//1.17.9
 	"March 2, 2019"			//1.17.9
 };
 
@@ -677,17 +673,12 @@ stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 138:  //1.17.9
+		case 137:  //1.17.9
 		{
 			DrawPanelText(panel, "1) [Core] Cvar to show boss description before selecting the boss (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] Adjusted some hardcoded weapons (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Fixed pickups when FF2 is disabled (Batfoxkid)");
 			DrawPanelText(panel, "4) [Gameplay] Cvar for RPS queue point betting and boss limiter (Batfoxkid/SHADoW)");
-		}
-		case 137:  //1.17.9
-		{
-			DrawPanelText(panel, "5) [Core] Cvar to check for bots before logging boss win/losses (Batfoxkid)");
-			DrawPanelText(panel, "6) [Core] Added natives for setting tripling, knockback, crits, and boss name (Batfoxkid)");
 		}
 		case 136:  //1.17.8
 		{
@@ -1708,14 +1699,6 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	CreateNative("FF2_SetBossCharge", Native_SetBossCharge);
 	CreateNative("FF2_GetBossRageDamage", Native_GetBossRageDamage);
 	CreateNative("FF2_SetBossRageDamage", Native_SetBossRageDamage);
-	CreateNative("FF2_GetBossTriple", Native_GetBossTriple);
-	CreateNative("FF2_SetBossTriple", Native_SetBossTriple);
-	CreateNative("FF2_GetBossKnockback", Native_GetBossKnockback);
-	CreateNative("FF2_SetBossKnockback", Native_SetBossKnockback);
-	CreateNative("FF2_GetBossCrits", Native_GetBossCrits);
-	CreateNative("FF2_SetBossCrits", Native_SetBossCrits);
-	CreateNative("FF2_GetBossName", Native_GetBossName);
-	CreateNative("FF2_SetBossName", Native_SetBossName);
 	CreateNative("FF2_GetClientDamage", Native_GetDamage);
 	CreateNative("FF2_GetRoundState", Native_GetRoundState);
 	CreateNative("FF2_GetSpecialKV", Native_GetSpecialKV);
@@ -1836,8 +1819,8 @@ public OnPluginStart()
 	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
 	cvarDebugMsg=CreateConVar("ff2_debug_msg", "0", "1-Chat to players, 2-Chat to ff2_debuger perms, 4-Console, 8-Custom log", _, true, 0.0, true, 15.0);
-	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "300", "Minimum damage to increase killstreak count", _, true, 0.0);
-	cvarAirStrike=CreateConVar("ff2_dmg_airstrike", "300", "Minimum damage to increase head count for the Air-Strike", _, true, 0.0);
+	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "250", "Minimum damage to increase killstreak count", _, true, 0.0);
+	cvarAirStrike=CreateConVar("ff2_dmg_airstrike", "250", "Minimum damage to increase head count for the Air-Strike", _, true, 0.0);
 	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
 	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
 	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier", _, true, 0.0);
@@ -1874,7 +1857,6 @@ public OnPluginStart()
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
-	cvarBossLogBots=CreateConVar("ff2_boss_log_bots", "0", "-1-Don't log if any bots, 0-ff2_boss_log excludes bots, 1-ff2_boss_log includes bots", _, true, -1.0, true, 1.0);
 	cvarBossDesc=CreateConVar("ff2_boss_desc", "0", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
 	cvarRPSPoints=CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
 	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
@@ -3856,65 +3838,47 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 
 	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
 	{
-		new HumanPlayers=35;
-		if(GetConVarInt(cvarBossLogBots)<1)
-		{
-			new Bots;
-			for(new client; client<=MaxClients; client++)
-			{
-				if(IsValidClient(client) && IsFakeClient(client))
-					Bots++;
-			}
-			if(GetConVarInt(cvarBossLogBots)==0)
-				HumanPlayers=playing-Bots;
-			else if(GetConVarInt(cvarBossLogBots)<0 && Bots>0)
-				HumanPlayers=0;
-		}
-		if(HumanPlayers>=GetConVarInt(cvarBossLog))
-		{
-			// Variables
-			decl String:bossName[64];
-			//char FormatedTime[64];
-			char MapName[64];
-			char Result[64];
-			char PlayerName[64];
-			char Authid[64];
+		// Variables
+		decl String:bossName[64];
+		char FormatedTime[64];
+		char MapName[64];
+		char Result[64];
+		char PlayerName[64];
+		char Authid[64];
 
-			// Set variables
-			//int CurrentTime = GetTime();
-			//FormatTime(FormatedTime, 100, "%y %m %d - %X", CurrentTime);
-			GetCurrentMap(MapName, sizeof(MapName));
-			Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
-			for(new client; client<=MaxClients; client++)
+		// Set variables
+		int CurrentTime = GetTime();
+		FormatTime(FormatedTime, 100, "%X", CurrentTime);
+		GetCurrentMap(MapName, sizeof(MapName));
+		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+		for(new client; client<=MaxClients; client++)
+		{
+			if(IsBoss(client))
 			{
-				if(IsBoss(client))
+				new boss=Boss[client];
+				if(!IsFakeClient(client))
 				{
-					new boss=Boss[client];
-					if(!IsFakeClient(client))
-					{
-						GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
-						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
-					}
-					else
-					{
-						Format(PlayerName, sizeof(PlayerName), "Bot");
-						Format(Authid, sizeof(Authid), "Bot");
-					}
-					KvRewind(BossKV[Special[boss]]);
-					KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
-					BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+					GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+					GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
 				}
+				else
+				{
+					Format(PlayerName, sizeof(PlayerName), "Bot");
+					Format(Authid, sizeof(Authid), "Bot");
+				}
+				KvRewind(BossKV[Special[boss]]);
+				KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
 			}
-
-			// Write
-			Handle bossLog = OpenFile(bLog, "a+");
-
-			//WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
-			WriteFileLine(bossLog, "%s - %s <%s> has %s", MapName, PlayerName, Authid, Result);
-			WriteFileLine(bossLog, "");
-			CloseHandle(bossLog);
-			DebugMsg(0, "Writing Boss Log");
 		}
+
+		// Write
+		Handle bossLog = OpenFile(bLog, "a+");
+
+		WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+		WriteFileLine(bossLog, "");
+		CloseHandle(bossLog);
+		DebugMsg(0, "Writing Boss Log");
 	}
 
 	if(ReloadFF2)
@@ -4880,7 +4844,6 @@ public Action:Command_SetMyBoss(client, args)
 			{
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-				strcopy(cIncoming[client], sizeof(cIncoming[]), boss);
 				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
@@ -4891,7 +4854,6 @@ public Action:Command_SetMyBoss(client, args)
 				IsBossSelected[client]=true;
 				KvGetString(BossKV[config], "name", boss, sizeof(boss));
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-				strcopy(cIncoming[client], sizeof(cIncoming[]), boss);
 				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
@@ -6007,9 +5969,6 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 	else
 		countdownOvertime=GetConVarBool(cvarCountdownOvertime);
 
-	// String settings
-	KvGetString(BossKV[Special[boss]], "name", currentName[client], sizeof(currentName[]), "=Failed name=");
-
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
 	TF2_RemovePlayerDisguise(client);
@@ -7104,13 +7063,6 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 				DebugMsg(0, "Reduced Alpha For Gunslinger Medic");
 			}
 		}
-		#if defined _tf2attributes_included
-		if(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1180 && tf2attributes)	//Gas Passer
-		{
-			TF2Attrib_RemoveByDefIndex(weapon, 2059);
-			TF2Attrib_SetByDefIndex(weapon, 2059, 1500.0);
-		}
-		#endif
 	}
 	else
 	{
@@ -7121,7 +7073,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	shield[client]=IsValidEntity(playerBack) ? playerBack : 0;
 	if(IsValidEntity(FindPlayerBack(client, 642)))  //Cozy Camper
 	{
-		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 2.0 ; 15 ; 0.0 ; 1 ; 0.75");
+		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 1.5 ; 15 ; 0.0 ; 1 ; 0.75");
 		DebugMsg(0, "Given Cozy Camper SMG");
 	}
 
@@ -7351,13 +7303,14 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 	if(IsBoss(client) || GetGameTime()>=HPTime)
 	{
 		new String:text[512];  //Do not decl this
-		decl String:lives[8];
+		decl String:lives[8], String:name[64];
 		for(new target; target<=MaxClients; target++)
 		{
 			if(IsBoss(target))
 			{
 				new boss=Boss[target];
-				//KvRewind(BossKV[Special[boss]]);
+				KvRewind(BossKV[Special[boss]]);
+				KvGetString(BossKV[Special[boss]], "name", name, sizeof(name), "=Failed name=");
 				if(BossLives[boss]>1)
 				{
 					Format(lives, sizeof(lives), "x%i", BossLives[boss]);
@@ -7366,8 +7319,8 @@ public Action:Command_GetHP(client)  //TODO: This can rarely show a very large n
 				{
 					lives[0]='\0';
 				}
-				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", currentName[target], BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", currentName[target], BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				BossHealthLast[boss]=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 			}
 		}
@@ -8453,12 +8406,14 @@ public Action:BossTimer(Handle:timer)
 		if(RedAlivePlayers==1 && !executed2)
 		{
 			new String:message[512];  //Do not decl this
+			decl String:name[64];
 			for(new target; target<=MaxClients; target++)  //TODO: Why is this for loop needed when we're already in a boss for loop
 			{
 				if(IsBoss(target))
 				{
 					new boss2=GetBossIndex(target);
-					//KvRewind(BossKV[Special[boss2]]);
+					KvRewind(BossKV[Special[boss2]]);
+					KvGetString(BossKV[Special[boss2]], "name", name, sizeof(name), "=Failed name=");
 					//Format(bossLives, sizeof(bossLives), ((BossLives[boss2]>1) ? ("x%i", BossLives[boss2]) : ("")));
 					decl String:bossLives[10];
 					if(BossLives[boss2]>1)
@@ -8469,7 +8424,7 @@ public Action:BossTimer(Handle:timer)
 					{
 						Format(bossLives, sizeof(bossLives), "");
 					}
-					Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", currentName[target], BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+					Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 				}
 			}
 
@@ -9266,12 +9221,14 @@ public Action:Timer_DrawGame(Handle:timer)
 	SetHudTextParams(-1.0, 0.17, 1.1, 255, 255, 255, 255);
 
 	new String:message[512];  //Do not decl this
+	decl String:name[64];
 	for(new client; client<=MaxClients; client++)
 	{
 		if(IsBoss(client))
 		{
 			new boss2=GetBossIndex(client);
-			//KvRewind(BossKV[Special[boss2]]);
+			KvRewind(BossKV[Special[boss2]]);
+			KvGetString(BossKV[Special[boss2]], "name", name, sizeof(name), "=Failed name=");
 			decl String:bossLives[10];
 			if(BossLives[boss2]>1)
 			{
@@ -9281,7 +9238,7 @@ public Action:Timer_DrawGame(Handle:timer)
 			{
 				Format(bossLives, sizeof(bossLives), "");
 			}
-			Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", currentName[client], BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+			Format(message, sizeof(message), "%s\n%t", message, "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 		}
 	}
 	for(new client; client<=MaxClients; client++)
@@ -9505,7 +9462,9 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 			}
 			BossLives[boss]=lives;
 
-			//KvRewind(BossKV[Special[boss]]);
+			decl String:bossName[64];
+			KvRewind(BossKV[Special[boss]]);
+			KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(new target=1; target<=MaxClients; target++)
@@ -9514,11 +9473,11 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 				{
 					if(!Companions && GetConVarBool(cvarGameText))
 					{
-						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, currentName[client], BossLives[boss]);
+						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, bossName, BossLives[boss]);
 					}
 					else
 					{
-						PrintCenterText(target, "%t", ability, currentName[client], BossLives[boss]);
+						PrintCenterText(target, "%t", ability, bossName, BossLives[boss]);
 					}
 				}
 			}
@@ -9569,20 +9528,34 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
-	/*if(IsValidClient(attacker))
+	if(IsValidClient(attacker) && client!=attacker)
 	{
 		new weapon=GetPlayerWeaponSlot(attacker, TFWeaponSlot_Primary);
-		if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104)  //Air Strike moved back to OnTakeDamage
+		new i;
+		if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104 && GetConVarFloat(cvarAirStrike)>0)  //Air Strike-moved from OTD
 		{
-			static airStrikeDamage;
-			airStrikeDamage+=damage;
-			if(airStrikeDamage>=200)
+			AirstrikeDamage[attacker]+=damage;
+			while(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && i<10)
 			{
+				i++;
 				SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-				airStrikeDamage-=200;
+				AirstrikeDamage[attacker]-=GetConVarFloat(cvarAirStrike);
+				DebugMsg(0, "Increased Air-Strike Heads");
 			}
 		}
-	}*/
+		if(GetConVarFloat(cvarDmg2KStreak)>0)
+		{
+			i=0;
+			KillstreakDamage[attacker]+=damage;
+			while(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && i<10)
+			{
+				i++;
+				SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
+				KillstreakDamage[attacker]-=GetConVarFloat(cvarDmg2KStreak);
+				DebugMsg(0, "Increased Kill Streak");
+			}
+		}
+	}
 
 	if(BossCharge[boss][0]>rageMax[client])
 	{
@@ -9935,12 +9908,14 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							{
 								if(GetConVarBool(cvarTellName))
 								{
+									new String:spcl[768];
+									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", currentName[client]);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", spcl);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber Player", currentName[client]);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber Player", spcl);
 									else
-										PrintHintText(attacker, "%t", "Caber Player", currentName[client]);
+										PrintHintText(attacker, "%t", "Caber Player", spcl);
 								}
 								else
 								{
@@ -10098,12 +10073,14 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							{
 								if(GetConVarBool(cvarTellName))
 								{
+									new String:spcl[768];
+									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 									if(GetConVarInt(cvarAnnotations)==1)
-										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", currentName[client]);
+										CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", spcl);
 									else if(GetConVarInt(cvarAnnotations)==2)
-										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Market Gardener Player", currentName[client]);
+										ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Market Gardener Player", spcl);
 									else
-										PrintHintText(attacker, "%t", "Market Gardener Player", currentName[client]);
+										PrintHintText(attacker, "%t", "Market Gardener Player", spcl);
 								}
 								else
 								{
@@ -10218,7 +10195,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 							}
 						}
 					}
-					case 1104:  //Air-Strike
+					/*case 1104:  //Air Strike-moved to OnPlayerHurt for now since OTD doesn't display the actual damage :/
 					{
 						if(GetConVarFloat(cvarAirStrike)>0)
 						{
@@ -10230,18 +10207,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 								DebugMsg(0, "Increased Air-Strike Heads");
 							}
 						}
-					}
-				}
-
-				if(GetConVarFloat(cvarDmg2KStreak)>0)
-				{
-					KillstreakDamage[attacker]+=damage;
-					if(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak))
-					{
-						SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
-						KillstreakDamage[attacker]-=GetConVarFloat(cvarDmg2KStreak);
-						DebugMsg(0, "Increased Kill Streak");
-					}
+					}*/
 				}
 
 				if(bIsBackstab)
@@ -10282,12 +10248,14 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						if(GetConVarBool(cvarTellName))
 						{
+							new String:spcl[768];
+							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", currentName[client]);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", spcl);
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab Player", currentName[client]);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab Player", spcl);
 							else
-								PrintHintText(attacker, "%t", "Backstab Player", currentName[client]);
+								PrintHintText(attacker, "%t", "Backstab Player", spcl);
 						}
 						else
 						{
@@ -10410,12 +10378,14 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					{
 						if(GetConVarBool(cvarTellName))
 						{
+							new String:spcl[768];
+							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 							if(GetConVarInt(cvarAnnotations)==1)
-								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", currentName[client]);
+								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
 							else if(GetConVarInt(cvarAnnotations)==2)
-								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Player", currentName[client]);
+								ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Player", spcl);
 							else
-								PrintHintText(attacker, "%t", "Telefrag Player", currentName[client]);
+								PrintHintText(attacker, "%t", "Telefrag Player", spcl);
 						}
 						else
 						{
@@ -10606,13 +10576,15 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
 			if(GetConVarBool(cvarTellName))
-			
+			{
+				new String:spcl[768];
+				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", currentName[attacker]);
+					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", currentName[attacker]);
+					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", spcl);
 				else
-					PrintHintText(victim, "%t", "Goomba Stomped Player", currentName[attacker]);
+					PrintHintText(victim, "%t", "Goomba Stomped Player", spcl);
 			}
 			else
 			{
@@ -10636,12 +10608,14 @@ public Action:OnStomp(attacker, victim, &Float:damageMultiplier, &Float:damageBo
 		{
 			if(GetConVarBool(cvarTellName))
 			{
+				new String:spcl[768];
+				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				if(GetConVarInt(cvarAnnotations)==1)
-					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", currentName[victim]);
+					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", spcl);
 				else if(GetConVarInt(cvarAnnotations)==2)
-					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Player", currentName[victim]);
+					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Player", spcl);
 				else
-					PrintHintText(attacker, "%t", "Goomba Stomp Player", currentName[victim]);
+					PrintHintText(attacker, "%t", "Goomba Stomp Player", spcl);
 			}
 			else
 			{
@@ -12071,7 +12045,7 @@ public FF2PanelH(Handle:menu, MenuAction:action, client, selection)
 			}
 			case 2:
 			{
-				Command_SetMyBoss(client);
+				Command_SetMyBoss(client, 0);
 			}
 			case 3:
 			{
@@ -12096,7 +12070,7 @@ public FF2PanelH(Handle:menu, MenuAction:action, client, selection)
 			default:
 			{
 				return;
-			}
+}
 		}
 	}
 }
@@ -13285,7 +13259,7 @@ stock RemoveShield(client, attacker, Float:position[3])
 	DebugMsg(0, "Removed shield");
 }
 
-public DebugMsg(priority, String:dmessage[], any:...)
+public DebugMsg(priority, String:buffer[], any:...)
 {
 	if(!GetConVarBool(cvarDebug) || GetConVarInt(cvarDebugMsg)<1 || DebugMsgFreeze>8)
 	{
@@ -13321,8 +13295,8 @@ public DebugMsg(priority, String:dmessage[], any:...)
 			Format(prefixcon, sizeof(prefixcon), "");
 	}
 	new String:message[512], String:messagecon[512];
-	Format(message, sizeof(message), "%s%s", prefix, dmessage);
-	Format(messagecon, sizeof(messagecon), "%s%s", prefixcon, dmessage);
+	Format(message, sizeof(message), "%s%s", prefix, buffer);
+	Format(messagecon, sizeof(messagecon), "%s%s", prefixcon, buffer);
 	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
 	ReplaceString(messagecon, sizeof(messagecon), "\n", "");  //Get rid of newlines
 
@@ -13506,46 +13480,6 @@ public Native_GetBossRageDamage(Handle:plugin, numParams)
 public Native_SetBossRageDamage(Handle:plugin, numParams)
 {
 	BossRageDamage[GetNativeCell(1)]=GetNativeCell(2);
-}
-
-public Native_GetBossTriple(Handle:plugin, numParams)
-{
-	return dmgTriple[GetNativeCell(1)];
-}
-
-public Native_SetBossTriple(Handle:plugin, numParams)
-{
-	dmgTriple[GetNativeCell(1)]=GetNativeCell(2);
-}
-
-public Native_GetBossKnockback(Handle:plugin, numParams)
-{
-	return selfKnockback[GetNativeCell(1)];
-}
-
-public Native_SetBossKnockback(Handle:plugin, numParams)
-{
-	selfKnockback[GetNativeCell(1)]=GetNativeCell(2);
-}
-
-public Native_GetBossCrits(Handle:plugin, numParams)
-{
-	return randomCrits[GetNativeCell(1)];
-}
-
-public Native_SetBossCrits(Handle:plugin, numParams)
-{
-	randomCrits[GetNativeCell(1)]=GetNativeCell(2);
-}
-
-public Native_GetBossName(Handle:plugin, numParams)
-{
-	return currentName[GetNativeCell(1)];
-}
-
-public Native_SetBossName(Handle:plugin, numParams)
-{
-	currentName[GetNativeCell(1)]=GetNativeCell(2);
 }
 
 public Native_GetRoundState(Handle:plugin, numParams)
@@ -13940,7 +13874,7 @@ public OnItemSpawned(entity)
 
 public Action:OnPickup(entity, client)  //Thanks friagram!
 {
-	if(IsBoss(client) && Enabled) // Can leak when FF2 is disabled
+	if(IsBoss(client) && Enabled)
 	{
 		decl String:classname[32];
 		GetEntityClassname(entity, classname, sizeof(classname));
