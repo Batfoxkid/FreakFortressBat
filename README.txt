@@ -4,8 +4,8 @@
 ### Installiton and Setup:
 The download does not include boss configs, models, or subplugins. It is recommended that you install the offical Freak Fortress
 1.10.14 (https://github.com/50DKP/FF2-Official/releases/tag/1.10.14) bosses and subpugins before installing this edit. To install
-this edit, download 'Source code' in releases, smx file for already compiled This edit generates some new cvars, so save a backup
-of cfg/sourcemod/FreakFortress2.cfg and delete it, it will generate new cvars. Notes:
+this edit, download 'Source code' in releases. This edit generates some new cvars, so save a backup of
+cfg/sourcemod/FreakFortress2.cfg and delete it, it will generate new cvars. Notes:
 
 -= All non-boss config (eg. characters.cfg, doors.cfg, and maps.cfg) need to go in addons/sourcemod/data/freak_fortress_2/ =-
 -=   This has it's own boss selection and toggle menu, if you wish to disable these see cfg/sourcemod/FreakFortress2.cfg   =-
