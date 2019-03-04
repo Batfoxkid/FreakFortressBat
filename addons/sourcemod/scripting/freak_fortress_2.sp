@@ -144,7 +144,6 @@ new healthcheckused;
 new RedAlivePlayers;
 new BlueAlivePlayers;
 new RoundCount;
-new ClassKill=0;
 new Companions=0;
 new GhostBoss=0;
 new Float:rageMax[MAXPLAYERS+1];
@@ -159,6 +158,7 @@ new uberTarget[MAXPLAYERS+1];
 new shield[MAXPLAYERS+1];
 new detonations[MAXPLAYERS+1];
 new bool:playBGM[MAXPLAYERS+1]=true;
+new Healing[MAXPLAYERS+1];
 
 new Float:shieldHP[MAXPLAYERS+1];
 new String:currentBGM[MAXPLAYERS+1][PLATFORM_MAX_PATH];
@@ -264,6 +264,7 @@ new Handle:cvarBossDesc;
 new Handle:cvarRPSPoints;
 new Handle:cvarRPSLimit;
 new Handle:cvarRPSDivide;
+new Handle:cvarHealingHud;
 
 new Handle:FF2Cookies;
 
@@ -524,6 +525,7 @@ static const String:ff2versiontitles[][]=
 	"1.17.6",
 	"1.17.7",
 	"1.17.8",
+	"1.17.9",
 	"1.17.9"
 };
 
@@ -666,19 +668,28 @@ static const String:ff2versiondates[][]=
 	"February 5, 2019",		//1.17.6
 	"February 10, 2019",		//1.17.7
 	"February 15, 2019",		//1.17.8
-	"March 2, 2019"			//1.17.9
+	"March 6, 2019",		//1.17.9
+	"March 6, 2019"			//1.17.9
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 137:  //1.17.9
+		case 138:  //1.17.9
 		{
 			DrawPanelText(panel, "1) [Core] Cvar to show boss description before selecting the boss (Batfoxkid)");
-			DrawPanelText(panel, "2) [Core] Adjusted some hardcoded weapons (Batfoxkid)");
-			DrawPanelText(panel, "3) [Core] Fixed pickups when FF2 is disabled (Batfoxkid)");
+			DrawPanelText(panel, "2) [Gameplay] Adjusted some hardcoded weapons (Batfoxkid)");
+			DrawPanelText(panel, "3) [Gameplay] Fixed pickups when FF2 is disabled (Batfoxkid)");
 			DrawPanelText(panel, "4) [Gameplay] Cvar for RPS queue point betting and boss limiter (Batfoxkid/SHADoW)");
+			DrawPanelText(panel, "5) [Gameplay] Cvar to show healing done (Vee)");
+		}
+		case 137:  //1.17.9
+		{
+			DrawPanelText(panel, "6) [Gameplay] Candy Cane Scouts gain healing credit (Vee)");
+			DrawPanelText(panel, "7) [Gameplay] Fix shields against critical hits (Batfoxkid)");
+			DrawPanelText(panel, "8) [Gameplay] Made Killstreaker and Airstrike damage more accurate (Batfoxkid)");
+			DrawPanelText(panel, "9) [Gameplay] Cvar for Airstrike damage to gain a head (Batfoxkid)");
 		}
 		case 136:  //1.17.8
 		{
@@ -1861,6 +1872,7 @@ public OnPluginStart()
 	cvarRPSPoints=CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
 	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
 	cvarRPSDivide=CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
+	cvarHealingHud=CreateConVar("ff2_hud_heal", "0", "0-Disable, 1-Show player's healing in damage HUD", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1876,11 +1888,13 @@ public OnPluginStart()
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	HookEvent("player_chargedeployed", OnUberDeployed);
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
+	HookEvent("player_healed", OnPlayerHealed, EventHookMode_Pre);
 	//HookEvent("player_ignited", OnPlayerIgnited, EventHookMode_Pre);
 	HookEvent("object_destroyed", OnObjectDestroyed, EventHookMode_Pre);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Pre);
 	HookEvent("deploy_buff_banner", OnDeployBackup);
 	HookEvent("rps_taunt_event", OnRPS, EventHookMode_Post);
+	HookEvent("player_disconnect", OnPlayerDisconnect, EventHookMode_Pre);
 
 	AddCommandListener(OnCallForMedic, "voicemenu");    //Used to activate rages
 	AddCommandListener(OnSuicide, "explode");           //Used to stop boss from suiciding
@@ -1916,72 +1930,76 @@ public OnPluginStart()
 	HookConVarChange(cvarPointsMin, CvarChange);
 	HookConVarChange(cvarPointsExtra, CvarChange);
 
-	RegConsoleCmd("ff2", FF2Panel);
-	RegConsoleCmd("ff2_hp", Command_GetHPCmd);
-	RegConsoleCmd("ff2hp", Command_GetHPCmd);
-	RegConsoleCmd("ff2_next", QueuePanelCmd);
-	RegConsoleCmd("ff2next", QueuePanelCmd);
-	RegConsoleCmd("ff2_classinfo", Command_HelpPanelClass);
-	RegConsoleCmd("ff2classinfo", Command_HelpPanelClass);
-	RegConsoleCmd("ff2_new", NewPanelCmd);
-	RegConsoleCmd("ff2new", NewPanelCmd);
-	RegConsoleCmd("ff2music", MusicTogglePanelCmd);
-	RegConsoleCmd("ff2_music", MusicTogglePanelCmd);
-	RegConsoleCmd("ff2voice", VoiceTogglePanelCmd);
-	RegConsoleCmd("ff2_voice", VoiceTogglePanelCmd);
-	RegConsoleCmd("ff2_resetpoints", ResetQueuePointsCmd);
-	RegConsoleCmd("ff2resetpoints", ResetQueuePointsCmd);
-	RegConsoleCmd("ff2_boss", Command_SetMyBoss);
-	RegConsoleCmd("ff2boss", Command_SetMyBoss);
-	RegConsoleCmd("setboss", Command_SetMyBoss);
+	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
+	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
+	RegConsoleCmd("ff2hp", Command_GetHPCmd, "View the boss's current HP");
+	RegConsoleCmd("ff2_next", QueuePanelCmd, "View the queue point list");
+	RegConsoleCmd("ff2next", QueuePanelCmd, "View the queue point list");
+	RegConsoleCmd("ff2_classinfo", Command_HelpPanelClass, "View class or boss info");
+	RegConsoleCmd("ff2classinfo", Command_HelpPanelClass, "View class or boss info");
+	RegConsoleCmd("ff2_infotoggle", HelpPanel3Cmd, "Toggle viewing class or boss info");
+	RegConsoleCmd("ff2infotoggle", HelpPanel3Cmd, "Toggle viewing class or boss info");
+	RegConsoleCmd("ff2_new", NewPanelCmd, "View FF2 changelog");
+	RegConsoleCmd("ff2new", NewPanelCmd, "View FF2 changelog");
+	RegConsoleCmd("ff2music", MusicTogglePanelCmd, "View the music menu");
+	RegConsoleCmd("ff2_music", MusicTogglePanelCmd, "View the music menu");
+	RegConsoleCmd("ff2voice", VoiceTogglePanelCmd, "Toggle hearing boss monologues");
+	RegConsoleCmd("ff2_voice", VoiceTogglePanelCmd, "Toggle hearing boss monologues");
+	RegConsoleCmd("ff2_resetpoints", ResetQueuePointsCmd, "Reset your queue points");
+	RegConsoleCmd("ff2resetpoints", ResetQueuePointsCmd, "Reset your queue points");
+	RegConsoleCmd("ff2_boss", Command_SetMyBoss, "View FF2 Boss Preferences");
+	RegConsoleCmd("ff2boss", Command_SetMyBoss, "View FF2 Boss Preferences");
+	RegConsoleCmd("setboss", Command_SetMyBoss, "View FF2 Boss Preferences");
 
-	RegConsoleCmd("hale", FF2Panel);
-	RegConsoleCmd("hale_hp", Command_GetHPCmd);
-	RegConsoleCmd("halehp", Command_GetHPCmd);
-	RegConsoleCmd("hale_next", QueuePanelCmd);
-	RegConsoleCmd("halenext", QueuePanelCmd);
-	RegConsoleCmd("hale_classinfo", Command_HelpPanelClass);
-	RegConsoleCmd("haleclassinfo", Command_HelpPanelClass);
-	RegConsoleCmd("hale_new", NewPanelCmd);
-	RegConsoleCmd("halenew", NewPanelCmd);
-	RegConsoleCmd("halemusic", MusicTogglePanelCmd);
-	RegConsoleCmd("hale_music", MusicTogglePanelCmd);
-	RegConsoleCmd("halevoice", VoiceTogglePanelCmd);
-	RegConsoleCmd("hale_voice", VoiceTogglePanelCmd);
-	RegConsoleCmd("hale_resetpoints", ResetQueuePointsCmd);
-	RegConsoleCmd("haleresetpoints", ResetQueuePointsCmd);
-	RegConsoleCmd("hale_boss", Command_SetMyBoss);
-	RegConsoleCmd("haleboss", Command_SetMyBoss);
+	RegConsoleCmd("hale", FF2Panel, "Menu of FF2 commands");
+	RegConsoleCmd("hale_hp", Command_GetHPCmd, "View the boss's current HP");
+	RegConsoleCmd("halehp", Command_GetHPCmd, "View the boss's current HP");
+	RegConsoleCmd("hale_next", QueuePanelCmd, "View the queue point list");
+	RegConsoleCmd("halenext", QueuePanelCmd, "View the queue point list");
+	RegConsoleCmd("hale_classinfo", Command_HelpPanelClass, "View class or boss info");
+	RegConsoleCmd("haleclassinfo", Command_HelpPanelClass, "View class or boss info");
+	RegConsoleCmd("hale_infotoggle", HelpPanel3Cmd, "Toggle viewing class or boss info");
+	RegConsoleCmd("haleinfotoggle", HelpPanel3Cmd, "Toggle viewing class or boss info");
+	RegConsoleCmd("hale_new", NewPanelCmd, "View FF2 changelog");
+	RegConsoleCmd("halenew", NewPanelCmd, "View FF2 changelog");
+	RegConsoleCmd("halemusic", MusicTogglePanelCmd, "View the music menu");
+	RegConsoleCmd("hale_music", MusicTogglePanelCmd, "View the music menu");
+	RegConsoleCmd("halevoice", VoiceTogglePanelCmd, "Toggle hearing boss monologues");
+	RegConsoleCmd("hale_voice", VoiceTogglePanelCmd, "Toggle hearing boss monologues");
+	RegConsoleCmd("hale_resetpoints", ResetQueuePointsCmd, "Reset your queue points");
+	RegConsoleCmd("haleresetpoints", ResetQueuePointsCmd, "Reset your queue points");
+	RegConsoleCmd("hale_boss", Command_SetMyBoss, "View FF2 Boss Preferences");
+	RegConsoleCmd("haleboss", Command_SetMyBoss, "View FF2 Boss Preferences");
 
 	BossCookie = RegClientCookie("ff2_boss_toggle", "Players FF2 Boss Toggle", CookieAccess_Public);	
 	CompanionCookie = RegClientCookie("ff2_companion_toggle", "Players FF2 Companion Boss Toggle", CookieAccess_Public);	
 	
-	RegConsoleCmd("ff2toggle", BossMenu);
-	RegConsoleCmd("ff2_toggle", BossMenu);
-	RegConsoleCmd("ff2companion", CompanionMenu);
-	RegConsoleCmd("ff2_companion", CompanionMenu);
-	RegConsoleCmd("haletoggle", BossMenu);
-	RegConsoleCmd("hale_toggle", BossMenu);
-	RegConsoleCmd("halecompanion", CompanionMenu);
-	RegConsoleCmd("hale_companion", CompanionMenu);
+	RegConsoleCmd("ff2toggle", BossMenu, "Toggle being a FF2 boss");
+	RegConsoleCmd("ff2_toggle", BossMenu, "Toggle being a FF2 boss");
+	RegConsoleCmd("ff2companion", CompanionMenu, "Toggle being a FF2 companion");
+	RegConsoleCmd("ff2_companion", CompanionMenu, "Toggle being a FF2 companion");
+	RegConsoleCmd("haletoggle", BossMenu, "Toggle being a FF2 boss");
+	RegConsoleCmd("hale_toggle", BossMenu, "Toggle being a FF2 boss");
+	RegConsoleCmd("halecompanion", CompanionMenu, "Toggle being a FF2 companion");
+	RegConsoleCmd("hale_companion", CompanionMenu, "Toggle being a FF2 companion");
 	for(new i = 0; i < MAXPLAYERS; i++)
 	{
 		ClientCookie[i] = TOGGLE_UNDEF;
 		ClientCookie2[i] = TOGGLE_UNDEF;
 	}
 
-	RegConsoleCmd("ff2_skipsong", Command_SkipSong);
-	RegConsoleCmd("ff2skipsong", Command_SkipSong);
-	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong);
-	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong);
-	RegConsoleCmd("ff2_tracklist", Command_Tracklist);
-	RegConsoleCmd("ff2tracklist", Command_Tracklist);
-	RegConsoleCmd("hale_skipsong", Command_SkipSong);
-	RegConsoleCmd("haleskipsong", Command_SkipSong);
-	RegConsoleCmd("hale_shufflesong", Command_ShuffleSong);
-	RegConsoleCmd("haleshufflesong", Command_ShuffleSong);
-	RegConsoleCmd("hale_tracklist", Command_Tracklist);
-	RegConsoleCmd("haletracklist", Command_Tracklist);
+	RegConsoleCmd("ff2_skipsong", Command_SkipSong, "Skip the current song");
+	RegConsoleCmd("ff2skipsong", Command_SkipSong, "Skip the current song");
+	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong, "Play a random song");
+	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong, "Play a random song");
+	RegConsoleCmd("ff2_tracklist", Command_Tracklist, "View list of songs");
+	RegConsoleCmd("ff2tracklist", Command_Tracklist, "View list of songs");
+	RegConsoleCmd("hale_skipsong", Command_SkipSong, "Skip the current song");
+	RegConsoleCmd("haleskipsong", Command_SkipSong, "Skip the current song");
+	RegConsoleCmd("hale_shufflesong", Command_ShuffleSong, "Play a random song");
+	RegConsoleCmd("haleshufflesong", Command_ShuffleSong, "Play a random song");
+	RegConsoleCmd("hale_tracklist", Command_Tracklist, "View list of songs");
+	RegConsoleCmd("haletracklist", Command_Tracklist, "View list of songs");
 
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
@@ -3483,23 +3501,15 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 	for(new client=1; client<=MaxClients; client++)
 	{
 		Damage[client]=0;
+		Healing[client]=0;
 		uberTarget[client]=-1;
 		emitRageSound[client]=true;
+		AirstrikeDamage[client]=0.0;
+		KillstreakDamage[client]=0.0;
 		if(IsValidClient(client) && GetClientTeam(client)>_:TFTeam_Spectator)
 		{
 			playing++;
 		}
-	}
-
-	if(playing>=GetConVarInt(cvarDuoMin))  // Check if theres enough players for companions
-	{
-		DuoMin=true;
-		DebugMsg(0, "Duos Enabled");
-	}
-	else
-	{
-		DuoMin=false;
-		DebugMsg(0, "Duos Disabled");
 	}
 
 	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
@@ -3836,6 +3846,11 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	if(HasSwitched)
 		HasSwitched=false;
 
+	if(!Enabled)
+	{
+		return Plugin_Continue;
+	}
+
 	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
 	{
 		// Variables
@@ -3909,11 +3924,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		FindCharacters();
 		ReloadConfigs=false;
 		DebugMsg(1, "Reloaded Configs");
-	}
-
-	if(!Enabled)
-	{
-		return Plugin_Continue;
 	}
 
 	executed=false;
@@ -4102,8 +4112,39 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 		}
 	}
 
+	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
+	{
+		DuoMin=true;
+		DebugMsg(0, "Duos Enabled");
+	}
+	else if(playing<GetConVarInt(cvarDuoMin) && DuoMin)
+	{
+		DuoMin=false;
+		DebugMsg(0, "Duos Disabled");
+	}
+
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
+	return Plugin_Continue;
+}
+
+public Action:OnPlayerDisconnect(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	if(!Enabled)
+	{
+		return Plugin_Continue;
+	}
+
+	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
+	{
+		DuoMin=true;
+		DebugMsg(0, "Duos Enabled");
+	}
+	else if(playing<GetConVarInt(cvarDuoMin) && DuoMin)
+	{
+		DuoMin=false;
+		DebugMsg(0, "Duos Disabled");
+	}
 	return Plugin_Continue;
 }
 
@@ -6686,7 +6727,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 1180:  //Gas Passer
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "874 ; 0.6 ; 875 ; 1");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "874 ; 0.6 ; 875 ; 1 ; 2059 ; 3000");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6703,25 +6744,6 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 				}
 			}
 		}
-		if(TF2_GetPlayerClass(client)==TFClass_DemoMan && !StrContains(classname, "tf_weapon_grenadelauncher", false))
-		{
-			new Handle:itemOverride;
-			if(iItemDefinitionIndex==996)  //Loose Cannon
-			{
-				itemOverride=PrepareItemHandle(item, _, _, "138 ; 1.35");
-			}
-			else
-			{
-				itemOverride=PrepareItemHandle(item, _, _, "2 ; 1.35");
-			}
-
-			if(itemOverride!=INVALID_HANDLE)
-			{
-				item=itemOverride;
-				return Plugin_Changed;
-			}
-		}
-
 		if(TF2_GetPlayerClass(client)==TFClass_Medic && !StrContains(classname, "tf_weapon_syringegun_medic"))  //Syringe guns
 		{
 			new Handle:itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.05");
@@ -7960,15 +7982,28 @@ public Action:ClientTimer(Handle:timer)
 				new observer=GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 				if(IsValidClient(observer) && !IsBoss(observer) && observer!=client)
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Spectate", Damage[client], observer, Damage[observer]);
+					if(Healing[observer]>0 && Healing[client]>0 && GetConVarBool(cvarHealingHud))
+						FF2_ShowSyncHudText(client, rageHUD, "%t %t | %t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					else if(Healing[client]>0 && GetConVarBool(cvarHealingHud))
+						FF2_ShowSyncHudText(client, rageHUD, "%t %t | %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer]);
+					else if(Healing[observer]>0 && GetConVarBool(cvarHealingHud))
+						FF2_ShowSyncHudText(client, rageHUD, "%t | %t %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					else
+						FF2_ShowSyncHudText(client, rageHUD, "%t | %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer]);
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
+					if(Healing[client]>0 && GetConVarBool(cvarHealingHud))
+						FF2_ShowSyncHudText(client, rageHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+					else
+						FF2_ShowSyncHudText(client, rageHUD, "%t", "Your Damage Dealt", Damage[client]);
 				}
 				continue;
 			}
-			FF2_ShowSyncHudText(client, rageHUD, "%t", "Damage Self", Damage[client]);
+			if(Healing[client]>0 && GetConVarBool(cvarHealingHud))
+				FF2_ShowSyncHudText(client, rageHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+			else
+				FF2_ShowSyncHudText(client, rageHUD, "%t", "Your Damage Dealt", Damage[client]);
 
 			new TFClassType:class=TF2_GetPlayerClass(client);
 			new weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -8926,36 +8961,34 @@ public Action:OnPlayerDeath(Handle:event, const String:eventName[], bool:dontBro
 		if(IsBoss(attacker))
 		{
 			new boss=GetBossIndex(attacker);
+			new bool:firstBloodSound=true;
 			if(firstBlood)  //TF_DEATHFLAG_FIRSTBLOOD is broken
 			{
 				if(RandomSound("sound_first_blood", sound, sizeof(sound), boss))
 				{
 					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+					firstBloodSound=false;
 				}
 				firstBlood=false;
 			}
 
-			if(RedAlivePlayers!=1 && KSpreeCount[boss]!=3)  //Don't conflict with end-of-round sounds or killing spree
+			if(RedAlivePlayers!=1 && KSpreeCount[boss]<2 && firstBloodSound)  //Don't conflict with end-of-round sounds, killing spree, or first blood
 			{
-				ClassKill=GetRandomInt(1, 2);
-				if((ClassKill == 1) && RandomSound("sound_hit", sound, sizeof(sound), boss))
+				new ClassKill=GetRandomInt(0, 1);
+				new String:classnames[][]={"", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
+				decl String:class[32];
+				Format(class, sizeof(class), "sound_kill_%s", classnames[TF2_GetPlayerClass(client)]);
+				if(RandomSound(class, sound, sizeof(sound), boss) && ClassKill)
 				{
 					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 				}
-				else if(ClassKill == 2)
+				else if(RandomSound("sound_hit", sound, sizeof(sound), boss))
 				{
-					new String:classnames[][]={"", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
-					decl String:class[32];
-					Format(class, sizeof(class), "sound_kill_%s", classnames[TF2_GetPlayerClass(client)]);
-					if(RandomSound(class, sound, sizeof(sound), boss))
-					{
-						EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
-						EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
-					}
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 				}
-				ClassKill=0;
 			}
 
 			if(GetGameTime()<=KSpreeTimer[boss])
@@ -9528,26 +9561,30 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 		}
 	}
 
-	if(IsValidClient(attacker) && client!=attacker)
+	if(IsValidClient(attacker) && IsValidClient(client) && client!=attacker && damage>0)
 	{
-		new weapon=GetPlayerWeaponSlot(attacker, TFWeaponSlot_Primary);
 		new i;
-		if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104 && GetConVarFloat(cvarAirStrike)>0)  //Air Strike-moved from OTD
+		new Float:position[3];
+		GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
+		if(GetClientTeam(attacker)==OtherTeam && GetConVarFloat(cvarAirStrike)>0)  //Air Strike-moved from OTD
 		{
-			AirstrikeDamage[attacker]+=damage;
-			while(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && i<10)
+			new weapon=GetPlayerWeaponSlot(attacker, TFWeaponSlot_Primary);
+			if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104)
 			{
-				i++;
-				SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-				AirstrikeDamage[attacker]-=GetConVarFloat(cvarAirStrike);
-				DebugMsg(0, "Increased Air-Strike Heads");
+				AirstrikeDamage[attacker]+=damage;
+				while(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && i<26)
+				{
+					i++;
+					SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
+					AirstrikeDamage[attacker]-=GetConVarFloat(cvarAirStrike);
+					DebugMsg(0, "Increased Air-Strike Heads");
+				}
 			}
 		}
-		if(GetConVarFloat(cvarDmg2KStreak)>0)
+		if(GetClientTeam(attacker)==OtherTeam && GetConVarFloat(cvarDmg2KStreak)>0)
 		{
-			i=0;
 			KillstreakDamage[attacker]+=damage;
-			while(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && i<10)
+			while(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && i<26)
 			{
 				i++;
 				SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
@@ -9573,6 +9610,25 @@ stock bool:RemoveCond(iClient, TFCond:iCond)
 		return true;
 	}
 	return false;
+}
+
+public Action:OnPlayerHealed(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	if(!Enabled || CheckRoundState()!=1)
+	{
+		return Plugin_Continue;
+	}
+
+	new client=GetClientOfUserId(GetEventInt(event, "patient"));
+	new healer=GetClientOfUserId(GetEventInt(event, "healer"));
+	new heals=GetEventInt(event, "amount");
+	if(client==healer)
+	{
+		return Plugin_Continue;
+	}
+
+	Healing[healer]+=heals;
+	return Plugin_Continue;
 }
 
 public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
@@ -9647,16 +9703,14 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	{
 		DebugMsg(0, "Reducted Shield Damage");
 
-		damage*=shDmgReduction[client]; // damage resistance on shield
+		if(damagetype & DMG_CRIT)
+			damage*=damage*3.0;
+		else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed) || TF2_IsPlayerInCondition(attacker, TFCond_NoHealingDamageBuff))
+			damage*=damage*1.35;
 
-		shieldHP[client]-=damage;	// take a small portion of shield health away	
+		damage*=shDmgReduction[client];	// damage resistance on shield
 
-		new health=GetClientHealth(client);
-		if(shieldHP[client]<=0.0 || health<=damage)
-		{
-			RemoveShield(client, attacker, position);
-			return Plugin_Stop;
-		}
+		shieldHP[client]-=damage;	// take a small portion of shield health away
 
 		if(shDmgReduction[client]>=1.0)
 		{
@@ -9665,6 +9719,12 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 		else
 		{
 			shDmgReduction[client]+=0.03;
+		}
+
+		new health=GetClientHealth(client);
+		if(shieldHP[client]<=0.0 || health<=damage)
+		{
+			RemoveShield(client, attacker, position);
 		}
 
 		new String:ric[PLATFORM_MAX_PATH];
@@ -9676,18 +9736,15 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 	}
 	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==2)
 	{
+		if(damagetype & DMG_CRIT)
+			damage=damage*3.0;
+		else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed) || TF2_IsPlayerInCondition(attacker, TFCond_NoHealingDamageBuff))
+			damage=damage*1.35;
+
 		new health=GetClientHealth(client);
 		if(health<=damage)
 		{
 			RemoveShield(client, attacker, position);
-			return Plugin_Handled;
-		}
-		else
-		{	// Scale Vector on the DefenseBuffed doesn't seem to work
-			damageForce[0]*=0.25;
-			damageForce[1]*=0.25;
-			damageForce[2]*=0.25;
-			return Plugin_Changed;
 		}
 	}
 	if(IsBoss(attacker))
@@ -9976,7 +10033,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 317:  //Candycane
 					{
-						SpawnSmallHealthPackAt(client, GetClientTeam(attacker));
+						SpawnSmallHealthPackAt(client, GetClientTeam(attacker), attacker);
 					}
 					case 327:  //Claidheamh Mòr
 					{
@@ -10716,7 +10773,7 @@ stock GetClientCloakIndex(client)
 	return GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 }
 
-stock SpawnSmallHealthPackAt(client, team=0)
+stock SpawnSmallHealthPackAt(client, team=0, attacker)
 {
 	if(!IsValidClient(client, false) || !IsPlayerAlive(client))
 	{
@@ -10735,6 +10792,7 @@ stock SpawnSmallHealthPackAt(client, team=0)
 		new Float:velocity[3];//={float(GetRandomInt(-10, 10)), float(GetRandomInt(-10, 10)), 50.0};  //Q_Q
 		velocity[0]=float(GetRandomInt(-10, 10)), velocity[1]=float(GetRandomInt(-10, 10)), velocity[2]=50.0;  //I did this because setting it on the creation of the vel variable was creating a compiler error for me.
 		TeleportEntity(healthpack, position, NULL_VECTOR, velocity);
+		SetEntPropEnt(healthpack, Prop_Send, "m_hOwnerEntity", attacker);
 		DebugMsg(0, "Spawned health kit");
 	}
 }
@@ -12065,12 +12123,16 @@ public FF2PanelH(Handle:menu, MenuAction:action, client, selection)
 			}
 			case 7:
 			{
+				VoiceTogglePanel(client);
+			}
+			case 8:
+			{
 				HelpPanel3(client);
 			}
 			default:
 			{
 				return;
-}
+			}
 		}
 	}
 }
@@ -12194,7 +12256,15 @@ public Action:HelpPanel3Cmd(client, args)
 		return Plugin_Continue;
 	}
 
-	HelpPanel3(client);
+	if(!GetConVarBool(cvarAdvancedMusic))
+	{
+		HelpPanel3(client);
+	}
+	else
+	{
+		ToggleClassInfo(client);
+	}
+
 	return Plugin_Handled;
 }
 
@@ -12213,7 +12283,6 @@ public Action:HelpPanel3(client)
 	CloseHandle(panel);
 	return Plugin_Handled;
 }
-
 
 public ClassInfoTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 {
@@ -12237,6 +12306,24 @@ public ClassInfoTogglePanelH(Handle:menu, MenuAction:action, client, selection)
 			CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_classinfo", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		}
 	}
+}
+
+ToggleClassInfo(client)
+{
+	decl String:cookies[24];
+	decl String:cookieValues[8][5];
+	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
+	ExplodeString(cookies, " ", cookieValues, 8, 5);
+	if(StringToInt(cookieValues[3])==1)
+	{
+		Format(cookies, sizeof(cookies), "%s %s %s 0 %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
+	}
+	else
+	{
+		Format(cookies, sizeof(cookies), "%s %s %s 1 %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
+	}
+	SetClientCookie(client, FF2Cookies, cookies);
+	CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_classinfo", StringToInt(cookieValues[3])==0 ? "off" : "on");	// TODO: Make this more multi-language friendly
 }
 
 public Action:Command_HelpPanelClass(client, args)
@@ -12776,7 +12863,7 @@ public Action:VoiceTogglePanelCmd(client, args)
 	}
 	else
 	{
-		ToggleVoice(client, CheckSoundException(client, SOUNDEXCEPT_VOICE) ? false : true);               
+		ToggleVoice(client, CheckSoundException(client, SOUNDEXCEPT_VOICE) ? false : true);
 		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_voice", !CheckSoundException(client, SOUNDEXCEPT_VOICE) ? "off" : "on");	// TODO: Make this more multi-language friendly
 	}
 	return Plugin_Handled;
@@ -13251,12 +13338,23 @@ stock RemoveShield(client, attacker, Float:position[3])
 		EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 		EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 	}
+	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
 	if(GetConVarInt(cvarShieldType)==3)
 		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 1.0);
-	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
 	shieldHP[client]=0.0;
 	shield[client]=0;
+	CreateTimer(1.0, Timer_RemoveStun, client, TIMER_FLAG_NO_MAPCHANGE);
 	DebugMsg(0, "Removed shield");
+}
+
+public Action:Timer_RemoveStun(Handle:timer, client)
+{
+	if(RemoveCond(client, TFCond_Dazed))
+	{
+		DebugMsg(0, "Removed stun");
+		return Plugin_Continue;
+	}
+	return Plugin_Continue;
 }
 
 public DebugMsg(priority, String:buffer[], any:...)
