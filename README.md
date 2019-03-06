@@ -17,11 +17,11 @@ Visit the Issues tab (https://github.com/Batfoxkid/FreakFortressBat/issues) to r
 SHADoW NiNE TR3S for his fork public release (and I use most of the code from, rip)                                                
 https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
 
-Bacon Plague and M76030 for their boss self-knockback code                                                    
+Bacon Plague and M76030 for their boss self-knockback code                                                                         
 https://steamcommunity.com/profiles/76561198049884052/ | https://steamcommunity.com/profiles/76561198046651252
 
-Deathreus for the current boss in server name                                                                 
+Deathreus for the current boss in server name                                                                                      
 https://github.com/Deathreus | https://github.com/Deathreus/FF2-Official
 
-And the FF2 team (that I would like to see work on the official more)                                          
+And the FF2 team                                                                                                                   
 https://github.com/50DKP/FF2-Official
