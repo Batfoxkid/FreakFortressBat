@@ -9109,8 +9109,8 @@ public Action:OnObjectDeflected(Handle:event, const String:name[], bool:dontBroa
 		return Plugin_Continue;
 	}
 
-	new boss=GetBossIndex(GetClientOfUserId(GetEventInt(event, "ownerid")));
-	new client=Boss[boss];
+	new client=GetClientOfUserId(GetEventInt(event, "ownerid"));
+	new boss=GetBossIndex(client);
 	if(boss!=-1 && BossCharge[boss][0]<rageMax[client])
 	{
 		BossCharge[boss][0]+=rageMax[client]*7.0/rageMin[client];  //TODO: Allow this to be customizable
