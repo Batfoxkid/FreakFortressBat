@@ -1,0 +1,40 @@
+"Updater"
+{
+	"Information"
+	{
+		"Version"
+		{
+			"Latest"	"1.17.9"
+			"Previous"	"1.17.8"
+		}
+
+		"Notes"			"Cvar to show boss description before selecting the boss"
+		"Notes"			"Adjusted some hardcoded weapons"
+		"Notes"			"Fixed pickups when FF2 is disabled"
+		"Notes"			"Cvar for RPS queue point betting and boss limiter"
+		"Notes"			"Cvar to show healing done"
+		"Notes"			"Candy Cane Scouts gain healing credit"
+		"Notes"			"Fix shields against critical hits"
+		"Notes"			"Made Killstreaker and Airstrike damage more accurate"
+		"Notes"			"Cvar for Airstrike damage to gain a head"
+	}
+
+	"Files"
+	{
+		"Patch"
+		{
+			"Plugin"	"Path_SM/plugins/freak_fortress_2.smx"
+			"Source"	"Path_SM/scripting/freak_fortress_2.sp"
+			"Plugin"	"Path_SM/translations/freak_fortress_2.phrases.txt"
+			"Plugin"	"Path_SM/translations/freak_fortress_2_prefs.phrases.txt"
+		}
+
+		"Plugin"		"Path_SM/plugins/freak_fortress_2.smx"
+		"Source"		"Path_SM/scripting/freak_fortress_2.sp"
+		"Source"		"Path_SM/scripting/include/freak_fortress_2.inc"
+		"Source"		"Path_SM/scripting/include/freak_fortress_2_subplugin.inc"
+		"Source"		"Path_SM/scripting/include/freak_fortress_2_vsh_feedback.inc"
+		"Plugin"		"Path_SM/translations/freak_fortress_2.phrases.txt"
+		"Plugin"		"Path_SM/translations/freak_fortress_2_prefs.phrases.txt"
+	}
+}
