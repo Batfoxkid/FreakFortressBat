@@ -63,6 +63,19 @@
 	{
 		"en"	"Change Difficulty"
 	}
+	"to0_confirm"
+	{
+		"#format" "{1:s}"
+		"en"	"Select {1}"
+	}
+	"to0_cancel"
+	{
+		"en"	"Cancel"
+	}
+	"to0_nodesc"
+	{
+		"en"	"No Boss Description"
+	}
 	"to0_comfirmrandom"
 	{
 		"en"	"{olive}[FF2]{default} You will become a random boss. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to select a boss."
