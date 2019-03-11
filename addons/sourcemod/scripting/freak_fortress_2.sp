@@ -671,7 +671,7 @@ static const String:ff2versiondates[][]=
 	"February 10, 2019",		//1.17.7
 	"February 15, 2019",		//1.17.8
 	"March 8, 2019",		//1.17.9
-	"March 8, 2019"			//1.17.9
+	"March 8, 2019",		//1.17.9
 	"Unreleased"			//1.17.10
 };
 
