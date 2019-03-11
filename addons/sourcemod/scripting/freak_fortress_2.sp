@@ -4932,7 +4932,7 @@ public Action:Command_SetMyBoss(client, args)
 
 		AddMenuItem(dMenu, boss, boss);
 	}
-	if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(client, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+	if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(client, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
 	{
 		//#if !defined _freak_fortress_2_kspree_included
 		Format(boss, sizeof(boss), "Killstreaker");	// Temp, will set up proper translations
