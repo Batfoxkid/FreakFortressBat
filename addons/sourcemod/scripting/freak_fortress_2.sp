@@ -4969,7 +4969,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 		commandcount++;			// "Very Efficient"
 	if(GetConVarBool(cvarDuoBoss))
 		commandcount++;
-	if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+	if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
 		commandcount++;
 
 	if(commandcount<1)
@@ -5034,7 +5034,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						if(GetConVarBool(cvarToggleBoss))
 							BossMenu(param1, 0);
-						else if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+						else if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
 							FakeClientCommand(param1, "ff2_kspree");
 						else
 							CompanionMenu(param1, 0);
@@ -5081,14 +5081,14 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						if(GetConVarBool(cvarToggleBoss))
 							BossMenu(param1, 0);
-						else if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+						else if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
 							FakeClientCommand(param1, "ff2_kspree");
 					}
 					case 2:
 					{
 						if(GetConVarBool(cvarDuoBoss))
 							CompanionMenu(param1, 0);
-						else if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+						else if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
 							FakeClientCommand(param1, "ff2_kspree");
 					}
 					default:
