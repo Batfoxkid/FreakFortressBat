@@ -64,6 +64,7 @@ last time or to encourage others to do the same.
 #tryinclude <rtd2>
 #tryinclude <tf2attributes>
 #tryinclude <updater>
+#tryinclude <freak_fortress_2_kspree>	// TODO: Make an include for checking client's current prefs
 #define REQUIRE_PLUGIN
 
 /*
@@ -4914,26 +4915,28 @@ public Action:Command_SetMyBoss(client, args)
 	if(GetConVarBool(cvarToggleBoss))
 	{
 		if(ClientCookie[client] == TOGGLE_ON || ClientCookie[client] == TOGGLE_UNDEF)
-		{
 			Format(boss, sizeof(boss), "%T", "to0_disablepts", client);
-		}
+
 		else
-		{
 			Format(boss, sizeof(boss), "%T", "to0_enablepts", client);
-		}
+
 		AddMenuItem(dMenu, boss, boss);
 	}
-	
 	if(GetConVarBool(cvarDuoBoss))
 	{
 		if(ClientCookie2[client] == TOGGLE_ON || ClientCookie2[client] == TOGGLE_UNDEF)
-		{
 			Format(boss, sizeof(boss), "%T", "to0_disableduo", client);
-		}
+
 		else
-		{
 			Format(boss, sizeof(boss), "%T", "to0_enableduo", client);
-		}
+
+		AddMenuItem(dMenu, boss, boss);
+	}
+	if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(client, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+	{
+		//#if !defined _freak_fortress_2_kspree_included
+		Format(boss, sizeof(boss), "Killstreaker");	// Temp, will set up proper translations
+		//#endif
 		AddMenuItem(dMenu, boss, boss);
 	}
 	
@@ -4961,7 +4964,15 @@ public Action:Command_SetMyBoss(client, args)
 
 public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 {
-	if (!GetConVarBool(cvarToggleBoss) && !GetConVarBool(cvarDuoBoss))	// ''Very Efficient''
+	new commandcount;
+	if(GetConVarBool(cvarToggleBoss))
+		commandcount++;			// "Very Efficient"
+	if(GetConVarBool(cvarDuoBoss))
+		commandcount++;
+	if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+		commandcount++;
+
+	if(commandcount<1)
 	{
 		switch(action)
 		{
@@ -4999,7 +5010,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 			}
 		}
 	}
-	else if (!GetConVarBool(cvarToggleBoss) || !GetConVarBool(cvarDuoBoss))
+	else if(commandcount<2)
 	{
 		switch(action)
 		{
@@ -5023,8 +5034,62 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					{
 						if(GetConVarBool(cvarToggleBoss))
 							BossMenu(param1, 0);
+						else if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+							FakeClientCommand(param1, "ff2_kspree");
 						else
 							CompanionMenu(param1, 0);
+					}
+					default:
+					{
+						if(!GetConVarBool(cvarBossDesc))
+						{
+							IsBossSelected[param1]=true;
+							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						}
+						else
+						{
+							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+							ConfirmBoss(param1);
+						}
+					}
+				}
+			}
+		}
+	}
+	else if(commandcount<3)
+	{
+		switch(action)
+		{
+			case MenuAction_End:
+			{
+				CloseHandle(menu);
+			}
+			
+			case MenuAction_Select:
+			{
+				switch(param2)
+				{
+					case 0: 
+					{
+						IsBossSelected[param1]=true;
+						xIncoming[param1] = "";
+						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+						return;
+					}
+					case 1:
+					{
+						if(GetConVarBool(cvarToggleBoss))
+							BossMenu(param1, 0);
+						else if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+							FakeClientCommand(param1, "ff2_kspree");
+					}
+					case 2:
+					{
+						if(GetConVarBool(cvarDuoBoss))
+							CompanionMenu(param1, 0);
+						else if(GetConVarBool(FindConVar("ff2_kspree_merge") && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+							FakeClientCommand(param1, "ff2_kspree");
 					}
 					default:
 					{
@@ -5066,6 +5131,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					}
 					case 1: BossMenu(param1, 0);
 					case 2: CompanionMenu(param1, 0);
+					case 3: FakeClientCommand(param1, "ff2_kspree");
 					default:
 					{
 						if(!GetConVarBool(cvarBossDesc))
