@@ -73,9 +73,9 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "17"
-#define FORK_STABLE_REVISION "9"
+#define FORK_STABLE_REVISION "10"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Dev"
+#define FORK_DEV_REVISION "Dev"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -527,7 +527,8 @@ static const String:ff2versiontitles[][]=
 	"1.17.7",
 	"1.17.8",
 	"1.17.9",
-	"1.17.9"
+	"1.17.9",
+	"1.17.10"
 };
 
 static const String:ff2versiondates[][]=
@@ -671,12 +672,19 @@ static const String:ff2versiondates[][]=
 	"February 15, 2019",		//1.17.8
 	"March 8, 2019",		//1.17.9
 	"March 8, 2019"			//1.17.9
+	"Unreleased"			//1.17.10
 };
 
 stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 139:  //1.17.10
+		{
+			DrawPanelText(panel, "1) [Core] Addjusted cvar to not use weapons.cfg (Batfoxkid)");
+			DrawPanelText(panel, "2) [Core] weapons.cfg is applied first than hardcoded, when enabled (Batfoxkid)");
+			DrawPanelText(panel, "3) [Core] Added Russian preference translations (MAGNAT2645)");
+		}
 		case 138:  //1.17.9
 		{
 			DrawPanelText(panel, "1) [Core] Cvar to show boss description before selecting the boss (Batfoxkid)");
@@ -1843,7 +1851,7 @@ public OnPluginStart()
 	cvarStrangeWep=CreateConVar("ff2_strangewep", "1", "0-Disable Boss Weapon Stranges, 1-Enable Boss Weapon Stranges", _, true, 0.0, true, 1.0);
 	cvarQualityWep=CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
 	cvarTripleWep=CreateConVar("ff2_triplewep", "1", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
-	cvarHardcodeWep=CreateConVar("ff2_hardcodewep", "0", "0-Only Use Config, 1-Use Alongside Hardcoded", _, true, 0.0, true, 1.0);
+	cvarHardcodeWep=CreateConVar("ff2_hardcodewep", "1", "0-Only Use Config, 1-Use Alongside Hardcoded, 2-Only Use Hardcoded", _, true, 0.0, true, 2.0);
 	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
 	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
 	cvarNameChange=CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
@@ -1869,7 +1877,7 @@ public OnPluginStart()
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
-	cvarBossDesc=CreateConVar("ff2_boss_desc", "0", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
+	cvarBossDesc=CreateConVar("ff2_boss_desc", "1", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
 	cvarRPSPoints=CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
 	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
 	cvarRPSDivide=CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
@@ -6201,7 +6209,84 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		return Plugin_Continue;
 	}
 
-	if(GetConVarBool(cvarHardcodeWep))
+	if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>1)
+	{
+		if(GetConVarInt(cvarHardcodeWep)<2)
+			LogError("[FF2] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
+	}
+	else
+	{	
+		char weapon[64], wepIndexStr[768], attributes[768];
+		for(int i=1; ; i++)
+		{
+			KvRewind(kvWeaponMods);
+			Format(weapon, 10, "weapon%i", i);
+			if(KvJumpToKey(kvWeaponMods, weapon))
+			{
+				int isOverride=KvGetNum(kvWeaponMods, "mode");
+				KvGetString(kvWeaponMods, "classname", weapon, sizeof(weapon));
+				KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
+				KvGetString(kvWeaponMods, "attributes", attributes, sizeof(attributes));
+				if(isOverride)
+				{
+					if(StrContains(wepIndexStr, "-2")!=-1 && StrContains(classname, weapon, false)!=-1 || StrContains(wepIndexStr, "-1")!=-1 && StrEqual(classname, weapon, false))
+					{
+						if(isOverride!=3)
+						{
+							Handle itemOverride=PrepareItemHandle(item, _, _, attributes, isOverride==1 ? false : true);
+							if(itemOverride!=null)
+							{
+								item=itemOverride;
+								return Plugin_Changed;
+							}
+						}
+						else
+						{
+							return Plugin_Stop;
+						}
+					}
+					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
+					{
+						int wepIndex;
+						char wepIndexes[768][32];
+						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for (int wepIdx = 0; wepIdx<=weaponIdxcount ; wepIdx++)
+						{
+							if(strlen(wepIndexes[wepIdx])>0)
+							{
+								wepIndex = StringToInt(wepIndexes[wepIdx]);
+								if(wepIndex == iItemDefinitionIndex)
+								{
+									switch(isOverride)
+									{
+										case 3:
+										{
+											return Plugin_Stop;
+										}					
+										case 2,1:
+										{
+											Handle itemOverride=PrepareItemHandle(item, _, _, attributes, isOverride==1 ? false : true);
+											if(itemOverride!=null)
+											{
+												item=itemOverride;
+												return Plugin_Changed;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}	
+			}
+			else
+			{
+				break;
+			}
+		}
+		KvGoBack(kvWeaponMods);
+	}
+	if(GetConVarInt(cvarHardcodeWep)>0)
 	{
 		switch(iItemDefinitionIndex)
 		{
@@ -6873,82 +6958,6 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 		}
 	}
-	if(kvWeaponMods == null)
-	{
-		LogError("[FF2] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
-	}
-	else
-	{	
-		char weapon[64], wepIndexStr[768], attributes[768];
-		for(int i=1; ; i++)
-		{
-			KvRewind(kvWeaponMods);
-			Format(weapon, 10, "weapon%i", i);
-			if(KvJumpToKey(kvWeaponMods, weapon))
-			{
-				int isOverride=KvGetNum(kvWeaponMods, "mode");
-				KvGetString(kvWeaponMods, "classname", weapon, sizeof(weapon));
-				KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
-				KvGetString(kvWeaponMods, "attributes", attributes, sizeof(attributes));
-				if(isOverride)
-				{
-					if(StrContains(wepIndexStr, "-2")!=-1 && StrContains(classname, weapon, false)!=-1 || StrContains(wepIndexStr, "-1")!=-1 && StrEqual(classname, weapon, false))
-					{
-						if(isOverride!=3)
-						{
-							Handle itemOverride=PrepareItemHandle(item, _, _, attributes, isOverride==1 ? false : true);
-							if(itemOverride!=null)
-							{
-								item=itemOverride;
-								return Plugin_Changed;
-							}
-						}
-						else
-						{
-							return Plugin_Stop;
-						}
-					}
-					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
-					{
-						int wepIndex;
-						char wepIndexes[768][32];
-						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
-						for (int wepIdx = 0; wepIdx<=weaponIdxcount ; wepIdx++)
-						{
-							if(strlen(wepIndexes[wepIdx])>0)
-							{
-								wepIndex = StringToInt(wepIndexes[wepIdx]);
-								if(wepIndex == iItemDefinitionIndex)
-								{
-									switch(isOverride)
-									{
-										case 3:
-										{
-											return Plugin_Stop;
-										}					
-										case 2,1:
-										{
-											Handle itemOverride=PrepareItemHandle(item, _, _, attributes, isOverride==1 ? false : true);
-											if(itemOverride!=null)
-											{
-												item=itemOverride;
-												return Plugin_Changed;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}	
-			}
-			else
-			{
-				break;
-			}
-		}
-		KvGoBack(kvWeaponMods);
-	}
 	return Plugin_Continue;
 }
 
@@ -7115,7 +7124,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	new civilianCheck[MaxClients+1];
 
 	new weapon=GetPlayerWeaponSlot(client, 4);
-	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60  && (kvWeaponMods == null || GetConVarBool(cvarHardcodeWep)))  //Cloak and Dagger
+	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60  && (kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0))  //Cloak and Dagger
 	{
 		TF2_RemoveWeaponSlot(client, 4);
 		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 1.65 ; 728 ; 1 ; 729 ; 0.65");
@@ -7128,7 +7137,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
-	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && (GetConVarBool(cvarHardcodeWep)))
+	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && GetConVarInt(cvarHardcodeWep)>0)
 	{
 		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
 		SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
@@ -7166,7 +7175,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	}
 
 	#if defined _tf2attributes_included
-	if(tf2attributes && (GetConVarBool(cvarHardcodeWep)))
+	if(tf2attributes && GetConVarInt(cvarHardcodeWep)>0)
 	{
 		if(IsValidEntity(FindPlayerBack(client, 444)))  //Mantreads
 		{
@@ -8582,44 +8591,39 @@ public Action:BossTimer(Handle:timer)
 
 public Action:Timer_RPS(Handle:timer, any:userid)
 {
-	new boss=GetClientOfUserId(userid);
-	if(IsPlayerAlive(boss) && GetBossIndex(boss)>=0)
+	new client=GetClientOfUserId(userid);
+	new boss=FF2_GetBossIndex(client);
+	if(IsPlayerAlive(client) && boss>=0)
 	{
-		decl ApplyDamage;
-		RPSLosses[boss]++;
-		DebugMsg(0, "RPS: Excuted");
+		RPSLosses[client]++;
+		DebugMsg(0, "RPS: Executed");
 
-		if(GetConVarInt(cvarRPSDivide))
-			ApplyDamage=1349*GetConVarInt(cvarRPSLimit);
-		else
-			ApplyDamage=-1;
+		if(RPSLosses[client]<0)
+			RPSLosses[client]=0;
 
-		if(RPSLosses[boss]<0)
-			RPSLosses[boss]=0;
-
-		if(RPSHealth[boss]==-1)
+		if(RPSHealth[client]==-1)
 		{
-			RPSHealth[boss]=FF2_GetBossHealth(GetBossIndex(boss));
+			RPSHealth[client]=FF2_GetBossHealth(boss);
 		}
 
-		if(RPSLosses[boss]>=GetConVarInt(cvarRPSLimit) && FF2_GetBossHealth(GetBossIndex(boss))>ApplyDamage)
+		if(RPSLosses[client]>=GetConVarInt(cvarRPSLimit))
 		{
-			if(IsValidClient(RPSWinner))
+			if(IsValidClient(RPSWinner) && FF2_GetBossHealth(boss)>1349)
 			{
-				SDKHooks_TakeDamage(boss, RPSWinner, RPSWinner, float(FF2_GetBossHealth(GetBossIndex(boss))), DMG_GENERIC, -1);
+				SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float(FF2_GetBossHealth(boss))/1.349, DMG_GENERIC, -1);
 				DebugMsg(0, "RPS: Dealt Full Damage");
 			}
 			else // Winner disconnects?
 			{
-				ForcePlayerSuicide(boss);
+				ForcePlayerSuicide(client);
 				DebugMsg(0, "RPS: Forced Suicide");
 			}
 		}
-		else if(FF2_GetBossHealth(GetBossIndex(boss))>ApplyDamage && ApplyDamage>0)
+		else if(FF2_GetBossHealth(boss)>1349 && GetConVarBool(cvarRPSDivide))
 		{
 			if(IsValidClient(RPSWinner))
 			{
-				SDKHooks_TakeDamage(boss, RPSWinner, RPSWinner, float((RPSHealth[boss]/GetConVarInt(cvarRPSLimit))-1349), DMG_GENERIC, -1);
+				SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float((RPSHealth[client]/GetConVarInt(cvarRPSLimit))-999)/1.349, DMG_GENERIC, -1);
 				DebugMsg(0, "RPS: Dealt Partial Damage");
 			}
 		}
@@ -8920,8 +8924,8 @@ public Action:OnRPS(Handle:event, const String:eventName[], bool:dontBroadcast)
 	{
 		DebugMsg(0, "RPS: Started Damage Timer");
 		RPSWinner=winner;
-		TF2_AddCondition(RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not
-		CreateTimer(3.1, Timer_RPS, GetClientOfUserId(loser), TIMER_FLAG_NO_MAPCHANGE);
+		TF2_AddCondition(RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not during damage
+		CreateTimer(3.1, Timer_RPS, loser, TIMER_FLAG_NO_MAPCHANGE);
 		return;
 	}
 
@@ -9987,7 +9991,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 				{
 					case 61, 1006:  //Ambassador, Festive Ambassador
 					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							if(damagecustom==TF_CUSTOM_HEADSHOT)
 							{
@@ -10002,7 +10006,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 214:  //Powerjack
 					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							new health=GetClientHealth(attacker);
 							new newhealth=health+25;
@@ -10087,7 +10091,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 310:  //Warrior's Spirit
 					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							new health=GetClientHealth(attacker);
 							new newhealth=health+50;
@@ -10103,7 +10107,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 327:  //Claidheamh Mòr
 					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							new Float:charge=GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter");
 							if(charge+25.0>=100.0)
@@ -10118,7 +10122,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 348:  //Sharpened Volcano Fragment
 					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							new health=GetClientHealth(attacker);
 							new max=GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
@@ -10252,7 +10256,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 525, 595:  //Diamondback, Manmelter
 					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							if(GetEntProp(attacker, Prop_Send, "m_iRevengeCrits"))  //If a revenge crit was used, give a damage bonus
 							{
@@ -10309,7 +10313,7 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 					}
 					case 594:  //Phlogistinator
 					{
-						if(kvWeaponMods == null || GetConVarBool(cvarHardcodeWep))
+						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							if(!TF2_IsPlayerInCondition(attacker, TFCond_CritMmmph))
 							{
