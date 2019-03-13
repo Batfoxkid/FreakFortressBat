@@ -681,9 +681,10 @@ stock FindVersionData(Handle:panel, versionIndex)
 	{
 		case 139:  //1.17.10
 		{
-			DrawPanelText(panel, "1) [Core] Addjusted cvar to not use weapons.cfg (Batfoxkid)");
+			DrawPanelText(panel, "1) [Core] Adjusted cvar to able to not use weapons.cfg (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] weapons.cfg is applied first than hardcoded, when enabled (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Added Russian preference translations (MAGNAT2645)");
+			DrawPanelText(panel, "4) [Core] Players with class info off won't view boss description in boss menu (Batfoxkid)");
 		}
 		case 138:  //1.17.9
 		{
@@ -5002,7 +5003,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					}
 					default:
 					{
-						if(!GetConVarBool(cvarBossDesc))
+						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
@@ -5049,7 +5050,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					}
 					default:
 					{
-						if(!GetConVarBool(cvarBossDesc))
+						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
@@ -5101,7 +5102,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					}
 					default:
 					{
-						if(!GetConVarBool(cvarBossDesc))
+						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
@@ -5142,7 +5143,7 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 					case 3: FakeClientCommand(param1, "ff2_kspree");
 					default:
 					{
-						if(!GetConVarBool(cvarBossDesc))
+						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
