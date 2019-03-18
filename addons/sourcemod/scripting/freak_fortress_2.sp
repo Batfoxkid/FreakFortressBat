@@ -64,7 +64,7 @@ last time or to encourage others to do the same.
 #tryinclude <rtd2>
 #tryinclude <tf2attributes>
 #tryinclude <updater>
-#tryinclude <freak_fortress_2_kspree>	// TODO: Make an include for checking client's current prefs
+#tryinclude <freak_fortress_2_kstreak>
 #define REQUIRE_PLUGIN
 
 /*
@@ -129,6 +129,10 @@ new bool:tf2attributes=false;
 
 #if defined _goomba_included
 new bool:goomba=false;
+#endif
+
+#if defined _freak_fortress_2_kstreak_included
+new bool:kmerge=false;
 #endif
 
 new bool:smac=false;
@@ -2093,6 +2097,10 @@ public OnPluginStart()
 	#if defined _tf2attributes_included
 	tf2attributes=LibraryExists("tf2attributes");
 	#endif
+
+	#if defined _freak_fortress_2_kstreak_included
+	kmerge=view_as<bool>(FF2_KStreak_Merge());
+	#endif
 }
 
 public Action:Command_SetRage(client, args)
@@ -2390,6 +2398,13 @@ public OnLibraryAdded(const String:name[])
 		Updater_AddPlugin(UPDATE_URL);
 	}
 	#endif
+
+	#if defined _freak_fortress_2_kstreak_included
+	if(!strcmp(name, "ff2_kstreak_pref", false))
+	{
+		kmerge=view_as<bool>(FF2_KStreak_Merge());
+	}
+	#endif
 }
 
 public OnLibraryRemoved(const String:name[])
@@ -2429,6 +2444,14 @@ public OnLibraryRemoved(const String:name[])
 	{
 		Updater_RemovePlugin();
 		DebugMsg(0, "updater removed");
+	}
+	#endif
+
+	#if defined _freak_fortress_2_kstreak_included
+	if(!strcmp(name, "ff2_kstreak_pref", false))
+	{
+		kmerge=false;
+		DebugMsg(0, "ff2_kstreak_pref removed");
 	}
 	#endif
 }
@@ -4941,13 +4964,19 @@ public Action:Command_SetMyBoss(client, args)
 
 		AddMenuItem(dMenu, boss, boss);
 	}
-	if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(client, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
+	#if defined _freak_fortress_2_kstreak_included
+	if(kmerge && CheckCommandAccess(client, "ff2_kstreak_a", 0, true))
 	{
-		//#if !defined _freak_fortress_2_kspree_included
-		Format(boss, sizeof(boss), "Killstreaker");	// Temp, will set up proper translations
-		//#endif
+		if(FF2_KStreak_GetCookies(client, 0)==1)
+			Format(boss, sizeof(boss), "Disable Killstreaks");	// Temp, will set up proper translations
+		else if(FF2_KStreak_GetCookies(client, 0)<1)
+			Format(boss, sizeof(boss), "Enable Killstreaks");
+		else
+			Format(boss, sizeof(boss), "Toggle Killstreaks");
+
 		AddMenuItem(dMenu, boss, boss);
 	}
+	#endif
 	
 	for(new config; config<Specials; config++)
 	{
@@ -4973,35 +5002,38 @@ public Action:Command_SetMyBoss(client, args)
 
 public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 {
-	new commandcount;
-	if(GetConVarBool(cvarToggleBoss))
-		commandcount++;			// "Very Efficient"
-	if(GetConVarBool(cvarDuoBoss))
-		commandcount++;
-	if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
-		commandcount++;
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
 
-	if(commandcount<1)
-	{
-		switch(action)
+		case MenuAction_Select:
 		{
-			case MenuAction_End:
+			switch(param2)
 			{
-				CloseHandle(menu);
-			}
-			
-			case MenuAction_Select:
-			{
-				switch(param2)
+				case 0: 
 				{
-					case 0: 
-					{
-						IsBossSelected[param1]=true;
-						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
-						return;
-					}
-					default:
+					IsBossSelected[param1]=true;
+					xIncoming[param1] = "";
+					CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+					return;
+				}
+				case 1:
+				{
+					if(GetConVarBool(cvarToggleBoss))
+						BossMenu(param1, 0);
+
+					else if(GetConVarBool(cvarDuoBoss))
+						CompanionMenu(param1, 0);
+
+					#if defined _freak_fortress_2_kstreak_included
+					else if(kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+						FF2_KStreak_Menu(param1, 0);
+					#endif
+
+					else
 					{
 						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 						{
@@ -5016,39 +5048,20 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 						}
 					}
 				}
-			}
-		}
-	}
-	else if(commandcount<2)
-	{
-		switch(action)
-		{
-			case MenuAction_End:
-			{
-				CloseHandle(menu);
-			}
-			
-			case MenuAction_Select:
-			{
-				switch(param2)
+				case 2:
 				{
-					case 0: 
-					{
-						IsBossSelected[param1]=true;
-						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
-						return;
-					}
-					case 1:
-					{
-						if(GetConVarBool(cvarToggleBoss))
-							BossMenu(param1, 0);
-						else if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
-							FakeClientCommand(param1, "ff2_kspree");
-						else
-							CompanionMenu(param1, 0);
-					}
-					default:
+					if(GetConVarBool(cvarDuoBoss) && GetConVarBool(cvarToggleBoss))
+						CompanionMenu(param1, 0);
+
+					#if defined _freak_fortress_2_kstreak_included
+					else if(GetConVarBool(cvarToggleBoss) && !GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+						FF2_KStreak_Menu(param1, 0);
+
+					else if(!GetConVarBool(cvarToggleBoss) && GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+						FF2_KStreak_Menu(param1, 0);
+					#endif
+
+					else
 					{
 						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 						{
@@ -5063,44 +5076,13 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 						}
 					}
 				}
-			}
-		}
-	}
-	else if(commandcount<3)
-	{
-		switch(action)
-		{
-			case MenuAction_End:
-			{
-				CloseHandle(menu);
-			}
-			
-			case MenuAction_Select:
-			{
-				switch(param2)
+				case 3:
 				{
-					case 0: 
-					{
-						IsBossSelected[param1]=true;
-						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
-						return;
-					}
-					case 1:
-					{
-						if(GetConVarBool(cvarToggleBoss))
-							BossMenu(param1, 0);
-						else if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
-							FakeClientCommand(param1, "ff2_kspree");
-					}
-					case 2:
-					{
-						if(GetConVarBool(cvarDuoBoss))
-							CompanionMenu(param1, 0);
-						else if(GetConVarBool(FindConVar("ff2_kspree_merge")) && CheckCommandAccess(param1, "ff2_kspree_a", 0, true) && CommandExists("ff2_kspree"))
-							FakeClientCommand(param1, "ff2_kspree");
-					}
-					default:
+					#if defined _freak_fortress_2_kstreak_included
+					if(GetConVarBool(cvarToggleBoss) && GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+						FF2_KStreak_Menu(param1, 0);
+
+					else
 					{
 						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 						{
@@ -5114,46 +5096,32 @@ public Command_SetMyBossH(Handle:menu, MenuAction:action, param1, param2)
 							ConfirmBoss(param1);
 						}
 					}
+					#else
+					if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
+					{
+						IsBossSelected[param1]=true;
+						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+					}
+					else
+					{
+						GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+						ConfirmBoss(param1);
+					}
+					#endif
 				}
-			}
-		}
-	}
-	else
-	{
-		switch(action)
-		{
-			case MenuAction_End:
-			{
-				CloseHandle(menu);
-			}
-			
-			case MenuAction_Select:
-			{
-				switch(param2)
+				default:
 				{
-					case 0: 
+					if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
 					{
 						IsBossSelected[param1]=true;
-						xIncoming[param1] = "";
-						CReplyToCommand(param1, "%t", "to0_comfirmrandom");
-						return;
+						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
-					case 1: BossMenu(param1, 0);
-					case 2: CompanionMenu(param1, 0);
-					case 3: FakeClientCommand(param1, "ff2_kspree");
-					default:
+					else
 					{
-						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
-						{
-							IsBossSelected[param1]=true;
-							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
-						}
-						else
-						{
-							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
-							ConfirmBoss(param1);
-						}
+						GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+						ConfirmBoss(param1);
 					}
 				}
 			}
@@ -8590,45 +8558,52 @@ public Action:BossTimer(Handle:timer)
 	return Plugin_Continue;
 }
 
-public Action:Timer_RPS(Handle:timer, any:userid)
+public Action:Timer_RPS(Handle:timer, client)
 {
-	new client=GetClientOfUserId(userid);
-	new boss=FF2_GetBossIndex(client);
-	if(IsPlayerAlive(client) && boss>=0)
+	if(!IsValidClient(client))
 	{
-		RPSLosses[client]++;
-		DebugMsg(0, "RPS: Executed");
+		return Plugin_Continue;
+	}
 
-		if(RPSLosses[client]<0)
-			RPSLosses[client]=0;
+	new boss=GetBossIndex(client);
+	if(boss==-1 || !IsPlayerAlive(client))
+	{
+		return Plugin_Continue;
+	}
 
-		if(RPSHealth[client]==-1)
+	RPSLosses[client]++;
+	DebugMsg(0, "RPS: Executed");
+
+	if(RPSLosses[client]<0)
+		RPSLosses[client]=0;
+
+	if(RPSHealth[client]==-1)
+	{
+		RPSHealth[client]=FF2_GetBossHealth(boss);
+	}
+
+	if(RPSLosses[client]>=GetConVarInt(cvarRPSLimit))
+	{
+		if(IsValidClient(RPSWinner) && FF2_GetBossHealth(boss)>1349)
 		{
-			RPSHealth[client]=FF2_GetBossHealth(boss);
+			SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float(FF2_GetBossHealth(boss))/1.349, DMG_GENERIC, -1);
+			DebugMsg(0, "RPS: Dealt Full Damage");
 		}
-
-		if(RPSLosses[client]>=GetConVarInt(cvarRPSLimit))
+		else // Winner disconnects?
 		{
-			if(IsValidClient(RPSWinner) && FF2_GetBossHealth(boss)>1349)
-			{
-				SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float(FF2_GetBossHealth(boss))/1.349, DMG_GENERIC, -1);
-				DebugMsg(0, "RPS: Dealt Full Damage");
-			}
-			else // Winner disconnects?
-			{
-				ForcePlayerSuicide(client);
-				DebugMsg(0, "RPS: Forced Suicide");
-			}
-		}
-		else if(FF2_GetBossHealth(boss)>1349 && GetConVarBool(cvarRPSDivide))
-		{
-			if(IsValidClient(RPSWinner))
-			{
-				SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float((RPSHealth[client]/GetConVarInt(cvarRPSLimit))-999)/1.349, DMG_GENERIC, -1);
-				DebugMsg(0, "RPS: Dealt Partial Damage");
-			}
+			ForcePlayerSuicide(client);
+			DebugMsg(1, "RPS: Forced Suicide");
 		}
 	}
+	else if(FF2_GetBossHealth(boss)>1349 && GetConVarBool(cvarRPSDivide))
+	{
+		if(IsValidClient(RPSWinner))
+		{
+			SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float((RPSHealth[client]/GetConVarInt(cvarRPSLimit))-999)/1.349, DMG_GENERIC, -1);
+			DebugMsg(0, "RPS: Dealt Partial Damage");
+		}
+	}
+	return Plugin_Continue;
 }
 
 public Action:Timer_BotRage(Handle:timer, any:bot)
