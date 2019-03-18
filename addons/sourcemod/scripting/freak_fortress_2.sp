@@ -270,6 +270,7 @@ new Handle:cvarRPSPoints;
 new Handle:cvarRPSLimit;
 new Handle:cvarRPSDivide;
 new Handle:cvarHealingHud;
+new Handle:cvarSteamTools;
 
 new Handle:FF2Cookies;
 
@@ -1887,6 +1888,7 @@ public OnPluginStart()
 	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
 	cvarRPSDivide=CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
 	cvarHealingHud=CreateConVar("ff2_hud_heal", "0", "0-Disable, 1-Show player's healing in damage HUD", _, true, 0.0, true, 1.0);
+	cvarSteamTools=CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2599,7 +2601,7 @@ public EnableFF2()
 	FindHealthBar();
 
 	#if defined _steamtools_included
-	if(steamtools)
+	if(steamtools && GetConVarBool(cvarSteamTools))
 	{
 		decl String:gameDesc[64];
 		Format(gameDesc, sizeof(gameDesc), "Freak Fortress 2 (%s)", PLUGIN_VERSION);
@@ -2667,7 +2669,7 @@ public DisableFF2()
 	}
 
 	#if defined _steamtools_included
-	if(steamtools)
+	if(steamtools && GetConVarBool(cvarSteamTools))
 	{
 		Steam_SetGameDescription("Team Fortress");
 	}
@@ -3476,7 +3478,7 @@ public Action:OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast
 	if(!GetConVarBool(cvarEnabled))
 	{
 		#if defined _steamtools_included
-		if(steamtools)
+		if(steamtools && GetConVarBool(cvarSteamTools))
 		{
 			Steam_SetGameDescription("Team Fortress");
 		}
