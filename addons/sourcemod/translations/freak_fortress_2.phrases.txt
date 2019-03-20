@@ -19,7 +19,7 @@
 	"wait_hp"	// Chat
 	{
 		"#format"	"{1:i},{2:s}"
-		"en"		"You cannot check the boss' hp right now. Wait {1} more second(s). Last known hp value was {2}"
+		"en"		"You cannot check the boss' HP right now. Wait {1} more second(s). Last known HP value was {2}"
 		"ru"		"Ты не можешь проверить ОЗ босса прямо сейчас. Подожди ещё {1} сек. Последнее известное - {2}"
 	}
 	"damage"	// HUD
@@ -49,7 +49,7 @@
 	{
 		"#format"	"{1:i}"
 		"en"		"Shield HP: {1} percent"
-		"ru"		"ОЗ Щита: {1}%%"
+		"ru"		"ОЗ Щита: {1} процентов"
 	}
 	"Boss Lives Left"	// HUD
 	{
@@ -72,7 +72,7 @@
 	{
 		"#format"	"{1:i}"
 		"en"		"Rage is {1} percent ready"
-		"ru"		"Ярость: {1}%% готово"
+		"ru"		"Ярость: {1} процентов готово"
 	}
 	"super_duper_jump"	// HUD
 	{
@@ -83,13 +83,13 @@
 	{
 		"#format"	"{1:i}"
 		"en"		"Teleport is ready. {1} percent charged."
-		"ru"		"Телепорт: {1}%% готово"
+		"ru"		"Телепорт готов. {1} процентов заряжено."
 	}
 	"jump_status"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Super Jump is ready. {1} percent charged."
-		"ru"		"Прыжок: {1}%% готово"
+		"ru"		"Прыжок готов. {1} процентов заряжено."
 	}
 	"teleport_status_2"	// HUD
 	{
@@ -166,13 +166,13 @@
 	}
 	"menu_2"	// Menu
 	{
-		"en"		"Investigate the boss's current health level (/ff2hp)"
+		"en"		"Investigate the boss's current HP level (/ff2hp)"
 		"ru"		"Хочу узнать текущие ОЗ босса (/ff2hp)"
 	}
 	"menu_3"	// Menu
 	{
 		"en"		"Boss Preferences (/ff2boss)"
-		"ru"		"Boss Preferences (/ff2boss)"
+		"ru"		"Настройки Боссов (/ff2boss)"
 	}
 	"menu_4"	// Menu
 	{
@@ -250,7 +250,7 @@
 	"ff2_start"	// Chat, HUD
 	{
 		"#format"	"{1:N},{2:s},{3:i},{4:s}"
-		"en"		"{1} became\n {2}\n with {3}{4} hp"
+		"en"		"{1} became\n {2}\n with {3}{4} HP"
 		"ru"		"{1} становится\n {2}\n с {3}{4} ОЗ"
 	}
 	"ff2_hp"	// Chat, HUD
@@ -262,13 +262,13 @@
 	"ff2_alive"	// Chat, HUD
 	{
 		"#format"	"{1:s},{2:N},{3:i},{4:i},{5:s}"
-		"en"		"{1} ({2}) won with {3} out of {4}{5} hp left."
+		"en"		"{1} ({2}) won with {3} out of {4}{5} HP left."
 		"ru"		"{1} ({2}) выиграл с {3} из {4}{5} ОЗ."
 	}
 	"select_charset"	// Menu
 	{
 		"en"		"Please vote for the boss pack for the next map."
-		"ru"		"Какой выбрать набор персонажей на следующей карте."
+		"ru"		"Проголосуйте за набор персонажей для следующей карте."
 	}
 	"your_points"	// Menu
 	{
@@ -318,7 +318,7 @@
 	"to0_near"	// Chat
 	{
 		"en"		"You will become the boss soon. Type {olive}/ff2boss{default} to select a boss."
-		"ru"		"Ты скоро станешь Боссом. Введи {olive}/ff2next{default}, чтобы убедиться в этом."
+		"ru"		"Ты скоро станешь Боссом. Введи {olive}/ff2boss{default}, чтобы выбрать босса."
 	}
 	"arena_round"	// Chat
 	{
@@ -340,7 +340,7 @@
 	"ff2_voice"	// Chat
 	{
 		"#format"	"{1:s}"
-		"en"		"Boss's voices is {1} now."
+		"en"		"Boss's voices is {1} now"
 		"ru"		"Монологи боссов: {1}"
 	}
 	"ff2_voice2"	// Chat
@@ -378,8 +378,8 @@
 	"charge_status"	// HUD
 	{
 		"#format"	"{1:i}"
-		"en"		"Charge is ready. {1} percent charged."
-		"ru"		"Заряд: {1}%% готово"
+		"en"		"Charge is ready! {1} percent charged."
+		"ru"		"Заряд готов! {1} процентов заряжено."
 	}
 	"nextmap_charset"	// Chat
 	{
@@ -437,8 +437,8 @@
 	}
 	"Backstabbed"	// Hint, Annotation
 	{
-		"en"		"You just got backstabbed!"
-		"ru"		"Тебе нанесли удар в спину!"
+		"en"		"Be careful! You just got backstabbed!"
+		"ru"		"Осторожнее! Тебе нанесли удар в спину!"
 	}
 	"Backstab Player"	// Hint, Annotation
 	{
@@ -459,8 +459,8 @@
 	}
 	"Market Gardened"	// Hint, Annotation
 	{
-		"en"		"You just got market-gardened!"
-		"ru"		"Тебя ударили Землекопом в полёте!"
+		"en"		"Be careful! You just got market-gardened!"
+		"ru"		"Осторожнее! Тебя ударили Землекопом в полёте!"
 	}
 	"Market Gardener Player"	// Hint, Annotation
 	{
@@ -484,7 +484,7 @@
 	{
 		"#format"	"{1:N},{2:i}"
 		"en"		"{1}'s Damage: {2}"
-		"ru"		"Урон {1}: {2}"
+		"ru"		"Урон игрока {1}: {2}"
 	}
 	"Your Damage Dealt"	// HUD
 	{
@@ -496,6 +496,7 @@
 	{
 		"#format"	"{1:i}"
 		"en"		"(Healing: {1})"
+		"ru"		"(Лечение: {1})"
 	}
 	"Caber"	// Hint, Annotation
 	{
@@ -504,8 +505,8 @@
 	}
 	"Cabered"	// Hint, Annotation
 	{
-		"en"		"You just got ullapool cabered!"
-		"ru"		"Тебя подорвали!"
+		"en"		"Be careful! You just got ullapool cabered!"
+		"ru"		"Осторожнее! Тебя подорвали!"
 	}
 	"Caber Player"	// Hint, Annotation
 	{
@@ -515,7 +516,7 @@
 	}
 	"Cabered Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"		
+		"#format"	"{1:N}"
 		"en"		"{1} ullapool cabered you!"
 		"ru"		"{1} подорвал тебя!"
 	}
@@ -530,18 +531,18 @@
 		"ru"		"Ты раздавил кого-то!"
 	}
 	"Goomba Stomped"	// Hint, Annotation
-	{		
+	{
 		"en"		"Ouch!  Watch your head!"
 		"ru"		"Ай!  Береги голову!"
 	}
 	"Goomba Stomped Boss"	// Hint, Annotation
-	{		
+	{
 		"en"		"You were just goomba stomped!"
 		"ru"		"Тебя раздавили!"
 	}
 	"Goomba Stomp Player"	// Hint, Annotation
 	{
-		"#format"	"{1:s}"	
+		"#format"	"{1:s}"
 		"en"		"You goomba stomped {1}!"
 		"ru"		"Ты раздавил босса {1}!"
 	}
@@ -553,13 +554,13 @@
 	}
 	"Goomba Stomped Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"		
+		"#format"	"{1:N}"
 		"en"		"Ouch! {1} goomba stomped you! Watch your head!"
 		"ru"		"Ай! {1} раздавил тебя! Береги голову!"
 	}
 	"Goomba Stomped Boss Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"		
+		"#format"	"{1:N}"
 		"en"		"{1} goomba stomped you!"
 		"ru"		"{1} раздавил тебя!"
 	}
@@ -591,7 +592,7 @@
 	}
 	"Telefraged Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"		
+		"#format"	"{1:N}"
 		"en"		"TELEFRAG! {1} telefraged you!"
 		"ru"		"ТЕЛЕФРАГ! {1} ранил тебя!"
 	}
