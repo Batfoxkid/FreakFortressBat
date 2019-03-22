@@ -4970,11 +4970,11 @@ public Action:Command_SetMyBoss(client, args)
 	if(kmerge && CheckCommandAccess(client, "ff2_kstreak_a", 0, true))
 	{
 		if(FF2_KStreak_GetCookies(client, 0)==1)
-			Format(boss, sizeof(boss), "Disable Killstreaks");	// Temp, will set up proper translations
+			Format(boss, sizeof(boss), "%T", "to0_disablekstreak", client);
 		else if(FF2_KStreak_GetCookies(client, 0)<1)
-			Format(boss, sizeof(boss), "Enable Killstreaks");
+			Format(boss, sizeof(boss), "%T", "to0_enablekstreak", client);
 		else
-			Format(boss, sizeof(boss), "Toggle Killstreaks");
+			Format(boss, sizeof(boss), "%T", "to0_togglekstreak", client);
 
 		AddMenuItem(dMenu, boss, boss);
 	}
