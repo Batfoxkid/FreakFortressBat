@@ -73,6 +73,18 @@
 		"en"		"Enable Companions"
 		"ru"		"Включить компаньонов"
 	}
+	"to0_disablekstreak"
+	{
+		"en"		"Disable Killstreaks"
+	}
+	"to0_enablekstreak"
+	{
+		"en"		"Enable Killstreaks"
+	}
+	"to0_togglekstreak"
+	{
+		"en"		"Toggle Killstreaks"
+	}
 	"to0_difficulty"
 	{
 		"en"		"Change Difficulty"
