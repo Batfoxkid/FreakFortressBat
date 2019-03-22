@@ -375,6 +375,12 @@
 		"en"		"What's new in {olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
 		"ru"		"Что нового в {olive}{1}{default} ({olive}{2}{default})? Введи {olive}/ff2new{default}."
 	}
+	"seeldier_rage_message"
+	{
+		"#format"	"{1:s}"
+		"en"		"Now you are {1}'s minion! Attack other team!"
+		"ru"		"Теперь ты помощник {1}! Атакуй вражескую команду!"
+	}
 	"charge_status"	// HUD
 	{
 		"#format"	"{1:i}"
