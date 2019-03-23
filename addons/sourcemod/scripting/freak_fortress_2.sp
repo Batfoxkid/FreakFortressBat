@@ -4180,6 +4180,8 @@ public Action:OnPlayerDisconnect(Handle:event, const String:name[], bool:dontBro
 		DuoMin=false;
 		DebugMsg(0, "Duos Disabled");
 	}
+	new client=GetClientOfUserId(GetEventInt(event, "userid"));
+	xIncoming[client] = "";
 	return Plugin_Continue;
 }
 
