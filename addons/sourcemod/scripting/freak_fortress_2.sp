@@ -151,6 +151,7 @@ new BlueAlivePlayers;
 new RoundCount;
 new Companions=0;
 new GhostBoss=0;
+new bool:LastMan;
 new Float:rageMax[MAXPLAYERS+1];
 new Float:rageMin[MAXPLAYERS+1];
 new rageMode[MAXPLAYERS+1];
@@ -690,6 +691,7 @@ stock FindVersionData(Handle:panel, versionIndex)
 			DrawPanelText(panel, "2) [Core] weapons.cfg is applied first than hardcoded, when enabled (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Added Russian preference translations (MAGNAT2645)");
 			DrawPanelText(panel, "4) [Core] Players with class info off won't view boss description in boss menu (Batfoxkid)");
+			DrawPanelText(panel, "5) [Core] Fixed sound_lastman playing multiple times in a round (Batfoxkid)");
 		}
 		case 138:  //1.17.9
 		{
@@ -3878,6 +3880,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	RoundCount++;
 	Companions=0;
+	LastMan=true;
 	if(HasSwitched)
 		HasSwitched=false;
 
@@ -9217,7 +9220,7 @@ public Action:Timer_CheckAlivePlayers(Handle:timer)
 	{
 		ForceTeamWin(BossTeam);
 	}
-	else if(RedAlivePlayers==1 && BlueAlivePlayers && Boss[0] && !DrawGameTimer)
+	else if(RedAlivePlayers==1 && BlueAlivePlayers && Boss[0] && !DrawGameTimer && LastMan)
 	{
 		decl String:sound[PLATFORM_MAX_PATH];
 		if(RandomSound("sound_lastman", sound, sizeof(sound)))
@@ -9225,6 +9228,7 @@ public Action:Timer_CheckAlivePlayers(Handle:timer)
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
+		LastMan=false;
 	}
 	else if(PointType!=1 && RedAlivePlayers<=AliveToEnable && !executed)
 	{
