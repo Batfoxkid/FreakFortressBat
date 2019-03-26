@@ -9751,6 +9751,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					{
 						if(boss>=0 && SapperBoss[target])
 						{
+							#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
+							TF2_StunPlayer(target, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
+							TF2_AddCondition(target, TFCond_Sapped, 3.0);
+							#else
 							if(index==810 || index==831)
 							{
 								TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 6.0);
@@ -9761,6 +9765,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_StunPlayer(target, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
 								TF2_AddCondition(target, TFCond_Sapped, 3.0);
 							}
+							#endif
 							SapperCooldown[client]=GetConVarFloat(cvarSapperCooldown);
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
@@ -9769,6 +9774,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 						}
 						else if(SapperMinion)
 						{
+							#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
+							TF2_StunPlayer(target, 4.0, 0.0, TF_STUNFLAGS_NORMALBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
+							TF2_AddCondition(target, TFCond_Sapped, 4.0);
+							#else
 							if(index==810 || index==831)
 							{
 								TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 8.0);
@@ -9780,6 +9789,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_StunPlayer(target, 4.0, 0.0, TF_STUNFLAGS_NORMALBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
 								TF2_AddCondition(target, TFCond_Sapped, 4.0);
 							}
+							#endif
 							SapperCooldown[client]=GetConVarFloat(cvarSapperCooldown);
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
