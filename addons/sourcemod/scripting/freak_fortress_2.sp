@@ -1908,7 +1908,7 @@ public OnPluginStart()
 	cvarSteamTools=CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
 	cvarSappers=CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
 	cvarSapperCooldown=CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
-	cvarTheme=CreateConVar("ff2_theme", "1", "1-No Theme, #-Flags of Themes", _, true, 1.0, true, 16.0);
+	cvarTheme=CreateConVar("ff2_theme", "1", "1-No Theme, #-Flags of Themes", _, true, 1.0, true, 15.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -6847,17 +6847,26 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 444:  //Mantreads
 			{
+				#if defined _tf2attributes_included
+				if(tf2attributes)
+				{
+					TF2Attrib_SetByDefIndex(client, 58, 1.5);
+				}
+				else
+				{
+					new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.5");
+					if(itemOverride!=INVALID_HANDLE)
+					{
+						item=itemOverride;
+						return Plugin_Changed;
+					}
+				}
+				#else
 				new Handle:itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
 					return Plugin_Changed;
-				}
-
-				#if defined _tf2attributes_included
-				if(tf2attributes)
-				{
-					TF2Attrib_SetByDefIndex(client, 58, 1.5);
 				}
 				#endif
 			}
