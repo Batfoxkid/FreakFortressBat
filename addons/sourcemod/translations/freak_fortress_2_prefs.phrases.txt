@@ -411,4 +411,24 @@
 		"en"		"{default}{snow}Unknown Artist"
 		"ru"		"{default}{snow}Неизвестный артист"
 	}
+	"deny_nofirst"
+	{
+		"en"		"You can not select this boss before the first round!"
+	}
+	"deny_donator"
+	{
+		"en"		"You do not have access to this boss!"
+	}
+	"deny_duo_short"
+	{
+		"en"		"There is not enough players to play this boss!"
+	}
+	"deny_duo_off"
+	{
+		"en"		"You turned off companions, enable to play this boss!"
+	}
+	"deny_unknown"
+	{
+		"en"		"Boss could not be found!"
+	}
 }
