@@ -4948,14 +4948,35 @@ public Action:Command_SetMyBoss(client, args)
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 			if(KvGetNum(BossKV[config], "hidden", 0)) continue;
-			if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) continue;
 			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
-			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-			if(strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))) continue;
-			if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true)) continue;
 			if(StrContains(boss, name, false)!=-1)
 			{
+				if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					return Plugin_Handled;
+				}
+				if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_nofirst");
+					return Plugin_Handled;
+				}
+				if(strlen(companionName) && !DuoMin)
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_short");
+					return Plugin_Handled;
+				}
+				if(strlen(companionName) && (ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_off");
+					return Plugin_Handled;
+				}
+				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					return Plugin_Handled;
+				}
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
 				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
@@ -4975,7 +4996,6 @@ public Action:Command_SetMyBoss(client, args)
 		CReplyToCommand(client, "{olive}[FF2]{default} Boss could not be found!");
 		return Plugin_Handled;
 	}
-
 	decl String:boss[64];
 	new Handle:dMenu = CreateMenu(Command_SetMyBossH);
 
@@ -5025,15 +5045,24 @@ public Action:Command_SetMyBoss(client, args)
 		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 		if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 		if(KvGetNum(BossKV[config], "hidden", 0)) continue;
-		if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) continue;
 		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
 		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
-		if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) continue;
-		if(strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))) continue;
-		if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true)) continue;
 		
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
-		AddMenuItem(dMenu, boss, boss);
+		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) ||
+		   (strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))))
+		{
+			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+		}
+		else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true)) // Check if I have to
+		{
+			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+		}
+		else
+		{
+			AddMenuItem(dMenu, boss, boss);
+		}
 	}
 
 	SetMenuExitButton(dMenu, true);
