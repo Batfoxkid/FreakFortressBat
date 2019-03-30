@@ -1800,6 +1800,7 @@ new String:cIncoming[MAXPLAYERS+1][700];
 
 new Handle:BossCookie=INVALID_HANDLE;
 new Handle:CompanionCookie=INVALID_HANDLE;
+new Handle:LastPlayedCookie=INVALID_HANDLE;
 
 new ClientCookie[MAXPLAYERS+1];
 new ClientCookie2[MAXPLAYERS+1];
@@ -1878,7 +1879,7 @@ public OnPluginStart()
 	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
 	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
 	cvarNameChange=CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
-	cvarKeepBoss=CreateConVar("ff2_boss_keep", "0", "0-Disable, 1-Players keep their current boss selection", _, true, 0.0, true, 1.0);
+	cvarKeepBoss=CreateConVar("ff2_boss_keep", "0", "-1-Players can't choose the same boss twice, 0-Nothing, 1-Players keep their current boss selection", _, true, -1.0, true, 1.0);
 	cvarSelectBoss=CreateConVar("ff2_boss_select", "1", "0-Disable, 1-Players can select bosses", _, true, 0.0, true, 1.0);
 	cvarToggleBoss=CreateConVar("ff2_boss_toggle", "1", "0-Disable, 1-Players can toggle being the boss", _, true, 0.0, true, 1.0);
 	cvarDuoBoss=CreateConVar("ff2_boss_companion", "1", "0-Disable, 1-Players can toggle being a companion", _, true, 0.0, true, 1.0);
@@ -2010,7 +2011,8 @@ public OnPluginStart()
 	RegConsoleCmd("haleboss", Command_SetMyBoss, "View FF2 Boss Preferences");
 
 	BossCookie = RegClientCookie("ff2_boss_toggle", "Players FF2 Boss Toggle", CookieAccess_Public);	
-	CompanionCookie = RegClientCookie("ff2_companion_toggle", "Players FF2 Companion Boss Toggle", CookieAccess_Public);	
+	CompanionCookie = RegClientCookie("ff2_companion_toggle", "Players FF2 Companion Boss Toggle", CookieAccess_Public);
+	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Players FF2 Previous Boss", CookieAccess_Protected);		
 	
 	RegConsoleCmd("ff2toggle", BossMenu, "Toggle being a FF2 boss");
 	RegConsoleCmd("ff2_toggle", BossMenu, "Toggle being a FF2 boss");
@@ -2120,10 +2122,6 @@ public OnPluginStart()
 
 	#if defined _tf2attributes_included
 	tf2attributes=LibraryExists("tf2attributes");
-	#endif
-
-	#if defined _freak_fortress_2_kstreak_included
-	kmerge=view_as<bool>(FF2_KStreak_Merge());
 	#endif
 }
 
@@ -3913,6 +3911,17 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	if(HasSwitched)
 		HasSwitched=false;
 
+	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
+	{
+		DuoMin=true;
+		DebugMsg(0, "Duos Enabled");
+	}
+	else if(playing<GetConVarInt(cvarDuoMin) && DuoMin)
+	{
+		DuoMin=false;
+		DebugMsg(0, "Duos Disabled");
+	}
+
 	if(!Enabled)
 	{
 		return Plugin_Continue;
@@ -4180,17 +4189,6 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
-	}
-
-	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
-	{
-		DuoMin=true;
-		DebugMsg(0, "Duos Enabled");
-	}
-	else if(playing<GetConVarInt(cvarDuoMin) && DuoMin)
-	{
-		DuoMin=false;
-		DebugMsg(0, "Duos Disabled");
 	}
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -4977,6 +4975,16 @@ public Action:Command_SetMyBoss(client, args)
 					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
 					return Plugin_Handled;
 				}
+				if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0)
+				{
+					char cookie[64];
+					GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
+					if(StrEqual(boss, cookie, false))
+					{
+						CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_recent");
+						return Plugin_Handled;
+					}
+				}
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
 				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
@@ -4986,6 +4994,41 @@ public Action:Command_SetMyBoss(client, args)
 			KvGetString(BossKV[config], "filename", boss, sizeof(boss));
 			if(StrContains(boss, name, false)!=-1)
 			{
+				if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					return Plugin_Handled;
+				}
+				if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_nofirst");
+					return Plugin_Handled;
+				}
+				if(strlen(companionName) && !DuoMin)
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_short");
+					return Plugin_Handled;
+				}
+				if(strlen(companionName) && (ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_off");
+					return Plugin_Handled;
+				}
+				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
+				{
+					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					return Plugin_Handled;
+				}
+				if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0)
+				{
+					char cookie[64];
+					GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
+					if(StrEqual(boss, cookie, false))
+					{
+						CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_recent");
+						return Plugin_Handled;
+					}
+				}
 				IsBossSelected[client]=true;
 				KvGetString(BossKV[config], "name", boss, sizeof(boss));
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
@@ -5055,13 +5098,23 @@ public Action:Command_SetMyBoss(client, args)
 		{
 			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
 		}
-		else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true)) // Check if I have to
+		else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
 		{
 			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
 		}
 		else
 		{
-			AddMenuItem(dMenu, boss, boss);
+			if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0)
+			{
+				char cookie[64];
+				GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
+				if(StrEqual(boss, cookie, false))
+					AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+				else
+					AddMenuItem(dMenu, boss, boss);
+			}
+			else
+				AddMenuItem(dMenu, boss, boss);
 		}
 	}
 
@@ -5380,7 +5433,7 @@ public Action:FF2_OnSpecialSelected(boss, &SpecialNum, String:SpecialName[], boo
 	if (!boss && !StrEqual(xIncoming[client], ""))
 	{
 		strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
-		if(!GetConVarBool(cvarKeepBoss) || !GetConVarBool(cvarSelectBoss) || IsFakeClient(client))
+		if(GetConVarInt(cvarKeepBoss)<1 || !GetConVarBool(cvarSelectBoss) || IsFakeClient(client))
 		{
 			xIncoming[client] = "";
 			DebugMsg(0, "Reset Boss Selection");
@@ -6316,6 +6369,12 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 	if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 	{
 		SetClientQueuePoints(client, 0);
+	}
+	if(AreClientCookiesCached(client))
+	{
+		char cookie[64];
+		KvGetString(BossKV[Special[boss]], "name", cookie, sizeof(cookie));
+		SetClientCookie(client, LastPlayedCookie, cookie);
 	}
 	return Plugin_Continue;
 }
@@ -9867,7 +9926,7 @@ public Action:OnPlayerHealed(Handle:event, const String:name[], bool:dontBroadca
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
-	if(!Enabled || CheckRoundState()!=1 || !IsValidClient(client) || IsFakeClient(client))
+	if(!Enabled || CheckRoundState()!=1 || !IsValidClient(client) || IsFakeClient(client) || !IsPlayerAlive(client))
 		return Plugin_Continue;
 
 	int index=-1;
