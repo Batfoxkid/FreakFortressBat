@@ -9577,7 +9577,7 @@ public Action:Timer_DrawGame(Handle:timer)
 				{
 					ShowGameText(client, "ico_notify_thirty_seconds", _, "%s | %s", message, timeDisplay);
 				}
-				else if(timeleft<countdownTime/6 && timeleft>=0)
+				else if(timeleft<countdownTime/6 && timeleft>0)
 				{
 					ShowGameText(client, "ico_notify_ten_seconds", _, "%s | %s", message, timeDisplay);
 				}
@@ -9621,7 +9621,7 @@ public Action:Timer_DrawGame(Handle:timer)
 					ShowGameText(client, "leaderboard_streak", _, timeDisplay);
 				}
 			}
-			else if(isCapping)
+			else if(isCapping && timeleft<=0)
 			{
 				FF2_ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
 			}
@@ -9937,7 +9937,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		GetEdictClassname(entity, classname, sizeof(classname));
 		index=GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
 
-		if((buttons & IN_ATTACK) && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !GetEntProp(client, Prop_Send, "m_bFeignDeathReady") && (!strcmp(classname, "tf_weapon_sapper") || !strcmp(classname, "tf_weapon_builder")) && index!=28)
+		if((buttons & IN_ATTACK) && !TF2_IsPlayerInCondition(client, TFCond_Dazed) && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !GetEntProp(client, Prop_Send, "m_bFeignDeathReady") && (!strcmp(classname, "tf_weapon_sapper") || !strcmp(classname, "tf_weapon_builder")) && index!=28)
 		{
 			float position[3], position2[3], distance;
 			int boss;
