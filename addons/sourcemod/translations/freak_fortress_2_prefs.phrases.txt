@@ -427,6 +427,10 @@
 	{
 		"en"		"You turned off companions, enable to play this boss!"
 	}
+	"deny_recent"
+	{
+		"en"		"You already played this boss on your round!"
+	}
 	"deny_unknown"
 	{
 		"en"		"Boss could not be found!"
