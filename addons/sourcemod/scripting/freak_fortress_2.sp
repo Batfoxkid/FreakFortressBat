@@ -1926,6 +1926,8 @@ public OnPluginStart()
 	HookEvent("rps_taunt_event", OnRPS, EventHookMode_Post);
 	HookEvent("player_disconnect", OnPlayerDisconnect, EventHookMode_Pre);
 
+	HookUserMessage(GetUserMessageId("PlayerJarated"), OnJarate);	//Used to subtract rage when a boss is jarated (not through Sydney Sleeper)
+
 	AddCommandListener(OnCallForMedic, "voicemenu");	//Used to activate rages
 	AddCommandListener(OnSuicide, "explode");		//Used to stop boss from suiciding
 	AddCommandListener(OnSuicide, "kill");			//Used to stop boss from suiciding
@@ -6583,15 +6585,6 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 					return Plugin_Changed;
 				}
 			}
-			case 58, 1083, 1105:  //Jarate
-			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "249 ; 1.5 ; 280 ; 17 ; 2 ; 23");
-				if(itemOverride!=INVALID_HANDLE)
-				{
-					item=itemOverride;
-					return Plugin_Changed;
-				}
-			}
 			case 127:  //Direct Hit
 			{
 				new Handle:itemOverride=PrepareItemHandle(item, _, _, "179 ; 1.0");
@@ -6721,7 +6714,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 265:  //Sticky Jumper
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2 ; 400 ; 1", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2 ; 280 ; 14 ; 400 ; 1", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6817,7 +6810,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 355:  //Fan O'War
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.25 ; 6 ; 0.5 ; 49 ; 1 ; 137 ; 4 ; 107 ; 1.1 ; 201 ; 1.1 ; 77 ; 0.38", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.25 ; 6 ; 0.5 ; 49 ; 1 ; 137 ; 2 ; 107 ; 1.1 ; 201 ; 1.1 ; 77 ; 0.38", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -9404,6 +9397,30 @@ public Action:OnObjectDeflected(Handle:event, const String:name[], bool:dontBroa
 			BossCharge[boss][0]=rageMax[client];
 		}
 		DebugMsg(0, "Airblasted boss");
+	}
+	return Plugin_Continue;
+}
+
+public Action:OnJarate(UserMsg:msg_id, Handle:bf, const players[], playersNum, bool:reliable, bool:init)
+{
+	new client=BfReadByte(bf);
+	new victim=BfReadByte(bf);
+	new boss=GetBossIndex(victim);
+	if(boss!=-1)
+	{
+		new jarate=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+		if(jarate!=-1)
+		{
+			new index=GetEntProp(jarate, Prop_Send, "m_iItemDefinitionIndex");
+			if((index==58 || index==1083 || index==1105) && GetEntProp(jarate, Prop_Send, "m_iEntityLevel")!=-122)  //-122 is the Jar of Ants which isn't really Jarate
+			{
+				BossCharge[boss][0]-=rageMax[client]*8.0/rageMin[client];  //TODO: Allow this to be customizable
+				if(BossCharge[boss][0]<0.0)
+				{
+					BossCharge[boss][0]=0.0;
+				}
+			}
+		}
 	}
 	return Plugin_Continue;
 }
