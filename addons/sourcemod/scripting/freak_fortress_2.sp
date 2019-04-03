@@ -165,7 +165,7 @@ new shield[MAXPLAYERS+1];
 new detonations[MAXPLAYERS+1];
 new bool:playBGM[MAXPLAYERS+1]=true;
 new Healing[MAXPLAYERS+1];
-new Float:SapperCooldown[MAXPLAYERS+1];
+//new Float:SapperCooldown[MAXPLAYERS+1];
 
 new Float:shieldHP[MAXPLAYERS+1];
 new String:currentBGM[MAXPLAYERS+1][PLATFORM_MAX_PATH];
@@ -273,8 +273,8 @@ new Handle:cvarRPSLimit;
 new Handle:cvarRPSDivide;
 new Handle:cvarHealingHud;
 new Handle:cvarSteamTools;
-new Handle:cvarSappers;
-new Handle:cvarSapperCooldown;
+//new Handle:cvarSappers;
+//new Handle:cvarSapperCooldown;
 new Handle:cvarTheme;
 
 new Handle:FF2Cookies;
@@ -373,8 +373,8 @@ new bool:IsBossSelected[MAXPLAYERS+1];
 new bool:dmgTriple[MAXPLAYERS+1];
 new bool:selfKnockback[MAXPLAYERS+1];
 new bool:randomCrits[MAXPLAYERS+1];
-new bool:SapperBoss[MAXPLAYERS+1];
-new bool:SapperMinion;
+//new bool:SapperBoss[MAXPLAYERS+1];
+//new bool:SapperMinion;
 
 static const char OTVoice[][] = {
     "vo/announcer_overtime.mp3",
@@ -542,7 +542,6 @@ static const String:ff2versiontitles[][]=
 	"1.17.8",
 	"1.17.9",
 	"1.17.9",
-	"1.17.10",
 	"1.17.10"
 };
 
@@ -687,7 +686,6 @@ static const String:ff2versiondates[][]=
 	"February 15, 2019",		//1.17.8
 	"March 8, 2019",		//1.17.9
 	"March 8, 2019",		//1.17.9
-	"April 3, 2019",		//1.17.10
 	"April 3, 2019"			//1.17.10
 };
 
@@ -695,18 +693,13 @@ stock FindVersionData(Handle:panel, versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 140:  //1.17.10
+		case 139:  //1.17.10
 		{
-			DrawPanelText(panel, "1) [Core] Adjusted cvar to able to not use weapons.cfg (Batfoxkid)");
+			DrawPanelText(panel, "1) [Bosses] Added 'theme' setting for certain bosses blocked with ff2_theme (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] weapons.cfg is applied first than hardcoded, when enabled (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Added Russian preference translations (MAGNAT2645)");
 			DrawPanelText(panel, "4) [Core] Players with class info off won't view boss description in boss menu (Batfoxkid)");
 			DrawPanelText(panel, "5) [Core] Fixed sound_lastman playing multiple times in a round (Batfoxkid)");
-		}
-		case 139:  //1.17.10
-		{
-			DrawPanelText(panel, "6) [Gameplay] Added the ability to sap bosses or minions (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "7) [Bosses] Added 'holiday' setting for certain bosses playable during a Holiday (Batfoxkid)");
 		}
 		case 138:  //1.17.9
 		{
@@ -1907,9 +1900,9 @@ public OnPluginStart()
 	cvarRPSDivide=CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
 	cvarHealingHud=CreateConVar("ff2_hud_heal", "0", "0-Disable, 1-Show player's healing in damage HUD", _, true, 0.0, true, 1.0);
 	cvarSteamTools=CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
-	cvarSappers=CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
-	cvarSapperCooldown=CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
-	cvarTheme=CreateConVar("ff2_theme", "1", "1-No Theme, #-Flags of Themes", _, true, 1.0, true, 15.0);
+	//cvarSappers=CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
+	//cvarSapperCooldown=CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
+	cvarTheme=CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 1.0, true, 15.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -3907,7 +3900,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 	RoundCount++;
 	Companions=0;
 	LastMan=true;
-	SapperMinion=false;
+	//SapperMinion=false;
 	if(HasSwitched)
 		HasSwitched=false;
 
@@ -4079,7 +4072,7 @@ public Action:OnRoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 			detonations[boss]=0;
 			AirstrikeDamage[boss]=0.0;
 			KillstreakDamage[boss]=0.0;
-			SapperCooldown[boss]=0.0;
+			//SapperCooldown[boss]=0.0;
 		}
 
 		for(new timer; timer<=1; timer++)
@@ -5333,78 +5326,82 @@ bool BossTheme(int config)
 {
 	KvRewind(BossKV[config]);
 	int theme=KvGetNum(BossKV[config], "theme", 0);
-	if(theme>=0)
+	if(theme>0)
 	{
 		switch(GetConVarInt(cvarTheme))
 		{
-			case 1:
+			case 0:
 			{
-				if(theme==0)
-					return false;
+				return true;
 			}
-			case 2:
+			case 1:
 			{
 				if(theme==1)
 					return false;
 			}
-			case 3:
-			{
-				if(theme==0 || theme==1)
-					return false;
-			}
-			case 4:
+			case 2:
 			{
 				if(theme==2)
 					return false;
 			}
-			case 5:
-			{
-				if(theme==0 || theme==2)
-					return false;
-			}
-			case 6:
+			case 3:
 			{
 				if(theme==1 || theme==2)
 					return false;
 			}
-			case 7:
-			{
-				if(theme==0 || theme==1 || theme==2)
-					return false;
-			}
-			case 8:
+			case 4:
 			{
 				if(theme==3)
 					return false;
 			}
-			case 9:
-			{
-				if(theme==0 || theme==3)
-					return false;
-			}
-			case 10:
+			case 5:
 			{
 				if(theme==1 || theme==3)
 					return false;
 			}
-			case 11:
-			{
-				if(theme==0 || theme==1 || theme==3)
-					return false;
-			}
-			case 12:
+			case 6:
 			{
 				if(theme==2 || theme==3)
 					return false;
 			}
+			case 7:
+			{
+				if(theme==1 || theme==2 || theme==3)
+					return false;
+			}
+			case 8:
+			{
+				if(theme==4)
+					return false;
+			}
+			case 9:
+			{
+				if(theme==1 || theme==4)
+					return false;
+			}
+			case 10:
+			{
+				if(theme==2 || theme==4)
+					return false;
+			}
+			case 11:
+			{
+				if(theme==1 || theme==2 || theme==4)
+					return false;
+			}
+			case 12:
+			{
+				if(theme==3 || theme==4)
+					return false;
+			}
 			case 13:
 			{
-				if(theme==0 || theme==2 || theme==3)
+				if(theme==1 || theme==3 || theme==4)
 					return false;
 			}
 			case 14:
 			{
-				if(theme==1 || theme==2 || theme==3)
+				if(theme==2 || theme==3 || theme==4)
 					return false;
 			}
 			default:
@@ -6218,13 +6215,13 @@ public Action:Timer_MakeBoss(Handle:timer, any:boss)
 	else
 		GhostBoss=GetConVarInt(cvarGhostBoss);
 
-	if((KvGetNum(BossKV[Special[boss]], "sapper", -1)<0 && (GetConVarInt(cvarSappers)==1 || GetConVarInt(cvarSappers)>2)) || KvGetNum(BossKV[Special[boss]], "sapper", -1)==1 || KvGetNum(BossKV[Special[boss]], "sapper", -1)>2)
+	/*if((KvGetNum(BossKV[Special[boss]], "sapper", -1)<0 && (GetConVarInt(cvarSappers)==1 || GetConVarInt(cvarSappers)>2)) || KvGetNum(BossKV[Special[boss]], "sapper", -1)==1 || KvGetNum(BossKV[Special[boss]], "sapper", -1)>2)
 		SapperBoss[client]=true;
 	else
 		SapperBoss[client]=false;
 
 	if((KvGetNum(BossKV[Special[boss]], "sapper", -1)<0 && GetConVarInt(cvarSappers)>1) || KvGetNum(BossKV[Special[boss]], "sapper", -1)>1)
-		SapperMinion=true;
+		SapperMinion=true;*/
 
 	// Rage settings
 	rageMax[client]=float(KvGetNum(BossKV[Special[boss]], "ragemax", 100));
@@ -6634,7 +6631,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 140, 1086, 30668:  //Wrangler
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "54 ; 0.75 ; 128 ; 1 ; 206 ; 2");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "54 ; 0.75 ; 128 ; 1 ; 206 ; 1.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6715,7 +6712,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 237:  //Rocket Jumper
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 135 ; 0.5 ; 206 ; 2.5 ; 400 ; 1", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 135 ; 0.5 ; 206 ; 2 ; 400 ; 1", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6724,7 +6721,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 265:  //Sticky Jumper
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2.5 ; 400 ; 1", true);
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2 ; 400 ; 1", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -6856,7 +6853,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 414:  //Liberty Launcher
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.65 ; 206 ; 2");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.65 ; 206 ; 1.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7017,7 +7014,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 775:  //Escape Plan
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "740 ; 0 ; 206 ; 2 ; 239 ; 0.5");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "740 ; 0 ; 206 ; 1.5 ; 239 ; 0.5");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7063,7 +7060,7 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 			}
 			case 1104:  //Air Strike
 			{
-				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.82 ; 206 ; 1.5");
+				new Handle:itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.82 ; 206 ; 1.25");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7405,7 +7402,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	{
 		if(GetConVarInt(cvarShieldType)==4)
 		{
-			shieldHP[client]=500.0;
+			shieldHP[client]=333.4;
 			shDmgReduction[client]=0.75;
 		}
 		else
@@ -8328,16 +8325,16 @@ public Action:ClientTimer(Handle:timer)
 				{
 					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
 					if(GetConVarInt(cvarShieldType)==4)
-						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.2));
+						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.3));
 					else
 						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.1));
 				}
 			}
-			else if(SapperCooldown[client]>0.0)
+			/*else if(SapperCooldown[client]>0.0)
 			{
 				SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
 				FF2_ShowHudText(client, -1, "%t", "Sapper Cooldown", RoundToFloor((SapperCooldown[client]-GetConVarFloat(cvarSapperCooldown))*(Pow(GetConVarFloat(cvarSapperCooldown), -1.0)*-100.0)));
-			}
+			}*/
 			// Chdata's Deadringer Notifier
 			else if(GetConVarBool(cvarDeadRingerHud) && TF2_GetPlayerClass(client)==TFClass_Spy)
 			{
@@ -9881,10 +9878,10 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 				DebugMsg(0, "Increased Kill Streak");
 			}
 		}
-		if(SapperCooldown[attacker]>0.0)
+		/*if(SapperCooldown[attacker]>0.0)
 		{
 			SapperCooldown[attacker]-=damage;
-		}
+		}*/
 	}
 
 	if(BossCharge[boss][0]>rageMax[client])
@@ -9924,85 +9921,91 @@ public Action:OnPlayerHealed(Handle:event, const String:name[], bool:dontBroadca
 	return Plugin_Continue;
 }
 
-public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
+/*public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
 	if(!Enabled || CheckRoundState()!=1 || !IsValidClient(client) || IsFakeClient(client) || !IsPlayerAlive(client))
 		return Plugin_Continue;
 
 	int index=-1;
 	int entity=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	if(IsValidEntity(weapon) && IsValidEdict(weapon) && GetClientTeam(client)==OtherTeam && SapperCooldown[client]<=0)
+	if((IsValidEntity(weapon) || IsValidEdict(weapon)))
 	{
 		char classname[64];
 		GetEdictClassname(entity, classname, sizeof(classname));
 		index=GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
 
-		if((buttons & IN_ATTACK) && !TF2_IsPlayerInCondition(client, TFCond_Dazed) && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !GetEntProp(client, Prop_Send, "m_bFeignDeathReady") && (!strcmp(classname, "tf_weapon_sapper") || !strcmp(classname, "tf_weapon_builder")) && index!=28)
+		if(GetClientTeam(client)==OtherTeam && (buttons & IN_ATTACK))
 		{
-			float position[3], position2[3], distance;
-			int boss;
-			GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
-			for(int target=1; target<=MaxClients; target++)
+			if(!strcmp(classname, "tf_weapon_sapper") || !strcmp(classname, "tf_weapon_builder") && index!=28)
 			{
-				if(IsValidClient(target) && IsPlayerAlive(target) && GetClientTeam(target)==BossTeam)
+				if(SapperCooldown[client]>0 || TF2_IsPlayerInCondition(client, TFCond_Dazed) || TF2_IsPlayerInCondition(client, TFCond_Cloaked) || GetEntProp(client, Prop_Send, "m_bFeignDeathReady"))
+					return Plugin_Continue;
+
+				float position[3], position2[3], distance;
+				GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
+				int boss;
+				for(int target=1; target<=MaxClients; target++)
 				{
 					boss=FF2_GetBossIndex(target);
-					GetEntPropVector(target, Prop_Send, "m_vecOrigin", position2);
-					distance=GetVectorDistance(position, position2);
-					if(distance<120 && target!=client &&
-					  !TF2_IsPlayerInCondition(target, TFCond_Dazed) &&
-					  !TF2_IsPlayerInCondition(target, TFCond_Sapped) &&
-					  !TF2_IsPlayerInCondition(target, TFCond_UberchargedHidden) &&
-					  !TF2_IsPlayerInCondition(target, TFCond_Ubercharged) &&
-					  !TF2_IsPlayerInCondition(target, TFCond_Bonked) &&
-					  !TF2_IsPlayerInCondition(target, TFCond_MegaHeal))
+					if(IsValidClient(target) && IsPlayerAlive(target) && GetClientTeam(target)==BossTeam)
 					{
-						if(boss>=0 && SapperBoss[target])
+						GetEntPropVector(target, Prop_Send, "m_vecOrigin", position2);
+						distance=GetVectorDistance(position, position2);
+						if(distance<120 && target!=client &&
+						 (!TF2_IsPlayerInCondition(target, TFCond_Dazed) ||
+						  !TF2_IsPlayerInCondition(target, TFCond_Sapped) ||
+						  !TF2_IsPlayerInCondition(target, TFCond_UberchargedHidden) ||
+						  !TF2_IsPlayerInCondition(target, TFCond_Ubercharged) ||
+						  !TF2_IsPlayerInCondition(target, TFCond_Bonked) ||
+						  !TF2_IsPlayerInCondition(target, TFCond_MegaHeal)))
 						{
-							#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
-							TF2_StunPlayer(target, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
-							TF2_AddCondition(target, TFCond_Sapped, 3.0);
-							#else
-							if(index==810 || index==831)
+							if(boss>=0 && SapperBoss[target])
 							{
-								TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 6.0);
-								TF2_AddCondition(target, TFCond_Sapped, 6.0);
-							}
-							else
-							{
+								#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
 								TF2_StunPlayer(target, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
 								TF2_AddCondition(target, TFCond_Sapped, 3.0);
+								#else
+								if(index==810 || index==831)
+								{
+									TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 6.0);
+									TF2_AddCondition(target, TFCond_Sapped, 6.0);
+								}
+								else
+								{
+									TF2_StunPlayer(target, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
+									TF2_AddCondition(target, TFCond_Sapped, 3.0);
+								}
+								#endif
+								SapperCooldown[client]=GetConVarFloat(cvarSapperCooldown);
+								SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
+								SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
+								SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
+								return Plugin_Handled;
 							}
-							#endif
-							SapperCooldown[client]=GetConVarFloat(cvarSapperCooldown);
-							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
-							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
-							SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
-							return Plugin_Handled;
-						}
-						else if(SapperMinion)
-						{
-							#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
-							TF2_StunPlayer(target, 4.0, 0.0, TF_STUNFLAGS_NORMALBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
-							TF2_AddCondition(target, TFCond_Sapped, 4.0);
-							#else
-							if(index==810 || index==831)
+							else if(SapperMinion)
 							{
-								TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 8.0);
-								TF2_StunPlayer(target, 8.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
-								TF2_AddCondition(target, TFCond_Sapped, 8.0);
-							}
-							else
-							{
+								#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
 								TF2_StunPlayer(target, 4.0, 0.0, TF_STUNFLAGS_NORMALBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
 								TF2_AddCondition(target, TFCond_Sapped, 4.0);
+								#else
+								if(index==810 || index==831)
+								{
+									TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 8.0);
+									TF2_StunPlayer(target, 8.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
+									TF2_AddCondition(target, TFCond_Sapped, 8.0);
+								}
+								else
+								{
+									TF2_StunPlayer(target, 4.0, 0.0, TF_STUNFLAGS_NORMALBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
+									TF2_AddCondition(target, TFCond_Sapped, 4.0);
+								}
+								#endif
+								SapperCooldown[client]=GetConVarFloat(cvarSapperCooldown);
+								SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
+								SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
+								SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
+								return Plugin_Handled;
 							}
-							#endif
-							SapperCooldown[client]=GetConVarFloat(cvarSapperCooldown);
-							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
-							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
-							SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
-							return Plugin_Handled;
 						}
 					}
 				}
@@ -10010,7 +10013,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		}
 	}
 	return Plugin_Continue;
-}
+}*/
 
 public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
 {
@@ -10656,7 +10659,6 @@ public Action:OnTakeDamage(client, &attacker, &inflictor, &Float:damage, &damage
 						damage=BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 					damagetype|=DMG_CRIT;
 					damagecustom=0;
-					SapperCooldown[client]=0.0;
 
 					EmitSoundToClient(client, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 					EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
@@ -11961,9 +11963,9 @@ public bool:PickCharacter(boss, companion)
 			   KvGetNum(BossKV[Special[boss]], "donator") ||
 			   KvGetNum(BossKV[Special[boss]], "admin") ||
 			   KvGetNum(BossKV[Special[boss]], "owner") ||
+			   KvGetNum(BossKV[Special[boss]], "theme") ||
 			  (KvGetNum(BossKV[Special[boss]], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) ||
-			  (strlen(companionName) && !DuoMin) ||
-			   BossTheme(Special[boss]))
+			  (strlen(companionName) && !DuoMin))
 			{
 				Special[boss]=-1;
 				continue;
