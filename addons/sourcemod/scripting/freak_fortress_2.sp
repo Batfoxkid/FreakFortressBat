@@ -1902,7 +1902,7 @@ public OnPluginStart()
 	cvarSteamTools=CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
 	//cvarSappers=CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
 	//cvarSapperCooldown=CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
-	cvarTheme=CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 1.0, true, 15.0);
+	cvarTheme=CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2585,6 +2585,8 @@ public EnableFF2()
 	bossTeleportation=GetConVarBool(cvarBossTeleporter);
 	shieldCrits=GetConVarInt(cvarShieldCrits);
 	//allowedDetonations=GetConVarInt(cvarCaberDetonations);
+	Annotations=GetConVarInt(cvarAnnotations);
+	TellName=GetConVarBool(cvarTellName);
 
 	//Set some Valve cvars to what we want them to be
 	SetConVarInt(FindConVar("tf_arena_use_queue"), 0);
@@ -7395,7 +7397,7 @@ public Action:Timer_CheckItems(Handle:timer, any:userid)
 	{
 		if(GetConVarInt(cvarShieldType)==4)
 		{
-			shieldHP[client]=333.4;
+			shieldHP[client]=500.0;
 			shDmgReduction[client]=0.75;
 		}
 		else
@@ -8318,7 +8320,7 @@ public Action:ClientTimer(Handle:timer)
 				{
 					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
 					if(GetConVarInt(cvarShieldType)==4)
-						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.3));
+						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.2));
 					else
 						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.1));
 				}
