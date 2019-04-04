@@ -4,19 +4,15 @@
 	{
 		"Version"
 		{
-			"Latest"	"1.17.9"
-			"Previous"	"1.17.8"
+			"Latest"	"1.17.10"
+			"Previous"	"1.17.9"
 		}
 
-		"Notes"			"Cvar to show boss description before selecting the boss"
-		"Notes"			"Adjusted some hardcoded weapons"
-		"Notes"			"Fixed pickups when FF2 is disabled"
-		"Notes"			"Cvar for RPS queue point betting and boss limiter"
-		"Notes"			"Cvar to show healing done"
-		"Notes"			"Candy Cane Scouts gain healing credit"
-		"Notes"			"Fix shields against critical hits"
-		"Notes"			"Made Killstreaker and Airstrike damage more accurate"
-		"Notes"			"Cvar for Airstrike damage to gain a head"
+		"Notes"			"Added 'theme' setting for certain bosses blocked with ff2_theme"
+		"Notes"			"weapons.cfg is applied first than hardcoded, when enabled"
+		"Notes"			"Added Russian preference translations"
+		"Notes"			"Players with class info off won't view boss description in boss menu"
+		"Notes"			"Fixed sound_lastman playing multiple times in a round"
 	}
 
 	"Files"
