@@ -26,6 +26,7 @@ before_script:
     - wget "https://raw.githubusercontent.com/Flyflo/SM-Goomba-Stomp/master/addons/sourcemod/scripting/include/goomba.inc" -O include/goomba.inc
     - wget "https://raw.githubusercontent.com/Phil25/RTD/master/scripting/include/rtd2.inc" -O include/rtd2.inc
     - wget "https://forums.alliedmods.net/attachment.php?attachmentid=116849&d=1377667508" -O include/tf2attributes.inc
+    - wget "https://forums.alliedmods.net/attachment.php?attachmentid=174751&d=1554175258" -O include/freak_fortress_2_kstreak.inc
 
     - chmod +x spcomp
     - mkdir compiled
