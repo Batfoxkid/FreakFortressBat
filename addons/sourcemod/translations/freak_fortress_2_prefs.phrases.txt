@@ -76,14 +76,17 @@
 	"to0_disablekstreak"
 	{
 		"en"		"Disable Killstreaks"
+		"ru"		"Выключить серии убийств"
 	}
 	"to0_enablekstreak"
 	{
 		"en"		"Enable Killstreaks"
+		"ru"		"Включить серии убийств"
 	}
 	"to0_togglekstreak"
 	{
 		"en"		"Toggle Killstreaks"
+		"ru"		"Переключить серии убийств"
 	}
 	"to0_difficulty"
 	{
@@ -414,25 +417,31 @@
 	"deny_nofirst"
 	{
 		"en"		"You can not select this boss before the first round!"
+		"ru"		"Ты не можешь выбрать этого босса до первого раунда!"
 	}
 	"deny_donator"
 	{
 		"en"		"You do not have access to this boss!"
+		"ru"		"У тебя нету доступа для этого босса!"
 	}
 	"deny_duo_short"
 	{
 		"en"		"There is not enough players to play this boss!"
+		"ru"		"Недостаточно игроков, чтобы играть за этого босса!"
 	}
 	"deny_duo_off"
 	{
 		"en"		"You turned off companions, enable to play this boss!"
+		"ru"		"Нужно сперва включить выбор на роль компаньона, чтобы играть за этого босса!"
 	}
 	"deny_recent"
 	{
 		"en"		"You already played this boss on your round!"
+		"ru"		"Ты уже играл за этого босса в своём раунде!"
 	}
 	"deny_unknown"
 	{
 		"en"		"Boss could not be found!"
+		"ru"		"Босс не найден!"
 	}
 }

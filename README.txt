@@ -20,14 +20,20 @@ Visit the Issues tab (https://github.com/Batfoxkid/FreakFortressBat/issues) to r
 have. Please try to avoid spam and nonsense.
 
 -=- Credits -=-
-SHADoW NiNE TR3S for his fork public release (and I use most of the code from, rip)
+SHADoW NiNE TR3S for FreakFortressBBG (and I use most of the code from)
 https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
 
+MAGNAT2645 for Russian translations and pointing out errors
+https://github.com/MAGNAT2645
+
+sarysa for the improved stun code
+https://github.com/sarysa | https://forums.alliedmods.net/showthread.php?t=309245
+
 Bacon Plague and M76030 for their boss self-knockback code
-https://steamcommunity.com/profiles/76561198049884052/ | https://steamcommunity.com/profiles/76561198046651252
+https://steamcommunity.com/profiles/76561198049884052/ | https://github.com/M76030
 
 Deathreus for the current boss in server name
 https://github.com/Deathreus | https://github.com/Deathreus/FF2-Official
 
-And the FF2 team                                         
+And the FF2 team
 https://github.com/50DKP/FF2-Official
