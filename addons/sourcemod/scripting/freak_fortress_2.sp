@@ -7771,13 +7771,13 @@ public void OnClientDisconnect(int client)
 		KillTimer(MusicTimer[client]);
 		MusicTimer[client]=INVALID_HANDLE;
 	}
-	if(ClientCookie[client] == TOGGLE_TEMP)
+	if(GetClientPreferences(client, PREF_BOSS)>2)
 	{
-		SetClientCookie(client, BossCookie, "-1");
+		SetClientPreferences(client, PREF_BOSS, TOGGLE_UNDEF);
 	}
-	if(ClientCookie2[client] == TOGGLE_TEMP)
+	if(GetClientPreferences(client, PREF_DUO)>2)
 	{
-		SetClientCookie(client, CompanionCookie, "1");
+		SetClientPreferences(client, PREF_DUO, TOGGLE_ON);
 	}
 }
 
