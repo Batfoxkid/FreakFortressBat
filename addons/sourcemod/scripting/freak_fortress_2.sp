@@ -10994,7 +10994,7 @@ stock int GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client]) && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
+			if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
 			{
 				if(GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
 				{
@@ -11014,7 +11014,7 @@ stock int GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client]) && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion)  || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
+			if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion)  || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
