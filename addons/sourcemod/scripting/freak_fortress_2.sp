@@ -4148,7 +4148,7 @@ public Action BossMenuTimer(Handle timer, any clientpack)
 	ResetPack(clientpack);
 	clientId = ReadPackCell(clientpack);
 	CloseHandle(clientpack);
-	int Pref = GetClientPreferences(client, PREF_BOSS);
+	int Pref = GetClientPreferences(clientId, PREF_BOSS);
 	if(Pref!=1 && Pref!=2)
 	{
 		BossMenu(clientId, 0);
@@ -4182,7 +4182,7 @@ public int MenuHandlerCompanion(Handle menu, MenuAction action, int param1, int 
 	if(action == MenuAction_Select)
 	{
 		int choice = param2 + 1;
-		SetClientPreferences(client, PREF_BOSS, choice);
+		SetClientPreferences(param1, PREF_BOSS, choice);
 
 		switch(choice)
 		{
@@ -4227,7 +4227,7 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 	if(action == MenuAction_Select)
 	{
 		int choice = param2 + 1;
-		SetClientPreferences(client, PREF_DUO, choice);
+		SetClientPreferences(param1, PREF_DUO, choice);
 
 		switch(choice)
 		{
@@ -4769,8 +4769,6 @@ int GetClientPreferences(int client, int type)
 	{
 		return StringToInt(cookieValues[5][0]);
 	}
-	Format(cookies, sizeof(cookies), "%s %s %s %s %s %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[3], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
-	SetClientCookie(client, FF2Cookies, cookies);
 }
 
 void SetClientPreferences(int client, int type, int enable)
@@ -4793,12 +4791,12 @@ void SetClientPreferences(int client, int type, int enable)
 		else if(enable==TOGGLE_OFF)
 		{
 			cookieValues[4][0]='2';
-			xIncoming[client] = "";
+			xIncoming[client][0] = '\0';
 		}
 		else if(enable==TOGGLE_TEMP)
 		{
 			cookieValues[4][0]='3';
-			xIncoming[client] = "";
+			xIncoming[client][0] = '\0';
 		}
 		else
 		{
@@ -4814,12 +4812,12 @@ void SetClientPreferences(int client, int type, int enable)
 		else if(enable==TOGGLE_OFF)
 		{
 			cookieValues[5][0]='2';
-			xIncoming[param1] = "";
+			xIncoming[client][0] = '\0';
 		}
 		else if(enable==TOGGLE_TEMP)
 		{
 			cookieValues[5][0]='3';
-			xIncoming[param1] = "";
+			xIncoming[client][0] = '\0';
 		}
 		else
 		{
@@ -5079,7 +5077,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				case 0: 
 				{
 					IsBossSelected[param1]=true;
-					xIncoming[param1] = "";
+					xIncoming[param1][0] = '\0';
 					CReplyToCommand(param1, "%t", "to0_comfirmrandom");
 					return;
 				}
@@ -7736,41 +7734,6 @@ public void OnClientPostAdminCheck(int client)
 	else
 	{
 		playBGM[client]=false;
-	}
-}
-
-public void OnClientCookiesCached(int client)
-{
-	char sEnabled[2];
-	GetClientCookie(client, BossCookie, sEnabled, sizeof(sEnabled));
-
-	int enabled = StringToInt(sEnabled);
-
-	if(1>enabled || 2<enabled)
-	{
-		ClientCookie[client] = TOGGLE_UNDEF;
-		Handle clientPack = CreateDataPack();
-		WritePackCell(clientPack, client);
-		CreateTimer(GetConVarFloat(cvarFF2TogglePrefDelay), BossMenuTimer, clientPack);
-	}
-	else
-	{
-		ClientCookie[client] = enabled;
-	}
-
-	GetClientCookie(client, CompanionCookie, sEnabled, sizeof(sEnabled));
-
-	enabled = StringToInt(sEnabled);
-
-	if(1>enabled || 2<enabled)
-	{
-		ClientCookie2[client] = TOGGLE_UNDEF;
-		Handle clientPack = CreateDataPack();
-		WritePackCell(clientPack, client);
-	}
-	else
-	{
-		ClientCookie2[client] = enabled;
 	}
 }
 
