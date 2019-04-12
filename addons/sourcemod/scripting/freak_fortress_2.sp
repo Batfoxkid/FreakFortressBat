@@ -105,14 +105,13 @@ last time or to encourage others to do the same.
 
 #define SOUNDEXCEPT_MUSIC 0
 #define SOUNDEXCEPT_VOICE 1
+#define PREF_DUO  2
+#define PREF_BOSS 3
 
 #define HEALTHBAR_CLASS "monster_resource"
 #define HEALTHBAR_PROPERTY "m_iBossHealthPercentageByte"
 #define HEALTHBAR_MAX 255
 #define MONOCULUS "eyeball_boss"
-
-#define MAX_MESSAGE_LENGTH	256
-#define MAX_BUFFER_LENGTH	(MAX_MESSAGE_LENGTH * 4)
 
 // File paths
 #define ConfigPath "configs/freak_fortress_2"
@@ -253,6 +252,7 @@ ConVar cvarQualityWep;
 ConVar cvarTripleWep;
 ConVar cvarHardcodeWep;
 ConVar cvarSelfKnockback;
+ConVar cvarFF2TogglePrefDelay;
 ConVar cvarNameChange;
 ConVar cvarKeepBoss;
 ConVar cvarSelectBoss;
@@ -1801,18 +1801,13 @@ char xIncoming[MAXPLAYERS+1][700];
 char cIncoming[MAXPLAYERS+1][700];
 
 // Boss Toggle
-#define TOGGLE_UNDEF -1
+#define TOGGLE_UNDEF 0
 #define TOGGLE_ON  1
 #define TOGGLE_OFF 2
 #define TOGGLE_TEMP 3
 
-Handle BossCookie=INVALID_HANDLE;
-Handle CompanionCookie=INVALID_HANDLE;
 Handle LastPlayedCookie=INVALID_HANDLE;
-Handle cvarFF2TogglePrefDelay=INVALID_HANDLE;
 
-ClientCookie[MAXPLAYERS+1];
-ClientCookie2[MAXPLAYERS+1];
 ClientPoint[MAXPLAYERS+1];
 ClientID[MAXPLAYERS+1];
 ClientQueue[MAXPLAYERS+1][2];
@@ -1832,7 +1827,7 @@ public void OnPluginStart()
 	{
 		CreateDirectory(pLog, 511);
 		
-		if (!DirExists(pLog))
+		if(!DirExists(pLog))
 			LogError("Failed to create directory at %s", pLog);
 	}
 
@@ -1997,7 +1992,16 @@ public void OnPluginStart()
 	RegConsoleCmd("ff2resetpoints", ResetQueuePointsCmd, "Reset your queue points");
 	RegConsoleCmd("ff2_boss", Command_SetMyBoss, "View FF2 Boss Preferences");
 	RegConsoleCmd("ff2boss", Command_SetMyBoss, "View FF2 Boss Preferences");
-	RegConsoleCmd("setboss", Command_SetMyBoss, "View FF2 Boss Preferences");
+	RegConsoleCmd("ff2toggle", BossMenu, "Toggle being a FF2 boss");
+	RegConsoleCmd("ff2_toggle", BossMenu, "Toggle being a FF2 boss");
+	RegConsoleCmd("ff2companion", CompanionMenu, "Toggle being a FF2 companion");
+	RegConsoleCmd("ff2_companion", CompanionMenu, "Toggle being a FF2 companion");
+	RegConsoleCmd("ff2_skipsong", Command_SkipSong, "Skip the current song");
+	RegConsoleCmd("ff2skipsong", Command_SkipSong, "Skip the current song");
+	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong, "Play a random song");
+	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong, "Play a random song");
+	RegConsoleCmd("ff2_tracklist", Command_Tracklist, "View list of songs");
+	RegConsoleCmd("ff2tracklist", Command_Tracklist, "View list of songs");
 
 	RegConsoleCmd("hale", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("hale_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -2018,31 +2022,10 @@ public void OnPluginStart()
 	RegConsoleCmd("haleresetpoints", ResetQueuePointsCmd, "Reset your queue points");
 	RegConsoleCmd("hale_boss", Command_SetMyBoss, "View FF2 Boss Preferences");
 	RegConsoleCmd("haleboss", Command_SetMyBoss, "View FF2 Boss Preferences");
-
-	BossCookie = RegClientCookie("ff2_boss_toggle", "Players FF2 Boss Toggle", CookieAccess_Public);
-	CompanionCookie = RegClientCookie("ff2_companion_toggle", "Players FF2 Companion Boss Toggle", CookieAccess_Public);
-	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Players FF2 Previous Boss", CookieAccess_Protected);
-
-	RegConsoleCmd("ff2toggle", BossMenu, "Toggle being a FF2 boss");
-	RegConsoleCmd("ff2_toggle", BossMenu, "Toggle being a FF2 boss");
-	RegConsoleCmd("ff2companion", CompanionMenu, "Toggle being a FF2 companion");
-	RegConsoleCmd("ff2_companion", CompanionMenu, "Toggle being a FF2 companion");
 	RegConsoleCmd("haletoggle", BossMenu, "Toggle being a FF2 boss");
 	RegConsoleCmd("hale_toggle", BossMenu, "Toggle being a FF2 boss");
 	RegConsoleCmd("halecompanion", CompanionMenu, "Toggle being a FF2 companion");
 	RegConsoleCmd("hale_companion", CompanionMenu, "Toggle being a FF2 companion");
-	for(int i = 0; i < MAXPLAYERS; i++)
-	{
-		ClientCookie[i] = TOGGLE_UNDEF;
-		ClientCookie2[i] = TOGGLE_UNDEF;
-	}
-
-	RegConsoleCmd("ff2_skipsong", Command_SkipSong, "Skip the current song");
-	RegConsoleCmd("ff2skipsong", Command_SkipSong, "Skip the current song");
-	RegConsoleCmd("ff2_shufflesong", Command_ShuffleSong, "Play a random song");
-	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong, "Play a random song");
-	RegConsoleCmd("ff2_tracklist", Command_Tracklist, "View list of songs");
-	RegConsoleCmd("ff2tracklist", Command_Tracklist, "View list of songs");
 	RegConsoleCmd("hale_skipsong", Command_SkipSong, "Skip the current song");
 	RegConsoleCmd("haleskipsong", Command_SkipSong, "Skip the current song");
 	RegConsoleCmd("hale_shufflesong", Command_ShuffleSong, "Play a random song");
@@ -2093,15 +2076,16 @@ public void OnPluginStart()
 
 	AutoExecConfig(true, "FreakFortress2");
 
-	FF2Cookies=RegClientCookie("ff2_cookies_mk2", "", CookieAccess_Protected);
+	FF2Cookies = RegClientCookie("ff2_cookies_mk2", "", CookieAccess_Protected);
+	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Players FF2 Previous Boss", CookieAccess_Protected);
 
-	jumpHUD=CreateHudSynchronizer();
-	rageHUD=CreateHudSynchronizer();
-	livesHUD=CreateHudSynchronizer();
-	abilitiesHUD=CreateHudSynchronizer();
-	timeleftHUD=CreateHudSynchronizer();
-	infoHUD=CreateHudSynchronizer();
-	//lifeHUD=CreateHudSynchronizer();
+	jumpHUD = CreateHudSynchronizer();
+	rageHUD = CreateHudSynchronizer();
+	livesHUD = CreateHudSynchronizer();
+	abilitiesHUD = CreateHudSynchronizer();
+	timeleftHUD = CreateHudSynchronizer();
+	infoHUD = CreateHudSynchronizer();
+	//lifeHUD = CreateHudSynchronizer();
 
 	char oldVersion[64];
 	cvarVersion.GetString(oldVersion, 64);
@@ -2122,15 +2106,15 @@ public void OnPluginStart()
 	AddMultiTargetFilter("@!boss", BossTargetFilter, "all non-Boss players", false);
 
 	#if defined _steamtools_included
-	steamtools=LibraryExists("SteamTools");
+	steamtools = LibraryExists("SteamTools");
 	#endif
 
 	#if defined _goomba_included
-	goomba=LibraryExists("goomba");
+	goomba = LibraryExists("goomba");
 	#endif
 
 	#if defined _tf2attributes_included
-	tf2attributes=LibraryExists("tf2attributes");
+	tf2attributes = LibraryExists("tf2attributes");
 	#endif
 }
 
@@ -3681,17 +3665,15 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		
 		SortCustom2D(ClientQueue, sizeof(ClientQueue), SortQueueDesc);
 		
-		for(int client=1;client<=MaxClients;client++)
+		for(int client=1; client<=MaxClients; client++)
 		{
 			if(!IsValidClient(client))
-			{
 				continue;
-			}
 
 			ClientID[client] = ClientQueue[client][0];
 			ClientPoint[client] = ClientQueue[client][1];
 			
-			if(ClientCookie[client] == TOGGLE_ON)
+			if(GetClientPreferences(client, PREF_BOSS)==1)
 			{
 				int index = -1;
 				for(int i = 1; i < MAXPLAYERS+1; i++)
@@ -3711,12 +3693,11 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
    				}
 			}
-			else if(ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP)
+			else if(GetClientPreferences(client, PREF_BOSS)>1)
 			{
-				//SetClientQueuePoints(client, -15);
 				char nick[64];
 				GetClientName(client, nick, sizeof(nick));
-				if(ClientCookie[client] == TOGGLE_OFF)
+				if(GetClientPreferences(client, PREF_BOSS)<3)
 				{
 					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
 				}
@@ -3725,7 +3706,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 				}
 			}
-			else if(ClientCookie[client] == TOGGLE_UNDEF || !ClientCookie[client])
+			else if(GetClientPreferences(client, PREF_BOSS)<1)
 			{
 				char nick[64];
 				GetClientName(client, nick, sizeof(nick));
@@ -4146,9 +4127,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 public Action OnPlayerDisconnect(Handle event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled)
-	{
 		return Plugin_Continue;
-	}
 
 	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
 	{
@@ -4158,8 +4137,8 @@ public Action OnPlayerDisconnect(Handle event, const char[] name, bool dontBroad
 	{
 		DuoMin=false;
 	}
-	int client=GetClientOfUserId(GetEventInt(event, "userid"));
-	xIncoming[client] = "";
+	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	xIncoming[client][0] = '\0';
 	return Plugin_Continue;
 }
 
@@ -4169,36 +4148,30 @@ public Action BossMenuTimer(Handle timer, any clientpack)
 	ResetPack(clientpack);
 	clientId = ReadPackCell(clientpack);
 	CloseHandle(clientpack);
-	if(ClientCookie[clientId] == TOGGLE_UNDEF)
+	int Pref = GetClientPreferences(client, PREF_BOSS);
+	if(Pref!=1 && Pref!=2)
 	{
 		BossMenu(clientId, 0);
 	}
 }
 
-// Companion Menu
 public Action CompanionMenu(int client, int args)
 {
 	if(IsValidClient(client) && GetConVarBool(cvarDuoBoss))
 	{
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Companion Toggle Menu Title", ClientCookie2[client]);
-
-		char sEnabled[2];
-		GetClientCookie(client, CompanionCookie, sEnabled, sizeof(sEnabled));
-		ClientCookie2[client] = StringToInt(sEnabled);	
-
 		Handle menu = CreateMenu(MenuHandlerCompanion);
-		SetMenuTitle(menu, "%T", "FF2 Companion Toggle Menu Title", client, ClientCookie2[client]);
+		SetGlobalTransTarget(client);
+		SetMenuTitle(menu, "%t", "FF2 Companion Toggle Menu Title");
 
 		char menuoption[128];
-		Format(menuoption, sizeof(menuoption), "%T", "Enable Companion Selection", client);
+		Format(menuoption, sizeof(menuoption), "%t", "Enable Companion Selection");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
-		Format(menuoption, sizeof(menuoption), "%T", "Disable Companion Selection", client);
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
-		Format(menuoption, sizeof(menuoption), "%T", "Disable Companion Selection For Map", client);
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection For Map");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
 
 		SetMenuExitButton(menu, true);
-
 		DisplayMenu(menu, client, 20);
 	}
 	return Plugin_Handled;
@@ -4208,25 +4181,17 @@ public int MenuHandlerCompanion(Handle menu, MenuAction action, int param1, int 
 {
 	if(action == MenuAction_Select)
 	{
-		char sEnabled[2];
 		int choice = param2 + 1;
+		SetClientPreferences(client, PREF_BOSS, choice);
 
-		ClientCookie2[param1] = choice;
-		IntToString(choice, sEnabled, sizeof(sEnabled));
-
-		SetClientCookie(param1, CompanionCookie, sEnabled);
-
-		if(1 == choice)
+		switch(choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Enabled");
-		}
-		else if(2 == choice)
-		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled");
-		}
-		else if(3 == choice)
-		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
+			case 1:
+				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Enabled");
+			case 2:
+				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled");
+			case 3:
+				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
 		}
 	}
 	else if(action == MenuAction_End)
@@ -4235,29 +4200,23 @@ public int MenuHandlerCompanion(Handle menu, MenuAction action, int param1, int 
 	}
 }
 
-// Boss menu
 public Action BossMenu(int client, int args)
 {
 	if(IsValidClient(client) && GetConVarBool(cvarToggleBoss))
 	{
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Menu Title", ClientCookie[client]);
-		char sEnabled[2];
-		GetClientCookie(client, BossCookie, sEnabled, sizeof(sEnabled));
-		ClientCookie[client] = StringToInt(sEnabled);
-
 		Handle menu = CreateMenu(MenuHandlerBoss);
-		SetMenuTitle(menu, "%T", "FF2 Toggle Menu Title", client, ClientCookie[client]);
+		SetGlobalTransTarget(client);
+		SetMenuTitle(menu, "%t", "FF2 Toggle Menu Title");
 
 		char menuoption[128];
-		Format(menuoption, sizeof(menuoption), "%T", "Enable Queue Points", client);
+		Format(menuoption, sizeof(menuoption), "%t", "Enable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
-		Format(menuoption, sizeof(menuoption), "%T", "Disable Queue Points", client);
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
-		Format(menuoption, sizeof(menuoption), "%T", "Disable Queue Points For This Map", client);
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Queue Points For This Map");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 
 		SetMenuExitButton(menu, true);
-
 		DisplayMenu(menu, client, 20);
 	}
 	return Plugin_Handled;
@@ -4267,25 +4226,17 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 {
 	if(action == MenuAction_Select)
 	{
-		char sEnabled[2];
 		int choice = param2 + 1;
+		SetClientPreferences(client, PREF_DUO, choice);
 
-		ClientCookie[param1] = choice;
-		IntToString(choice, sEnabled, sizeof(sEnabled));
-
-		SetClientCookie(param1, BossCookie, sEnabled);
-		
-		if(1 == choice)
+		switch(choice)
 		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
-		}
-		else if(2 == choice)
-		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
-		}
-		else if(3 == choice)
-		{
-			CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
+			case 1:
+				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
+			case 2:
+				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+			case 3:
+				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
 		}
 	} 
 	else if(action == MenuAction_End)
@@ -4335,7 +4286,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 	int[] add_points2 = new int[MaxClients+1];
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if((ClientCookie[client] == TOGGLE_OFF || ClientCookie[client] == TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Do not give queue points to those who have ff2 bosses disabled
+		if(GetClientPreferences(client, PREF_BOSS)>1 && GetConVarBool(cvarToggleBoss)) // Do not give queue points to those who have ff2 bosses disabled
 			continue;
 
 		if(IsValidClient(client))
@@ -4799,79 +4750,101 @@ void SetClientSoundOptions(int client, char soundException, bool enable)
 	SetClientCookie(client, FF2Cookies, cookies);
 }
 
-public Action Command_YouAreNext(int client, int args)
+int GetClientPreferences(int client, int type)
 {
-	if(!Enabled || !IsValidClient(client))
+	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client))
 	{
-		return Plugin_Handled;
-	}
-	
-	if(IsVoteInProgress())
-	{
-		CreateTimer(5.0, Timer_RetryBossNotify, client);
-		return Plugin_Handled;
-	}
-	
-	if(client == 0)
-	{
-		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
-		return Plugin_Handled;
+		return -1;
 	}
 
-	char texts[256];
-	Handle panel = CreatePanel();
-
-	Format(texts, sizeof(texts), "%T\n%T", "to0_next", client, "to0_near", client);
-	CRemoveTags(texts, sizeof(texts));
-
-	ReplaceString(texts, sizeof(texts), "{olive}", "");
-	ReplaceString(texts, sizeof(texts), "{default}", "");
-	
-	SetPanelTitle(panel, texts);
-	
-	Format(texts, sizeof(texts), "%T", "to0_to0_next", client);
-	DrawPanelItem(panel, texts);
-	
-	SendPanelToClient(panel, client, SkipBossPanelH, 30);
-
-	CloseHandle(panel);
-
-	return Plugin_Handled;
+	char cookies[24];
+	char cookieValues[8][5];
+	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
+	ExplodeString(cookies, " ", cookieValues, 8, 5);
+	if(type==PREF_DUO)
+	{
+		return StringToInt(cookieValues[4][0]);
+	}
+	else
+	{
+		return StringToInt(cookieValues[5][0]);
+	}
+	Format(cookies, sizeof(cookies), "%s %s %s %s %s %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[3], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
+	SetClientCookie(client, FF2Cookies, cookies);
 }
 
-public Action Timer_RetryBossNotify(Handle timer, any client)
+void SetClientPreferences(int client, int type, int enable)
 {
-	Command_YouAreNext(client, 0);
-}
-
-public int SkipBossPanelH(Handle menu, MenuAction action, int param1, int param2)
-{
-	switch(action)
+	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client))
 	{
-		case MenuAction_End: CloseHandle(menu);
-		case MenuAction_Select:
+		return;
+	}
+
+	char cookies[24];
+	char cookieValues[8][5];
+	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
+	ExplodeString(cookies, " ", cookieValues, 8, 5);
+	if(type==PREF_DUO)
+	{
+		if(enable==TOGGLE_ON)
 		{
-			Command_SetMyBoss(param1, 0);
+			cookieValues[4][0]='1';
+		}
+		else if(enable==TOGGLE_OFF)
+		{
+			cookieValues[4][0]='2';
+			xIncoming[client] = "";
+		}
+		else if(enable==TOGGLE_TEMP)
+		{
+			cookieValues[4][0]='3';
+			xIncoming[client] = "";
+		}
+		else
+		{
+			cookieValues[4][0]='0';
 		}
 	}
-	return;
+	else
+	{
+		if(enable==TOGGLE_ON)
+		{
+			cookieValues[5][0]='1';
+		}
+		else if(enable==TOGGLE_OFF)
+		{
+			cookieValues[5][0]='2';
+			xIncoming[param1] = "";
+		}
+		else if(enable==TOGGLE_TEMP)
+		{
+			cookieValues[5][0]='3';
+			xIncoming[param1] = "";
+		}
+		else
+		{
+			cookieValues[5][0]='0';
+		}
+	}
+	Format(cookies, sizeof(cookies), "%s %s %s %s %s %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[3], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
+	SetClientCookie(client, FF2Cookies, cookies);
 }
 
 public Action Command_SetMyBoss(int client, int args)
 {
-	if (!client)
+	if(!client)
 	{
 		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 		return Plugin_Handled;
 	}
 	
-	if (!GetConVarBool(cvarSelectBoss))
+	if(!GetConVarBool(cvarSelectBoss))
 	{
 		// No reply because, disabled msg and another plugin's menu shows?
 		return Plugin_Handled;
 	}
 	
-	if (!CheckCommandAccess(client, "ff2_boss", 0, true))
+	if(!CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
 		ReplyToCommand(client, "[SM] %t", "No Access");
 		return Plugin_Handled;
@@ -4908,7 +4881,7 @@ public Action Command_SetMyBoss(int client, int args)
 					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_short");
 					return Plugin_Handled;
 				}
-				if(strlen(companionName) && (ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss))
+				if(strlen(companionName) && GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1)
 				{
 					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_off");
 					return Plugin_Handled;
@@ -4952,7 +4925,7 @@ public Action Command_SetMyBoss(int client, int args)
 					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_short");
 					return Plugin_Handled;
 				}
-				if(strlen(companionName) && (ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss))
+				if(strlen(companionName) && GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1)
 				{
 					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_off");
 					return Plugin_Handled;
@@ -4986,28 +4959,35 @@ public Action Command_SetMyBoss(int client, int args)
 	char boss[64];
 	Handle dMenu = CreateMenu(Command_SetMyBossH);
 
-	SetMenuTitle(dMenu, "%T", "ff2_boss_selection", client, xIncoming[client]);
+	SetGlobalTransTarget(client);
+	SetMenuTitle(dMenu, "%t", "ff2_boss_selection", xIncoming[client]);
 	
-	Format(boss, sizeof(boss), "%T", "to0_random", client);
+	Format(boss, sizeof(boss), "%t", "to0_random");
 	AddMenuItem(dMenu, boss, boss);
 	
 	if(GetConVarBool(cvarToggleBoss))
 	{
-		if(ClientCookie[client] == TOGGLE_ON || ClientCookie[client] == TOGGLE_UNDEF)
-			Format(boss, sizeof(boss), "%T", "to0_disablepts", client);
-
+		if(GetClientPreferences(client, PREF_BOSS)<2)
+		{
+			Format(boss, sizeof(boss), "%t", "to0_disablepts");
+		}
 		else
-			Format(boss, sizeof(boss), "%T", "to0_enablepts", client);
+		{
+			Format(boss, sizeof(boss), "%t", "to0_enablepts");
+		}
 
 		AddMenuItem(dMenu, boss, boss);
 	}
 	if(GetConVarBool(cvarDuoBoss))
 	{
-		if(ClientCookie2[client] == TOGGLE_ON || ClientCookie2[client] == TOGGLE_UNDEF)
-			Format(boss, sizeof(boss), "%T", "to0_disableduo", client);
-
+		if(GetClientPreferences(client, PREF_DUO)<2)
+		{
+			Format(boss, sizeof(boss), "%t", "to0_disableduo");
+		}
 		else
-			Format(boss, sizeof(boss), "%T", "to0_enableduo", client);
+		{
+			Format(boss, sizeof(boss), "%t", "to0_enableduo");
+		}
 
 		AddMenuItem(dMenu, boss, boss);
 	}
@@ -5015,11 +4995,17 @@ public Action Command_SetMyBoss(int client, int args)
 	if(kmerge && CheckCommandAccess(client, "ff2_kstreak_a", 0, true))
 	{
 		if(FF2_KStreak_GetCookies(client, 0)==1)
-			Format(boss, sizeof(boss), "%T", "to0_disablekstreak", client);
+		{
+			Format(boss, sizeof(boss), "%t", "to0_disablekstreak");
+		}
 		else if(FF2_KStreak_GetCookies(client, 0)<1)
-			Format(boss, sizeof(boss), "%T", "to0_enablekstreak", client);
+		{
+			Format(boss, sizeof(boss), "%t", "to0_enablekstreak");
+		}
 		else
-			Format(boss, sizeof(boss), "%T", "to0_togglekstreak", client);
+		{
+			Format(boss, sizeof(boss), "%t", "to0_togglekstreak");
+		}
 
 		AddMenuItem(dMenu, boss, boss);
 	}
@@ -5038,7 +5024,11 @@ public Action Command_SetMyBoss(int client, int args)
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 		   (KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) ||
-		   (strlen(companionName) && (!DuoMin || ((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)))))
+		   (strlen(companionName) && !DuoMin))
+		{
+			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+		}
+		else if(strlen(companionName) && GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1)
 		{
 			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
 		}
@@ -5053,12 +5043,18 @@ public Action Command_SetMyBoss(int client, int args)
 				char cookie[64];
 				GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
 				if(StrEqual(boss, cookie, false))
+				{
 					AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+				}
 				else
+				{
 					AddMenuItem(dMenu, boss, boss);
+				}
 			}
 			else
+			{
 				AddMenuItem(dMenu, boss, boss);
+			}
 		}
 	}
 
@@ -5090,16 +5086,19 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				case 1:
 				{
 					if(GetConVarBool(cvarToggleBoss))
+					{
 						BossMenu(param1, 0);
-
+					}
 					else if(GetConVarBool(cvarDuoBoss))
+					{
 						CompanionMenu(param1, 0);
-
+					}
 					#if defined _freak_fortress_2_kstreak_included
 					else if(kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+					{
 						FF2_KStreak_Menu(param1, 0);
+					}
 					#endif
-
 					else
 					{
 						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
@@ -5118,16 +5117,19 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				case 2:
 				{
 					if(GetConVarBool(cvarDuoBoss) && GetConVarBool(cvarToggleBoss))
+					{
 						CompanionMenu(param1, 0);
-
+					}
 					#if defined _freak_fortress_2_kstreak_included
 					else if(GetConVarBool(cvarToggleBoss) && !GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+					{
 						FF2_KStreak_Menu(param1, 0);
-
+					}
 					else if(!GetConVarBool(cvarToggleBoss) && GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+					{
 						FF2_KStreak_Menu(param1, 0);
+					}
 					#endif
-
 					else
 					{
 						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
@@ -5147,8 +5149,9 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				{
 					#if defined _freak_fortress_2_kstreak_included
 					if(GetConVarBool(cvarToggleBoss) && GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+					{
 						FF2_KStreak_Menu(param1, 0);
-
+					}
 					else
 					{
 						if(!GetConVarBool(cvarBossDesc) || !GetClientClassInfoCookie(param1))
@@ -5200,13 +5203,12 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 public Action ConfirmBoss(int client)
 {
 	if(!GetConVarBool(cvarBossDesc))
-	{
 		return Plugin_Handled;
-	}
 
 	char text[512], language[20], boss[64];
 	GetLanguageInfo(GetClientLanguage(client), language, 8, text, 8);
 	Format(language, sizeof(language), "description_%s", language);
+	SetGlobalTransTarget(client);
 		
 	for(int config; config<Specials; config++)
 	{
@@ -5221,7 +5223,7 @@ public Action ConfirmBoss(int client)
 				KvGetString(BossKV[config], "description_en", text, sizeof(text));  //Default to English if their language isn't available
 				if(!text[0])
 				{
-					Format(text, sizeof(text), "%T", "to0_nodesc", client);
+					Format(text, sizeof(text), "%t", "to0_nodesc");
 				}
 			}
 			ReplaceString(text, sizeof(text), "\\n", "\n");
@@ -5231,10 +5233,10 @@ public Action ConfirmBoss(int client)
 	Handle dMenu = CreateMenu(ConfirmBossH);
 	SetMenuTitle(dMenu, text);
 
-	Format(text, sizeof(text), "%T", "to0_confirm", client, cIncoming[client]);
+	Format(text, sizeof(text), "%t", "to0_confirm", cIncoming[client]);
 	AddMenuItem(dMenu, text, text);
 
-	Format(text, sizeof(text), "%T", "to0_cancel", client);
+	Format(text, sizeof(text), "%t", "to0_cancel");
 	AddMenuItem(dMenu, text, text);
 
 	SetMenuExitButton(dMenu, false);
@@ -5366,23 +5368,21 @@ bool BossTheme(int config)
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
 	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
-	if(preset)
+	if(!boss && strlen(xIncoming[client]))
 	{
-		if(!boss && !StrEqual(xIncoming[client], ""))
+		if(preset)
 		{
 			CPrintToChat(client, "{olive}[FF2]{default} %t", "boss_selection_overridden");
 		}
-		return Plugin_Continue;
-	}
-	
-	if(!boss && !StrEqual(xIncoming[client], ""))
-	{
-		strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
-		if(GetConVarInt(cvarKeepBoss)<1 || !GetConVarBool(cvarSelectBoss) || IsFakeClient(client))
+		else
 		{
-			xIncoming[client] = "";
+			strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
+			if(GetConVarInt(cvarKeepBoss)<1 || !GetConVarBool(cvarSelectBoss) || IsFakeClient(client))
+			{
+				xIncoming[client][0] = '\0';
+			}
+			return Plugin_Changed;
 		}
-		return Plugin_Changed;
 	}
 	return Plugin_Continue;
 }
@@ -6101,7 +6101,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 						int wepIndex;
 						char wepIndexes[768][32];
 						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
-						for (int wepIdx = 0; wepIdx<=weaponIdxcount ; wepIdx++)
+						for(int wepIdx = 0; wepIdx<=weaponIdxcount ; wepIdx++)
 						{
 							if(strlen(wepIndexes[wepIdx])>0)
 							{
@@ -7718,8 +7718,8 @@ public void OnClientPostAdminCheck(int client)
 		GetClientCookie(client, FF2Cookies, buffer, sizeof(buffer));
 		if(!buffer[0])
 		{
-			SetClientCookie(client, FF2Cookies, "0 1 1 1 3 3 3");
-			//Queue points | music exception | voice exception | class info | UNUSED | UNUSED | UNUSED
+			SetClientCookie(client, FF2Cookies, "0 1 1 1 0 0 3");
+			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | UNUSED
 		}
 	}
 
@@ -10076,7 +10076,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 416:  //Market Gardener (courtesy of Chdata)
 					{
-						if (RemoveCond(attacker, TFCond_BlastJumping))	// New way to check explosive jumping status
+						if(RemoveCond(attacker, TFCond_BlastJumping))	// New way to check explosive jumping status
 						//if(FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING)
                         			{
 							if(GetConVarBool(cvarLowStab))
@@ -10882,9 +10882,9 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 		result=false;
 		return Plugin_Changed;
 	}
-	else if (Enabled && !IsBoss(client) && CheckRoundState()==1 && IsValidEntity(weapon) && SniperClimbDelay!=0)
+	else if(Enabled && !IsBoss(client) && CheckRoundState()==1 && IsValidEntity(weapon) && SniperClimbDelay!=0)
 	{
-		if (!StrContains(weaponname, "tf_weapon_club"))
+		if(!StrContains(weaponname, "tf_weapon_club"))
 		{
 			SickleClimbWalls(client, weapon);
 		}
@@ -10894,7 +10894,8 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 
 public int SickleClimbWalls(int client, int weapon)	 //Credit to Mecha the Slag
 {
-	if (!IsValidClient(client) || (GetClientHealth(client)<=SniperClimbDamage) )return;
+	if(!IsValidClient(client) || (GetClientHealth(client)<=SniperClimbDamage))
+		return;
 
 	char classname[64];
 	float vecClientEyePos[3];
@@ -10905,24 +10906,29 @@ public int SickleClimbWalls(int client, int weapon)	 //Credit to Mecha the Slag
 	//Check for colliding entities
 	TR_TraceRayFilter(vecClientEyePos, vecClientEyeAng, MASK_PLAYERSOLID, RayType_Infinite, TraceRayDontHitSelf, client);
 
-	if (!TR_DidHit(INVALID_HANDLE)) return;
+	if(!TR_DidHit(INVALID_HANDLE))
+		return;
 
 	int TRIndex = TR_GetEntityIndex(INVALID_HANDLE);
 	GetEdictClassname(TRIndex, classname, sizeof(classname));
-	if (!StrEqual(classname, "worldspawn")) return;
+	if(!StrEqual(classname, "worldspawn"))
+		return;
 
 	float fNormal[3];
 	TR_GetPlaneNormal(INVALID_HANDLE, fNormal);
 	GetVectorAngles(fNormal, fNormal);
 
-	if (fNormal[0] >= 30.0 && fNormal[0] <= 330.0) return;
-	if (fNormal[0] <= -30.0) return;
+	if(fNormal[0] >= 30.0 && fNormal[0] <= 330.0)
+		return;
+	if(fNormal[0] <= -30.0)
+		return;
 
 	float pos[3];
 	TR_GetEndPosition(pos);
 	float distance = GetVectorDistance(vecClientEyePos, pos);
 
-	if (distance >= 100.0) return;
+	if(distance >= 100.0)
+		return;
 
 	float fVelocity[3];
 	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
@@ -10933,16 +10939,18 @@ public int SickleClimbWalls(int client, int weapon)	 //Credit to Mecha the Slag
 
 	SDKHooks_TakeDamage(client, client, client, SniperClimbDamage, DMG_CLUB, GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 
-	if (!IsBoss(client)) ClientCommand(client, "playgamesound \"%s\"", "player\\taunt_clip_spin.wav");
+	if(!IsBoss(client))
+		ClientCommand(client, "playgamesound \"%s\"", "player\\taunt_clip_spin.wav");
 
 	RequestFrame(Timer_NoAttacking, EntIndexToEntRef(weapon));
-	// CreateTimer(0.0, Timer_NoAttacking, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 stock int SetNextAttack(int weapon, float duration = 0.0)
 {
-	if (weapon <= MaxClients) return;
-	if (!IsValidEntity(weapon)) return;
+	if(weapon <= MaxClients)
+		return;
+	if(!IsValidEntity(weapon))
+		return;
 	float next = GetGameTime() + duration;
 	SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", next);
 	SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", next);
@@ -10966,17 +10974,17 @@ stock int GetClientWithMostQueuePoints(bool[] omit)
 	{
 		if(IsValidClient(client) && GetClientQueuePoints(client)>=GetClientQueuePoints(winner) && !omit[client])
 		{
-			if((ClientCookie[client]==TOGGLE_OFF || ClientCookie[client]==TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
+			if(GetClientPreferences(client, PREF_BOSS)>1)	// Skip clients who have disabled being able to be a boss
+			{
 				continue;
-			
+			}
 			if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 			{
 				winner=client;
 			}
 		}
 	}
-	
-	if(!winner)
+	if(!winner)	// Ignore the boss toggle pref if we can't find available clients
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
@@ -10986,7 +10994,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit)
 				{
 					winner=client;
 				}
-			}		
+			}
 		}
 	}
 	return winner;
@@ -10997,35 +11005,59 @@ stock int GetRandomValidClient(bool[] omit)
 	int companion;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
+		if(IsValidClient(client) && !omit[client] && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
 		{
-			if((ClientCookie2[client]==TOGGLE_OFF || ClientCookie2[client]==TOGGLE_TEMP) && GetConVarBool(cvarDuoBoss)) // Skip clients who have disabled being able to be selected as a companion
-				continue;
-
-			if((ClientCookie[client]==TOGGLE_OFF || ClientCookie[client]==TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
-				continue;
-			
+			if(GetConVarBool(cvarDuoBoss))	// Skip clients who have disabled being able to be selected as a companion
+			{
+				if(GetClientPreferences(client, PREF_DUO)>1)
+				{
+					continue;
+				}
+			}
+			if(GetConVarBool(cvarToggleBoss))	// Skip clients who have disabled being able to be a boss
+			{
+				if(GetClientPreferences(client, PREF_BOSS)>1)
+				{
+					continue;
+				}
+			}
 			if((SpecForceBoss && !GetConVarBool(cvarDuoRandom)) || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 			{
 				companion=client;
 			}
 		}
 	}
-	
-	if(!companion)
+	if(!companion)	// Ignore the companion toggle pref if we can't find available clients
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client]) //&& (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || GetConVarBool(cvarDuoRandom)))
+			if(IsValidClient(client) && !omit[client]) && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion) || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
 			{
-				if((ClientCookie[client]==TOGGLE_OFF || ClientCookie[client]==TOGGLE_TEMP) && GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
-					continue;
-
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator)) // Ignore the companion toggle pref if we can't find available clients
+				if(GetConVarBool(cvarToggleBoss)) // Skip clients who have disabled being able to be a boss
+				{
+					if(GetClientPreferences(client, PREF_BOSS)>1)
+					{
+						continue;
+					}
+				}
+				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					companion=client;
 				}
-			}		
+			}
+		}
+	}
+	if(!companion)	// Ignore the boss toggle pref if we can't find available clients
+	{
+		for(int client=1; client<MaxClients; client++)
+		{
+			if(IsValidClient(client) && !omit[client]) && (GetClientQueuePoints(client)>=GetClientQueuePoints(companion)  || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
+			{
+				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				{
+					companion=client;
+				}
+			}
 		}
 	}
 	return companion;
@@ -11036,9 +11068,7 @@ stock int LastBossIndex()
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(!Boss[client])
-		{
 			return client-1;
-		}
 	}
 	return 0;
 }
@@ -11049,10 +11079,8 @@ stock int GetBossIndex(int client)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
-			if(Boss[boss]==client)
-			{
+			if(Boss[boss] == client)
 				return boss;
-			}
 		}
 	}
 	return -1;
@@ -11060,7 +11088,7 @@ stock int GetBossIndex(int client)
 
 stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
 {
-	float sum=GetArrayCell(sumArray, bracket);
+	float sum = GetArrayCell(sumArray, bracket);
 	switch(GetArrayCell(_operator, bracket))
 	{
 		case Operator_Add:
@@ -11113,8 +11141,8 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
-	int playing2=playing + 1;
-	int size=1;
+	int playing2 = playing + 1;
+	int size = 1;
 	int matchingBrackets;
 	for(int i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
 	{
@@ -11135,7 +11163,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 		}
 	}
 
-	Handle sumArray=CreateArray(_, size), _operator=CreateArray(_, size);
+	Handle sumArray = CreateArray(_, size), _operator=CreateArray(_, size);
 	int bracket;  //Each bracket denotes a separate sum (within parentheses).  At the end, they're all added together to achieve the actual sum
 	SetArrayCell(sumArray, 0, 0.0);  //TODO:  See if these can be placed naturally in the loop
 	SetArrayCell(_operator, bracket, Operator_None);
@@ -11143,7 +11171,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	char character[2], value[16];  //We don't decl value because we directly append characters to it and there's no point in decl'ing character
 	for(int i; i<=strlen(formula); i++)
 	{
-		character[0]=formula[i];  //Find out what the next char in the formula is
+		character[0] = formula[i];  //Find out what the next char in the formula is
 		switch(character[0])
 		{
 			case ' ', '\t':  //Ignore whitespace
@@ -11159,7 +11187,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 			case ')':
 			{
 				OperateString(sumArray, bracket, value, sizeof(value), _operator);
-				if(GetArrayCell(_operator, bracket)!=Operator_None)  //Something like (5*)
+				if(GetArrayCell(_operator, bracket) != Operator_None)  //Something like (5*)
 				{
 					LogError("[FF2 Bosses] %s's %s formula has an invalid operator at character %i", bossName, key, i+1);
 					CloseHandle(sumArray);
@@ -11219,10 +11247,10 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 		}
 	}
 
-	int result=RoundFloat(GetArrayCell(sumArray, 0));
+	int result = RoundFloat(GetArrayCell(sumArray, 0));
 	CloseHandle(sumArray);
 	CloseHandle(_operator);
-	if(result<=0)
+	if(result <= 0)
 	{
 		LogError("[FF2] %s has an invalid %s formula, using default!", bossName, key);
 		return defaultValue;
@@ -11239,6 +11267,7 @@ stock int GetAbilityArgument(int index, const char[] plugin_name, const char[] a
 {
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0;
+
 	KvRewind(BossKV[Special[index]]);
 	char s[10];
 	for(int i=1; i<MAXRANDOMS; i++)
