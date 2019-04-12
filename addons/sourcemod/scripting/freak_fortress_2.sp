@@ -8726,7 +8726,7 @@ public Action OnRPS(Handle event, const char[] eventName, bool dontBroadcast)
 		return;
 	}
 
-	if(ClientCookie[winner]!=TOGGLE_OFF && ClientCookie[loser]!=TOGGLE_OFF && !IsBoss(winner) && !IsBoss(loser) && GetClientQueuePoints(loser)>=GetConVarInt(cvarRPSPoints) && GetConVarInt(cvarRPSPoints)>0)	// Teammate or Minion loses?
+	if(GetClientPreferences(winner, PREF_BOSS)!=2 && GetClientPreferences(loser, PREF_BOSS)!=2 && !IsBoss(winner) && !IsBoss(loser) && GetClientQueuePoints(winner)>=GetConVarInt(cvarRPSPoints) && GetClientQueuePoints(loser)>=GetConVarInt(cvarRPSPoints) && GetConVarInt(cvarRPSPoints)>0)	// Teammate or Minion loses?
 	{
 		CPrintToChat(winner, "{olive}[FF2]{default} %t", "rps_won", GetConVarInt(cvarRPSPoints), loser);
 		SetClientQueuePoints(winner, GetClientQueuePoints(winner)+GetConVarInt(cvarRPSPoints));
