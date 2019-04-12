@@ -42,7 +42,7 @@ before_script:
 
     - chmod +x spcomp
     - mkdir compiled
-script: ./compile.sh freak_fortress_2.sp
+script: ./compile.sh freak_fortress_2.sp freaks/ffbat_defaults.sp
 
 # Notifications
 notifications:
