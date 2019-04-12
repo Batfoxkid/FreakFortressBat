@@ -1639,11 +1639,25 @@ void Rage_Bow(int boss)
 {
 	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
-	char attributes[64];
+	char attributes[64], classname[64];
+
 	FF2_GetAbilityArgumentString(boss, this_plugin_name, "rage_cbs_bowrage", 1, attributes, sizeof(attributes));
-	if(strlen(attributes)==0)
+	if(!strlen(attributes))
 		attributes="6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19";
-	int weapon=SpawnWeapon(client, "tf_weapon_compound_bow", 1005, 101, 5, attributes);
+
+	int maximum = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 2, CBS_MAX_ARROWS);
+
+	FF2_GetAbilityArgumentString(boss, this_plugin_name, "rage_cbs_bowrage", 3, classname, sizeof(classname));
+	if(!strlen(classname))
+		classname="tf_weapon_compound_bow";
+
+	int index = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 4, 1005);
+
+	int level = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 5, 101);
+
+	int quality = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 6, 5);
+
+	int weapon=SpawnWeapon(client, classname, index, level, quality, attributes);
 	SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
 	TFTeam team=(FF2_GetBossTeam()==view_as<int>(TFTeam_Blue) ? TFTeam_Red:TFTeam_Blue);
 
@@ -1656,7 +1670,7 @@ void Rage_Bow(int boss)
 		}
 	}
 
-	FF2_SetAmmo(client, weapon, ((otherTeamAlivePlayers>=CBS_MAX_ARROWS) ? CBS_MAX_ARROWS : otherTeamAlivePlayers)-1, 1);  //Put one arrow in the clip
+	FF2_SetAmmo(client, weapon, ((otherTeamAlivePlayers>=maximum) ? maximum : otherTeamAlivePlayers)-1, 1);  //Put one arrow in the clip
 }
 
 
