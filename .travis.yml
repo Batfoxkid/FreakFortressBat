@@ -41,7 +41,7 @@ before_script:
     - sed -i'' 's/required = 1/#if defined REQUIRE_PLUGIN\nrequired = 1\n\#else\nrequired = 0/' include/rtd.inc
 
     - chmod +x spcomp
-    - mkdir compiled
+    - mkdir compiled compiled/freaks
 script: ./compile.sh freak_fortress_2.sp freaks/ffbat_defaults.sp
 
 # Notifications
