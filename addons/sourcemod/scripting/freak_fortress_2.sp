@@ -2617,14 +2617,14 @@ public void EnableFF2()
 
 	changeGamemode=0;
 	
-	/*for(int client; client<=MaxClients; client++)
+	for(int client; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
 		{
 			SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 			SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 		}
-	}*/
+	}
 }
 
 public void DisableFF2()
@@ -4182,7 +4182,7 @@ public int MenuHandlerCompanion(Handle menu, MenuAction action, int param1, int 
 	if(action == MenuAction_Select)
 	{
 		int choice = param2 + 1;
-		SetClientPreferences(param1, PREF_BOSS, choice);
+		SetClientPreferences(param1, PREF_DUO, choice);
 
 		switch(choice)
 		{
@@ -4227,7 +4227,7 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 	if(action == MenuAction_Select)
 	{
 		int choice = param2 + 1;
-		SetClientPreferences(param1, PREF_DUO, choice);
+		SetClientPreferences(param1, PREF_BOSS, choice);
 
 		switch(choice)
 		{
@@ -9569,9 +9569,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(!Enabled || !IsValidEntity(attacker))
-	{
 		return Plugin_Continue;
-	}
 
 	static bool foundDmgCustom, dmgCustomInOTD;
 	if(!foundDmgCustom)
@@ -9580,26 +9578,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		foundDmgCustom=true;
 	}
 
-	//ABILITY TO ROCKET JUMP PT1
-	if((attacker<=0 || client==attacker) && IsBoss(client) && damagetype & DMG_FALL && selfKnockback[attacker])
-	{
-		damage*=1.0;
-		return Plugin_Changed;
-	}
-	else if((attacker<=0 || client==attacker) && IsBoss(client) && !selfKnockback[attacker])
+	if((attacker<=0 || client==attacker) && IsBoss(client) && !selfKnockback[attacker])
 	{
 		return Plugin_Handled;
 	}
+
 	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 	{
 		return Plugin_Continue;
 	}
-	/*if(!CheckRoundState() && IsBoss(client) && !selfKnockback[attacker])
-	{
-		damage*=0.0;
-		return Plugin_Changed;
-	}*/
-	//END OF PART 1
 
 	float position[3];
 	GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
@@ -9635,9 +9622,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==4)
 	{
 		if(damagetype & DMG_CRIT)
-			damage*=damage*3.0;
+		{
+			damage*=3.0;
+		}
 		else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed) || TF2_IsPlayerInCondition(attacker, TFCond_NoHealingDamageBuff))
-			damage*=damage*1.35;
+		{
+			damage*=1.35;
+		}
 
 		damage*=shDmgReduction[client];	// damage resistance on shield
 
@@ -9668,9 +9659,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==2)
 	{
 		if(damagetype & DMG_CRIT)
-			damage=damage*3.0;
+		{
+			damage*=3.0;
+		}
 		else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed) || TF2_IsPlayerInCondition(attacker, TFCond_NoHealingDamageBuff))
-			damage=damage*1.35;
+		{
+			damage*=1.35;
+		}
 
 		int health=GetClientHealth(client);
 		if(health<=damage)
@@ -9720,13 +9715,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		int boss=GetBossIndex(client);
 		if(boss!=-1)
 		{
-			//ABILITY TO ROCKETJUMP PART2
-			if(damagetype & DMG_FALL && selfKnockback[client])
-			{
-				damage=1.0;
-				return Plugin_Changed;
-			}
-			//END OF PART 2
 			if(attacker<=MaxClients)
 			{
 				bool bIsTelefrag, bIsBackstab;
