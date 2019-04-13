@@ -74,6 +74,7 @@ enum Operators
 
 //	ConVars
 ConVar cvarBaseJumperStun;
+ConVar cvarStrangeWep;
 ConVar cvarSoloShame;
 ConVar cvarTimeScale;
 ConVar cvarCheats;
@@ -165,7 +166,10 @@ public void OnAllPluginsLoaded()
 {
 	cvarBaseJumperStun=FindConVar("ff2_base_jumper_stun");
 	if(!Outdated)
+	{
+		cvarStrangeWep=FindConVar("ff2_strangewep");
 		cvarSoloShame=FindConVar("ff2_solo_shame");
+	}
 }
 
 #if !defined _smac_included
@@ -1643,23 +1647,46 @@ void Rage_Bow(int boss)
 
 	FF2_GetAbilityArgumentString(boss, this_plugin_name, "rage_cbs_bowrage", 1, attributes, sizeof(attributes));
 	if(!strlen(attributes))
-		attributes="6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19";
+	{
+		if(Outdated)
+		{
+			attributes="6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19";
+		}
+		else
+		{
+			if(GetConVarBool(cvarStrangeWep)
+			{
+				attributes="2 ; 3.0 ; 6 ; 0.5 ; 37 ; 0.0 ; 214 ; 333 ; 280 ; 19";
+			}
+			else
+			{
+				attributes="2 ; 3.0 ; 6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19";
+			}
+		}
+	}
 
-	int maximum = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 2, CBS_MAX_ARROWS);
+	int maximum = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 2, 9);
 
-	FF2_GetAbilityArgumentString(boss, this_plugin_name, "rage_cbs_bowrage", 3, classname, sizeof(classname));
+	float ammo = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "rage_cbs_bowrage", 3, 1.0);
+
+	int clip = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "rage_cbs_bowrage", 4, 1);
+
+	FF2_GetAbilityArgumentString(boss, this_plugin_name, "rage_cbs_bowrage", 5, classname, sizeof(classname));
 	if(!strlen(classname))
 		classname="tf_weapon_compound_bow";
 
-	int index = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 4, 1005);
+	int index = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 6, 1005);
 
-	int level = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 5, 101);
+	int level = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 7, 101);
 
-	int quality = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 6, 5);
+	int quality = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 8, 5);
 
 	int weapon=SpawnWeapon(client, classname, index, level, quality, attributes);
-	SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
-	TFTeam team=(FF2_GetBossTeam()==view_as<int>(TFTeam_Blue) ? TFTeam_Red:TFTeam_Blue);
+	if(FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 9, 1))
+	{
+		SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
+	}
+	TFTeam team=(BossTeam==view_as<int>(TFTeam_Blue) ? TFTeam_Red : TFTeam_Blue);
 
 	int otherTeamAlivePlayers;
 	for(int target=1; target<=MaxClients; target++)
@@ -1670,7 +1697,20 @@ void Rage_Bow(int boss)
 		}
 	}
 
-	FF2_SetAmmo(client, weapon, ((otherTeamAlivePlayers>=maximum) ? maximum : otherTeamAlivePlayers)-1, 1);  //Put one arrow in the clip
+	ammo *= otherTeamAlivePlayers;
+	ammo -= clip;
+
+	while(ammo < 0)
+	{
+		clip--;
+		ammo++;
+		i++;
+	}
+
+	if(clip < 0)
+	{
+		FF2_SetAmmo(client, weapon, RoundToFloor(ammo), clip);
+	}
 }
 
 
