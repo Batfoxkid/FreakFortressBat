@@ -158,7 +158,6 @@ int RedAlivePlayers;
 int BlueAlivePlayers;
 int RoundCount;
 int Companions=0;
-int GhostBoss=0;
 bool LastMan=true;
 float rageMax[MAXPLAYERS+1];
 float rageMin[MAXPLAYERS+1];
@@ -271,7 +270,6 @@ ConVar cvarLowStab;
 ConVar cvarGameText;
 ConVar cvarAnnotations;
 ConVar cvarTellName;
-ConVar cvarGhostBoss;
 ConVar cvarShieldType;
 ConVar cvarCountdownOvertime;
 ConVar cvarBossLog;
@@ -382,6 +380,7 @@ bool selfKnockback[MAXPLAYERS+1];
 bool randomCrits[MAXPLAYERS+1];
 bool SapperBoss[MAXPLAYERS+1];
 bool SapperMinion;
+char BossIcon[64];
 
 static const char OTVoice[][] = {
     "vo/announcer_overtime.mp3",
@@ -550,6 +549,7 @@ static const char ff2versiontitles[][]=
 	"1.17.9",
 	"1.17.9",
 	"1.17.10",
+	"1.18.0",
 	"1.18.0"
 };
 
@@ -695,6 +695,7 @@ static const char ff2versiondates[][]=
 	"March 8, 2019",		//1.17.9
 	"March 8, 2019",		//1.17.9
 	"April 3, 2019",		//1.17.10
+	"Development",			//1.18.0
 	"Development"			//1.18.0
 };
 
@@ -702,12 +703,17 @@ stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 140:  //1.18.0
+		case 141:  //1.18.0
 		{
 			DrawPanelText(panel, "1) [Core] Code is now in Transitional Syntax (Batfoxkid)");
 			DrawPanelText(panel, "2) [Bosses] Merged all default subplugins (Batfoxkid)");
 			DrawPanelText(panel, "3) [Bosses] Added new stun options (Batfoxkid from sarysa)");
 			DrawPanelText(panel, "4) [Gameplay] Added the ability to sap bosses or minions (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "5) [Bosses] Replaced 'ghost' with 'icon' setting for custom icon (Batfoxkid)");
+		}
+		case 140:  //1.18.0
+		{
+			DrawPanelText(panel, "6) [Core] Filler (Batfoxkid)");
 		}
 		case 139:  //1.17.10
 		{
@@ -1899,7 +1905,6 @@ public void OnPluginStart()
 	cvarGameText=CreateConVar("ff2_text_game", "0", "For game messages: 0-Use HUD texts, 1-Use game_text_tf entities, 2-Include boss intro and timer too", _, true, 0.0, true, 2.0);
 	cvarAnnotations=CreateConVar("ff2_text_msg", "0", "For backstabs and such: 0-Use hint texts, 1-Use annotations, 2-Use game_text_tf entities", _, true, 0.0, true, 2.0);
 	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
-	cvarGhostBoss=CreateConVar("ff2_text_ghost", "0", "For game messages: 0-Default shows killstreak symbol, 1-Default shows a ghost", _, true, 0.0, true, 1.0);
 	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
@@ -5526,13 +5531,16 @@ public Action MessageTimer(Handle timer)
 	{
 		if(IsValidClient(client))
 		{
-			if(!Companions && GetConVarInt(cvarGameText)==2 && !GhostBoss)
+			if(!Companions && GetConVarInt(cvarGameText)==2)
 			{
-				ShowGameText(client, "leaderboard_streak", _, text);
-			}
-			else if(!Companions && GetConVarInt(cvarGameText)==2)
-			{
-				ShowGameText(client, "ico_ghost", _, text);
+				if(strlen(BossIcon))
+				{
+					ShowGameText(client, BossIcon, _, text);
+				}
+				else
+				{
+					ShowGameText(client, "leaderboard_streak", _, text);
+				}
 			}
 			else
 			{
@@ -5854,80 +5862,124 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss]=BossHealth[boss];
 
-	// True or false settings
 	if(KvGetNum(BossKV[Special[boss]], "triple", -1)>=0)
+	{
 		dmgTriple[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "triple", -1));
+	}
 	else
+	{
 		dmgTriple[client]=GetConVarBool(cvarTripleWep);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0)
+	{
 		selfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "knockback", -1));
+	}
 	else
+	{
 		selfKnockback[client]=GetConVarBool(cvarSelfKnockback);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "crits", -1)>=0)
+	{
 		randomCrits[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "crits", -1));
+	}
 	else
+	{
 		randomCrits[client]=GetConVarBool(cvarCrits);
+	}
 
-	if(KvGetNum(BossKV[Special[boss]], "ghost", -1)>=0)
-		GhostBoss=view_as<bool>(KvGetNum(BossKV[Special[boss]], "ghost", -1));
-	else
-		GhostBoss=GetConVarBool(cvarGhostBoss);
-
-	// Rage settings
+	KvGetString(BossKV[Special[boss]], "icon", BossIcon, sizeof(BossIcon));
 	rageMax[client]=KvGetFloat(BossKV[Special[boss]], "ragemax", 100.0);
 	rageMin[client]=KvGetFloat(BossKV[Special[boss]], "ragemin", 100.0);
 	rageMode[client]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
 
 	// Timer/point settings
 	if(KvGetNum(BossKV[Special[boss]], "pointtype", -1)>=0 && KvGetNum(BossKV[Special[boss]], "pointtype", -1)<=2)
+	{
 		PointType=KvGetNum(BossKV[Special[boss]], "pointtype", -1);
+	}
 	else
+	{
 		PointType=GetConVarInt(cvarPointType);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "pointdelay", -9999)!=-9999)	// Can be below 0 so...
+	{
 		PointDelay=KvGetNum(BossKV[Special[boss]], "pointdelay", -9999);
+	}
 	else
+	{
 		PointDelay=GetConVarInt(cvarPointDelay);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "pointtime", -9999)!=-9999)	// Same here, in-case of some weird boss logic
+	{
 		PointTime=KvGetNum(BossKV[Special[boss]], "pointtime", -9999);
+	}
 	else
+	{
 		PointTime=GetConVarInt(cvarPointTime);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "pointalive", -1)>=0)	// Can't be below 0, it's players
+	{
 		AliveToEnable=KvGetNum(BossKV[Special[boss]], "pointalive", -1);
+	}
 	else
+	{
 		AliveToEnable=GetConVarInt(cvarAliveToEnable);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "countdownhealth", -1)>=0)	// Also can't be below 0, it's health
+	{
 		countdownHealth=KvGetNum(BossKV[Special[boss]], "countdownhealth", -1);
+	}
 	else
+	{
 		countdownHealth=GetConVarInt(cvarCountdownHealth);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "countdownalive", -1)>=0)	// Yet again, can't be below 0
+	{
 		countdownPlayers=KvGetNum(BossKV[Special[boss]], "countdownalive", -1);
+	}
 	else
+	{
 		countdownPlayers=GetConVarInt(cvarCountdownPlayers);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "countdowntime", -1)>=0)	// .w.
+	{
 		countdownTime=KvGetNum(BossKV[Special[boss]], "countdowntime", -1);
+	}
 	else
+	{
 		countdownTime=GetConVarInt(cvarCountdownTime);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "countdownovertime", -1)>=0)	// OVERTIME!
+	{
 		countdownOvertime=view_as<bool>(KvGetNum(BossKV[Special[boss]], "countdownovertime", -1));
+	}
 	else
+	{
 		countdownOvertime=GetConVarBool(cvarCountdownOvertime);
+	}
 
 	if((KvGetNum(BossKV[Special[boss]], "sapper", -1)<0 && (GetConVarInt(cvarSappers)==1 || GetConVarInt(cvarSappers)>2)) || KvGetNum(BossKV[Special[boss]], "sapper", -1)==1 || KvGetNum(BossKV[Special[boss]], "sapper", -1)>2)
+	{
 		SapperBoss[client]=true;
+	}
 	else
+	{
 		SapperBoss[client]=false;
+	}
 
 	if((KvGetNum(BossKV[Special[boss]], "sapper", -1)<0 && GetConVarInt(cvarSappers)>1) || KvGetNum(BossKV[Special[boss]], "sapper", -1)>1)
+	{
 		SapperMinion=true;
+	}
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
@@ -6357,7 +6409,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 265:  //Sticky Jumper
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2 ; 400 ; 1", true);
+				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2 ; 280 ; 14 ; 400 ; 1", true);
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7267,13 +7319,16 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 		{
 			if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 			{
-				if(!Companions && GetConVarBool(cvarGameText) && !GhostBoss)
+				if(!Companions && GetConVarBool(cvarGameText))
 				{
-					ShowGameText(target, "leaderboard_streak", _, text);
-				}
-				else if(!Companions && GetConVarBool(cvarGameText))
-				{
-					ShowGameText(target, "ico_ghost", _, text);
+					if(strlen(BossIcon))
+					{
+						ShowGameText(target, BossIcon, _, text);
+					}
+					else
+					{
+						ShowGameText(target, "leaderboard_streak", _, text);
+					}
 				}
 				else
 				{
@@ -8343,13 +8398,16 @@ public Action BossTimer(Handle timer)
 			{
 				if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
-					if(!Companions && GetConVarBool(cvarGameText) && !GhostBoss)
+					if(!Companions && GetConVarBool(cvarGameText))
 					{
-						ShowGameText(target, "leaderboard_streak", _, message);
-					}
-					else if(!Companions && GetConVarBool(cvarGameText))
-					{
-						ShowGameText(target, "ico_ghost", _, message);
+						if(strlen(BossIcon))
+						{
+							ShowGameText(target, BossIcon, _, message);
+						}
+						else
+						{
+							ShowGameText(target, "leaderboard_streak", _, message);
+						}
 					}
 					else
 					{
@@ -9150,9 +9208,9 @@ public Action Timer_DrawGame(Handle timer)
 				{
 					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%s | %t", message, "Overtime");
 				}
-				else if(GhostBoss)
+				else if(strlen(BossIcon))
 				{
-					ShowGameText(client, "ico_ghost", _, "%s | %s", message, timeDisplay);
+					ShowGameText(client, BossIcon, _, "%s | %s", message, timeDisplay);
 				}
 				else
 				{
@@ -9177,9 +9235,9 @@ public Action Timer_DrawGame(Handle timer)
 				{
 					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
 				}
-				else if(GhostBoss)
+				else if(strlen(BossIcon))
 				{
-					ShowGameText(client, "ico_ghost", _, timeDisplay);
+					ShowGameText(client, BossIcon, _, timeDisplay);
 				}
 				else
 				{
