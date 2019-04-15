@@ -40,8 +40,6 @@
 
 #pragma newdecls required
 
-#file "FF2 Unofficial Subplugin: Defaults"
-
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"3"
 #define STABLE_REVISION	"0"
@@ -1659,7 +1657,7 @@ void Rage_Bow(int boss)
 		}
 		else
 		{
-			if(GetConVarBool(cvarStrangeWep)
+			if(GetConVarBool(cvarStrangeWep))
 			{
 				attributes="2 ; 3.0 ; 6 ; 0.5 ; 37 ; 0.0 ; 214 ; 333 ; 280 ; 19";
 			}
@@ -1732,7 +1730,7 @@ public Action Timer_Prepare_Explosion_Rage(Handle timer, Handle data)
 	ExpDamage[client] = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 4, 180.0);
 	ExpRange[client] = FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 4, 350);
 
-	if(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 5, 1);
+	if(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 5, 1))
 		ClientCommand(client, "+taunt");
 
 	CreateTimer(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 2, 0.12), Timer_Rage_Explosive_Dance, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
@@ -1780,8 +1778,8 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 
 			DispatchSpawn(explosion);
 
-			explosionPosition[0]=bossPosition[0]+GetRandomInt(-ExpRange[client], ExpRange[client]);
-			explosionPosition[1]=bossPosition[1]+GetRandomInt(-ExpRange[client], ExpRange[client]);
+			explosionPosition[0]=bossPosition[0]+GetRandomInt((ExpRange[client]*-1), ExpRange[client]);
+			explosionPosition[1]=bossPosition[1]+GetRandomInt((ExpRange[client]*-1), ExpRange[client]);
 			if(!(GetEntityFlags(boss) & FL_ONGROUND))
 			{
 				explosionPosition[2]=bossPosition[2]+GetRandomInt(RoundToFloor(ExpRange[client]*-3/7), RoundToFloor(ExpRange[client]*3/7));
@@ -2017,3 +2015,6 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int quality
 	EquipPlayerWeapon(client, entity);
 	return entity;
 }
+
+#file "FF2 Unofficial Subplugin: Defaults"
+
