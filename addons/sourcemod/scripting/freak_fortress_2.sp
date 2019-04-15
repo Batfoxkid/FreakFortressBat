@@ -4488,15 +4488,15 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		}
 		while(KvGetFloat(BossKV[Special[0]], music)>1);
 
-		char lives[2][256];
+		char lives[256];
 		for(int i; i<19; i++)
 		{
 			index=GetRandomInt(1, index-1);
-			Format(lives[0], sizeof(lives[]), "life%i", index);
-			KvGetString(BossKV[Special[0]], lives[0], lives[1], sizeof(lives[]));
-			if(lives[1])
+			Format(lives, sizeof(lives), "life%i", index);
+			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+			if(StringToInt(lives))
 			{
-				if(StringToInt(id3[5])!=BossLives[Special[0]])
+				if(StringToInt(lives)!=BossLives[Special[0]])
 				{
 					continue;
 				}
@@ -12591,16 +12591,16 @@ public Action Command_SkipSong(int client, int args)
 			cursongId[client]=1;
 		}
 
-		char lives[2][256];
-		Format(lives[0], sizeof(lives[]), "life%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], lives[0], lives[1], sizeof(lives[]));
-		if(lives[1])
+		char lives[256];
+		Format(lives, sizeof(lives), "life%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+		if(lives)
 		{
-			if(StringToInt(id3[5])!=BossLives[Special[0]])
+			if(StringToInt(lives)!=BossLives[Special[0]])
 			{
 				for(int i; i<index-1; i++)
 				{
-					if(StringToInt(id3[5])!=BossLives[Special[0]])
+					if(StringToInt(lives)!=BossLives[Special[0]])
 					{
 						cursongId[client]=i;
 						continue;
@@ -12695,7 +12695,7 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char id3[8][256];
+	char id3[6][256];
 	Handle trackList = CreateMenu(Command_TrackListH);
 	SetGlobalTransTarget(client);
 	SetMenuTitle(trackList, "%t", "track_select");
@@ -12717,13 +12717,14 @@ public Action Command_Tracklist(int client, int args)
 			return Plugin_Handled;
 		}
 
+		char lives[256];
 		for(int trackIdx=1; trackIdx<=index-1; trackIdx++)
 		{
-			Format(id3[6], sizeof(id3[]), "life%i", trackIdx);
-			KvGetString(BossKV[Special[0]], id3[6], id3[7], sizeof(id3[]));
-			if(id3[7])
+			Format(lives, sizeof(lives), "life%i", trackIdx);
+			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+			if(lives)
 			{
-				if(StringToInt(id3[7])!=BossLives[Special[0]])
+				if(StringToInt(lives)!=BossLives[Special[0]])
 				{
 					continue;
 				}
@@ -12828,21 +12829,21 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 				Format(music, 10, "path%i", track);
 				KvGetString(BossKV[Special[0]], music, music, sizeof(music));
 
-				char id3[6][256];
+				char id3[4][256];
 				Format(id3[0], sizeof(id3[]), "name%i", track);
 				KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
 				Format(id3[1], sizeof(id3[]), "artist%i", track);
 				KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
 
-				char temp[PLATFORM_MAX_PATH];
+				char temp[PLATFORM_MAX_PATH], lives[256];
 				Format(temp, sizeof(temp), "sound/%s", music);
 				if(FileExists(temp, true))
 				{
-					Format(id3[4], sizeof(id3[]), "life%i", trackIdx);
-					KvGetString(BossKV[Special[0]], id3[4], id3[5], sizeof(id3[]));
-					if(id3[5])
+					Format(lives, sizeof(lives), "life%i", trackIdx);
+					KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+					if(lives)
 					{
-						if(StringToInt(id3[5])!=BossLives[Special[0]])
+						if(StringToInt(lives)!=BossLives[Special[0]])
 						{
 							if(MusicTimer[param1]!=INVALID_HANDLE)
 							{
