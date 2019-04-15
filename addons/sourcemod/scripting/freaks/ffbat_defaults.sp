@@ -1672,7 +1672,7 @@ void Rage_Bow(int boss)
 
 	float ammo = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "rage_cbs_bowrage", 3, 1.0);
 
-	int clip = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "rage_cbs_bowrage", 4, 1);
+	int clip = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 4, 1);
 
 	FF2_GetAbilityArgumentString(boss, this_plugin_name, "rage_cbs_bowrage", 5, classname, sizeof(classname));
 	if(!strlen(classname))
@@ -1701,7 +1701,7 @@ void Rage_Bow(int boss)
 	ammo *= otherTeamAlivePlayers;	// Ammo multiplied by alive players
 	
 	if(ammo > maximum)		// Maximum or lower ammo
-		ammo=maximum;
+		ammo=view_as<float>(maximum);
 
 	ammo -= clip;			// Ammo subtracted by clip
 
@@ -1767,6 +1767,7 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 		float bossPosition[3], explosionPosition[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", bossPosition);
 		explosionPosition[2]=bossPosition[2];
+		int range;
 		for(int i; i<5; i++)
 		{
 			int explosion=CreateEntityByName("env_explosion");
@@ -1782,11 +1783,13 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 			explosionPosition[1]=bossPosition[1]+GetRandomInt((ExpRange[client]*-1), ExpRange[client]);
 			if(!(GetEntityFlags(boss) & FL_ONGROUND))
 			{
-				explosionPosition[2]=bossPosition[2]+GetRandomInt(RoundToFloor(ExpRange[client]*-3/7), RoundToFloor(ExpRange[client]*3/7));
+				range = RoundToFloor(view_as<float>(ExpRange[client])*3.0/7.0);
+				explosionPosition[2]=bossPosition[2]+GetRandomInt((range*-1), range);
 			}
 			else
 			{
-				explosionPosition[2]=bossPosition[2]+GetRandomInt(0, RoundToFloor(ExpRange[client]*2/7));
+				range = RoundToFloor(view_as<float>(ExpRange[client])*2.0/7.0);
+				explosionPosition[2]=bossPosition[2]+GetRandomInt(0, range);
 			}
 			TeleportEntity(explosion, explosionPosition, NULL_VECTOR, NULL_VECTOR);
 			AcceptEntityInput(explosion, "Explode");
