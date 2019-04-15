@@ -12594,7 +12594,7 @@ public Action Command_SkipSong(int client, int args)
 		char lives[256];
 		Format(lives, sizeof(lives), "life%i", cursongId[client]);
 		KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
-		if(lives)
+		if(strlen(lives))
 		{
 			if(StringToInt(lives)!=BossLives[Special[0]])
 			{
@@ -12702,7 +12702,7 @@ public Action Command_Tracklist(int client, int args)
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 	{
-		char music[PLATFORM_MAX_PATH], ability[32];
+		char music[PLATFORM_MAX_PATH];
 		int index;
 		do
 		{
@@ -12722,7 +12722,7 @@ public Action Command_Tracklist(int client, int args)
 		{
 			Format(lives, sizeof(lives), "life%i", trackIdx);
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
-			if(lives)
+			if(strlen(lives))
 			{
 				if(StringToInt(lives)!=BossLives[Special[0]])
 				{
@@ -12839,9 +12839,9 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 				Format(temp, sizeof(temp), "sound/%s", music);
 				if(FileExists(temp, true))
 				{
-					Format(lives, sizeof(lives), "life%i", trackIdx);
+					Format(lives, sizeof(lives), "life%i", track);
 					KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
-					if(lives)
+					if(strlen(lives))
 					{
 						if(StringToInt(lives)!=BossLives[Special[0]])
 						{
