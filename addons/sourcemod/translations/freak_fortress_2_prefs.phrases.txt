@@ -401,8 +401,8 @@
 	}
 	"ff2_no_music"
 	{
-		"en"		"Could not find any themes for this boss! If you are a developer, please check your config!"
-		"ru"		"Невозможно найти какую-либо тему для этого босса! Если вы разработчик, то проверьте вашу конфигурацию!"
+		"en"		"Could not find any themes for this boss!"
+		"ru"		"Невозможно найти какую-либо тему для этого босса!"
 	}
 	"unknown_song"
 	{
