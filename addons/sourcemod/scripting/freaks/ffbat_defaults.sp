@@ -87,6 +87,11 @@ int FF2Flags[MAXPLAYERS+1];
 //	Clone Attack
 int CloneOwnerIndex[MAXPLAYERS+1]=-1;
 
+//	Explosive Dance
+int ExpCount[MAXPLAYERS+1] = 35;
+float ExpDamage[MAXPLAYERS+1] = 180.0;
+int ExpRange[MAXPLAYERS+1] = 350;
+
 //	Instant Teleport
 float Tslowdown;
 float Tstun;
@@ -1682,35 +1687,34 @@ void Rage_Bow(int boss)
 	int quality = FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 8, 5);
 
 	int weapon=SpawnWeapon(client, classname, index, level, quality, attributes);
+
 	if(FF2_GetAbilityArgument(boss, this_plugin_name, "rage_cbs_bowrage", 9, 1))
-	{
 		SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
-	}
+
 	TFTeam team=(BossTeam==view_as<int>(TFTeam_Blue) ? TFTeam_Red : TFTeam_Blue);
 
 	int otherTeamAlivePlayers;
 	for(int target=1; target<=MaxClients; target++)
 	{
 		if(IsClientInGame(target) && view_as<TFTeam>(GetClientTeam(target))==team && IsPlayerAlive(target))
-		{
 			otherTeamAlivePlayers++;
-		}
 	}
 
-	ammo *= otherTeamAlivePlayers;
-	ammo -= clip;
+	ammo *= otherTeamAlivePlayers;	// Ammo multiplied by alive players
+	
+	if(ammo > maximum)		// Maximum or lower ammo
+		ammo=maximum;
 
-	while(ammo < 0)
+	ammo -= clip;			// Ammo subtracted by clip
+
+	while(ammo<0 && clip>=0)	// Remove clip until ammo or clip is zero
 	{
 		clip--;
 		ammo++;
-		i++;
 	}
-
-	if(clip < 0)
-	{
+					// If clip is positive or zero
+	if(clip >= 0)
 		FF2_SetAmmo(client, weapon, RoundToFloor(ammo), clip);
-	}
 }
 
 
@@ -1718,13 +1722,20 @@ void Rage_Bow(int boss)
 
 public Action Timer_Prepare_Explosion_Rage(Handle timer, Handle data)
 {
-	int boss=ReadPackCell(data);
-	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
+	int boss = ReadPackCell(data);
+	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 
 	char ability_name[64];
 	ReadPackString(data, ability_name, sizeof(ability_name));
 
-	CreateTimer(0.13, Timer_Rage_Explosive_Dance, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	ExpCount[client] = FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 3, 35);
+	ExpDamage[client] = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 4, 180.0);
+	ExpRange[client] = FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 4, 350);
+
+	if(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 5, 1);
+		ClientCommand(client, "+taunt");
+
+	CreateTimer(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 2, 0.12), Timer_Rage_Explosive_Dance, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
 	float position[3];
 	GetEntPropVector(client, Prop_Data, "m_vecOrigin", position);
@@ -1752,7 +1763,7 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 	static int count;
 	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	count++;
-	if(count<=35 && IsPlayerAlive(client))
+	if(count<=ExpCount[client] && IsPlayerAlive(client))
 	{
 		SetEntityMoveType(boss, MOVETYPE_NONE);
 		float bossPosition[3], explosionPosition[3];
@@ -1761,7 +1772,7 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 		for(int i; i<5; i++)
 		{
 			int explosion=CreateEntityByName("env_explosion");
-			DispatchKeyValueFloat(explosion, "DamageForce", 180.0);
+			DispatchKeyValueFloat(explosion, "DamageForce", ExpDamage[client]);
 
 			SetEntProp(explosion, Prop_Data, "m_iMagnitude", 280, 4);
 			SetEntProp(explosion, Prop_Data, "m_iRadiusOverride", 200, 4);
@@ -1769,15 +1780,15 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 
 			DispatchSpawn(explosion);
 
-			explosionPosition[0]=bossPosition[0]+GetRandomInt(-350, 350);
-			explosionPosition[1]=bossPosition[1]+GetRandomInt(-350, 350);
+			explosionPosition[0]=bossPosition[0]+GetRandomInt(-ExpRange[client], ExpRange[client]);
+			explosionPosition[1]=bossPosition[1]+GetRandomInt(-ExpRange[client], ExpRange[client]);
 			if(!(GetEntityFlags(boss) & FL_ONGROUND))
 			{
-				explosionPosition[2]=bossPosition[2]+GetRandomInt(-150, 150);
+				explosionPosition[2]=bossPosition[2]+GetRandomInt(RoundToFloor(ExpRange[client]*-3/7), RoundToFloor(ExpRange[client]*3/7));
 			}
 			else
 			{
-				explosionPosition[2]=bossPosition[2]+GetRandomInt(0,100);
+				explosionPosition[2]=bossPosition[2]+GetRandomInt(0, RoundToFloor(ExpRange[client]*2/7));
 			}
 			TeleportEntity(explosion, explosionPosition, NULL_VECTOR, NULL_VECTOR);
 			AcceptEntityInput(explosion, "Explode");
