@@ -4488,14 +4488,28 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		}
 		while(KvGetFloat(BossKV[Special[0]], music)>1);
 
-		index=GetRandomInt(1, index-1);
+		char lives[2][256];
+		for(int i; i<19; i++)
+		{
+			index=GetRandomInt(1, index-1);
+			Format(lives[0], sizeof(lives[]), "life%i", index);
+			KvGetString(BossKV[Special[0]], lives[0], lives[1], sizeof(lives[]));
+			if(lives[1])
+			{
+				if(StringToInt(id3[5])!=BossLives[Special[0]])
+				{
+					continue;
+				}
+			}
+			break;
+		}
 		Format(music, 10, "time%i", index);
 		float time=KvGetFloat(BossKV[Special[0]], music);
 		Format(music, 10, "path%i", index);
 		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
-		
+
 		cursongId[client]=index;
-		
+
 		// manual song ID
 		char id3[4][256];
 		Format(id3[0], sizeof(id3[]), "name%i", index);
@@ -9398,6 +9412,19 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 						}
 					}
 				}
+
+				Format(ability, 10, "sound_bgm");
+				KvRewind(BossKV[Special[boss]]);
+				if(KvJumpToKey(BossKV[Special[boss]], ability))
+				{
+					Format(ability, 10, "life%i", n);
+					KvGetString(BossKV[Special[boss]], ability, ability, 10);
+					if(ability[0])
+					{
+						StartMusic(client);
+					}
+				}
+
 			}
 			BossLives[boss]=lives;
 
@@ -12529,7 +12556,7 @@ public Action Command_SkipSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true)|| !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -12539,7 +12566,7 @@ public Action Command_SkipSong(int client, int args)
 
 	StopMusic(client, true);
 	
-	char id3[4][256];
+	char id3[6][256];
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 	{
@@ -12552,10 +12579,35 @@ public Action Command_SkipSong(int client, int args)
 		}
 		while(KvGetFloat(BossKV[Special[0]], music)>1);
 
+		if(!index)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");
+			return Plugin_Handled;
+		}
+
 		cursongId[client]++;
 		if(cursongId[client]>=index)
 		{
 			cursongId[client]=1;
+		}
+
+		char lives[2][256];
+		Format(lives[0], sizeof(lives[]), "life%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], lives[0], lives[1], sizeof(lives[]));
+		if(lives[1])
+		{
+			if(StringToInt(id3[5])!=BossLives[Special[0]])
+			{
+				for(int i; i<index-1; i++)
+				{
+					if(StringToInt(id3[5])!=BossLives[Special[0]])
+					{
+						cursongId[client]=i;
+						continue;
+					}
+					break;
+				}
+			}
 		}
 
 		Format(music, 10, "time%i", cursongId[client]);
@@ -12577,7 +12629,6 @@ public Action Command_SkipSong(int client, int args)
 		else
 		{
 			char bossName[64];
-			KvRewind(BossKV[Special[0]]);
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
 			if(MusicTimer[client]!=INVALID_HANDLE)
@@ -12603,7 +12654,7 @@ public Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true)|| !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
 		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -12644,13 +12695,14 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	char id3[6][256];
+	char id3[8][256];
 	Handle trackList = CreateMenu(Command_TrackListH);
-	SetMenuTitle(trackList, "%T", "track_select", client);
+	SetGlobalTransTarget(client);
+	SetMenuTitle(trackList, "%t", "track_select");
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 	{
-		char music[PLATFORM_MAX_PATH];
+		char music[PLATFORM_MAX_PATH], ability[32];
 		int index;
 		do
 		{
@@ -12661,12 +12713,21 @@ public Action Command_Tracklist(int client, int args)
 
 		if(!index)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");		
-			return Plugin_Handled;		
+			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");
+			return Plugin_Handled;
 		}
 
-		for(int trackIdx=1;trackIdx<=index-1;trackIdx++)
+		for(int trackIdx=1; trackIdx<=index-1; trackIdx++)
 		{
+			Format(id3[6], sizeof(id3[]), "life%i", trackIdx);
+			KvGetString(BossKV[Special[0]], id3[6], id3[7], sizeof(id3[]));
+			if(id3[7])
+			{
+				if(StringToInt(id3[7])!=BossLives[Special[0]])
+				{
+					continue;
+				}
+			}
 			Format(id3[0], sizeof(id3[]), "name%i", trackIdx);
 			KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
 			Format(id3[1], sizeof(id3[]), "artist%i", trackIdx);
@@ -12674,11 +12735,11 @@ public Action Command_Tracklist(int client, int args)
 			GetSongTime(trackIdx, id3[5], sizeof(id3[]));
 			if(!id3[3])
 			{
-				Format(id3[3], sizeof(id3[]), "%T", "unknown_artist", client);
+				Format(id3[3], sizeof(id3[]), "%t", "unknown_artist");
 			}
 			if(!id3[2])
 			{
-				Format(id3[2], sizeof(id3[]), "%T", "unknown_song", client);
+				Format(id3[2], sizeof(id3[]), "%t", "unknown_song");
 			}
 			Format(id3[4], sizeof(id3[]), "%s - %s (%s)", id3[3], id3[2], id3[5]);
 			CRemoveTags(id3[4], sizeof(id3[]));
@@ -12767,7 +12828,7 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 				Format(music, 10, "path%i", track);
 				KvGetString(BossKV[Special[0]], music, music, sizeof(music));
 
-				char id3[4][256];
+				char id3[6][256];
 				Format(id3[0], sizeof(id3[]), "name%i", track);
 				KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
 				Format(id3[1], sizeof(id3[]), "artist%i", track);
@@ -12777,12 +12838,24 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 				Format(temp, sizeof(temp), "sound/%s", music);
 				if(FileExists(temp, true))
 				{
+					Format(id3[4], sizeof(id3[]), "life%i", trackIdx);
+					KvGetString(BossKV[Special[0]], id3[4], id3[5], sizeof(id3[]));
+					if(id3[5])
+					{
+						if(StringToInt(id3[5])!=BossLives[Special[0]])
+						{
+							if(MusicTimer[param1]!=INVALID_HANDLE)
+							{
+								KillTimer(MusicTimer[param1]);
+							}
+							return;
+						}
+					}
 					PlayBGM(param1, music, time, _, id3[2], id3[3]);
 				}
 				else
 				{
 					char bossName[64];
-					KvRewind(BossKV[Special[0]]);
 					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 					LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
 					if(MusicTimer[param1]!=INVALID_HANDLE)
