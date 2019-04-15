@@ -396,8 +396,8 @@
 	}
 	"ff2_music_disabled"
 	{
-		"en"		"Boss themes are currently DISABLED. Please enable them!"
-		"ru"		"Музыкальные темы боссов ВЫКЛЮЧЕНЫ. Пожалуйста, включи их!"
+		"en"		"Boss themes are currently DISABLED."
+		"ru"		"Музыкальные темы боссов ВЫКЛЮЧЕНЫ."
 	}
 	"ff2_no_music"
 	{
