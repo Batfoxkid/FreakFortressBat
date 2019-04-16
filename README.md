@@ -11,7 +11,7 @@ The download does not include boss configs, models, or subplugins. It is recomme
 Visit the [Wiki tab](https://github.com/Batfoxkid/FreakFortressBat/wiki "Home · Batfoxkid/FreakFortressBat Wiki") to see a full list of changes. It will include cvars, boss settings, and other information.
 
 ### Reporting Issues:
-Visit the [Issues tab](https://github.com/Batfoxkid/FreakFortressBat/issues "Issues · Batfoxkid/FreakFortressBat") to report any bugs, enhancements, or questions you may have. Please try to avoid spam and nonsense.
+Visit the [Issues tab](https://github.com/Batfoxkid/FreakFortressBat/issues "Issues · Batfoxkid/FreakFortressBat") to report any bugs, enhancements, or questions you may have. [Here's an template.](https://github.com/Batfoxkid/FreakFortressBat/blob/master/CONTRIBUTING.md "FreakFortressBat/CONTRIBUTING.md at master · Batfoxkid/FreakFortressBat")
 
 ### Credits
 SHADoW NiNE TR3S for FreakFortressBBG (and I use most of the code from)                                                
