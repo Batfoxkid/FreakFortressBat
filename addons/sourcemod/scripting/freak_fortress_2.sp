@@ -60,7 +60,7 @@ last time or to encourage others to do the same.
 #define REQUIRE_EXTENSIONS
 #endif
 #undef REQUIRE_PLUGIN
-//#tryinclude <smac>
+#tryinclude <smac>
 #tryinclude <goomba>
 #tryinclude <rtd>
 #if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=9
@@ -143,7 +143,9 @@ bool goomba=false;
 bool kmerge=false;
 #endif
 
+#if !defined _smac_included
 bool smac=false;
+#endif
 
 bool isCapping=false;
 
@@ -2406,10 +2408,12 @@ public void OnLibraryAdded(const char[] name)
 	}
 	#endif
 
+	#if !defined _smac_included
 	if(!strcmp(name, "smac", false))
 	{
 		smac=true;
 	}
+	#endif
 
 	#if defined _updater_included && !defined FORK_DEV_REVISION
 	if(StrEqual(name, "updater") && GetConVarBool(cvarUpdater))
@@ -2449,10 +2453,12 @@ public void OnLibraryRemoved(const char[] name)
 	}
 	#endif
 
+	#if !defined _smac_included
 	if(!strcmp(name, "smac", false))
 	{
 		smac=false;
 	}
+	#endif
 
 	#if defined _updater_included
 	if(StrEqual(name, "updater"))
@@ -2602,11 +2608,13 @@ public void EnableFF2()
 	FindCharacters();
 	strcopy(FF2CharSetString, 2, "");
 
+	#if !defined _smac_included
 	if(smac && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE)
 	{
 		ServerCommand("smac_removecvar sv_cheats");
 		ServerCommand("smac_removecvar host_timescale");
 	}
+	#endif
 
 	bMedieval=FindEntityByClassname(-1, "tf_logic_medieval")!=-1 || GetConVarBool(FindConVar("tf_medieval"));
 	FindHealthBar();
@@ -2673,11 +2681,13 @@ public void DisableFF2()
 		bossHasRightMouseAbility[client]=false;
 	}
 
+	#if !defined _smac_included
 	if(smac && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE)
 	{
 		ServerCommand("smac_addcvar sv_cheats replicated ban 0 0");
 		ServerCommand("smac_addcvar host_timescale replicated ban 1.0 1.0");
 	}
+	#endif
 
 	#if defined _steamtools_included
 	if(steamtools && GetConVarBool(cvarSteamTools))
@@ -3223,7 +3233,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 		StringToInt(newValue) ? (changeGamemode=Enabled ? 0 : 1) : (changeGamemode=!Enabled ? 0 : 2);
 	}
 }
-/* TODO: Re-enable in 2.0.0
+
 #if defined _smac_included
 public Action:SMAC_OnCheatDetected(int client, const char module[], DetectionType type, Handle info)
 {
@@ -3243,7 +3253,7 @@ public Action:SMAC_OnCheatDetected(int client, const char module[], DetectionTyp
 	return Plugin_Continue;
 }
 #endif
-*/
+
 public Action Timer_Announce(Handle timer)
 {
 	static int announcecount=-1;
