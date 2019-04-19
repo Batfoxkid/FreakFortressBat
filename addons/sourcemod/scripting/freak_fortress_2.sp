@@ -3235,7 +3235,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 }
 
 #if defined _smac_included
-public Action:SMAC_OnCheatDetected(int client, const char module[], DetectionType type, Handle info)
+public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionType type, Handle info)
 {
 	Debug("SMAC: Cheat detected!");
 	if(type==Detection_CvarViolation)
