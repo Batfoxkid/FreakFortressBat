@@ -89,7 +89,7 @@ last time or to encourage others to do the same.
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION..."-"...BUILD_NUMBER
 #endif
 
-#define BUILD_NUMBER "1800069"
+#define BUILD_NUMBER "1800070"
 
 #define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
@@ -13989,7 +13989,10 @@ public int Native_SetClientShield(Handle plugin, int numParams)
 
 public int Native_RemoveClientShield(Handle plugin, int numParams)
 {
-	RemoveShield(GetNativeCell(1), GetNativeCell(2), GetNativeCell(3));
+	int client=GetNativeCell(1);
+	TF2_RemoveWearable(client, shield[client]);
+	shieldHP[client]=0.0;
+	shield[client]=0;
 }
 
 public int Native_Debug(Handle plugin, int numParams)
