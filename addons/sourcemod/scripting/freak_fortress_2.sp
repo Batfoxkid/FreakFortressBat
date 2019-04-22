@@ -89,7 +89,7 @@ last time or to encourage others to do the same.
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION..."-"...BUILD_NUMBER
 #endif
 
-#define BUILD_NUMBER "1800068"
+#define BUILD_NUMBER "1800069"
 
 #define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
@@ -13963,7 +13963,7 @@ public int Native_GetClientShield(Handle plugin, int numParams)
 		if(shield[client])
 		{
 			if(GetConVarInt(cvarShieldType)>2)
-				return RoundToFloor(shieldHP[client]/GetConVarFloat(cvarShieldHealth)*100.0));
+				return RoundToFloor(shieldHP[client]/GetConVarFloat(cvarShieldHealth)*100.0);
 			else
 				return 100;
 		}
@@ -14251,4 +14251,4 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 
 #include <freak_fortress_2_vsh_feedback>
 
-#file "Unofficial Freak Fortress "...BUILD_NUMBER
+#file "Unofficial Freak Fortress"
