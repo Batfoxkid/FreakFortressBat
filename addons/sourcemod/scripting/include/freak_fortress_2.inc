@@ -397,9 +397,11 @@ native void FF2_SetClientShield(int client, int entity, float health, float redu
  * Removes a client's shield
  *
  * @param client	Client's index
+ * @param attacker	Attacker's index
+ * @param postiton	Position of sound
  * @noreturn
  */
-native void FF2_RemoveClientShield(int client);
+native void FF2_RemoveClientShield(int client, int attacker, float position[3]);
 
 /**
  * Returns whether or not debug is enabled
@@ -635,3 +637,5 @@ public __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_Debug");
 }
 #endif
+
+#file "Freak Fortress 2 Include"
