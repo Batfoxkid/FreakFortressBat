@@ -89,7 +89,7 @@ last time or to encourage others to do the same.
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION..."-"...BUILD_NUMBER
 #endif
 
-#define BUILD_NUMBER "1800067"
+#define BUILD_NUMBER "1800068"
 
 #define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
@@ -275,6 +275,8 @@ ConVar cvarGameText;
 ConVar cvarAnnotations;
 ConVar cvarTellName;
 ConVar cvarShieldType;
+ConVar cvarShieldHealth;
+ConVar cvarShieldResist;
 ConVar cvarCountdownOvertime;
 ConVar cvarBossLog;
 ConVar cvarBossDesc;
@@ -717,11 +719,12 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		}
 		case 140:  //1.18.0
 		{
-			DrawPanelText(panel, "6) [Core] Filler (Batfoxkid)");
+			DrawPanelText(panel, "6) [Core] Added ff2_setcharge and ff2_addcharge (Batfoxkid)");
+			DrawPanelText(panel, "7) [Core] Debug commands use ShowActivity settings (Batfoxkid)");
 		}
 		case 139:  //1.17.10
 		{
-			DrawPanelText(panel, "1) [Gameplay] Bosses] Added 'theme' setting for certain bosses blocked with ff2_theme (Batfoxkid)");
+			DrawPanelText(panel, "1) [Bosses] Added 'theme' setting for certain bosses blocked with ff2_theme (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] weapons.cfg is applied first than hardcoded, when enabled (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Added Russian preference translations (MAGNAT2645)");
 			DrawPanelText(panel, "4) [Gameplay] Players with class info off won't view boss description in boss menu (Batfoxkid)");
@@ -1909,7 +1912,9 @@ public void OnPluginStart()
 	cvarGameText=CreateConVar("ff2_text_game", "0", "For game messages: 0-Use HUD texts, 1-Use game_text_tf entities, 2-Include boss intro and timer too", _, true, 0.0, true, 2.0);
 	cvarAnnotations=CreateConVar("ff2_text_msg", "0", "For backstabs and such: 0-Use hint texts, 1-Use annotations, 2-Use game_text_tf entities", _, true, 0.0, true, 2.0);
 	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
-	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
+	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted or melee hit, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
+	cvarShieldHealth=CreateConVar("ff2_shield_helth", "500", "Maximum amount of health a Shield has if ff2_shield_type is 3 or 4", _, true, 0.0);
+	cvarShieldResist=CreateConVar("ff2_shield_resistance", "0.75", "Maximum amount (inverted) precentage of damage resistance a Shield has if ff2_shield_type is 3 or 4", _, true, 0.0, true, 1.0);
 	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
 	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
 	cvarBossDesc=CreateConVar("ff2_boss_desc", "1", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
@@ -2160,14 +2165,7 @@ public Action Command_SetRage(int client, int args)
 			BossCharge[Boss[client]][0]=rageMeter;
 			CReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
-			if(tn_is_ml)
-			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Set", RoundFloat(rageMeter));
-			}
-			else
-			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
-			}
+			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2245,14 +2243,7 @@ public Action Command_AddRage(int client, int args)
 			BossCharge[Boss[client]][0]+=rageMeter;
 			CReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
-			if(tn_is_ml)
-			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Add", RoundFloat(rageMeter));
-			}
-			else
-			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
-			}
+			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2329,28 +2320,14 @@ public Action Command_SetInfiniteRage(int client, int args)
 				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-				if(tn_is_ml)
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite On");
-				}
-				else
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite On", "_s");
-				}
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite On", "_s");
 			}
 			else
 			{
 				InfiniteRageActive[client]=false;
 				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE deactivated");
 				LogAction(client, client, "\"%L\" deactivated infiite RAGE on themselves", client);
-				if(tn_is_ml)
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite Off");
-				}
-				else
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite Off", "_s");
-				}
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite Off", "_s");
 			}
 		}
 		return Plugin_Handled;
@@ -2465,14 +2442,7 @@ public Action Command_AddCharge(int client, int args)
 				BossCharge[Boss[client]][abilitySlot]+=rageMeter;
 				CReplyToCommand(client, "{olive}[FF2]{default} Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				if(tn_is_ml)
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", RoundFloat(rageMeter), abilitySlot);
-				}
-				else
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
-				}
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
@@ -2568,14 +2538,7 @@ public Action Command_SetCharge(int client, int args)
 				BossCharge[Boss[client]][abilitySlot]=rageMeter;
 				CReplyToCommand(client, "{olive}[FF2]{default} Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				if(tn_is_ml)
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", RoundFloat(rageMeter), abilitySlot);
-				}
-				else
-				{
-					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
-				}
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
@@ -7398,16 +7361,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 
 	if(IsValidEntity(shield[client]))
 	{
-		if(GetConVarInt(cvarShieldType)==4)
-		{
-			shieldHP[client]=500.0;
-			shDmgReduction[client]=0.75;
-		}
-		else if(GetConVarInt(cvarShieldType)==3)
-		{
-			shieldHP[client]=1000.0;
-			shDmgReduction[client]=0.5;
-		}
+		shieldHP[client]=GetConVarFloat(cvarShieldHealth);
+		shDmgReduction[client]=GetConVarFloat(cvarShieldResist);
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
@@ -8283,10 +8238,7 @@ public Action ClientTimer(Handle timer)
 				if(shield[client] && shieldHP[client]>0.0 && GetConVarInt(cvarShieldType)>2)
 				{
 					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
-					if(GetConVarInt(cvarShieldType)==4)
-						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.2));
-					else
-						FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]*0.1));
+					FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]/GetConVarFloat(cvarShieldHealth)*100.0));
 				}
 			}
 			else if(SapperCooldown[client]>0.0)
@@ -14010,10 +13962,8 @@ public int Native_GetClientShield(Handle plugin, int numParams)
 	{
 		if(shield[client])
 		{
-			if(GetConVarInt(cvarShieldType)==4)
-				return RoundToFloor(shieldHP[client]*0.2);
-			else if(GetConVarInt(cvarShieldType)==3)
-				return RoundToFloor(shieldHP[client]*0.1);
+			if(GetConVarInt(cvarShieldType)>2)
+				return RoundToFloor(shieldHP[client]/GetConVarFloat(cvarShieldHealth)*100.0));
 			else
 				return 100;
 		}
@@ -14026,28 +13976,20 @@ public int Native_SetClientShield(Handle plugin, int numParams)
 {
 	int client=GetNativeCell(1);
 	shield[client]=GetNativeCell(2);
-	if(GetConVarInt(cvarShieldType)==4)
+	shieldHP[client]=GetNativeCell(3)*GetConVarFloat(cvarShieldHealth)/100.0;
+	if(GetNativeCell(4)>0)
 	{
-		shieldHP[client]=GetNativeCell(3)*5.0;
-		if(GetNativeCell(4)>0)
-			shDmgReduction[client]=GetNativeCell(4);
-		else
-			shDmgReduction[client]=GetNativeCell(3)*0.0075;
+		shDmgReduction[client]=GetNativeCell(4);
 	}
 	else
 	{
-		shieldHP[client]=GetNativeCell(3)*10.0;
-		if(GetNativeCell(4)>0)
-			shDmgReduction[client]=GetNativeCell(4);
-		else
-			shDmgReduction[client]=GetNativeCell(3)*0.005;
+		shDmgReduction[client]=GetNativeCell(3)*GetConVarFloat(cvarShieldResist)/100.0;
 	}
 }
 
 public int Native_RemoveClientShield(Handle plugin, int numParams)
 {
-	int client=GetNativeCell(1);
-	TF2_RemoveWearable(client, shield[client]);
+	RemoveShield(GetNativeCell(1), GetNativeCell(2), GetNativeCell(3));
 }
 
 public int Native_Debug(Handle plugin, int numParams)
