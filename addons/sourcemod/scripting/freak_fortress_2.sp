@@ -81,13 +81,15 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "18"
 #define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "Dev"
+#define FORK_DEV_REVISION "Build"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
 #else
-	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION
+	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION..."-"...BUILD_NUMBER
 #endif
+
+#define BUILD_NUMBER "1800067"
 
 #define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
@@ -1827,7 +1829,7 @@ char pLog[PLATFORM_MAX_PATH];
 
 public void OnPluginStart()
 {
-	LogMessage("===Freak Fortress 2 Initializing-%s===", PLUGIN_VERSION);
+	LogMessage("===Freak Fortress 2 Initializing-%s===", BUILD_NUMBER);
 
 	// Logs
 	BuildPath(Path_SM, pLog, sizeof(pLog), BossLogPath);
@@ -2067,6 +2069,8 @@ public void OnPluginStart()
 	RegAdminCmd("ff2_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: ff2_setrage <target> <percent>. Sets the RAGE to a boss player");
 	RegAdminCmd("ff2_addrage", Command_AddRage, ADMFLAG_CHEATS, "Usage: ff2_addrage <target> <percent>. Gives RAGE to a boss player");
 	RegAdminCmd("ff2_setinfiniterage", Command_SetInfiniteRage, ADMFLAG_CHEATS, "Usage: ff2_infiniterage <target>. Gives infinite RAGE to a boss player");
+	RegAdminCmd("ff2_setcharge", Command_SetCharge, ADMFLAG_CHEATS, "Usage: ff2_setcharge <target> <slot> <percent>. Sets a boss's charge");
+	RegAdminCmd("ff2_addcharge", Command_AddCharge, ADMFLAG_CHEATS, "Usage: ff2_addcharge <target> <slot> <percent>. Adds a boss's charge");
 
 	RegAdminCmd("hale_select", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  hale_select <boss>.  Forces next round to use that boss");
 	RegAdminCmd("hale_special", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  hale_select <boss>.  Forces next round to use that boss");
@@ -2080,6 +2084,8 @@ public void OnPluginStart()
 	RegAdminCmd("hale_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: hale_setrage <target> <percent>. Sets the RAGE to a boss player");
 	RegAdminCmd("hale_addrage", Command_AddRage, ADMFLAG_CHEATS, "Usage: hale_addrage <target> <percent>. Gives RAGE to a boss player");
 	RegAdminCmd("hale_setinfiniterage", Command_SetInfiniteRage, ADMFLAG_CHEATS, "Usage: hale_infiniterage <target>. Gives infinite RAGE to a boss player");
+	RegAdminCmd("hale_setcharge", Command_SetCharge, ADMFLAG_CHEATS, "Usage: hale_setcharge <target> <slot> <percent>. Sets a boss's charge");
+	RegAdminCmd("hale_addcharge", Command_AddCharge, ADMFLAG_CHEATS, "Usage: hale_addcharge <target> <slot> <percent>. Adds a boss's charge");
 
 	AutoExecConfig(true, "FreakFortress2");
 
@@ -2137,7 +2143,7 @@ public Action Command_SetRage(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] Command can only be used in-game!");
+				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 			
@@ -2152,8 +2158,16 @@ public Action Command_SetRage(int client, int args)
 			float rageMeter=StringToFloat(ragePCT);
 			
 			BossCharge[Boss[client]][0]=rageMeter;
-			CReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
+			CReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
+			if(tn_is_ml)
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Set", RoundFloat(rageMeter));
+			}
+			else
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
+			}
 		}
 		return Plugin_Handled;
 	}
@@ -2190,6 +2204,14 @@ public Action Command_SetRage(int client, int args)
 		BossCharge[Boss[target_list[target]]][0]=rageMeter;
 		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		CReplyToCommand(client, "{olive}[FF2]{default} Set %d rage to %s", RoundFloat(rageMeter), target_name);
+		if(tn_is_ml)
+		{
+			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Set", target_name, RoundFloat(rageMeter));
+		}
+		else
+		{
+			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
+		}
 	}
 	return Plugin_Handled;
 }
@@ -2206,7 +2228,7 @@ public Action Command_AddRage(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] Command can only be used in-game!");
+				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 			
@@ -2223,6 +2245,14 @@ public Action Command_AddRage(int client, int args)
 			BossCharge[Boss[client]][0]+=rageMeter;
 			CReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
+			if(tn_is_ml)
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Add", RoundFloat(rageMeter));
+			}
+			else
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
+			}
 		}
 		return Plugin_Handled;
 	}
@@ -2259,6 +2289,14 @@ public Action Command_AddRage(int client, int args)
 		BossCharge[Boss[target_list[target]]][0]+=rageMeter;
 		LogAction(client, target_list[target], "\"%L\" added %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		CReplyToCommand(client, "{olive}[FF2]{default} Added %d rage to %s", RoundFloat(rageMeter), target_name);
+		if(tn_is_ml)
+		{
+			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Add", target_name, RoundFloat(rageMeter));
+		}
+		else
+		{
+			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
+		}
 	}
 	return Plugin_Handled;
 }
@@ -2275,7 +2313,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] Command can only be used in-game!");
+				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 			
@@ -2289,14 +2327,30 @@ public Action Command_SetInfiniteRage(int client, int args)
 				InfiniteRageActive[client]=true;
 				BossCharge[Boss[client]][0]=rageMax[client];
 				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated");
-				LogAction(client, client, "\"%L\" activated infiite RAGE on themselves", client);
+				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+				if(tn_is_ml)
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite On");
+				}
+				else
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite On", "_s");
+				}
 			}
 			else
 			{
 				InfiniteRageActive[client]=false;
 				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE deactivated");
 				LogAction(client, client, "\"%L\" deactivated infiite RAGE on themselves", client);
+				if(tn_is_ml)
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite Off");
+				}
+				else
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite Off", "_s");
+				}
 			}
 		}
 		return Plugin_Handled;
@@ -2335,12 +2389,28 @@ public Action Command_SetInfiniteRage(int client, int args)
 			CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
 			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+			if(tn_is_ml)
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite On", target_name);
+			}
+			else
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite On", "_s", target_name);
+			}
 		}
 		else
 		{
 			InfiniteRageActive[target_list[target]]=false;	
 			CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE deactivated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" deactivated infinite RAGE on \"%L\"", client, target_list[target]);
+			if(tn_is_ml)
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite Off", target_name);
+			}
+			else
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite Off", "_s", target_name);
+			}
 		}
 	}
 	return Plugin_Handled;
@@ -2360,6 +2430,212 @@ public Action Timer_InfiniteRage(Handle timer, any client)
 		BossCharge[Boss[client]][0]=rageMax[client];
 
 	return Plugin_Continue;
+}
+
+public Action Command_AddCharge(int client, int args)
+{
+	if(args!=3)
+	{
+		if(args!=2)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_addcharge or hale_addcharge <target> <slot> <percent>");
+		}
+		else 
+		{
+			if(!IsValidClient(client))
+			{
+				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
+				return Plugin_Handled;
+			}
+
+			if(!IsBoss(client) || !IsPlayerAlive(client) || CheckRoundState()!=1)
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to add your charge!");
+				return Plugin_Handled;
+			}
+
+			char ragePCT[80], slotCharge[10];
+			GetCmdArg(1, slotCharge, sizeof(slotCharge));
+			GetCmdArg(2, ragePCT, sizeof(ragePCT));
+			float rageMeter=StringToFloat(ragePCT);
+			int abilitySlot=StringToInt(slotCharge);
+
+			if(!abilitySlot || abilitySlot<=7)
+			{
+				BossCharge[Boss[client]][abilitySlot]+=rageMeter;
+				CReplyToCommand(client, "{olive}[FF2]{default} Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
+				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
+				if(tn_is_ml)
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", RoundFloat(rageMeter), abilitySlot);
+				}
+				else
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				}
+			}
+			else
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+			}
+		}
+		return Plugin_Handled;
+	}
+    
+	char ragePCT[80], slotCharge[10];
+	char targetName[PLATFORM_MAX_PATH];
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, slotCharge, sizeof(slotCharge));
+	GetCmdArg(3, ragePCT, sizeof(ragePCT));
+	float rageMeter=StringToFloat(ragePCT);
+	int abilitySlot=StringToInt(slotCharge);
+
+	char target_name[MAX_TARGET_LENGTH];
+	int target_list[MAXPLAYERS], target_count;
+	bool tn_is_ml;
+
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml))<=0)
+	{
+		ReplyToTargetError(client, target_count);
+		return Plugin_Handled;
+	}
+
+	for(int target; target<target_count; target++)
+	{
+		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
+		{
+			continue;
+		}
+
+		if(!IsBoss(target_list[target]) || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to add their charge!", target_name);
+			return Plugin_Handled;
+		}
+
+		if(!abilitySlot || abilitySlot<=7)
+		{
+			BossCharge[Boss[target_list[target]]][abilitySlot]+=rageMeter;
+			CReplyToCommand(client, "{olive}[FF2]{default} %s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]), RoundFloat(rageMeter));
+			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
+			if(tn_is_ml)
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
+			}
+			else
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+			}
+		}
+		else
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+		}
+	}
+	return Plugin_Handled;
+}
+
+public Action Command_SetCharge(int client, int args)
+{
+	if(args!=3)
+	{
+		if(args!=2)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_setcharge or hale_setcharge <target> <slot> <percent>");
+		}
+		else 
+		{
+			if(!IsValidClient(client))
+			{
+				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
+				return Plugin_Handled;
+			}
+
+			if(!IsBoss(client) || !IsPlayerAlive(client) || CheckRoundState()!=1)
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to set your charge!");
+				return Plugin_Handled;
+			}
+
+			char ragePCT[80], slotCharge[10];
+			GetCmdArg(1, slotCharge, sizeof(slotCharge));
+			GetCmdArg(2, ragePCT, sizeof(ragePCT));
+			float rageMeter=StringToFloat(ragePCT);
+			int abilitySlot=StringToInt(slotCharge);
+
+			if(!abilitySlot || abilitySlot<=7)
+			{
+				BossCharge[Boss[client]][abilitySlot]=rageMeter;
+				CReplyToCommand(client, "{olive}[FF2]{default} Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
+				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
+				if(tn_is_ml)
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", RoundFloat(rageMeter), abilitySlot);
+				}
+				else
+				{
+					CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				}
+			}
+			else
+			{
+				CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+			}
+		}
+		return Plugin_Handled;
+	}
+    
+	char ragePCT[80], slotCharge[10];
+	char targetName[PLATFORM_MAX_PATH];
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, slotCharge, sizeof(slotCharge));
+	GetCmdArg(3, ragePCT, sizeof(ragePCT));
+	float rageMeter=StringToFloat(ragePCT);
+	int abilitySlot=StringToInt(slotCharge);
+
+	char target_name[MAX_TARGET_LENGTH];
+	int target_list[MAXPLAYERS], target_count;
+	bool tn_is_ml;
+
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml))<=0)
+	{
+		ReplyToTargetError(client, target_count);
+		return Plugin_Handled;
+	}
+
+	for(int target; target<target_count; target++)
+	{
+		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
+		{
+			continue;
+		}
+
+		if(!IsBoss(target_list[target]) || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to set their charge!", target_name);
+			return Plugin_Handled;
+		}
+
+		if(!abilitySlot || abilitySlot<=7)
+		{
+			BossCharge[Boss[target_list[target]]][abilitySlot]=rageMeter;
+			CReplyToCommand(client, "{olive}[FF2]{default} %s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]));
+			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
+			if(tn_is_ml)
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
+			}
+			else
+			{
+				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+			}
+		}
+		else
+		{
+			CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+		}
+	}
+	return Plugin_Handled;
 }
 
 public bool BossTargetFilter(const char[] pattern, Handle clients)
@@ -14033,4 +14309,4 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 
 #include <freak_fortress_2_vsh_feedback>
 
-#file "Unofficial Freak Fortress"
+#file "Unofficial Freak Fortress "...BUILD_NUMBER
