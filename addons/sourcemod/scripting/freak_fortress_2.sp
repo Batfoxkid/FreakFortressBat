@@ -2142,7 +2142,7 @@ public Action Command_SetRage(int client, int args)
 	{
 		if(args!=1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_setrage or hale_setrage <target> <percent>");
+			FReplyToCommand(client, "Usage: ff2_setrage or hale_setrage <target> <percent>");
 		}
 		else 
 		{
@@ -2154,7 +2154,7 @@ public Action Command_SetRage(int client, int args)
 			
 			if(!IsBoss(client) || GetBossIndex(client)==-1 || !IsPlayerAlive(client) || CheckRoundState()!=1)
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to set your RAGE!");
+				FReplyToCommand(client, "You must be a boss to set your RAGE!");
 				return Plugin_Handled;
 			}
 			
@@ -2163,9 +2163,9 @@ public Action Command_SetRage(int client, int args)
 			float rageMeter=StringToFloat(ragePCT);
 			
 			BossCharge[Boss[client]][0]=rageMeter;
-			CReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
+			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
-			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
+			FShowActivity(client, "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2195,20 +2195,20 @@ public Action Command_SetRage(int client, int args)
 		
 		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to set RAGE!", target_name);
+			FReplyToCommand(client, "%s must be a boss to set RAGE!", target_name);
 			return Plugin_Handled;
 		}
 
 		BossCharge[Boss[target_list[target]]][0]=rageMeter;
 		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
-		CReplyToCommand(client, "{olive}[FF2]{default} Set %d rage to %s", RoundFloat(rageMeter), target_name);
+		FReplyToCommand(client, "Set %d rage to %s", RoundFloat(rageMeter), target_name);
 		if(tn_is_ml)
 		{
-			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Set", target_name, RoundFloat(rageMeter));
+			FShowActivity(client, "%t", "Give Rage Set", target_name, RoundFloat(rageMeter));
 		}
 		else
 		{
-			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
+			FShowActivity(client, "%t", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
 		}
 	}
 	return Plugin_Handled;
@@ -2220,7 +2220,7 @@ public Action Command_AddRage(int client, int args)
 	{
 		if(args!=1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_addrage or hale_addrage <target> <percent>");
+			FReplyToCommand(client, "Usage: ff2_addrage or hale_addrage <target> <percent>");
 		}
 		else 
 		{
@@ -2232,7 +2232,7 @@ public Action Command_AddRage(int client, int args)
 			
 			if(!IsBoss(client) || GetBossIndex(client)==-1 || !IsPlayerAlive(client) || CheckRoundState()!=1)
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to give yourself RAGE!");
+				FReplyToCommand(client, "You must be a boss to give yourself RAGE!");
 				return Plugin_Handled;
 			}
 			
@@ -2241,9 +2241,9 @@ public Action Command_AddRage(int client, int args)
 			float rageMeter=StringToFloat(ragePCT);
 			
 			BossCharge[Boss[client]][0]+=rageMeter;
-			CReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
-			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
-			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
+			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
+			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
+			FShowActivity(client, "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2273,20 +2273,20 @@ public Action Command_AddRage(int client, int args)
 		
 		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to add RAGE!", target_name);
+			FReplyToCommand(client, "%s must be a boss to add RAGE!", target_name);
 			return Plugin_Handled;
 		}
 
 		BossCharge[Boss[target_list[target]]][0]+=rageMeter;
 		LogAction(client, target_list[target], "\"%L\" added %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
-		CReplyToCommand(client, "{olive}[FF2]{default} Added %d rage to %s", RoundFloat(rageMeter), target_name);
+		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
 		if(tn_is_ml)
 		{
-			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Add", target_name, RoundFloat(rageMeter));
+			FShowActivity(client, "%t", "Give Rage Add", target_name, RoundFloat(rageMeter));
 		}
 		else
 		{
-			CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
+			FShowActivity(client, "%t", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
 		}
 	}
 	return Plugin_Handled;
@@ -2298,7 +2298,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 	{
 		if(args>1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_setinfiniterage or hale_setinfiniterage <target>");
+			FReplyToCommand(client, "Usage: ff2_setinfiniterage or hale_setinfiniterage <target>");
 		}
 		else 
 		{
@@ -2310,24 +2310,24 @@ public Action Command_SetInfiniteRage(int client, int args)
 			
 			if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || CheckRoundState()!=1)
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to enable/disable infinite RAGE!");
+				FReplyToCommand(client, "You must be a boss to enable/disable infinite RAGE!");
 				return Plugin_Handled;
 			}
 			if(!InfiniteRageActive[client])
 			{
 				InfiniteRageActive[client]=true;
 				BossCharge[Boss[client]][0]=rageMax[client];
-				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated");
+				FReplyToCommand(client, "Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite On", "_s");
+				FShowActivity(client, "%t", "Self Infinite On", "_s");
 			}
 			else
 			{
 				InfiniteRageActive[client]=false;
-				CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE deactivated");
-				LogAction(client, client, "\"%L\" deactivated infiite RAGE on themselves", client);
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Infinite Off", "_s");
+				FReplyToCommand(client, "Infinite RAGE deactivated");
+				LogAction(client, client, "\"%L\" deactivated infinite RAGE on themselves", client);
+				FShowActivity(client, "%t", "Self Infinite Off", "_s");
 			}
 		}
 		return Plugin_Handled;
@@ -2355,7 +2355,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 		
 		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to enable/disable infinite RAGE!", target_name);
+			FReplyToCommand(client, "%s must be a boss to enable/disable infinite RAGE!", target_name);
 			return Plugin_Handled;
 		}
 
@@ -2363,30 +2363,30 @@ public Action Command_SetInfiniteRage(int client, int args)
 		{
 			InfiniteRageActive[target_list[target]]=true;
 			BossCharge[Boss[target_list[target]]][0]=rageMax[target_list[target]];
-			CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE activated for %s", target_name);
+			FReplyToCommand(client, "Infinite RAGE activated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
 			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			if(tn_is_ml)
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite On", target_name);
+				FShowActivity(client, "%t", "Give Infinite On", target_name);
 			}
 			else
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite On", "_s", target_name);
+				FShowActivity(client, "%t", "Give Infinite On", "_s", target_name);
 			}
 		}
 		else
 		{
 			InfiniteRageActive[target_list[target]]=false;	
-			CReplyToCommand(client, "{olive}[FF2]{default} Infinite RAGE deactivated for %s", target_name);
+			FReplyToCommand(client, "Infinite RAGE deactivated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" deactivated infinite RAGE on \"%L\"", client, target_list[target]);
 			if(tn_is_ml)
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite Off", target_name);
+				FShowActivity(client, "%t", "Give Infinite Off", target_name);
 			}
 			else
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Infinite Off", "_s", target_name);
+				FShowActivity(client, "%t", "Give Infinite Off", "_s", target_name);
 			}
 		}
 	}
@@ -2415,7 +2415,7 @@ public Action Command_AddCharge(int client, int args)
 	{
 		if(args!=2)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_addcharge or hale_addcharge <target> <slot> <percent>");
+			FReplyToCommand(client, "Usage: ff2_addcharge or hale_addcharge <target> <slot> <percent>");
 		}
 		else 
 		{
@@ -2427,7 +2427,7 @@ public Action Command_AddCharge(int client, int args)
 
 			if(!IsBoss(client) || !IsPlayerAlive(client) || CheckRoundState()!=1)
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to add your charge!");
+				FReplyToCommand(client, "You must be a boss to add your charge!");
 				return Plugin_Handled;
 			}
 
@@ -2440,13 +2440,13 @@ public Action Command_AddCharge(int client, int args)
 			if(!abilitySlot || abilitySlot<=7)
 			{
 				BossCharge[Boss[client]][abilitySlot]+=rageMeter;
-				CReplyToCommand(client, "{olive}[FF2]{default} Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
+				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				FShowActivity(client, "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+				FReplyToCommand(client, "Invalid slot!");
 			}
 		}
 		return Plugin_Handled;
@@ -2479,27 +2479,27 @@ public Action Command_AddCharge(int client, int args)
 
 		if(!IsBoss(target_list[target]) || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to add their charge!", target_name);
+			FReplyToCommand(client, "%s must be a boss to add their charge!", target_name);
 			return Plugin_Handled;
 		}
 
 		if(!abilitySlot || abilitySlot<=7)
 		{
 			BossCharge[Boss[target_list[target]]][abilitySlot]+=rageMeter;
-			CReplyToCommand(client, "{olive}[FF2]{default} %s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]), RoundFloat(rageMeter));
+			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]), RoundFloat(rageMeter));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			if(tn_is_ml)
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
+				FShowActivity(client, "%t", "Give Charge Add", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+				FShowActivity(client, "%t", "Give Charge Add", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 		}
 		else
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+			FReplyToCommand(client, "Invalid slot!");
 		}
 	}
 	return Plugin_Handled;
@@ -2511,7 +2511,7 @@ public Action Command_SetCharge(int client, int args)
 	{
 		if(args!=2)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_setcharge or hale_setcharge <target> <slot> <percent>");
+			FReplyToCommand(client, "Usage: ff2_setcharge or hale_setcharge <target> <slot> <percent>");
 		}
 		else 
 		{
@@ -2523,7 +2523,7 @@ public Action Command_SetCharge(int client, int args)
 
 			if(!IsBoss(client) || !IsPlayerAlive(client) || CheckRoundState()!=1)
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} You must be a boss to set your charge!");
+				FReplyToCommand(client, "You must be a boss to set your charge!");
 				return Plugin_Handled;
 			}
 
@@ -2536,13 +2536,13 @@ public Action Command_SetCharge(int client, int args)
 			if(!abilitySlot || abilitySlot<=7)
 			{
 				BossCharge[Boss[client]][abilitySlot]=rageMeter;
-				CReplyToCommand(client, "{olive}[FF2]{default} Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
+				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				FShowActivity(client, "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+				FReplyToCommand(client, "Invalid slot!");
 			}
 		}
 		return Plugin_Handled;
@@ -2575,27 +2575,27 @@ public Action Command_SetCharge(int client, int args)
 
 		if(!IsBoss(target_list[target]) || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %s must be a boss to set their charge!", target_name);
+			FReplyToCommand(client, "%s must be a boss to set their charge!", target_name);
 			return Plugin_Handled;
 		}
 
 		if(!abilitySlot || abilitySlot<=7)
 		{
 			BossCharge[Boss[target_list[target]]][abilitySlot]=rageMeter;
-			CReplyToCommand(client, "{olive}[FF2]{default} %s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]));
+			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			if(tn_is_ml)
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
+				FShowActivity(client, "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				CShowActivity2(client, "{olive}[FF2]{default} ", "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+				FShowActivity(client, "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 		}
 		else
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Invalid slot!");
+			FReplyToCommand(client, "Invalid slot!");
 		}
 	}
 	return Plugin_Handled;
@@ -2783,7 +2783,7 @@ public void OnPluginEnd()
 	if(!ReloadFF2 && CheckRoundState() == 1)
 	{
 		ForceTeamWin(0);
-		CPrintToChatAll("{olive}[FF2]{default} The plugin has been unexpectedly unloaded!");
+		FPrintToChatAll("The plugin has been unexpectedly unloaded!");
 	}
 }
 
@@ -2826,6 +2826,7 @@ public void EnableFF2()
 	allowedDetonations=GetConVarInt(cvarCaberDetonations);
 	Annotations=GetConVarInt(cvarAnnotations);
 	TellName=GetConVarBool(cvarTellName);
+
 
 	//Set some Valve cvars to what we want them to be
 	SetConVarInt(FindConVar("tf_arena_use_queue"), 0);
@@ -3503,48 +3504,48 @@ public Action Timer_Announce(Handle timer)
 		{
 			case 1:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ServerAd");
+				FPrintToChatAll("%t", "ServerAd");
 			}
 			case 2:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
+				FPrintToChatAll("%t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
 			}
 			case 3:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ClassicAd");
+				FPrintToChatAll("%t", "ClassicAd");
 			}
 			case 4:
 			{
 				if(GetConVarBool(cvarToggleBoss))	// Toggle Command?
 				{
-					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Toggle Command");
+					FPrintToChatAll("%t", "FF2 Toggle Command");
 				}
 				else					// Guess not, play the 4th thing and next is 5
 				{
 					announcecount=5;
-					CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
+					FPrintToChatAll("%t", "DevAd", PLUGIN_VERSION);
 				}
 			}
 			case 5:
 			{
-				CPrintToChatAll("{olive}[FF2]{default} %t", "DevAd", PLUGIN_VERSION);
+				FPrintToChatAll("%t", "DevAd", PLUGIN_VERSION);
 			}
 			case 6:
 			{
 				if(GetConVarBool(cvarDuoBoss))		// Companion Toggle?
 				{
-					CPrintToChatAll("{olive}[FF2]{default} %t", "FF2 Companion Command");
+					FPrintToChatAll("%t", "FF2 Companion Command");
 				}
 				else					// Guess not either, play the last thing and next is 0
 				{
 					announcecount=0;
-					CPrintToChatAll("{olive}[FF2]{default} %t", "type_ff2_to_open_menu");
+					FPrintToChatAll("%t", "type_ff2_to_open_menu");
 				}
 			}
 			default:
 			{
 				announcecount=0;
-				CPrintToChatAll("{olive}[FF2]{default} %t", "type_ff2_to_open_menu");
+				FPrintToChatAll("%t", "type_ff2_to_open_menu");
 			}
 		}
 	}
@@ -3770,7 +3771,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 
 	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
 	{
-		CPrintToChatAll("{olive}[FF2]{default} %t", "needmoreplayers");
+		FPrintToChatAll("%t", "needmoreplayers");
 		SetConVarString(hostName, oldName);
 		Enabled=false;
 		DisableSubPlugins();
@@ -3779,7 +3780,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	}
 	else if(RoundCount<arenaRounds)  //We're still in arena mode
 	{
-		CPrintToChatAll("{olive}[FF2]{default} %t", "arena_round", arenaRounds-RoundCount);
+		FPrintToChatAll("%t", "arena_round", arenaRounds-RoundCount);
 		Enabled=false;
 		DisableSubPlugins();
 		SetArenaCapEnableTime(60.0);
@@ -3940,11 +3941,11 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 				}
 				if(index > 0)
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Queue Notification", index, ClientPoint[index]);
+					FPrintToChat(client, "%t", "FF2 Toggle Queue Notification", index, ClientPoint[index]);
 				}
 				else
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
+					FPrintToChat(client, "%t", "FF2 Toggle Enabled Notification");
    				}
 			}
 			else if(GetClientPreferences(client, PREF_BOSS)>1)
@@ -3953,11 +3954,11 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 				GetClientName(client, nick, sizeof(nick));
 				if(GetClientPreferences(client, PREF_BOSS)<3)
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+					FPrintToChat(client, "%t", "FF2 Toggle Disabled Notification");
 				}
 				else
 				{
-					CPrintToChat(client, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
+					FPrintToChat(client, "%t", "FF2 Toggle Disabled Notification For Map");
 				}
 			}
 			else if(GetClientPreferences(client, PREF_BOSS)<1)
@@ -4288,7 +4289,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 				BossLives[boss]>1 ? Format(lives, sizeof(lives), "x%i", BossLives[boss]) : strcopy(lives, 2, "");
 				Format(text, sizeof(text), "%s\n%t", text, "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				FPrintToChatAll("%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 			}
 		}
 
@@ -4441,11 +4442,11 @@ public int MenuHandlerCompanion(Handle menu, MenuAction action, int param1, int 
 		switch(choice)
 		{
 			case 1:
-				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Enabled");
+				FPrintToChat(param1, "%t", "FF2 Companion Enabled");
 			case 2:
-				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled");
+				FPrintToChat(param1, "%t", "FF2 Companion Disabled");
 			case 3:
-				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Companion Disabled For Map");
+				FPrintToChat(param1, "%t", "FF2 Companion Disabled For Map");
 		}
 	}
 	else if(action == MenuAction_End)
@@ -4486,11 +4487,11 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 		switch(choice)
 		{
 			case 1:
-				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Enabled Notification");
+				FPrintToChat(param1, "%t", "FF2 Toggle Enabled Notification");
 			case 2:
-				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification");
+				FPrintToChat(param1, "%t", "FF2 Toggle Disabled Notification");
 			case 3:
-				CPrintToChat(param1, "{olive}[FF2]{default} %t", "FF2 Toggle Disabled Notification For Map");
+				FPrintToChat(param1, "%t", "FF2 Toggle Disabled Notification For Map");
 		}
 	} 
 	else if(action == MenuAction_End)
@@ -4616,7 +4617,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 				{
 					if(add_points2[client]>0)
 					{
-						CPrintToChat(client, "{olive}[FF2]{default} %t", "add_points", add_points2[client]);
+						FPrintToChat(client, "%t", "add_points", add_points2[client]);
 					}
 					SetClientQueuePoints(client, GetClientQueuePoints(client)+add_points2[client]);
 				}
@@ -4630,7 +4631,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 				{
 					if(add_points[client]>0)
 					{
-						CPrintToChat(client, "{olive}[FF2]{default} %t", "add_points", add_points[client]);
+						FPrintToChat(client, "%t", "add_points", add_points[client]);
 					}
 					SetClientQueuePoints(client, GetClientQueuePoints(client)+add_points[client]);
 				}
@@ -4846,7 +4847,7 @@ void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="
 		}
 		if((GetConVarInt(cvarSongInfo) == 1) || (unknown1 && unknown2 && loop && (GetConVarInt(cvarSongInfo) == 0)))
 		{ 
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "track_info", artist, name);
+			FPrintToChat(client, "%t", "track_info", artist, name);
 		}
 	}
 	else
@@ -5134,27 +5135,27 @@ public Action Command_SetMyBoss(int client, int args)
 			{
 				if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true))
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					FReplyToCommand(client, "%t", "deny_donator");
 					return Plugin_Handled;
 				}
 				if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_nofirst");
+					FReplyToCommand(client, "%t", "deny_nofirst");
 					return Plugin_Handled;
 				}
 				if(strlen(companionName) && !DuoMin)
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_short");
+					FReplyToCommand(client, "%t", "deny_duo_short");
 					return Plugin_Handled;
 				}
 				if(strlen(companionName) && GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1)
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_off");
+					FReplyToCommand(client, "%t", "deny_duo_off");
 					return Plugin_Handled;
 				}
 				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					FReplyToCommand(client, "%t", "deny_donator");
 					return Plugin_Handled;
 				}
 				if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0)
@@ -5163,13 +5164,13 @@ public Action Command_SetMyBoss(int client, int args)
 					GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
 					if(StrEqual(boss, cookie, false))
 					{
-						CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_recent");
+						FReplyToCommand(client, "%t", "deny_recent");
 						return Plugin_Handled;
 					}
 				}
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
+				FReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
 
@@ -5178,27 +5179,27 @@ public Action Command_SetMyBoss(int client, int args)
 			{
 				if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true))
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					FReplyToCommand(client, "%t", "deny_donator");
 					return Plugin_Handled;
 				}
 				if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_nofirst");
+					FReplyToCommand(client, "%t", "deny_nofirst");
 					return Plugin_Handled;
 				}
 				if(strlen(companionName) && !DuoMin)
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_short");
+					FReplyToCommand(client, "%t", "deny_duo_short");
 					return Plugin_Handled;
 				}
 				if(strlen(companionName) && GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1)
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_duo_off");
+					FReplyToCommand(client, "%t", "deny_duo_off");
 					return Plugin_Handled;
 				}
 				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_donator");
+					FReplyToCommand(client, "%t", "deny_donator");
 					return Plugin_Handled;
 				}
 				KvGetString(BossKV[config], "name", boss, sizeof(boss));
@@ -5208,17 +5209,17 @@ public Action Command_SetMyBoss(int client, int args)
 					GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
 					if(StrEqual(boss, cookie, false))
 					{
-						CReplyToCommand(client, "{olive}[FF2]{default} %t", "deny_recent");
+						FReplyToCommand(client, "%t", "deny_recent");
 						return Plugin_Handled;
 					}
 				}
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-				CReplyToCommand(client, "%t", "to0_boss_selected", boss);
+				FReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
 		}
-		CReplyToCommand(client, "{olive}[FF2]{default} Boss could not be found!");
+		FReplyToCommand(client, "Boss could not be found!");
 		return Plugin_Handled;
 	}
 
@@ -5346,7 +5347,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				{
 					IsBossSelected[param1]=true;
 					xIncoming[param1][0] = '\0';
-					CReplyToCommand(param1, "%t", "to0_comfirmrandom");
+					FReplyToCommand(param1, "%t", "to0_comfirmrandom");
 					return;
 				}
 				case 1:
@@ -5371,7 +5372,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 						}
 						else
 						{
@@ -5402,7 +5403,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 						}
 						else
 						{
@@ -5424,7 +5425,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-							CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 						}
 						else
 						{
@@ -5437,7 +5438,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 					else
 					{
@@ -5452,7 +5453,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+						FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 					else
 					{
@@ -5527,7 +5528,7 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 				{
 					IsBossSelected[param1]=true;
 					xIncoming[param1]=cIncoming[param1];
-					CReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+					FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 				}
 				default:
 				{
@@ -5638,7 +5639,7 @@ public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialNam
 	{
 		if(preset)
 		{
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "boss_selection_overridden");
+			FPrintToChat(client, "%t", "boss_selection_overridden");
 		}
 		else
 		{
@@ -5736,7 +5737,7 @@ public Action Timer_NextBossPanel(Handle timer)
 
 		if(!IsBoss(client))
 		{
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "to0_near");  //"You will become the Boss soon. Type {olive}/ff2next{default} to make sure."
+			FPrintToChat(client, "%t", "to0_near");  //"You will become the Boss soon. Type {olive}/ff2next{default} to make sure."
 			clients++;
 		}
 		added[client]=true;
@@ -5784,9 +5785,9 @@ public Action MessageTimer(Handle timer)
 			}
 
 			Format(text, sizeof(text), "%s\n%t", text, "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-			Format(textChat, sizeof(textChat), "{olive}[FF2]{default} %t!", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+			Format(textChat, sizeof(textChat), "%t!", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 			ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
-			CPrintToChatAll("%s", textChat);
+			FPrintToChatAll("%s", textChat);
 		}
 	}
 
@@ -7565,7 +7566,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 					lives[0]='\0';
 				}
 				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
-				CPrintToChatAll("{olive}[FF2]{default} %t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+				FPrintToChatAll("%t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				BossHealthLast[boss]=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 			}
 		}
@@ -7610,7 +7611,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 				Format(waitTime, sizeof(waitTime), "%s %i,", waitTime, BossHealthLast[Boss[target]]);
 			}
 		}
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "wait_hp", RoundFloat(HPTime-GetGameTime()), waitTime);
+		FPrintToChat(client, "%t", "wait_hp", RoundFloat(HPTime-GetGameTime()), waitTime);
 	}
 	return Plugin_Continue;
 }
@@ -7621,7 +7622,7 @@ public Action Command_SetNextBoss(int client, int args)
 
 	if(args<1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_special <boss>");
+		FReplyToCommand(client, "Usage: ff2_special <boss>");
 		return Plugin_Handled;
 	}
 	GetCmdArgString(name, sizeof(name));
@@ -7633,7 +7634,7 @@ public Action Command_SetNextBoss(int client, int args)
 		if(StrContains(boss, name, false)!=-1)
 		{
 			Incoming[0]=config;
-			CReplyToCommand(client, "{olive}[FF2]{default} Set the next boss to %s", boss);
+			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
 		}
 
@@ -7642,11 +7643,11 @@ public Action Command_SetNextBoss(int client, int args)
 		{
 			Incoming[0]=config;
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
-			CReplyToCommand(client, "{olive}[FF2]{default} Set the next boss to %s", boss);
+			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
 		}
 	}
-	CReplyToCommand(client, "{olive}[FF2]{default} Boss could not be found!");
+	FReplyToCommand(client, "Boss could not be found!");
 	return Plugin_Handled;
 }
 
@@ -7659,7 +7660,7 @@ public Action Command_Points(int client, int args)
 
 	if(args!=2)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_addpoints <target> <points>");
+		FReplyToCommand(client, "Usage: ff2_addpoints <target> <points>");
 		return Plugin_Handled;
 	}
 
@@ -7694,7 +7695,7 @@ public Action Command_Points(int client, int args)
 		SetClientQueuePoints(targets[0], GetClientQueuePoints(targets[0])+points);
 		LogAction(client, targets[0], "\"%L\" added %d queue points to \"%L\"", client, points, targets[0]);
 	}
-	CReplyToCommand(client, "{olive}[FF2]{default} Added %d queue points to %s", points, targetName);
+	FReplyToCommand(client, "Added %d queue points to %s", points, targetName);
 	return Plugin_Handled;
 }
 
@@ -7726,12 +7727,12 @@ public Action Command_StartMusic(int client, int args)
 			{
 				StartMusic(targets[0]);
 			}
-			CReplyToCommand(client, "{olive}[FF2]{default} Started boss music for %s.", targetName);
+			FReplyToCommand(client, "Started boss music for %s.", targetName);
 		}
 		else
 		{
 			StartMusic();
-			CReplyToCommand(client, "{olive}[FF2]{default} Started boss music for all clients.");
+			FReplyToCommand(client, "Started boss music for all clients.");
 		}
 		return Plugin_Handled;
 	}
@@ -7766,12 +7767,12 @@ public Action Command_StopMusic(int client, int args)
 			{
 				StopMusic(targets[0], true);
 			}
-			CReplyToCommand(client, "{olive}[FF2]{default} Stopped boss music for %s.", targetName);
+			FReplyToCommand(client, "Stopped boss music for %s.", targetName);
 		}
 		else
 		{
 			StopMusic(_, true);
-			CReplyToCommand(client, "{olive}[FF2]{default} Stopped boss music for all clients.");
+			FReplyToCommand(client, "Stopped boss music for all clients.");
 		}
 		return Plugin_Handled;
 	}
@@ -7782,7 +7783,7 @@ public Action Command_Charset(int client, int args)
 {
 	if(!args)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_charset <charset>");
+		FReplyToCommand(client, "Usage: ff2_charset <charset>");
 		return Plugin_Handled;
 	}
 
@@ -7805,7 +7806,7 @@ public Action Command_Charset(int client, int args)
 		KvGetSectionName(Kv, config, sizeof(config));
 		if(StrContains(config, charset, false)>=0)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Charset for nextmap is %s", config);
+			FReplyToCommand(client, "Charset for nextmap is %s", config);
 			isCharSetSelected=true;
 			FF2CharSet=i;
 			break;
@@ -7813,7 +7814,7 @@ public Action Command_Charset(int client, int args)
 
 		if(!KvGotoNextKey(Kv))
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Charset not found");
+			FReplyToCommand(client, "Charset not found");
 			break;
 		}
 	}
@@ -7825,7 +7826,7 @@ public Action Command_LoadCharset(int client, int args)
 {
 	if(!args)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_loadcharset <charset>");
+		FReplyToCommand(client, "Usage: ff2_loadcharset <charset>");
 		return Plugin_Handled;
 	}
 	
@@ -7852,11 +7853,11 @@ public Action Command_LoadCharset(int client, int args)
 			LoadCharset=true;
 			if(CheckRoundState()==0 || CheckRoundState()==1)
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} The current character set is set to be switched to %s!", config);
+				FReplyToCommand(client, "The current character set is set to be switched to %s!", config);
 				return Plugin_Handled;
 			}
 			
-			CReplyToCommand(client, "{olive}[FF2]{default} Character set has been switched to %s", config);
+			FReplyToCommand(client, "Character set has been switched to %s", config);
 			FindCharacters();
 			strcopy(FF2CharSetString, 2, "");
 			LoadCharset=false;
@@ -7865,7 +7866,7 @@ public Action Command_LoadCharset(int client, int args)
 
 		if(!KvGotoNextKey(Kv))
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} Charset not found");
+			FReplyToCommand(client, "Charset not found");
 			break;
 		}
 	}
@@ -7878,10 +7879,10 @@ public Action Command_ReloadFF2(int client, int args)
 	ReloadFF2 = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} The plugin is set to reload.");
+		FReplyToCommand(client, "The plugin is set to reload.");
 		return Plugin_Handled;
 	}
-	CReplyToCommand(client, "{olive}[FF2]{default} The plugin has been reloaded.");
+	FReplyToCommand(client, "The plugin has been reloaded.");
 	ReloadFF2 = false;
 	ServerCommand("sm plugins reload freak_fortress_2");
 	return Plugin_Handled;
@@ -7892,10 +7893,10 @@ public Action Command_ReloadCharset(int client, int args)
 	LoadCharset = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} Current character set is set to reload!");
+		FReplyToCommand(client, "Current character set is set to reload!");
 		return Plugin_Handled;
 	}
-	CReplyToCommand(client, "{olive}[FF2]{default} Current character set has been reloaded!");
+	FReplyToCommand(client, "Current character set has been reloaded!");
 	FindCharacters();
 	LoadCharset=false;
 	return Plugin_Handled;
@@ -7906,10 +7907,10 @@ public Action Command_ReloadFF2Weapons(int client, int args)
 	ReloadWeapons = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %s is set to reload!", WeaponCFG);
+		FReplyToCommand(client, "%s is set to reload!", WeaponCFG);
 		return Plugin_Handled;
 	}
-	CReplyToCommand(client, "{olive}[FF2]{default} %s has been reloaded!", WeaponCFG);
+	FReplyToCommand(client, "%s has been reloaded!", WeaponCFG);
 	CacheWeapons();
 	ReloadWeapons=false;
 	return Plugin_Handled;
@@ -7920,7 +7921,7 @@ public Action Command_ReloadFF2Configs(int client, int args)
 	ReloadConfigs = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} All configs are set to be reloaded!");
+		FReplyToCommand(client, "All configs are set to be reloaded!");
 		return Plugin_Handled;
 	}
 	CacheWeapons();
@@ -7940,7 +7941,7 @@ public Action Command_ReloadSubPlugins(int client, int args)
 			{
 				DisableSubPlugins(true);
 				EnableSubPlugins(true);
-				CReplyToCommand(client, "{olive}[FF2]{default} Reloaded subplugins!");
+				FReplyToCommand(client, "Reloaded subplugins!");
 			}
 			case 1: // Reload a specific subplugin
 			{
@@ -7949,14 +7950,14 @@ public Action Command_ReloadSubPlugins(int client, int args)
 				BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/freaks/%s.ff2", pluginName);
 				if(!FileExists(pluginName))
 				{
-					CReplyToCommand(client, "{olive}[FF2]{default} Subplugin %s does not exist!", pluginName);
+					FReplyToCommand(client, "Subplugin %s does not exist!", pluginName);
 					return Plugin_Handled;
 				}	
 				ReplaceString(pluginName, sizeof(pluginName), "addons/sourcemod/plugins/freaks/", "freaks/", false);
 				ServerCommand("sm plugins unload %s", pluginName);
 				ServerCommand("sm plugins load %s", pluginName);
 				ReplaceString(pluginName, sizeof(pluginName), "freaks/", " ", false);
-				CReplyToCommand(client, "{olive}[FF2]{default} Reloaded subplugin %s!", pluginName);		
+				FReplyToCommand(client, "Reloaded subplugin %s!", pluginName);		
 			}
 			default:
 			{
@@ -8061,8 +8062,8 @@ public void OnClientDisconnect(int client)
 			if(Boss[boss])
 			{
 				CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
-				CPrintToChat(Boss[boss], "{olive}[FF2]{default} %t", "Replace Disconnected Boss");
-				CPrintToChatAll("{olive}[FF2]{default} %t", "Boss Disconnected", client, Boss[boss]);
+				FPrintToChat(Boss[boss], "%t", "Replace Disconnected Boss");
+				FPrintToChatAll("%t", "Boss Disconnected", client, Boss[boss]);
 			}
 		}
 
@@ -8911,7 +8912,7 @@ public Action OnSuicide(int client, const char[] command, int args)
 	bool canBossSuicide=GetConVarBool(cvarBossSuicide);
 	if(Enabled && IsBoss(client) && (canBossSuicide ? !CheckRoundState() : true) && CheckRoundState()!=2)
 	{	
-		CPrintToChat(client, "{olive}[FF2]{default} %t", canBossSuicide ? "Boss Suicide Pre-round" : "Boss Suicide Denied");
+		FPrintToChat(client, "%t", canBossSuicide ? "Boss Suicide Pre-round" : "Boss Suicide Denied");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -9038,10 +9039,10 @@ public Action OnRPS(Handle event, const char[] eventName, bool dontBroadcast)
 
 	if(GetClientPreferences(winner, PREF_BOSS)!=2 && GetClientPreferences(loser, PREF_BOSS)!=2 && !IsBoss(winner) && !IsBoss(loser) && GetClientQueuePoints(winner)>=GetConVarInt(cvarRPSPoints) && GetClientQueuePoints(loser)>=GetConVarInt(cvarRPSPoints) && GetConVarInt(cvarRPSPoints)>0)	// Teammate or Minion loses?
 	{
-		CPrintToChat(winner, "{olive}[FF2]{default} %t", "rps_won", GetConVarInt(cvarRPSPoints), loser);
+		FPrintToChat(winner, "%t", "rps_won", GetConVarInt(cvarRPSPoints), loser);
 		SetClientQueuePoints(winner, GetClientQueuePoints(winner)+GetConVarInt(cvarRPSPoints));
 
-		CPrintToChat(loser, "{olive}[FF2]{default} %t", "rps_lost", GetConVarInt(cvarRPSPoints), winner);
+		FPrintToChat(loser, "%t", "rps_lost", GetConVarInt(cvarRPSPoints), winner);
 		SetClientQueuePoints(loser, GetClientQueuePoints(loser)-GetConVarInt(cvarRPSPoints));
 	}
 }
@@ -9240,7 +9241,7 @@ public Action Timer_Damage(Handle timer, any userid)
 	int client=GetClientOfUserId(userid);
 	if(IsValidClient(client, false))
 	{
-		CPrintToChat(client, "{olive}[FF2] %t. %t{default}", "damage", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
+		FPrintToChat(client, "{olive}%t. %t{default}", "damage", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 	}
 	return Plugin_Continue;
 }
@@ -12135,7 +12136,7 @@ public Action ResetQueuePointsCmd(int client, int args)
 
 	if(args!=1)  //Admins
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} Usage: ff2_resetqueuepoints <target>");
+		FReplyToCommand(client, "Usage: ff2_resetqueuepoints <target>");
 		return Plugin_Handled;
 	}
 
@@ -12171,12 +12172,12 @@ public int TurnToZeroPanelH(Handle menu, MenuAction action, int client, int posi
 	{
 		if(shortname[client]==client)
 		{
-			CPrintToChat(client,"{olive}[FF2]{default} %t", "to0_done");  //Your queue points have been reset to {olive}0{default}
+			FPrintToChat(client, "%t", "to0_done");  //Your queue points have been reset to {olive}0{default}
 		}
 		else
 		{
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "to0_done_admin", shortname[client]);  //{olive}{1}{default}'s queue points have been reset to {olive}0{default}
-			CPrintToChat(shortname[client], "{olive}[FF2]{default} %t", "to0_done_by_admin", client);  //{olive}{1}{default} reset your queue points to {olive}0{default}
+			FPrintToChat(client, "%t", "to0_done_admin", shortname[client]);  //{olive}{1}{default}'s queue points have been reset to {olive}0{default}
+			FPrintToChat(shortname[client], "%t", "to0_done_by_admin", client);  //{olive}{1}{default} reset your queue points to {olive}0{default}
 			LogAction(client, shortname[client], "\"%L\" reset \"%L\"'s queue points to 0", client, shortname[client]);
 		}
 		SetClientQueuePoints(shortname[client], 0);
@@ -12516,7 +12517,7 @@ public int ClassInfoTogglePanelH(Handle menu, MenuAction action, int client, int
 				Format(cookies, sizeof(cookies), "%s %s %s 1 %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
 			}
 			SetClientCookie(client, FF2Cookies, cookies);
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_classinfo", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
+			FPrintToChat(client, "%t", "ff2_classinfo", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		}
 	}
 }
@@ -12536,7 +12537,7 @@ void ToggleClassInfo(int client)
 		Format(cookies, sizeof(cookies), "%s %s %s 1 %s %s %s", cookieValues[0], cookieValues[1], cookieValues[2], cookieValues[4], cookieValues[5], cookieValues[6], cookieValues[7]);
 	}
 	SetClientCookie(client, FF2Cookies, cookies);
-	CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_classinfo", StringToInt(cookieValues[3])==0 ? "off" : "on");	// TODO: Make this more multi-language friendly
+	FPrintToChat(client, "%t", "ff2_classinfo", StringToInt(cookieValues[3])==0 ? "off" : "on");	// TODO: Make this more multi-language friendly
 }
 
 public Action Command_HelpPanelClass(int client, int args)
@@ -12669,12 +12670,12 @@ public Action MusicTogglePanelCmd(int client, int args)
 		{
 			if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 			{
-				CReplyToCommand(client, "{olive}[FF2]{default} You already have boss themes enabled...");
+				FReplyToCommand(client, "You already have boss themes enabled...");
 				return Plugin_Handled;
 			}
 			ToggleBGM(client, true);
 		}
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");	// TODO: Make this more multi-language friendly
+		FPrintToChat(client, "%t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");	// TODO: Make this more multi-language friendly
 		return Plugin_Handled;
 	}
 
@@ -12747,7 +12748,7 @@ public int MusicTogglePanelH(Handle menu, MenuAction action, int client, int sel
 					StartMusic(client);
 				}
 			}
-			CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
+			FPrintToChat(client, "%t", "ff2_music", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		}
 		else
 		{
@@ -12756,7 +12757,7 @@ public int MusicTogglePanelH(Handle menu, MenuAction action, int client, int sel
 				case 0:
 				{
 					ToggleBGM(client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? false : true);               
-					CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");	// And here too
+					FPrintToChat(client, "%t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");	// And here too
 				}
 				case 1: Command_SkipSong(client, 0);
 				case 2: Command_ShuffleSong(client, 0);
@@ -12790,17 +12791,17 @@ public Action Command_SkipSong(int client, int args)
 
 	if(!Enabled || CheckRoundState()!=1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		FReplyToCommand(client, "%t", "ff2_please wait");
 		return Plugin_Handled;
 	}
 
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
 	}
 
-    	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_skipped");
+    	FReplyToCommand(client, "%t", "track_skipped");
 
 	StopMusic(client, true);
 	
@@ -12819,7 +12820,7 @@ public Action Command_SkipSong(int client, int args)
 
 		if(!index)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");
+			FReplyToCommand(client, "%t", "ff2_no_music");
 			return Plugin_Handled;
 		}
 
@@ -12888,13 +12889,13 @@ public Action Command_ShuffleSong(int client, int args)
 
 	if(!Enabled || CheckRoundState()!=1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		FReplyToCommand(client, "%t", "ff2_please wait");
 		return Plugin_Handled;
 	}
 
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
 	}
 
@@ -12903,7 +12904,7 @@ public Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	CReplyToCommand(client, "{olive}[FF2]{default} %t", "track_shuffle");
+	FReplyToCommand(client, "%t", "track_shuffle");
 	StartMusic(client);
 	return Plugin_Handled;
 }
@@ -12918,13 +12919,13 @@ public Action Command_Tracklist(int client, int args)
 
 	if(!Enabled || CheckRoundState()!=1)
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_please wait");
+		FReplyToCommand(client, "%t", "ff2_please wait");
 		return Plugin_Handled;
 	}
 
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
-		CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_music_disabled");
+		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
 	}
 
@@ -12951,7 +12952,7 @@ public Action Command_Tracklist(int client, int args)
 
 		if(!index)
 		{
-			CReplyToCommand(client, "{olive}[FF2]{default} %t", "ff2_no_music");
+			FReplyToCommand(client, "%t", "ff2_no_music");
 			return Plugin_Handled;
 		}
 
@@ -13122,7 +13123,7 @@ public Action VoiceTogglePanelCmd(int client, int args)
 	else
 	{
 		ToggleVoice(client, CheckSoundException(client, SOUNDEXCEPT_VOICE) ? false : true);
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_voice", !CheckSoundException(client, SOUNDEXCEPT_VOICE) ? "off" : "on");	// TODO: Make this more multi-language friendly
+		FPrintToChat(client, "%t", "ff2_voice", !CheckSoundException(client, SOUNDEXCEPT_VOICE) ? "off" : "on");	// TODO: Make this more multi-language friendly
 	}
 	return Plugin_Handled;
 }
@@ -13156,10 +13157,10 @@ public int VoiceTogglePanelH(Handle menu, MenuAction action, int client, int sel
 			SetClientSoundOptions(client, SOUNDEXCEPT_VOICE, true);
 		}
 
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "ff2_voice", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
+		FPrintToChat(client, "%t", "ff2_voice", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		if(selection==2)
 		{
-			CPrintToChat(client, "%t", "ff2_voice2");
+			FPrintToChat(client, "%t", "ff2_voice2");
 		}
 	}
 }
@@ -13330,7 +13331,7 @@ public int Handler_VoteCharset(Handle menu, MenuAction action, int param1, int p
 		char nextmap[32];
 		GetConVarString(cvarNextmap, nextmap, sizeof(nextmap));
 		GetMenuItem(menu, param1, FF2CharSetString, sizeof(FF2CharSetString));
-		CPrintToChatAll("{olive}[FF2]{default} %t", "nextmap_charset", nextmap, FF2CharSetString);  //"The character set for {1} will be {2}."
+		FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);  //"The character set for {1} will be {2}."
 		isCharSetSelected=true;
 	}
 	else if(action==MenuAction_End)
@@ -13345,7 +13346,7 @@ public Action Command_Nextmap(int client, int args)
 	{
 		char nextmap[42];
 		GetConVarString(cvarNextmap, nextmap, sizeof(nextmap));
-		CPrintToChat(client, "{olive}[FF2]{default} %t", "nextmap_charset", nextmap, FF2CharSetString);
+		FPrintToChat(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
 	}
 	return Plugin_Handled;
 }
@@ -14091,6 +14092,78 @@ public void OnTakeDamagePost(int client, int attacker, int inflictor, float dama
 	{
 		UpdateHealthBar();
 	}
+}
+
+stock void FPrintToChat(int client, const char[] message, any ...)
+{
+	CCheckTrie();
+	if(client<=0 || client>MaxClients)
+	{
+		ThrowError("Invalid client index %i", client);
+	}
+	if(!IsClientInGame(client))
+	{
+		ThrowError("Client %i is not in game", client);
+	}
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
+	SetGlobalTransTarget(client);
+	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
+	VFormat(buffer2, sizeof(buffer2), buffer, 3);
+	CReplaceColorCodes(buffer2);
+	CSendMessage(client, buffer2);
+}
+
+stock void FPrintToChatAll(const char[] message, any ...)
+{
+	CCheckTrie();
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(!IsClientInGame(i) || CSkipList[i])
+		{
+			CSkipList[i] = false;
+			continue;
+		}
+		SetGlobalTransTarget(i);
+		Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
+		VFormat(buffer2, sizeof(buffer2), buffer, 2);
+		CReplaceColorCodes(buffer2);
+		CSendMessage(i, buffer2);
+	}
+}
+
+stock void FReplyToCommand(int client, const char[] message, any ...)
+{
+	char buffer[MAX_BUFFER_LENGTH];
+	SetGlobalTransTarget(client);
+	VFormat(buffer, sizeof(buffer), message, 3);
+	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		CRemoveTags(buffer, sizeof(buffer));
+		PrintToConsole(client, "[FF2] %s", buffer);
+	}
+	else
+	{
+		FPrintToChat(client, "%s", buffer);
+	}
+}
+
+stock void FShowActivity(int client, const char[] message, any ...)
+{
+	CCheckTrie();
+	if(client<0 || client>MaxClients)
+	{
+		ThrowError("Invalid client index %d", client);
+	}
+	if(client!=0 && !IsClientInGame(client))
+	{
+		ThrowError("Client %d is not in game", client);
+	}
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
+	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
+	VFormat(buffer2, sizeof(buffer2), buffer, 3);
+	CReplaceColorCodes(buffer2);
+	ShowActivity(client, "%s", buffer2);
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
