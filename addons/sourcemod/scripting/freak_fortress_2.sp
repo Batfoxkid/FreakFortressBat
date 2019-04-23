@@ -288,6 +288,7 @@ ConVar cvarSteamTools;
 ConVar cvarSappers;
 ConVar cvarSapperCooldown;
 ConVar cvarTheme;
+ConVar cvarSelfHealing;
 
 Handle FF2Cookies;
 
@@ -387,6 +388,9 @@ bool randomCrits[MAXPLAYERS+1];
 bool SapperBoss[MAXPLAYERS+1];
 bool SapperMinion;
 char BossIcon[64];
+int SelfHealing[MAXPLAYERS+1];
+float LifeHealing[MAXPLAYERS+1];
+float OverHealing[MAXPLAYERS+1];
 
 static const char OTVoice[][] = {
     "vo/announcer_overtime.mp3",
@@ -713,7 +717,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		{
 			DrawPanelText(panel, "1) [Core] Code is now in Transitional Syntax (Batfoxkid)");
 			DrawPanelText(panel, "2) [Bosses] Merged all default subplugins (Batfoxkid)");
-			DrawPanelText(panel, "3) [Bosses] Added new stun options (Batfoxkid from sarysa)");
+			DrawPanelText(panel, "3) [Bosses] Added new stun options (Batfoxkid from sarysa/SHADoW)");
 			DrawPanelText(panel, "4) [Gameplay] Added the ability to sap bosses or minions (Batfoxkid from SHADoW)");
 			DrawPanelText(panel, "5) [Bosses] Replaced 'ghost' with 'icon' setting for custom icon (Batfoxkid)");
 		}
@@ -721,6 +725,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		{
 			DrawPanelText(panel, "6) [Core] Added ff2_setcharge and ff2_addcharge (Batfoxkid)");
 			DrawPanelText(panel, "7) [Core] Debug commands use ShowActivity settings (Batfoxkid)");
+			DrawPanelText(panel, "8) [Bosses] Added 'healing' option to allow bosses to heal (Batfoxkid)");
 		}
 		case 139:  //1.17.10
 		{
@@ -1926,6 +1931,7 @@ public void OnPluginStart()
 	cvarSappers=CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
 	cvarSapperCooldown=CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
 	cvarTheme=CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
+	cvarSelfHealing=CreateConVar("ff2_healing", "0", "0-Block Boss Healing, 1-Allow Self-Healing, 2-Allow Non-Self Healing, 3-Allow All Healing", _, true, 0.0, true, 3.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -6153,6 +6159,18 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		randomCrits[client]=GetConVarBool(cvarCrits);
 	}
 
+	if(KvGetNum(BossKV[Special[boss]], "healing", -1)>=0)
+	{
+		SelfHealing[client]=KvGetNum(BossKV[Special[boss]], "healing", -1);
+	}
+	else
+	{
+		SelfHealing[client]=GetConVarInt(cvarSelfHealing);
+	}
+
+	LifeHealing[client]=KvGetFloat(BossKV[Special[boss]], "healing_lives", 0.0);
+	OverHealing[client]=KvGetFloat(BossKV[Special[boss]], "healing_over", 0.0);
+	rageMode[client]=KvGetNum(BossKV[Special[boss]], "ragemode", 0);
 	KvGetString(BossKV[Special[boss]], "icon", BossIcon, sizeof(BossIcon));
 	rageMax[client]=KvGetFloat(BossKV[Special[boss]], "ragemax", 100.0);
 	rageMin[client]=KvGetFloat(BossKV[Special[boss]], "ragemin", 100.0);
@@ -9793,15 +9811,41 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 		return Plugin_Continue;
 	}
 
-	int client=GetClientOfUserId(GetEventInt(event, "patient"));
-	int healer=GetClientOfUserId(GetEventInt(event, "healer"));
-	int heals=GetEventInt(event, "amount");
-	if(client==healer)
+	int client = GetClientOfUserId(GetEventInt(event, "patient"));
+	int healer = GetClientOfUserId(GetEventInt(event, "healer"));
+	int heals = GetEventInt(event, "amount");
+
+	if(IsBoss(client))
+	{
+		int boss = GetBossIndex(client);
+		float formula = BossHealthMax[boss]+(BossHealthMax[boss]*BossLivesMax[boss]*LifeHealing[client])+(BossHealthMax[boss]*OverHealing[client]);
+		if(client==healer && (SelfHealing[client]==1 || SelfHealing[client]>2))
+		{
+			BossHealth[boss] += heals;
+			if(BossHealth[boss] > formula)
+			{
+				BossHealth[boss] = formula;
+			}
+			UpdateHealthBar();
+		}
+		else if(client!=healer && SelfHealing[client]>1)
+		{
+			BossHealth[boss] += heals;
+			if(BossHealth[boss] > formula)
+			{
+				BossHealth[boss] = formula;
+			}
+			UpdateHealthBar();
+		}
+		return Plugin_Continue;
+	}
+
+	if(client == healer)
 	{
 		return Plugin_Continue;
 	}
 
-	Healing[healer]+=heals;
+	Healing[healer] += heals;
 	return Plugin_Continue;
 }
 
