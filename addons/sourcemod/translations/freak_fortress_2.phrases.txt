@@ -339,6 +339,64 @@
 		"en"		"Waiting for players to finish loading.  FF2 will start in {1} more round"
 		"ru"		"Ожидание игроков для завершения загрузки.  FF2 начнётся через {1} раундов"
 	}
+	"Give Charge Add"	// Chat
+	{
+		"#format"	"{1:t},{2:i},{3:i}"
+		"en"		"gave {1} {2} more charge to slot {3}"
+	}
+	"Give Charge Set"	// Chat
+	{
+		"#format"	"{1:t},{2:i},{3:i}"
+		"en"		"gave {1} {2} charge to slot {3}"
+	}
+	"Give Infinite Off"	// Chat
+	{
+		"#format"	"{1:t}"
+		"en"		"deactivated infinite RAGE on {1}"
+	}
+	"Give Infinite On"	// Chat
+	{
+		"#format"	"{1:t}"
+		"en"		"activated infinite RAGE on {1}"
+	}
+	"Give Rage Add"	// Chat
+	{
+		"#format"	"{1:i},{2:t}"
+		"en"		"added {1} RAGE to {2}"
+	}
+	"Give Rage Set"	// Chat
+	{
+		"#format"	"{1:i},{2:t}"
+		"en"		"set {1} RAGE to {2}"
+	}
+	"Self Charge Add"	// Chat
+	{
+		"#format"	"{1:i},{2:i}"
+		"en"		"gave themselves {1} more charge to slot {2}"
+	}
+	"Self Charge Set"	// Chat
+	{
+		"#format"	"{1:i},{2:i}"
+		"en"		"gave themselves {1} charge to slot {2}"
+	}
+	"Self Infinite Off"	// Chat
+	{
+		"en"		"deactivated infinite RAGE on themselves"
+	}
+	"Self Infinite On"	// Chat
+	{
+		"en"		"activated infinite RAGE on themselves"
+	}
+	"Self Rage Add"	// Chat
+	{
+		"#format"	"{1:i}"
+		"en"		"gave themselves {1} more RAGE"
+	}
+	"Self Rage Set"	// Chat
+	{
+		"#format"	"{1:i}"
+		"en"		"gave themselves {1} RAGE"
+	}
 	"used_weighdown"	// Deprecated
 	{
 		"en"		"You have used weighdown!"
@@ -640,6 +698,11 @@
 	{
 		"en"		"Status: Active"
 		"ru"		"Статус: Активно"
+	}
+	"Prefix"	// Chat
+	{
+		"en"		"{olive}[FF2]{default} "
+		"ru"		"{olive}[FF2]{default} "
 	}
 	"ServerAd"	// Chat
 	{
