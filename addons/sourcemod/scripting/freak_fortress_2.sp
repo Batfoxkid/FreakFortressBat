@@ -89,7 +89,7 @@ last time or to encourage others to do the same.
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION..."-"...BUILD_NUMBER
 #endif
 
-#define BUILD_NUMBER "1800070"
+#define BUILD_NUMBER "1800074"
 
 #define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
@@ -7264,7 +7264,6 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	SetEntityRenderColor(client, 255, 255, 255, 255);
 	hadshield[client]=false;
 	shield[client]=0;
-	int index=-1;
 	int[] civilianCheck = new int[MaxClients+1];
 
 	int weapon=GetPlayerWeaponSlot(client, 4);
