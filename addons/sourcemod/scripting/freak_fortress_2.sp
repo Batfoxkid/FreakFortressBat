@@ -289,6 +289,7 @@ ConVar cvarSappers;
 ConVar cvarSapperCooldown;
 ConVar cvarTheme;
 ConVar cvarSelfHealing;
+ConVar cvarBotRage;
 
 Handle FF2Cookies;
 
@@ -1932,6 +1933,7 @@ public void OnPluginStart()
 	cvarSapperCooldown=CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
 	cvarTheme=CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
 	cvarSelfHealing=CreateConVar("ff2_healing", "0", "0-Block Boss Healing, 1-Allow Self-Healing, 2-Allow Non-Self Healing, 3-Allow All Healing", _, true, 0.0, true, 3.0);
+	cvarBotRage=CreateConVar("ff2_bot_rage", "1", "0-Disable, 1-Bots can use rage when ready", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -6082,9 +6084,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 {
 	int client=Boss[boss];
 	if(!IsValidClient(client) || CheckRoundState()==-1)
-	{
 		return Plugin_Continue;
-	}
 
 	if(!IsPlayerAlive(client))
 	{
@@ -6100,9 +6100,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 
 	KvRewind(BossKV[Special[boss]]);
 	if(GetClientTeam(client)!=BossTeam)
-	{
 		AssignTeam(client, BossTeam);
-	}
 
 	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900)==1)	// If 1, toggle infinite rage
 	{
@@ -6259,9 +6257,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	}
 
 	if((KvGetNum(BossKV[Special[boss]], "sapper", -1)<0 && GetConVarInt(cvarSappers)>1) || KvGetNum(BossKV[Special[boss]], "sapper", -1)>1)
-	{
 		SapperMinion=true;
-	}
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
@@ -6272,17 +6268,13 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	switch(KvGetNum(BossKV[Special[boss]], "pickups", 0))  //Check if the boss is allowed to pickup health/ammo
 	{
 		case 1:
-		{
 			FF2flags[client]|=FF2FLAG_ALLOW_HEALTH_PICKUPS;
-		}
+
 		case 2:
-		{
 			FF2flags[client]|=FF2FLAG_ALLOW_AMMO_PICKUPS;
-		}
+
 		case 3:
-		{
 			FF2flags[client]|=FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
-		}
 	}
 
 	if(!HasSwitched)
@@ -6290,36 +6282,28 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		switch(KvGetNum(BossKV[Special[boss]], "bossteam", 0))
 		{
 			case 1: // Always Random
-			{			
 				SwitchTeams((currentBossTeam==1) ? (view_as<int>(TFTeam_Blue)) : (view_as<int>(TFTeam_Red)) , (currentBossTeam==1) ? (view_as<int>(TFTeam_Red)) : (view_as<int>(TFTeam_Blue)), true);
-			}
+
 			case 2: // RED Boss
-			{
 				SwitchTeams(view_as<int>(TFTeam_Red), view_as<int>(TFTeam_Blue), true);
-			}
+
 			case 3: // BLU Boss
-			{
 				SwitchTeams(view_as<int>(TFTeam_Blue), view_as<int>(TFTeam_Red), true);
-			}
+
 			default: // Determined by "ff2_force_team" ConVar
-			{
 				SwitchTeams((blueBoss) ? (view_as<int>(TFTeam_Blue)) : (view_as<int>(TFTeam_Red)), (blueBoss) ? (view_as<int>(TFTeam_Red)) : (view_as<int>(TFTeam_Blue)), true);
-			}
 		}
 		HasSwitched=true;
 	}
 
 	CreateTimer(0.2, MakeModelTimer, boss, TIMER_FLAG_NO_MAPCHANGE);
 	if(!IsVoteInProgress() && GetClientClassInfoCookie(client))
-	{
 		HelpPanelBoss(boss);
-	}
 
 	if(!IsPlayerAlive(client))
-	{
 		return Plugin_Continue;
-	}
 
+	bool cosmetics=view_as<bool>(KvGetNum(BossKV[Special[boss]], "cosmetics", 0));
 	int entity=-1;
 	while((entity=FindEntityByClassname2(entity, "tf_wear*"))!=-1)
 	{
@@ -6331,9 +6315,14 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 				{
 					//NOOP
 				}
-				default:
+				case 131, 133, 405, 406, 444, 608, 1099, 1144:	// Wearable weapons
 				{
 					TF2_RemoveWearable(client, entity);
+				}
+				default:
+				{
+					if(!cosmetics)
+						TF2_RemoveWearable(client, entity);
 				}
 			}
 		}
@@ -6388,9 +6377,7 @@ stock void SetEntityTeamNum(int iEnt, int iTeam)
 public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDefinitionIndex, Handle &item)
 {
 	if(!Enabled)
-	{
 		return Plugin_Continue;
-	}
 
 	if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>1)
 	{
@@ -7144,30 +7131,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 	return Plugin_Continue;
 }
 
-public Action Timer_NoHonorBound(Handle timer, any userid)
-{
-	int client=GetClientOfUserId(userid);
-	if(IsValidClient(client) && IsPlayerAlive(client))
-	{
-		int melee=GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
-		int index=((IsValidEntity(melee) && melee>MaxClients) ? GetEntProp(melee, Prop_Send, "m_iItemDefinitionIndex") : -1);
-		int weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-		char classname[64];
-		if(IsValidEntity(weapon))
-		{
-			GetEntityClassname(weapon, classname, sizeof(classname));
-		}
-		if(index==357 && weapon==melee && !strcmp(classname, "tf_weapon_katana", false))
-		{
-			SetEntProp(melee, Prop_Send, "m_bIsBloody", 1);
-			if(GetEntProp(client, Prop_Send, "m_iKillCountSinceLastDeploy")<1)
-			{
-				SetEntProp(client, Prop_Send, "m_iKillCountSinceLastDeploy", 1);
-			}
-		}
-	}
-}
-
 stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const char[] att="", bool dontPreserve=false)
 {
 	static Handle weapon;
@@ -7296,9 +7259,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 {
 	int client=GetClientOfUserId(userid);
 	if(!IsValidClient(client) || !IsPlayerAlive(client) || CheckRoundState()==2 || IsBoss(client) || (FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
-	{
 		return Plugin_Continue;
-	}
 
 	SetEntityRenderColor(client, 255, 255, 255, 255);
 	hadshield[client]=false;
@@ -7314,9 +7275,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	}
 
 	if(bMedieval)
-	{
 		return Plugin_Continue;
-	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && GetConVarInt(cvarHardcodeWep)>0)
@@ -7350,9 +7309,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	shield[client]=IsValidEntity(playerBack) ? playerBack : 0;
 	hadshield[client]=IsValidEntity(playerBack) ? true : false;
 	if(IsValidEntity(FindPlayerBack(client, 642)))  //Cozy Camper
-	{
 		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 1.5 ; 15 ; 0.0 ; 1 ; 0.75");
-	}
 
 	#if defined _tf2attributes_included
 	if(tf2attributes && GetConVarInt(cvarHardcodeWep)>0)
@@ -7385,21 +7342,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	}
 
 	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
-	if(IsValidEntity(weapon))
-	{
-		index=GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-		switch(index)
-		{
-			case 357:  //Half-Zatoichi
-			{
-				CreateTimer(1.0, Timer_NoHonorBound, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-			}
-		}
-	}
-	else
-	{
+	if(!IsValidEntity(weapon))
 		civilianCheck[client]++;
-	}
 
 	if(civilianCheck[client]==3)
 	{
@@ -7419,9 +7363,7 @@ stock void RemovePlayerTarge(int client)
 		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 		{
 			if(index==131 || index==406 || index==1099 || index==1144)  //Chargin' Targe, Splendid Screen, Tide Turner, Festive Chargin' Targe
-			{
 				TF2_RemoveWearable(client, entity);
-			}
 		}
 	}
 }
@@ -7429,9 +7371,7 @@ stock void RemovePlayerTarge(int client)
 stock int RemovePlayerBack(int client, int[] indices, int length)
 {
 	if(length<=0)
-	{
 		return;
-	}
 
 	int entity=MaxClients+1;
 	while((entity=FindEntityByClassname2(entity, "tf_wearable"))!=-1)
@@ -7445,9 +7385,7 @@ stock int RemovePlayerBack(int client, int[] indices, int length)
 				for(int i; i<length; i++)
 				{
 					if(index==indices[i])
-					{
 						TF2_RemoveWearable(client, entity);
-					}
 				}
 			}
 		}
@@ -7461,9 +7399,7 @@ stock int FindPlayerBack(int client, int index)
 	{
 		char netclass[32];
 		if(GetEntityNetClass(entity, netclass, sizeof(netclass)) && StrContains(netclass, "CTFWearable")>-1 && GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex")==index && GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
-		{
 			return entity;
-		}
 	}
 	return -1;
 }
@@ -7555,9 +7491,7 @@ public Action Timer_Uber(Handle timer, any medigunid)
 public Action Command_GetHPCmd(int client, int args)
 {
 	if(!IsValidClient(client) || !Enabled || CheckRoundState()!=1)
-	{
 		return Plugin_Continue;
-	}
 
 	Command_GetHP(client);
 	return Plugin_Handled;
@@ -7625,9 +7559,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 		for(int target; target<=MaxClients; target++)
 		{
 			if(IsBoss(target))
-			{
 				Format(waitTime, sizeof(waitTime), "%s %i,", waitTime, BossHealthLast[Boss[target]]);
-			}
 		}
 		FPrintToChat(client, "%t", "wait_hp", RoundFloat(HPTime-GetGameTime()), waitTime);
 	}
@@ -7672,9 +7604,7 @@ public Action Command_SetNextBoss(int client, int args)
 public Action Command_Points(int client, int args)
 {
 	if(!Enabled2)
-	{
 		return Plugin_Continue;
-	}
 
 	if(args!=2)
 	{
@@ -8044,10 +7974,8 @@ public void OnClientPostAdminCheck(int client)
 		char buffer[24];
 		GetClientCookie(client, FF2Cookies, buffer, sizeof(buffer));
 		if(!buffer[0])
-		{
 			SetClientCookie(client, FF2Cookies, "0 1 1 1 0 0 3");
 			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | UNUSED
-		}
 	}
 
 	//We use the 0th index here because client indices can change.
@@ -8056,9 +7984,7 @@ public void OnClientPostAdminCheck(int client)
 	{
 		playBGM[client]=true;
 		if(Enabled)
-		{
 			CreateTimer(0.1, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-		}
 	}
 	else
 	{
@@ -8086,9 +8012,7 @@ public void OnClientDisconnect(int client)
 		}
 
 		if(IsClientInGame(client) && IsPlayerAlive(client) && CheckRoundState()==1)
-		{
 			CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
-		}
 	}
 
 	FF2flags[client]=0;
@@ -8122,23 +8046,17 @@ public Action OnPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 public Action OnPostInventoryApplication(Handle event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled)
-	{
 		return Plugin_Continue;
-	}
 
 	int client=GetClientOfUserId(GetEventInt(event, "userid"));
 	if(!IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	SetVariantString("");
 	AcceptEntityInput(client, "SetCustomModel");
 
 	if(IsBoss(client))
-	{
 		CreateTimer(0.1, Timer_MakeBoss, GetBossIndex(client), TIMER_FLAG_NO_MAPCHANGE);
-	}
 
 	if(!(FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
 	{
@@ -8163,17 +8081,13 @@ public Action Timer_RegenPlayer(Handle timer, any userid)
 {
 	int client=GetClientOfUserId(userid);
 	if(IsValidClient(client) && IsPlayerAlive(client))
-	{
 		TF2_RegeneratePlayer(client);
-	}
 }
 
 public Action ClientTimer(Handle timer)
 {
 	if(!Enabled || CheckRoundState()==2 || CheckRoundState()==-1)
-	{
 		return Plugin_Stop;
-	}
 
 	char classname[32];
 	TFCond cond;
@@ -8188,34 +8102,49 @@ public Action ClientTimer(Handle timer)
 				if(IsValidClient(observer) && !IsBoss(observer) && observer!=client)
 				{
 					if(Healing[observer]>0 && Healing[client]>0 && GetConVarBool(cvarHealingHud))
+					{
 						FF2_ShowSyncHudText(client, rageHUD, "%t %t | %t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					}
 					else if(Healing[client]>0 && GetConVarBool(cvarHealingHud))
+					{
 						FF2_ShowSyncHudText(client, rageHUD, "%t %t | %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer]);
+					}
 					else if(Healing[observer]>0 && GetConVarBool(cvarHealingHud))
+					{
 						FF2_ShowSyncHudText(client, rageHUD, "%t | %t %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					}
 					else
+					{
 						FF2_ShowSyncHudText(client, rageHUD, "%t | %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer]);
+					}
 				}
 				else
 				{
 					if(Healing[client]>0 && GetConVarBool(cvarHealingHud))
+					{
 						FF2_ShowSyncHudText(client, rageHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+					}
 					else
+					{
 						FF2_ShowSyncHudText(client, rageHUD, "%t", "Your Damage Dealt", Damage[client]);
+					}
 				}
 				continue;
 			}
 			if(Healing[client]>0 && GetConVarBool(cvarHealingHud))
+			{
 				FF2_ShowSyncHudText(client, rageHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+			}
 			else
+			{
 				FF2_ShowSyncHudText(client, rageHUD, "%t", "Your Damage Dealt", Damage[client]);
+			}
 
 			TFClassType class=TF2_GetPlayerClass(client);
 			int weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 			if(weapon<=MaxClients || !IsValidEntity(weapon) || !GetEntityClassname(weapon, classname, sizeof(classname)))
-			{
 				strcopy(classname, sizeof(classname), "");
-			}
+
 			bool validwep=!StrContains(classname, "tf_weapon", false);
 
 			int index=(validwep ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
@@ -8245,9 +8174,7 @@ public Action ClientTimer(Handle timer)
 						if(GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
-							{
 								FF2flags[client]|=FF2FLAG_UBERREADY;
-							}
 						}
 					}
 				}
@@ -8294,30 +8221,24 @@ public Action ClientTimer(Handle timer)
 					}
 
 					if(!(GetClientButtons(client) & IN_SCORE))
-					{
 						ShowSyncHudText(client, jumpHUD, "%s", s);
-					}
 				}
 			}
 			else if(class==TFClass_Soldier)
 			{
 				if((FF2flags[client] & FF2FLAG_ISBUFFED) && !(GetEntProp(client, Prop_Send, "m_bRageDraining")))
-				{
 					FF2flags[client]&=~FF2FLAG_ISBUFFED;
-				}
 			}
 
 			if(RedAlivePlayers<=lastPlayerGlow)
-			{
-				SetClientGlow(client, 3600.0);
-			}
+				SetClientGlow(client, 0.5, 3.0);
+
 			if(RedAlivePlayers==1 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 			{
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.3);
 				if(class==TFClass_Engineer && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))  // TODO: Is this necessary?
-				{
 					SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
-				}
+
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
 				continue;
 			}
@@ -8327,9 +8248,7 @@ public Action ClientTimer(Handle timer)
 			}
 
 			if(bMedieval)
-			{
 				continue;
-			}
 
 			cond=TFCond_HalloweenCritCandy;
 			if(TF2_IsPlayerInCondition(client, TFCond_CritCola) && (class==TFClass_Scout || class==TFClass_Sniper))
@@ -8380,11 +8299,11 @@ public Action ClientTimer(Handle timer)
 				{
 					cond=TFCond_Buffed;
 				}
-				if(class==TFClass_Scout && cond==TFCond_HalloweenCritCandy && (!StrContains(classname, "tf_weapon_pistol") || !StrContains(classname, "tf_weapon_handgun_scout_secondary")))
+				else if(class==TFClass_Scout && cond==TFCond_HalloweenCritCandy && (!StrContains(classname, "tf_weapon_pistol") || !StrContains(classname, "tf_weapon_handgun_scout_secondary")))
 				{
 					cond=TFCond_Buffed;
 				}
-				if(class==TFClass_Engineer && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_pistol"))
+				else if(class==TFClass_Engineer && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_pistol"))
 				{
 					addthecrit=false;
 				}
@@ -8399,9 +8318,7 @@ public Action ClientTimer(Handle timer)
 			}
 
 			if(index==16 && IsValidEntity(FindPlayerBack(client, 642)) && SniperClimbDelay!=0)  //SMG, Cozy Camper
-			{
 				addthecrit=false;
-			}
 
 			switch(class)
 			{
@@ -8429,9 +8346,7 @@ public Action ClientTimer(Handle timer)
 						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
-							{
 								FF2flags[client]|=FF2FLAG_UBERREADY;
-							}
 						}
 					}
 				}
@@ -8441,9 +8356,7 @@ public Action ClientTimer(Handle timer)
 					{
 						addthecrit=true;
 						if(shieldCrits==1)
-						{
 							cond=TFCond_CritCola;
-						}
 					}
 				}
 				case TFClass_Spy:
@@ -8489,9 +8402,7 @@ public Action ClientTimer(Handle timer)
 			{
 				TF2_AddCondition(client, cond, 0.3);
 				if(healer!=-1 && cond!=TFCond_Buffed)
-				{
 					TF2_AddCondition(client, TFCond_Buffed, 0.3);
-				}
 			}
 		}
 	}
@@ -8504,9 +8415,7 @@ stock int FindSentry(int client)
 	while((entity=FindEntityByClassname2(entity, "obj_sentrygun"))!=-1)
 	{
 		if(GetEntPropEnt(entity, Prop_Send, "m_hBuilder")==client)
-		{
 			return entity;
-		}
 	}
 	return -1;
 }
@@ -8514,18 +8423,15 @@ stock int FindSentry(int client)
 public Action BossTimer(Handle timer)
 {
 	if(!Enabled || CheckRoundState()==2)
-	{
 		return Plugin_Stop;
-	}
 
 	bool validBoss=false;
 	for(int boss; boss<=MaxClients; boss++)
 	{
 		int client=Boss[boss];
 		if(!IsValidClient(client) || !IsPlayerAlive(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
-		{
 			continue;
-		}
+
 		validBoss=true;
 
 		if(BossSpeed[Special[boss]]>0)	// Above 0, uses the classic FF2 method
@@ -8539,9 +8445,7 @@ public Action BossTimer(Handle timer)
 		// Below 0, TF2's default speeds and whatever attributes or conditions
 
 		if(BossHealth[boss]<=0 && IsPlayerAlive(client))  //Wat.  TODO:  Investigate
-		{
 			BossHealth[boss]=1;
-		}
 
 		if(BossLivesMax[boss]>1)
 		{
@@ -8551,7 +8455,7 @@ public Action BossTimer(Handle timer)
 
 		if((RoundFloat(BossCharge[boss][0])>=rageMin[client] && BossRageDamage[0]>1 && BossRageDamage[0]<99999) || BossRageDamage[0]==1)	// ragedamage above 1 and below 99999 and full rage, or ragedamage is 1
 		{
-			if(IsFakeClient(client) && !(FF2flags[client] & FF2FLAG_BOTRAGE))
+			if(IsFakeClient(client) && !(FF2flags[client] & FF2FLAG_BOTRAGE) && GetConVarBool(cvarBotRage))
 			{
 				CreateTimer(1.0, Timer_BotRage, boss, TIMER_FLAG_NO_MAPCHANGE);
 				FF2flags[client]|=FF2FLAG_BOTRAGE;
@@ -8606,9 +8510,7 @@ public Action BossTimer(Handle timer)
 				int slot=KvGetNum(BossKV[Special[boss]], "arg0", 0);
 				int buttonmode=KvGetNum(BossKV[Special[boss]], "buttonmode", 0);
 				if(slot<1)
-				{
 					continue;
-				}
 
 				KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability), "");
 				if(!ability[0])
@@ -8639,9 +8541,8 @@ public Action BossTimer(Handle timer)
 		}
 
 		if(RedAlivePlayers<=lastPlayerGlow)
-		{
-			SetClientGlow(client, 3600.0);
-		}
+			SetClientGlow(client, 0.5, 3.0);
+
 		if(RedAlivePlayers==1 && !executed2)
 		{
 			char message[512], name[64];
@@ -8692,45 +8593,34 @@ public Action BossTimer(Handle timer)
 		{
 			BossCharge[boss][0]+=OnlyScoutsLeft()*0.2;
 			if(BossCharge[boss][0]>rageMax[client])
-			{
 				BossCharge[boss][0]=rageMax[client];
-			}
 		}
 
 		HPTime-=0.2;
 		if(HPTime<0)
-		{
 			HPTime=0.0;
-		}
 
 		for(int client2; client2<=MaxClients; client2++)
 		{
 			if(KSpreeTimer[client2]>0)
-			{
 				KSpreeTimer[client2]-=0.2;
-			}
 		}
 	}
 
 	if(!validBoss)
-	{
 		return Plugin_Stop;
-	}
+
 	return Plugin_Continue;
 }
 
 public Action Timer_RPS(Handle timer, int client)
 {
 	if(!IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	int boss=GetBossIndex(client);
 	if(boss==-1 || !IsPlayerAlive(client))
-	{
 		return Plugin_Continue;
-	}
 
 	RPSLosses[client]++;
 
@@ -8738,9 +8628,7 @@ public Action Timer_RPS(Handle timer, int client)
 		RPSLosses[client]=0;
 
 	if(RPSHealth[client]==-1)
-	{
 		RPSHealth[client]=FF2_GetBossHealth(boss);
-	}
 
 	if(RPSLosses[client]>=GetConVarInt(cvarRPSLimit))
 	{
@@ -8753,22 +8641,18 @@ public Action Timer_RPS(Handle timer, int client)
 			ForcePlayerSuicide(client);
 		}
 	}
-	else if(FF2_GetBossHealth(boss)>1349 && GetConVarBool(cvarRPSDivide))
+	else if(FF2_GetBossHealth(boss)>(1349*GetConVarInt(cvarRPSLimit)) && GetConVarBool(cvarRPSDivide))
 	{
 		if(IsValidClient(RPSWinner))
-		{
 			SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float((RPSHealth[client]/GetConVarInt(cvarRPSLimit))-999)/1.35, DMG_GENERIC, -1);
-		}
 	}
 	return Plugin_Continue;
 }
 
 public Action Timer_BotRage(Handle timer, any bot)
 {
-	if(IsValidClient(Boss[bot], false))
-	{
+	if(IsValidClient(Boss[bot], false) && GetConVarBool(cvarBotRage))
 		FakeClientCommandEx(Boss[bot], "voicemenu 0 0");
-	}
 }
 
 stock int OnlyScoutsLeft()
@@ -9818,7 +9702,7 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 	if(IsBoss(client))
 	{
 		int boss = GetBossIndex(client);
-		float formula = BossHealthMax[boss]+(BossHealthMax[boss]*BossLivesMax[boss]*LifeHealing[client])+(BossHealthMax[boss]*OverHealing[client]);
+		int formula = RoundToFloor(BossHealthMax[boss]+(BossHealthMax[boss]*BossLivesMax[boss]*LifeHealing[client])+(BossHealthMax[boss]*OverHealing[client]));
 		if(client==healer && (SelfHealing[client]==1 || SelfHealing[client]>2))
 		{
 			BossHealth[boss] += heals;
