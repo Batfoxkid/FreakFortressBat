@@ -32,17 +32,14 @@
 #include <freak_fortress_2>
 #include <freak_fortress_2_subplugin>
 #undef REQUIRE_PLUGIN
-//#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=9
 #tryinclude <smac>
-//#endif
-//#tryinclude <freak_fortress_2_kstreak>
 #define REQUIRE_PLUGIN
 
 #pragma newdecls required
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"3"
-#define STABLE_REVISION	"1"
+#define STABLE_REVISION	"2"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -918,13 +915,12 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 			if((!TF2_IsPlayerInCondition(target, TFCond_Ubercharged) || (ignore>0 && ignore!=2)) && (!TF2_IsPlayerInCondition(target, TFCond_MegaHeal) || ignore>1) && GetVectorDistance(bossPosition, targetPosition)<=distance)
 			{
 				if(removeBaseJumperOnStun)
-				{
 					TF2_RemoveCondition(target, TFCond_Parachute);
-				}
+
 				if(solorage)
 				{
 					CreateTimer(duration, Timer_SoloRageResult, target);
-					CPrintToChatAll("{olive}[FF2]{default} %t", "Solo Rage", bossName);
+					CPrintToChatAll("%t%t", "Prefix", "Solo Rage", bossName);
 				}
 				TF2_StunPlayer(target, duration, slowdown, flagOverride, sounds ? client : 0);
 				if(strlen(particleEffect)>1)
@@ -940,9 +936,13 @@ public Action Timer_SoloRageResult(Handle timer, any client)
 		return Plugin_Continue;
 
 	if(IsPlayerAlive(client))
-		CPrintToChatAll("{olive}[FF2]{default} %t", "Solo Rage Fail");
+	{
+		CPrintToChatAll("%t%t", "Prefix", "Solo Rage Fail");
+	}
 	else
-		CPrintToChatAll("{olive}[FF2]{default} %t", "Solo Rage Win");
+	{
+		CPrintToChatAll("%t%t", "Prefix", "Solo Rage Win");
+	}
 
 	return Plugin_Continue;
 }
@@ -2001,4 +2001,3 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int quality
 }
 
 #file "FF2 Unofficial Subplugin: Defaults"
-
