@@ -5803,7 +5803,7 @@ public Action MessageTimer(Handle timer)
 	{
 		if(IsValidClient(client))
 		{
-			if(!Companions && GetConVarInt(cvarGameText)==2)
+			if(!Companions && GetConVarInt(cvarGameText)>1)
 			{
 				if(strlen(BossIcon))
 				{
@@ -7526,7 +7526,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 		{
 			if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 			{
-				if(!Companions && GetConVarBool(cvarGameText))
+				if(!Companions && GetConVarInt(cvarGameText)>0)
 				{
 					if(strlen(BossIcon))
 					{
@@ -8569,7 +8569,7 @@ public Action BossTimer(Handle timer)
 			{
 				if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
-					if(!Companions && GetConVarBool(cvarGameText))
+					if(!Companions && GetConVarInt(cvarGameText)>0)
 					{
 						if(strlen(BossIcon))
 						{
@@ -9249,7 +9249,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 		{
 			if(IsClientInGame(client) && IsPlayerAlive(client))
 			{
-				if(RedAlivePlayers>1 && GetConVarBool(cvarGameText))
+				if(RedAlivePlayers>1 && GetConVarInt(cvarGameText)>0)
 				{
 					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "point_enable", AliveToEnable);
 				}
@@ -9344,7 +9344,7 @@ public Action Timer_DrawGame(Handle timer)
 	{
 		if(IsValidClient(client))
 		{
-			if(!Companions && GetConVarBool(cvarGameText) && RedAlivePlayers==1)
+			if(!Companions && GetConVarInt(cvarGameText)>0 && RedAlivePlayers==1)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -9371,7 +9371,7 @@ public Action Timer_DrawGame(Handle timer)
 					ShowGameText(client, "leaderboard_streak", _, "%s | %s", message, timeDisplay);
 				}
 			}
-			else if(!Companions && GetConVarInt(cvarGameText)==2)
+			else if(!Companions && GetConVarInt(cvarGameText)>1)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -9577,7 +9577,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 			{
 				if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
-					if(!Companions && GetConVarBool(cvarGameText))
+					if(!Companions && GetConVarInt(cvarGameText)>0)
 					{
 						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, bossName, BossLives[boss]);
 					}
