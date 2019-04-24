@@ -393,7 +393,7 @@
 	"Self Infinite Off"	// Chat
 	{
 		"en"		"deactivated infinite RAGE on themselves"
-		"ru"		"отключил бесконечную ЯРОСТЬ у себе"
+		"ru"		"отключил бесконечную ЯРОСТЬ у себя"
 	}
 	"Self Infinite On"	// Chat
 	{
