@@ -42,7 +42,7 @@
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"3"
-#define STABLE_REVISION	"0"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -85,6 +85,9 @@ int FF2Flags[MAXPLAYERS+1];
 //	Clone Attack
 int CloneOwnerIndex[MAXPLAYERS+1]=-1;
 
+//	Demo Charge
+bool Charged[MAXPLAYERS+1];
+
 //	Explosive Dance
 int ExpCount[MAXPLAYERS+1] = 35;
 float ExpDamage[MAXPLAYERS+1] = 180.0;
@@ -98,12 +101,10 @@ int TflagOverride;
 //	Matrix Attack
 Handle SlowMoTimer;
 int oldTarget;
-#if defined _smac_included
-bool HasSlowdown[MAXPLAYERS+1]=false;
-#else
+#if !defined _smac_included
 bool smac=false;
-bool HasSlowdown=false;
 #endif
+bool HasSlowdown=false;
 
 //	Stun Rage
 bool Outdated=false;
@@ -130,9 +131,8 @@ public void OnPluginStart2()
 	int version[3];
 	FF2_GetFF2Version(version);
 	if(version[0]!=1 || (version[1]<10 || (version[1]==10 && version[2]<3)))
-	{
 		SetFailState("This subplugin depends on at least FF2 v1.10.3");
-	}
+
 	int fversion[3];
 	FF2_GetForkVersion(fversion);
 	if(fversion[0]==1 && fversion[1]<18)
@@ -153,9 +153,13 @@ public void OnPluginStart2()
 	PrecacheSound("items/pumpkin_pickup.wav");
 
 	if(Outdated)
+	{
 		LoadTranslations("ff2_1st_set.phrases");
+	}
 	else
+	{
 		LoadTranslations("freak_fortress_2.phrases");
+	}
 }
 
 public void OnMapStart()
@@ -276,9 +280,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		}
 
 		if(!otherTeamIsAlive)
-		{
 			return Plugin_Continue;
-		}
 
 		int target, tries;
 		do
@@ -286,9 +288,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 			tries++;
 			target=GetRandomInt(1, MaxClients);
 			if(tries==100)
-			{
 				return Plugin_Continue;
-			}
 		}
 		while(!IsValidEntity(target) || target==client || (FF2_GetFF2flags(target) & FF2FLAG_ALLOWSPAWNINBOSSTEAM) || !IsPlayerAlive(target));
 
@@ -313,9 +313,13 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 			else
 			{
 				if(sounds)
+				{
 					TF2_StunPlayer(client, Tstun, Tslowdown, TflagOverride, target);
+				}
 				else
+				{
 					TF2_StunPlayer(client, Tstun, Tslowdown, TflagOverride, 0);
+				}
 			}
 			TeleportEntity(client, position, NULL_VECTOR, NULL_VECTOR);
 		}
@@ -350,16 +354,8 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
     */
 	else if(!strcmp(ability_name, "special_democharge"))
 	{
-		if(status>0)
-		{
-			float charge=FF2_GetBossCharge(boss, 0);
-			SetEntPropFloat(client, Prop_Send, "m_flChargeMeter", 100.0);
-			TF2_AddCondition(client, TFCond_Charging, 0.25);
-			if(charge>10.0 && charge<90.0)
-			{
-				FF2_SetBossCharge(boss, 0, charge-0.4);
-			}
-		}
+		if(status>0 && !Charged[client])
+			CreateTimer(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 3, 0.0), Timer_DemoCharge, boss);
 	}
 	return Plugin_Continue;
 }
@@ -373,7 +369,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		FF2Flags[client]=0;
 		CloneOwnerIndex[client]=-1;
 		#if defined _smac_included
-		if(!HasSlowdown[client])
+		if(!HasSlowdown)
 		#else
 		if(smac && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE && !HasSlowdown)
 		#endif
@@ -383,10 +379,8 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 			{
 				if(FF2_HasAbility(boss, this_plugin_name, "rage_matrix_attack"))
 				{
-					#if defined _smac_included
-					HasSlowdown[client]=true;
-					#else
 					HasSlowdown=true;
+					#if !defined _smac_included
 					ServerCommand("smac_removecvar sv_cheats");
 					ServerCommand("smac_removecvar host_timescale");
 					#endif
@@ -414,9 +408,8 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		if(FF2Flags[client] & FLAG_ONSLOWMO)
 		{
 			if(SlowMoTimer)
-			{
 				KillTimer(SlowMoTimer);
-			}
+
 			Timer_StopSlowMo(INVALID_HANDLE, -1);
 			return Plugin_Continue;
 		}
@@ -428,8 +421,8 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 
 		#if defined _smac_included
-		if(HasSlowdown[client])
-			HasSlowdown[client]=false;
+		if(HasSlowdown)
+			HasSlowdown=false;
 		#else
 		if(smac && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE && HasSlowdown)
 		{
@@ -454,7 +447,7 @@ public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionTyp
 		Debug("Cvar was %s", cvar);
 		if(StrEqual(cvar, "sv_cheats") || StrEqual(cvar, "host_timescale"))
 		{
-			if(HasSlowdown[client])
+			if(HasSlowdown)
 			{
 				Debug("SMAC: Ignoring violation");
 				return Plugin_Stop;
@@ -763,15 +756,42 @@ public Action Timer_Remove_Overlay(Handle timer)
 }
 
 
+/*	Demo Charge	*/
+
+public Action Timer_DemoCharge(Handle timer, int boss)
+{
+	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
+
+	float charge=FF2_GetBossCharge(boss, 0);
+	SetEntPropFloat(client, Prop_Send, "m_flChargeMeter", 100.0);
+	TF2_AddCondition(client, TFCond_Charging, FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 1, 0.25));
+	if(charge>FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 5, 10.0) && charge<FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 6, 90.0))
+	{
+		FF2_SetBossCharge(boss, 0, charge-FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 4, 0.4));
+	}
+
+	if(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 2, 0.0)>0)
+	{
+		Charged[client]=true;
+		CreateTimer(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 2, 0.0), Timer_ResetCharge, client, TIMER_FLAG_NO_MAPCHANGE);
+	}
+	return Plugin_Continue;
+}
+
+public Action Timer_ResetCharge(Handle timer, int client)
+{
+	Charged[client]=false;
+	return Plugin_Continue;
+}
+
+
 /*	New Weapon	*/
 
 int Rage_New_Weapon(int boss, const char[] ability_name)
 {
 	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	if(!client || !IsClientInGame(client) || !IsPlayerAlive(client))
-	{
 		return;
-	}
 
 	char classname[64], attributes[256];
 	FF2_GetAbilityArgumentString(boss, this_plugin_name, ability_name, 1, classname, sizeof(classname));
@@ -800,16 +820,12 @@ int Rage_New_Weapon(int boss, const char[] ability_name)
 	}
 
 	if(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 6))
-	{
 		SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
-	}
 
 	int ammo=FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 5, 0);
 	int clip=FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 7, 0);
 	if(ammo || clip)
-	{
 		FF2_SetAmmo(client, weapon, ammo, clip);
-	}
 }
 
 
@@ -864,9 +880,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
  // Solo Rage Duration
 	float soloduration=FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "rage_stun", 13, -1.0);
 	if(soloduration<=0)
-	{
 		soloduration=duration;
-	}
 
 	if((addduration!=0 || soloduration!=duration) && !Outdated)
 	{
@@ -876,9 +890,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 			{
 				GetEntPropVector(target, Prop_Send, "m_vecOrigin", targetPosition);
 				if((!TF2_IsPlayerInCondition(target, TFCond_Ubercharged) || (ignore>0 && ignore!=2)) && (!TF2_IsPlayerInCondition(target, TFCond_MegaHeal) || ignore>1) && GetVectorDistance(bossPosition, targetPosition)<=distance)
-				{
 					victims++;
-				}
 			}
 		}
 	}
@@ -945,16 +957,24 @@ stock int ReadHexOrDecInt(char hexOrDecString[12])	// Credits to sarysa
 			result=result<<4;
 				
 			if(hexOrDecString[i]>='0' && hexOrDecString[i]<='9')
+			{
 				result+=hexOrDecString[i]-'0';
+			}
 			else if(hexOrDecString[i]>='a' && hexOrDecString[i]<='f')
+			{
 				result+=hexOrDecString[i]-'a'+10;
+			}
 			else if(hexOrDecString[i]>='A' && hexOrDecString[i]<='F')
+			{
 				result+=hexOrDecString[i]-'A'+10;
+			}
 		}
 		return result;
 	}
 	else
+	{
 		return StringToInt(hexOrDecString);
+	}
 }
 
 stock int ReadHexOrDecString(int boss, const char[] ability_name, int args)
@@ -979,9 +999,7 @@ public Action OnDeflect(Handle event, const char[] name, bool dontBroadcast)
 	if(boss!=-1)
 	{
 		if(UberRageCount[boss]>11)
-		{
 			UberRageCount[boss]-=10;
-		}
 	}
 	return Plugin_Continue;
 }
@@ -1040,15 +1058,20 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 				if(GetVectorDistance(bossPosition, sentryPosition)<=distance)
 				{
 					if(destory)
+					{
 						SDKHooks_TakeDamage(sentry, client, client, 9001.0, DMG_GENERIC, -1);
+					}
 					else
 					{
 						if(health!=1)
 							SDKHooks_TakeDamage(sentry, client, client, GetEntProp(sentry, Prop_Send, "m_iMaxHealth")*health, DMG_GENERIC, -1);
+
 						if(ammo>=0 && ammo<=1 && ammo!=1)
 							SetEntProp(sentry, Prop_Send, "m_iAmmoShells", GetEntProp(sentry, Prop_Send, "m_iAmmoShells")*ammo);
+
 						if(rockets>=0 && rockets<=1 && rockets!=1)
 							SetEntProp(sentry, Prop_Send, "m_iAmmoRockets", GetEntProp(sentry, Prop_Send, "m_iAmmoRockets")*rockets);
+
 						if(duration>0)
 						{
 							SetEntProp(sentry, Prop_Send, "m_bDisabled", 1);
@@ -1071,11 +1094,14 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 				if(GetVectorDistance(bossPosition, sentryPosition)<=distance)
 				{
 					if(destory)
+					{
 						SDKHooks_TakeDamage(dispenser, client, client, 9001.0, DMG_GENERIC, -1);
+					}
 					else
 					{
 						if(health!=1)
 							SDKHooks_TakeDamage(dispenser, client, client, GetEntProp(dispenser, Prop_Send, "m_iMaxHealth")*health, DMG_GENERIC, -1);
+
 						if(duration>0)
 						{
 							SetEntProp(dispenser, Prop_Send, "m_bDisabled", 1);
@@ -1098,11 +1124,14 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 				if(GetVectorDistance(bossPosition, sentryPosition)<=distance)
 				{
 					if(destory)
+					{
 						SDKHooks_TakeDamage(teleporter, client, client, 9001.0, DMG_GENERIC, -1);
+					}
 					else
 					{
 						if(health!=1)
 							SDKHooks_TakeDamage(teleporter, client, client, GetEntProp(teleporter, Prop_Send, "m_iMaxHealth")*health, DMG_GENERIC, -1);
+
 						if(duration>0)
 						{
 							SetEntProp(teleporter, Prop_Send, "m_bDisabled", 1);
@@ -1119,10 +1148,9 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 public Action Timer_EnableBuilding(Handle timer, any sentryid)
 {
 	int sentry=EntRefToEntIndex(sentryid);
-	if(FF2_GetRoundState()==1 && sentry>MaxClients)
-	{
+	if(sentry>MaxClients)
 		SetEntProp(sentry, Prop_Send, "m_bDisabled", 0);
-	}
+
 	return Plugin_Continue;
 }
 
@@ -1134,9 +1162,8 @@ public Action Timer_StunBoss(Handle timer, any boss)
 {
 	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	if(!IsValidEntity(client))
-	{
 		return;
-	}
+
 	TF2_StunPlayer(client, Tstun, Tslowdown, TflagOverride, 0);
 }
 
@@ -1148,23 +1175,17 @@ public Action Timer_DissolveRagdoll(Handle timer, any userid)
 	int client=GetClientOfUserId(userid);
 	int ragdoll=-1;
 	if(client && IsClientInGame(client))
-	{
 		ragdoll=GetEntPropEnt(client, Prop_Send, "m_hRagdoll");
-	}
 
 	if(IsValidEntity(ragdoll))
-	{
 		DissolveRagdoll(ragdoll);
-	}
 }
 
 int DissolveRagdoll(int ragdoll)
 {
 	int dissolver=CreateEntityByName("env_entity_dissolver");
 	if(dissolver==-1)
-	{
 		return;
-	}
 
 	DispatchKeyValue(dissolver, "dissolvetype", "0");
 	DispatchKeyValue(dissolver, "magnitude", "200");
@@ -1206,9 +1227,7 @@ void Rage_Clone(const char[] ability_name, int boss)
 	for(maxKV=0; maxKV<8; maxKV++)
 	{
 		if(!(bossKV[maxKV]=FF2_GetSpecialKV(maxKV)))
-		{
 			break;
-		}
 	}
 
 	int alive, dead;
@@ -1252,9 +1271,8 @@ void Rage_Clone(const char[] ability_name, int boss)
 		if(changeModel)
 		{
 			if(model[0]=='\0')
-			{
 				KvGetString(bossKV[config], "model", model, sizeof(model));
-			}
+
 			SetVariantString(model);
 			AcceptEntityInput(clone, "SetCustomModel");
 			SetEntProp(clone, Prop_Send, "m_bUseClassAnimations", 1);
@@ -1271,14 +1289,10 @@ void Rage_Clone(const char[] ability_name, int boss)
 				int weapon;
 				TF2_RemoveAllWeapons(clone);
 				if(classname[0]=='\0')
-				{
 					classname="tf_weapon_bottle";
-				}
 
 				if(attributes[0]=='\0')
-				{
 					attributes="68 ; -1";
-				}
 
 				weapon=SpawnWeapon(clone, classname, index, 101, 0, attributes);
 				if(StrEqual(classname, "tf_weapon_builder") && index!=735)  //PDA, normal sapper
@@ -1337,33 +1351,25 @@ void Rage_Clone(const char[] ability_name, int boss)
 	while((entity=FindEntityByClassname(entity, "tf_wearable"))!=-1)
 	{
 		if((owner=GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity"))<=MaxClients && owner>0 && GetClientTeam(owner)==BossTeam)
-		{
 			TF2_RemoveWearable(owner, entity);
-		}
 	}
 
 	while((entity=FindEntityByClassname(entity, "tf_wearable_razorback"))!=-1)
 	{
 		if((owner=GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity"))<=MaxClients && owner>0 && GetClientTeam(owner)==BossTeam)
-		{
 			TF2_RemoveWearable(owner, entity);
-		}
 	}
 	
 	while((entity=FindEntityByClassname(entity, "tf_wearable_demoshield"))!=-1)
 	{
 		if((owner=GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity"))<=MaxClients && owner>0 && GetClientTeam(owner)==BossTeam)
-		{
 			TF2_RemoveWearable(owner, entity);
-		}
 	}
 
 	while((entity=FindEntityByClassname(entity, "tf_powerup_bottle"))!=-1)
 	{
 		if((owner=GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity"))<=MaxClients && owner>0 && GetClientTeam(owner)==BossTeam)
-		{
 			TF2_RemoveWearable(owner, entity);
-		}
 	}
 }
 
@@ -1418,9 +1424,7 @@ public Action SaveMinion(int client, int &attacker, int &inflictor, float &damag
 				tries++;
 				target=GetRandomInt(1, MaxClients);
 				if(tries==100)
-				{
 					return Plugin_Continue;
-				}
 			}
 			while(otherTeamIsAlive && (!IsValidEntity(target) || GetClientTeam(target)==BossTeam || !IsPlayerAlive(target)));
 
@@ -1567,25 +1571,19 @@ public int ParseFormula(int boss, const char[] key, int defaultValue, int playin
 				switch(character[0])
 				{
 					case '+':
-					{
 						SetArrayCell(_operator, bracket, Operator_Add);
-					}
+
 					case '-':
-					{
 						SetArrayCell(_operator, bracket, Operator_Subtract);
-					}
+
 					case '*':
-					{
 						SetArrayCell(_operator, bracket, Operator_Multiply);
-					}
+
 					case '/':
-					{
 						SetArrayCell(_operator, bracket, Operator_Divide);
-					}
+
 					case '^':
-					{
 						SetArrayCell(_operator, bracket, Operator_Exponent);
-					}
 				}
 			}
 		}
@@ -1620,9 +1618,7 @@ public Action Timer_Demopan_Rage(Handle timer, any count)  //TODO: Make this rag
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client)!=BossTeam)
-			{
 				ClientCommand(client, overlay);
-			}
 		}
 		SetCommandFlags("r_screenoverlay", GetCommandFlags("r_screenoverlay") & FCVAR_CHEAT);  //Reset the cheat permissions
 
@@ -1819,9 +1815,7 @@ void Rage_Slowmo(int boss, const char[] ability_name)
 
 	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
 	if(client)
-	{
 		CreateTimer(duration, Timer_RemoveEntity, EntIndexToEntRef(AttachParticle(client, BossTeam==view_as<int>(TFTeam_Blue) ? "scout_dodge_blue" : "scout_dodge_red", 75.0)), TIMER_FLAG_NO_MAPCHANGE);
-	}
 
 	EmitSoundToAll(SOUND_SLOW_MO_START, _, _, _, _, _, _, _, _, _, false);
 	EmitSoundToAll(SOUND_SLOW_MO_START, _, _, _, _, _, _, _, _, _, false);
@@ -1847,9 +1841,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float veloc
 {
 	int boss=FF2_GetBossIndex(client);
 	if(boss==-1 || !(FF2Flags[boss] & FLAG_ONSLOWMO))
-	{
 		return Plugin_Continue;
-	}
 
 	if(buttons & IN_ATTACK)
 	{
@@ -1905,14 +1897,11 @@ public Action Timer_Rage_SlowMo_Attack(Handle timer, Handle data)
 public bool TraceRayDontHitSelf(int entity, int mask)
 {
 	if(!entity || entity>MaxClients)
-	{
 		return true;
-	}
 
 	if(FF2_GetBossIndex(entity)==-1)
-	{
 		return true;
-	}
+
 	return false;
 }
 
@@ -1927,9 +1916,7 @@ stock void UpdateClientCheatValue(int value)
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsClientInGame(client) && !IsFakeClient(client))
-		{
 			SendConVarValue(client, cvarCheats, value ? "1" : "0");
-		}
 	}
 }
 
@@ -1940,9 +1927,7 @@ public Action Timer_RemoveEntity(Handle timer, any entid)
 {
 	int entity=EntRefToEntIndex(entid);
 	if(IsValidEntity(entity) && entity>MaxClients)
-	{
 		AcceptEntityInput(entity, "Kill");
-	}
 }
 
 stock int AttachParticle(int entity, char[] particleType, float offset=0.0, bool attach=true)
@@ -1983,9 +1968,7 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int quality
 	char attributes[32][32];
 	int count=ExplodeString(attribute, ";", attributes, 32, 32);
 	if(count%2!=0)
-	{
 		count--;
-	}
 
 	if(count>0)
 	{
@@ -2009,9 +1992,7 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int quality
 	}
 
 	if(weapon==INVALID_HANDLE)
-	{
 		return -1;
-	}
 
 	int entity=TF2Items_GiveNamedItem(client, weapon);
 	CloseHandle(weapon);
