@@ -767,7 +767,7 @@ public Action Timer_DemoCharge(Handle timer, int boss)
 	TF2_AddCondition(client, TFCond_Charging, FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 1, 0.25));
 	if(charge>FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 5, 10.0) && charge<FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 6, 90.0))
 	{
-		FF2_SetBossCharge(boss, 0, charge-FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 4, 0.4));
+		FF2_SetBossCharge(boss, 0, charge-FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 4, 0.4));
 	}
 
 	if(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, "special_democharge", 2, 0.0)>0)
