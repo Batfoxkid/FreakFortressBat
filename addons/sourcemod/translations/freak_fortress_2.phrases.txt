@@ -55,6 +55,7 @@
 	{
 		"#format"	"{1:i}"
 		"en"		"Sapper Power: {1}%%"
+		"ru"		"Сила Жучка: {1}%%"
 	}
 	"Boss Lives Left"	// HUD
 	{
@@ -111,10 +112,12 @@
 	"Solo Rage Fail"	// Chat
 	{
 		"en"		"It's {red}not{default} very effective..."
+		"ru"		"Это {red}не{default} очень эффективно..."
 	}
 	"Solo Rage Win"	// Chat
 	{
 		"en"		"It's {blue}super{default} effective..."
+		"ru"		"Это {blue}супер{default} эффективно..."
 	}
 	"help_scout"	// Menu
 	{
@@ -343,59 +346,71 @@
 	{
 		"#format"	"{1:t},{2:i},{3:i}"
 		"en"		"gave {1} {2} more charge to slot {3}"
+		"ru"		"выдал для {1} ещё {2} заряда в слот {3}"
 	}
 	"Give Charge Set"	// Chat
 	{
 		"#format"	"{1:t},{2:i},{3:i}"
 		"en"		"gave {1} {2} charge to slot {3}"
+		"ru"		"выдал для {1} {2} заряда в слот {3}"
 	}
 	"Give Infinite Off"	// Chat
 	{
 		"#format"	"{1:t}"
 		"en"		"deactivated infinite RAGE on {1}"
+		"ru"		"отключил бесконечную ЯРОСТЬ для {1}"
 	}
 	"Give Infinite On"	// Chat
 	{
 		"#format"	"{1:t}"
 		"en"		"activated infinite RAGE on {1}"
+		"ru"		"включил бесконечную ЯРОСТЬ для {1}"
 	}
 	"Give Rage Add"	// Chat
 	{
 		"#format"	"{1:i},{2:t}"
 		"en"		"added {1} RAGE to {2}"
+		"ru"		"добавил {1} ЯРОСТИ для {2}" // i'm not sure about %% after {1}
 	}
 	"Give Rage Set"	// Chat
 	{
 		"#format"	"{1:i},{2:t}"
 		"en"		"set {1} RAGE to {2}"
+		"ru"		"установил {1} ЯРОСТИ для {2}"
 	}
 	"Self Charge Add"	// Chat
 	{
 		"#format"	"{1:i},{2:i}"
 		"en"		"gave themselves {1} more charge to slot {2}"
+		"ru"		"выдал себе ещё {1} заряда в слот {2}"
 	}
 	"Self Charge Set"	// Chat
 	{
 		"#format"	"{1:i},{2:i}"
 		"en"		"gave themselves {1} charge to slot {2}"
+		"ru"		"выдал себе {1} заряда в слот {2}"
 	}
 	"Self Infinite Off"	// Chat
 	{
 		"en"		"deactivated infinite RAGE on themselves"
+		"ru"		"отключил бесконечную ЯРОСТЬ у себе"
 	}
 	"Self Infinite On"	// Chat
 	{
 		"en"		"activated infinite RAGE on themselves"
+		"ru"		"включил бесконечную ЯРОСТЬ для себя"
 	}
 	"Self Rage Add"	// Chat
 	{
 		"#format"	"{1:i}"
 		"en"		"gave themselves {1} more RAGE"
+		"ru"		"выдал себе ещё {1} ЯРОСТИ"
 	}
 	"Self Rage Set"	// Chat
 	{
 		"#format"	"{1:i}"
 		"en"		"gave themselves {1} RAGE"
+		"ru"		"выдал себе {1} ЯРОСТИ"
 	}
 	"used_weighdown"	// Deprecated
 	{
