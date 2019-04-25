@@ -3718,11 +3718,11 @@ void CheckToTeleportToSpawn()
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, SpawnTeleportCFG);
 		if(FileExists(config))
 		{
-			LogToFile(eLog,"[FF2] Please move '%s' from '%s' to '%s'!", SpawnTeleportCFG, ConfigPath, DataPath);
+			LogError("[FF2] Please move '%s' from '%s' to '%s'!", SpawnTeleportCFG, ConfigPath, DataPath);
 		}
 		else
 		{
-			LogToFile(eLog,"[FF2] Unable to find '%s', will not activate teleport to spawn.", config);
+			LogError("[FF2] Unable to find '%s', will not activate teleport to spawn.", config);
 		}
 		return;
 	}
@@ -6466,14 +6466,14 @@ static ArrayList s_hSpawnArray = null;
 
 stock void OnPluginStart_TeleportToMultiMapSpawn()
 {
-	s_hSpawnArray = int ArrayList(2);
+	s_hSpawnArray = new ArrayList(2);
 }
 
 stock void teamplay_round_start_TeleportToMultiMapSpawn()
 {
 	s_hSpawnArray.Clear();
 	int iInt=0, iEnt=MaxClients+1;
-	int iSkip[iEnt]={0,...};
+	int iSkip[MAXPLAYERS]={0,...};
 	//int[] iSkip = new int[MaxClients+1];
 	while((iEnt = FindEntityByClassname2(iEnt, "info_player_teamspawn")) != -1)
 	{
@@ -10875,10 +10875,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(SpawnTeleOnTriggerHurt && IsBoss(client) && CheckRoundState()==1)
 					{
 						HazardDamage[client] += damage;
-						if(HazardDamage[client]>=GetConVarFloat(cvarAirStrike))
+						if(HazardDamage[client]>=GetConVarFloat(cvarDamageToTele))
 						{
 							TeleportToMultiMapSpawn(client);
-							HazardDamage[client] = 0;
+							HazardDamage[client] = 0.0;
 						}
 					}
 
