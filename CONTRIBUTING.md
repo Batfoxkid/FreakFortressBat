@@ -37,8 +37,8 @@ If there are mistakes, we can resolve them, no need to close and make a new one 
 
 bool Yes = true;
 int No;
-char alsoFine[64];
 int AlsoGood;
+char forLocalVariables[64];
 Handle NOGOOD;
 float notgood;
 
@@ -51,32 +51,32 @@ public Action OnThisEvent(Handle NOGOOD, int Switches)
 	*/
 	if(Yes)	// Commment tabs
 	{
-		char Maybe[64];	// Assign when needed
+		char maybe[64];	// Assign when needed
 
 		if(No == 3)
 		{
 			switch(Switches)
 			{
 				case 2:
-					Maybe='No brackets needed';
+					maybe='No brackets needed';
 
 				case 5:
-					Maybe='Needed for multiple things';
+					maybe='Needed for multiple things';
 
 				default:
-					Maybe='\0';
+					maybe='\0';
 			}
 
-			for(int Fors=1; Fors<OrWhatLooksNice; Fors++)
+			for(int forLoop=1; forLoop<OrWhatLooksNice; forLoop++)
 			{
 				No--;
 			}
 // No tabs here
-			AlsoGood|=FLAG1|FLAG3;
+			AlsoGood |= FLAG1|FLAG3;
 		}
-		return Maybe;
+		return maybe;
 	}
-	else if(strlen(alsoFine) || notgood!=0)
+	else if(strlen(forLocalVariables) || notgood!=0)
 	{
 		No++;
 	}
