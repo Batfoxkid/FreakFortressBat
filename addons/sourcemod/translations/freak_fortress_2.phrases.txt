@@ -109,6 +109,11 @@
 		"en"		"Super Jump is not ready. {1} seconds remaining."
 		"ru"		"Супер Прыжок снова будет доступен через {1} сек."
 	}
+	"Solo Rage"	// Chat
+	{
+		"#format"	"{1:s}"
+		"en"		"{blue}{1}{default} used {red}solo rage{default}!"
+	}
 	"Solo Rage Fail"	// Chat
 	{
 		"en"		"It's {red}not{default} very effective..."
