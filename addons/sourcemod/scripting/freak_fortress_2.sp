@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."076"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."078"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3749,7 +3749,7 @@ void CheckToTeleportToSpawn()
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportBlacklistCFG);
 	if(!FileExists(config))
 	{
-		LogToFile(eLog,"[FF2] Unable to find %s, will not use map blacklist.", config);
+		LogError("[FF2] Unable to find %s, will not use map blacklist.", config);
 		return;
 	}
 
