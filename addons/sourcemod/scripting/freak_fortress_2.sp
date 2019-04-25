@@ -83,13 +83,13 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."076"
+
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
 #else
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION..."-"...BUILD_NUMBER
 #endif
-
-#define BUILD_NUMBER "1800074"
 
 #define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
@@ -101,9 +101,9 @@ last time or to encourage others to do the same.
 #define MINOR_REVISION "10"
 #define STABLE_REVISION "15"
 
-#define MAXENTITIES 2048
-#define MAXSPECIALS 150
-#define MAXRANDOMS 64
+#define MAXENTITIES 2048	// Probably shouldn't touch this
+#define MAXSPECIALS 144		// Maximum bosses in a pack
+#define MAXRANDOMS 64		// Maximum abilites in a boss
 
 #define SOUNDEXCEPT_MUSIC 0
 #define SOUNDEXCEPT_VOICE 1
@@ -124,6 +124,8 @@ last time or to encourage others to do the same.
 #define DebugLog "ff2_debug.log"
 #define DoorCFG "doors.cfg"
 #define MapCFG "maps.cfg"
+#define SpawnTeleportCFG "spawn_teleport.cfg"
+#define SpawnTeleportBlacklistCFG "spawn_teleport_blacklist.cfg"
 #define WeaponCFG "weapons.cfg"
 
 float shDmgReduction[MAXPLAYERS+1];
@@ -204,9 +206,11 @@ int RPSLosses[MAXPLAYERS+1];
 int RPSHealth[MAXPLAYERS+1];
 float AirstrikeDamage[MAXPLAYERS+1];
 float KillstreakDamage[MAXPLAYERS+1];
+float HazardDamage[MAXPLAYERS+1];
 bool emitRageSound[MAXPLAYERS+1];
 bool bossHasReloadAbility[MAXPLAYERS+1];
 bool bossHasRightMouseAbility[MAXPLAYERS+1];
+bool SpawnTeleOnTriggerHurt = false;
 
 int timeleft;
 int cursongId[MAXPLAYERS+1]=1;
@@ -290,6 +294,7 @@ ConVar cvarSapperCooldown;
 ConVar cvarTheme;
 ConVar cvarSelfHealing;
 ConVar cvarBotRage;
+ConVar cvarDamageToTele;
 
 Handle FF2Cookies;
 
@@ -727,6 +732,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 			DrawPanelText(panel, "6) [Core] Added ff2_setcharge and ff2_addcharge (Batfoxkid)");
 			DrawPanelText(panel, "7) [Core] Debug commands use ShowActivity settings (Batfoxkid)");
 			DrawPanelText(panel, "8) [Bosses] Added 'healing' option to allow bosses to heal (Batfoxkid)");
+			DrawPanelText(panel, "9) [Gameplay] Boss is now teleported to a random spawn when touching a 'trigger_hurt' location (Chdata/sarysa/SHADoW)");	
 		}
 		case 139:  //1.17.10
 		{
@@ -1934,6 +1940,7 @@ public void OnPluginStart()
 	cvarTheme=CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
 	cvarSelfHealing=CreateConVar("ff2_healing", "0", "0-Block Boss Healing, 1-Allow Self-Healing, 2-Allow Non-Self Healing, 3-Allow All Healing", _, true, 0.0, true, 3.0);
 	cvarBotRage=CreateConVar("ff2_bot_rage", "1", "0-Disable, 1-Bots can use rage when ready", _, true, 0.0, true, 1.0);
+	cvarDamageToTele=CreateConVar("ff2_tts_damage", "250.0", "Minimum damage boss needs to take in order to be teleported to spawn", _, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1956,6 +1963,8 @@ public void OnPluginStart()
 	HookEvent("deploy_buff_banner", OnDeployBackup);
 	HookEvent("rps_taunt_event", OnRPS, EventHookMode_Post);
 	HookEvent("player_disconnect", OnPlayerDisconnect, EventHookMode_Pre);
+
+	OnPluginStart_TeleportToMultiMapSpawn();	// Setup adt_array
 
 	HookUserMessage(GetUserMessageId("PlayerJarated"), OnJarate);	//Used to subtract rage when a boss is jarated (not through Sydney Sleeper)
 
@@ -2852,6 +2861,7 @@ public void EnableFF2()
 
 	CacheWeapons();
 	CheckToChangeMapDoors();
+	CheckToTeleportToSpawn();
 	MapHasMusic(true);
 	FindCharacters();
 	strcopy(FF2CharSetString, 2, "");
@@ -3696,8 +3706,77 @@ stock bool CheckToChangeMapDoors()
 	delete file;
 }
 
+void CheckToTeleportToSpawn()
+{
+	char config[PLATFORM_MAX_PATH];
+	GetCurrentMap(currentmap, sizeof(currentmap));
+	SpawnTeleOnTriggerHurt = false;
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportCFG);
+
+	if(!FileExists(config))
+	{
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, SpawnTeleportCFG);
+		if(FileExists(config))
+		{
+			LogToFile(eLog,"[FF2] Please move '%s' from '%s' to '%s'!", SpawnTeleportCFG, ConfigPath, DataPath);
+		}
+		else
+		{
+			LogToFile(eLog,"[FF2] Unable to find '%s', will not activate teleport to spawn.", config);
+		}
+		return;
+	}
+
+	Handle fileh=OpenFile(config, "r");
+	if(fileh==null)
+		return;
+
+	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, sizeof(config)))
+	{
+		Format(config, strlen(config) - 1, config);
+		if(!strncmp(config, "//", 2, false))
+			continue;
+
+		if(StrContains(currentmap, config, false)>=0 || !StrContains(config, "all", false))
+		{
+			LogMessage("[FF2] Enabling teleport to spawn for %s", currentmap);
+			SpawnTeleOnTriggerHurt = true;
+			delete fileh;
+			return;
+		}
+	}
+
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportBlacklistCFG);
+	if(!FileExists(config))
+	{
+		LogToFile(eLog,"[FF2] Unable to find %s, will not use map blacklist.", config);
+		return;
+	}
+
+	fileh=OpenFile(config, "r");
+	if(fileh==null)
+		return;
+
+	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, sizeof(config)))
+	{
+		Format(config, strlen(config) - 1, config);
+		if(!strncmp(config, "//", 2, false))
+			continue;
+
+		if(StrContains(currentmap, config, false)>=0|| !StrContains(config, "all", false))
+		{
+			LogMessage("[FF2] %s is blacklisted and won't be teleported to spawn!", currentmap);
+			SpawnTeleOnTriggerHurt = false;
+			delete fileh;
+			return;
+		}
+	}
+	delete fileh;
+}
+
 public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
+	teamplay_round_start_TeleportToMultiMapSpawn(); // Cache spawns
 	isCapping=false;
 	if(changeGamemode==1)
 	{
@@ -4189,6 +4268,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	{
 		CacheWeapons();
 		CheckToChangeMapDoors();
+		CheckToTeleportToSpawn();
 		FindCharacters();
 		ReloadConfigs=false;
 	}
@@ -4271,6 +4351,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			detonations[boss]=0;
 			AirstrikeDamage[boss]=0.0;
 			KillstreakDamage[boss]=0.0;
+			HazardDamage[boss]=0.0;
 			SapperCooldown[boss]=0.0;
 		}
 
@@ -6340,10 +6421,11 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	EquipBoss(boss);
 	KSpreeCount[boss]=0;
 	BossCharge[boss][0]=0.0;
-	RPSHealth[boss]=-1;
-	RPSLosses[boss]=0;
-	RPSHealth[boss]=0;
-	RPSLoser[boss]=-1.0;
+	RPSHealth[client]=-1;
+	RPSLosses[client]=0;
+	RPSHealth[client]=0;
+	RPSLoser[client]=-1.0;
+	HazardDamage[client]=0.0;
 	if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 	{
 		SetClientQueuePoints(client, 0);
@@ -6372,6 +6454,151 @@ stock TFTeam GetEntityTeamNum(int iEnt)
 stock void SetEntityTeamNum(int iEnt, int iTeam)
 {
 	SetEntProp(iEnt, Prop_Send, "m_iTeamNum", iTeam);
+}
+
+/*
+    TeleportToMultiMapSpawn()
+    [X][2]
+       [0] = RED spawnpoint entref
+       [1] = BLU spawnpoint entref
+*/
+static ArrayList s_hSpawnArray = null;
+
+stock void OnPluginStart_TeleportToMultiMapSpawn()
+{
+	s_hSpawnArray = int ArrayList(2);
+}
+
+stock void teamplay_round_start_TeleportToMultiMapSpawn()
+{
+	s_hSpawnArray.Clear();
+	int iInt=0, iEnt=MaxClients+1;
+	int iSkip[iEnt]={0,...};
+	//int[] iSkip = new int[MaxClients+1];
+	while((iEnt = FindEntityByClassname2(iEnt, "info_player_teamspawn")) != -1)
+	{
+		TFTeam iTeam = GetEntityTeamNum(iEnt);
+		int iClient = GetClosestPlayerTo(iEnt, iTeam);
+		if(iClient)
+		{
+			bool bSkip = false;
+			for(int i = 0; i<=MAXPLAYERS; i++)
+			{
+				if(iSkip[i] == iClient)
+				{
+					bSkip = true;
+					break;
+				}
+			}
+			if(bSkip)
+				continue;
+
+			iSkip[iInt++] = iClient;
+			int iIndex = s_hSpawnArray.Push(EntIndexToEntRef(iEnt));
+			s_hSpawnArray.Set(iIndex, iTeam, 1);	// Opposite team becomes an invalid ent
+		}
+	}
+}
+
+/*
+    Teleports a client to spawn, but only if it's a spawn that someone spawned in at the start of the round.
+    Useful for multi-stage maps like vsh_megaman
+*/
+
+stock int TeleportToMultiMapSpawn(int iClient, TFTeam iTeam=TFTeam_Unassigned)
+{
+	int iSpawn, iIndex;
+	TFTeam iTeleTeam;
+	if(iTeam <= TFTeam_Spectator)
+	{
+		iSpawn = EntRefToEntIndex(GetRandBlockCellEx(s_hSpawnArray));
+	}
+	else
+	{
+		do
+			iTeleTeam = view_as<TFTeam>(GetRandBlockCell(s_hSpawnArray, iIndex, 1));
+		while (iTeleTeam != iTeam);
+		iSpawn = EntRefToEntIndex(GetArrayCell(s_hSpawnArray, iIndex, 0));
+	}
+	TeleMeToYou(iClient, iSpawn);
+	return iSpawn;
+}
+
+/*
+    Returns 0 if no client was found.
+*/
+
+stock int GetClosestPlayerTo(int iEnt, TFTeam iTeam=TFTeam_Unassigned)
+{
+	int iBest;
+	float flDist, flTemp, vLoc[3], vPos[3];
+	GetEntPropVector(iEnt, Prop_Send, "m_vecOrigin", vLoc);
+	for(int iClient=1; iClient<=MaxClients; iClient++)
+	{
+		if(IsClientInGame(iClient) && IsPlayerAlive(iClient))
+		{
+			if(iTeam>TFTeam_Unassigned && GetEntityTeamNum(iClient)!=iTeam)
+				continue;
+
+			GetEntPropVector(iClient, Prop_Send, "m_vecOrigin", vPos);
+			flTemp = GetVectorDistance(vLoc, vPos);
+			if(!iBest || flTemp<flDist)
+			{
+				flDist = flTemp;
+				iBest = iClient;
+			}
+		}
+	}
+	return iBest;
+}
+
+/*
+    Teleports one entity to another.
+    Doesn't necessarily have to be players.
+    Returns true if a player teleported to a ducking player
+*/
+
+stock bool TeleMeToYou(int iMe, int iYou, bool bAngles=false)
+{
+	float vPos[3], vAng[3];
+	vAng = NULL_VECTOR;
+	GetEntPropVector(iYou, Prop_Send, "m_vecOrigin", vPos);
+	if(bAngles)
+		GetEntPropVector(iYou, Prop_Send, "m_angRotation", vAng);
+
+	bool bDucked = false;
+	if(IsValidClient(iMe) && IsValidClient(iYou) && GetEntProp(iYou, Prop_Send, "m_bDucked"))
+	{
+		float vCollisionVec[3];
+		vCollisionVec[0] = 24.0;
+		vCollisionVec[1] = 24.0;
+		vCollisionVec[2] = 62.0;
+		SetEntPropVector(iMe, Prop_Send, "m_vecMaxs", vCollisionVec);
+		SetEntProp(iMe, Prop_Send, "m_bDucked", 1);
+		SetEntityFlags(iMe, GetEntityFlags(iMe)|FL_DUCKING);
+		bDucked = true;
+	}
+	TeleportEntity(iMe, vPos, vAng, NULL_VECTOR);
+	return bDucked;
+}
+
+stock int GetRandBlockCell(ArrayList hArray, int &iSaveIndex, int iBlock=0, bool bAsChar=false, int iDefault=0)
+{
+	int iSize = hArray.Length;
+	if(iSize > 0)
+	{
+		iSaveIndex = GetRandomInt(0, iSize - 1);
+		return hArray.Get(iSaveIndex, iBlock, bAsChar);
+	}
+	iSaveIndex = -1;
+	return iDefault;
+}
+
+// Get a random value while ignoring the save index.
+stock int GetRandBlockCellEx(ArrayList hArray, int iBlock=0, bool bAsChar=false, int iDefault=0)
+{
+	int iIndex;
+	return GetRandBlockCell(hArray, iIndex, iBlock, bAsChar, iDefault);
 }
 
 public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDefinitionIndex, Handle &item)
@@ -7873,6 +8100,7 @@ public Action Command_ReloadFF2Configs(int client, int args)
 	}
 	CacheWeapons();
 	CheckToChangeMapDoors();
+	CheckToTeleportToSpawn();
 	FindCharacters();
 	ReloadConfigs = false;
 	return Plugin_Handled;
@@ -10644,6 +10872,16 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				char classname[64];
 				if(GetEntityClassname(attacker, classname, sizeof(classname)) && !strcmp(classname, "trigger_hurt", false))
 				{
+					if(SpawnTeleOnTriggerHurt && IsBoss(client) && CheckRoundState()==1)
+					{
+						HazardDamage[client] += damage;
+						if(HazardDamage[client]>=GetConVarFloat(cvarAirStrike))
+						{
+							TeleportToMultiMapSpawn(client);
+							HazardDamage[client] = 0;
+						}
+					}
+
 					Action action=Plugin_Continue;
 					Call_StartForward(OnTriggerHurt);
 					Call_PushCell(boss);
