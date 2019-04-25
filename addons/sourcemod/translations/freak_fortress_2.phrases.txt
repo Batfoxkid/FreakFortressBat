@@ -113,6 +113,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"{blue}{1}{default} used {red}solo rage{default}!"
+		"ru"		"{blue}{1}{default} использовал {red}ярость на одного{default}!"
 	}
 	"Solo Rage Fail"	// Chat
 	{
