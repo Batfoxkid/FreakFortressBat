@@ -5217,14 +5217,44 @@ public Action Command_SetMyBoss(int client, int args)
 			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
-			if(KvGetNum(BossKV[config], "hidden", 0)) continue;
-			if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
-			if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
+
 			if(StrContains(boss, name, false)!=-1)
 			{
-				if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true))
+				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+				   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
 				{
-					FReplyToCommand(client, "%t", "deny_donator");
+					if(KvGetNum(BossKV[config], "hidden", 0))
+					{
+						FReplyToCommand(client, "Boss could not be found!");
+						return Plugin_Handled;
+					}
+					else
+					{
+						FReplyToCommand(client, "%t", "deny_donator");
+						return Plugin_Handled;
+					}
+				}
+				else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
+				{
+					if(KvGetNum(BossKV[config], "hidden", 0))
+					{
+						FReplyToCommand(client, "Boss could not be found!");
+						return Plugin_Handled;
+					}
+					else
+					{
+						FReplyToCommand(client, "%t", "deny_donator");
+						return Plugin_Handled;
+					}
+				}
+				else if(KvGetNum(BossKV[config], "hidden", 0) &&
+				      !(KvGetNum(BossKV[config], "donator", 0) ||
+				        BossTheme(config) ||
+					KvGetNum(BossKV[config], "admin", 0) ||
+					KvGetNum(BossKV[config], "owner", 0)))
+				{
+					FReplyToCommand(client, "Boss could not be found!");
 					return Plugin_Handled;
 				}
 				if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
@@ -5240,11 +5270,6 @@ public Action Command_SetMyBoss(int client, int args)
 				if(strlen(companionName) && GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1)
 				{
 					FReplyToCommand(client, "%t", "deny_duo_off");
-					return Plugin_Handled;
-				}
-				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
-				{
-					FReplyToCommand(client, "%t", "deny_donator");
 					return Plugin_Handled;
 				}
 				if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0)
@@ -5266,9 +5291,41 @@ public Action Command_SetMyBoss(int client, int args)
 			KvGetString(BossKV[config], "filename", boss, sizeof(boss));
 			if(StrContains(boss, name, false)!=-1)
 			{
-				if(KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true))
+				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+				   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
 				{
-					FReplyToCommand(client, "%t", "deny_donator");
+					if(KvGetNum(BossKV[config], "hidden", 0))
+					{
+						FReplyToCommand(client, "Boss could not be found!");
+						return Plugin_Handled;
+					}
+					else
+					{
+						FReplyToCommand(client, "%t", "deny_donator");
+						return Plugin_Handled;
+					}
+				}
+				else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
+				{
+					if(KvGetNum(BossKV[config], "hidden", 0))
+					{
+						FReplyToCommand(client, "Boss could not be found!");
+						return Plugin_Handled;
+					}
+					else
+					{
+						FReplyToCommand(client, "%t", "deny_donator");
+						return Plugin_Handled;
+					}
+				}
+				else if(KvGetNum(BossKV[config], "hidden", 0) &&
+				      !(KvGetNum(BossKV[config], "donator", 0) ||
+				        BossTheme(config) ||
+					KvGetNum(BossKV[config], "admin", 0) ||
+					KvGetNum(BossKV[config], "owner", 0)))
+				{
+					FReplyToCommand(client, "Boss could not be found!");
 					return Plugin_Handled;
 				}
 				if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
@@ -5286,13 +5343,8 @@ public Action Command_SetMyBoss(int client, int args)
 					FReplyToCommand(client, "%t", "deny_duo_off");
 					return Plugin_Handled;
 				}
-				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
-				{
-					FReplyToCommand(client, "%t", "deny_donator");
-					return Plugin_Handled;
-				}
 				KvGetString(BossKV[config], "name", boss, sizeof(boss));
-				if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0)
+				if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0 && !CheckCommandAccess(client, "ff2_replay_bosses", ADMFLAG_CHEATS, true))
 				{
 					char cookie[64];
 					GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
@@ -5373,30 +5425,41 @@ public Action Command_SetMyBoss(int client, int args)
 		KvRewind(BossKV[config]);
 		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 		if(KvGetNum(BossKV[config], "blocked", 0)) continue;
-		if(KvGetNum(BossKV[config], "hidden", 0)) continue;
-		if(KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) continue;
-		if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)) continue;
-		
-		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+
 		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-		   (KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) ||
-		   (strlen(companionName) && !DuoMin))
+		   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+		   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
+		{
+			if(!KvGetNum(BossKV[config], "hidden", 0))
+				AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+		}
+		else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
+		{
+			if(!KvGetNum(BossKV[config], "hidden", 0))
+				AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+		}
+		else if(KvGetNum(BossKV[config], "hidden", 0) &&
+		      !(KvGetNum(BossKV[config], "donator", 0) ||
+		        BossTheme(config) ||
+			KvGetNum(BossKV[config], "admin", 0) ||
+			KvGetNum(BossKV[config], "owner", 0)))
+		{
+			// Don't show
+		}
+		else if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 		{
 			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
 		}
-		else if(strlen(companionName) && GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1)
-		{
-			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
-		}
-		else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_ROOT, true))
+		else if(strlen(companionName) && ((GetConVarBool(cvarDuoBoss) && GetClientPreferences(client, PREF_DUO)>1) || !DuoMin))
 		{
 			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
 		}
 		else
 		{
-			if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0)
+			if(AreClientCookiesCached(client) && GetConVarInt(cvarKeepBoss)<0 && !CheckCommandAccess(client, "ff2_replay_bosses", ADMFLAG_CHEATS, true))
 			{
 				char cookie[64];
+				KvGetString(BossKV[config], "name", boss, sizeof(boss));
 				GetClientCookie(client, LastPlayedCookie, cookie, sizeof(cookie));
 				if(StrEqual(boss, cookie, false))
 				{
