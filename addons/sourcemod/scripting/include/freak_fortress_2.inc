@@ -240,7 +240,7 @@ native int FF2_HasAbility(int boss, const char[] pluginName, const char[] abilit
  *							1 - as usual, used for brave jump or teleport
  *							2 - other charged abilities
  * @param buttonMode	How to activate the ability
- *							0 - by taunt
+ *							0 - by call for medic
  *							1 - by right mouse button or duck
  *							2 - by reload button
  * @noreturn
@@ -581,7 +581,7 @@ stock void Debug(char[] buffer, any ...)
 	}
 }
 
-public SharedPlugin:__pl_FF2=
+public SharedPlugin __pl_FF2=
 {
 	name="freak_fortress_2",
 	file="freak_fortress_2.smx",
@@ -593,7 +593,7 @@ public SharedPlugin:__pl_FF2=
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_FF2_SetNTVOptional()
+public void __pl_FF2_SetNTVOptional()
 {
 	MarkNativeAsOptional("FF2_IsFF2Enabled");
 	MarkNativeAsOptional("FF2_GetFF2Version");
