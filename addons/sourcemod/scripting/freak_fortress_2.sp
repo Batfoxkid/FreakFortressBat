@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."078"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."080"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5426,6 +5426,7 @@ public Action Command_SetMyBoss(int client, int args)
 		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 		if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 		   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
 		   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
@@ -6535,8 +6536,8 @@ stock void OnPluginStart_TeleportToMultiMapSpawn()
 stock void teamplay_round_start_TeleportToMultiMapSpawn()
 {
 	s_hSpawnArray.Clear();
-	int iInt=0, iEnt=MaxClients+1;
-	int iSkip[MAXPLAYERS]={0,...};
+	int /*iInt=0,*/ iEnt=MaxClients+1;
+	//int iSkip[MaxClients]={0,...};
 	//int[] iSkip = new int[MaxClients+1];
 	while((iEnt = FindEntityByClassname2(iEnt, "info_player_teamspawn")) != -1)
 	{
@@ -6544,19 +6545,19 @@ stock void teamplay_round_start_TeleportToMultiMapSpawn()
 		int iClient = GetClosestPlayerTo(iEnt, iTeam);
 		if(iClient)
 		{
-			bool bSkip = false;
-			for(int i = 0; i<=MAXPLAYERS; i++)
-			{
-				if(iSkip[i] == iClient)
-				{
-					bSkip = true;
-					break;
-				}
-			}
-			if(bSkip)
-				continue;
+			//bool bSkip = false;
+			//for(int i = 0; i<=MaxClients; i++)
+			//{
+				//if(iSkip[i] == iClient)
+				//{
+					//bSkip = true;
+					//break;
+				//}
+			//}
+			//if(bSkip)
+				//continue;
 
-			iSkip[iInt++] = iClient;
+			//iSkip[iInt++] = iClient;
 			int iIndex = s_hSpawnArray.Push(EntIndexToEntRef(iEnt));
 			s_hSpawnArray.Set(iIndex, iTeam, 1);	// Opposite team becomes an invalid ent
 		}
