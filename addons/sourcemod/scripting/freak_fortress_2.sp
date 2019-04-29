@@ -2182,7 +2182,7 @@ public Action Command_SetRage(int client, int args)
 			BossCharge[Boss[client]][0]=rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
-			FShowActivity(client, "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
+			CShowActivity(client, "%t%t", "Prefix", "Self Rage Set", "_s", RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2221,11 +2221,11 @@ public Action Command_SetRage(int client, int args)
 		FReplyToCommand(client, "Set %d rage to %s", RoundFloat(rageMeter), target_name);
 		if(tn_is_ml)
 		{
-			FShowActivity(client, "%t", "Give Rage Set", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t%t", "Prefix", "Give Rage Set", target_name, RoundFloat(rageMeter));
 		}
 		else
 		{
-			FShowActivity(client, "%t", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t%t", "Prefix", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
 		}
 	}
 	return Plugin_Handled;
@@ -2260,7 +2260,7 @@ public Action Command_AddRage(int client, int args)
 			BossCharge[Boss[client]][0]+=rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
-			FShowActivity(client, "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
+			CShowActivity(client, "%t%t", "Prefix", "Self Rage Add", "_s", RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2299,11 +2299,11 @@ public Action Command_AddRage(int client, int args)
 		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
 		if(tn_is_ml)
 		{
-			FShowActivity(client, "%t", "Give Rage Add", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t%t", "Prefix", "Give Rage Add", target_name, RoundFloat(rageMeter));
 		}
 		else
 		{
-			FShowActivity(client, "%t", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t%t", "Prefix", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
 		}
 	}
 	return Plugin_Handled;
@@ -2337,14 +2337,14 @@ public Action Command_SetInfiniteRage(int client, int args)
 				FReplyToCommand(client, "Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-				FShowActivity(client, "%t", "Self Infinite On", "_s");
+				CShowActivity(client, "%t%t", "Prefix", "Self Infinite On", "_s");
 			}
 			else
 			{
 				InfiniteRageActive[client]=false;
 				FReplyToCommand(client, "Infinite RAGE deactivated");
 				LogAction(client, client, "\"%L\" deactivated infinite RAGE on themselves", client);
-				FShowActivity(client, "%t", "Self Infinite Off", "_s");
+				CShowActivity(client, "%t%t", "Prefix", "Self Infinite Off", "_s");
 			}
 		}
 		return Plugin_Handled;
@@ -2385,11 +2385,11 @@ public Action Command_SetInfiniteRage(int client, int args)
 			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			if(tn_is_ml)
 			{
-				FShowActivity(client, "%t", "Give Infinite On", target_name);
+				CShowActivity(client, "%t%t", "Prefix", "Give Infinite On", target_name);
 			}
 			else
 			{
-				FShowActivity(client, "%t", "Give Infinite On", "_s", target_name);
+				CShowActivity(client, "%t%t", "Prefix", "Give Infinite On", "_s", target_name);
 			}
 		}
 		else
@@ -2399,11 +2399,11 @@ public Action Command_SetInfiniteRage(int client, int args)
 			LogAction(client, target_list[target], "\"%L\" deactivated infinite RAGE on \"%L\"", client, target_list[target]);
 			if(tn_is_ml)
 			{
-				FShowActivity(client, "%t", "Give Infinite Off", target_name);
+				CShowActivity(client, "%t%t", "Prefix", "Give Infinite Off", target_name);
 			}
 			else
 			{
-				FShowActivity(client, "%t", "Give Infinite Off", "_s", target_name);
+				CShowActivity(client, "%t%t", "Prefix", "Give Infinite Off", "_s", target_name);
 			}
 		}
 	}
@@ -2459,7 +2459,7 @@ public Action Command_AddCharge(int client, int args)
 				BossCharge[Boss[client]][abilitySlot]+=rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				FShowActivity(client, "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t%t", "Prefix", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
@@ -2507,11 +2507,11 @@ public Action Command_AddCharge(int client, int args)
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			if(tn_is_ml)
 			{
-				FShowActivity(client, "%t", "Give Charge Add", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t%t", "Prefix", "Give Charge Add", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				FShowActivity(client, "%t", "Give Charge Add", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t%t", "Prefix", "Give Charge Add", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 		}
 		else
@@ -2555,7 +2555,7 @@ public Action Command_SetCharge(int client, int args)
 				BossCharge[Boss[client]][abilitySlot]=rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				FShowActivity(client, "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t%t", "Prefix", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
@@ -2603,11 +2603,11 @@ public Action Command_SetCharge(int client, int args)
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			if(tn_is_ml)
 			{
-				FShowActivity(client, "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t%t", "Prefix", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				FShowActivity(client, "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t%t", "Prefix", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 		}
 		else
@@ -2625,7 +2625,7 @@ public bool BossTargetFilter(const char[] pattern, Handle clients)
 	{
 		if(IsValidClient(client) && FindValueInArray(clients, client)==-1)
 		{
-			if(Enabled && IsBoss(client))
+			if(IsBoss(client))
 			{
 				if(!non)
 				{
@@ -9004,7 +9004,7 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 
 public Action OnCallForMedic(int client, const char[] command, int args)
 {
-	if(!Enabled || !IsPlayerAlive(client) || CheckRoundState()!=1 || !IsBoss(client) || args!=2)
+	if(!IsPlayerAlive(client) || CheckRoundState()!=1 || !IsBoss(client) || args!=2)
 	{
 		return Plugin_Continue;
 	}
@@ -9103,7 +9103,7 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 public Action OnSuicide(int client, const char[] command, int args)
 {
 	bool canBossSuicide=GetConVarBool(cvarBossSuicide);
-	if(Enabled && IsBoss(client) && (canBossSuicide ? !CheckRoundState() : true) && CheckRoundState()!=2)
+	if(IsBoss(client) && (canBossSuicide ? !CheckRoundState() : true) && CheckRoundState()!=2)
 	{	
 		FPrintToChat(client, "%t", canBossSuicide ? "Boss Suicide Pre-round" : "Boss Suicide Denied");
 		return Plugin_Handled;
@@ -9113,7 +9113,7 @@ public Action OnSuicide(int client, const char[] command, int args)
 
 public Action OnChangeClass(int client, const char[] command, int args)
 {
-	if(Enabled && IsBoss(client) && IsPlayerAlive(client))
+	if(IsBoss(client) && IsPlayerAlive(client))
 	{
 		//Don't allow the boss to switch classes but instead set their *desired* class (for the next round)
 		char class[16];
@@ -11026,7 +11026,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 public Action TF2_OnPlayerTeleport(int client, int teleporter, bool &result)
 {
-	if(Enabled && IsBoss(client))
+	if(IsBoss(client))
 	{
 		switch(bossTeleportation)
 		{
@@ -11165,7 +11165,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 
 public int OnStompPost(int attacker, int victim, float damageMultiplier, float damageBonus, float jumpPower)
 {
-	if(Enabled && IsBoss(victim))
+	if(IsBoss(victim))
 	{
 		UpdateHealthBar();
 	}
@@ -11173,7 +11173,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 
 public Action RTD_CanRollDice(int client)
 {
-	if(Enabled && IsBoss(client) && !canBossRTD)
+	if(IsBoss(client) && !canBossRTD)
 	{
 		return Plugin_Handled;
 	}
@@ -11182,7 +11182,7 @@ public Action RTD_CanRollDice(int client)
 
 public Action RTD2_CanRollDice(int client)
 {
-	if(Enabled && IsBoss(client) && !canBossRTD)
+	if(IsBoss(client) && !canBossRTD)
 	{
 		return Plugin_Handled;
 	}
@@ -11191,7 +11191,7 @@ public Action RTD2_CanRollDice(int client)
 
 public Action OnGetMaxHealth(int client, int &maxHealth)
 {
-	if(Enabled && IsBoss(client))
+	if(IsBoss(client))
 	{
 		int boss=GetBossIndex(client);
 		SetEntityHealth(client, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1));
@@ -11381,7 +11381,7 @@ stock void RandomlyDisguise(int client)	//Original code was mecha's, but the ori
 
 public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname, bool &result)
 {
-	if(Enabled && IsBoss(client) && CheckRoundState()==1 && !TF2_IsPlayerCritBuffed(client) && !randomCrits[client])
+	if(IsBoss(client) && CheckRoundState()==1 && !TF2_IsPlayerCritBuffed(client) && !randomCrits[client])
 	{
 		result=false;
 		return Plugin_Changed;
@@ -12506,7 +12506,7 @@ void SetClientQueuePoints(int client, int points)
 
 stock bool IsBoss(int client)
 {
-	if(IsValidClient(client))
+	if(IsValidClient(client) && Enabled)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -13639,7 +13639,7 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 		Call_Finish(action);
 		if(rageMode[client]==1)
 		{
-			BossCharge[boss][slot]=BossCharge[boss][slot]-rageMin[client];	// This is weird...
+			BossCharge[boss][slot]-=rageMin[client];
 		}
 		else if(rageMode[client]==0)
 		{
@@ -13652,14 +13652,23 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 		int button;
 		switch(buttonMode)
 		{
+			case 1:
+			{
+				button=IN_DUCK|IN_ATTACK2;
+				bossHasRightMouseAbility[boss]=true;
+			}
 			case 2:
 			{
 				button=IN_RELOAD;
 				bossHasReloadAbility[boss]=true;
 			}
-			default:
+			case 3:
 			{
-				button=IN_DUCK|IN_ATTACK2;
+				button=IN_ATTACK3;
+			}
+			default:
+			{	// I really don't want players relying on ducking
+				button=IN_ATTACK2;
 				bossHasRightMouseAbility[boss]=true;
 			}
 		}
@@ -14317,7 +14326,7 @@ public Action VSH_OnGetRoundState(int &result)
 
 public void OnTakeDamagePost(int client, int attacker, int inflictor, float damage, int damagetype)
 {
-	if(Enabled && IsBoss(client))
+	if(IsBoss(client))
 	{
 		UpdateHealthBar();
 	}
@@ -14377,24 +14386,6 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 	}
 }
 
-stock void FShowActivity(int client, const char[] message, any ...)
-{
-	CCheckTrie();
-	if(client<0 || client>MaxClients)
-	{
-		ThrowError("Invalid client index %d", client);
-	}
-	if(client!=0 && !IsClientInGame(client))
-	{
-		ThrowError("Client %d is not in game", client);
-	}
-	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
-	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
-	VFormat(buffer2, sizeof(buffer2), buffer, 3);
-	CReplaceColorCodes(buffer2);
-	ShowActivity(client, "%s", buffer2);
-}
-
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	if(GetConVarBool(cvarHealthBar))
@@ -14436,7 +14427,7 @@ public void OnItemSpawned(int entity)
 
 public Action OnPickup(int entity, int client)  //Thanks friagram!
 {
-	if(IsBoss(client) && Enabled)
+	if(IsBoss(client))
 	{
 		char classname[32];
 		GetEntityClassname(entity, classname, sizeof(classname));
