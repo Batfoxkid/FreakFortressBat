@@ -391,7 +391,7 @@ native float FF2_GetClientShield(int client);
  * @param reduction	Shield's damage reduction
  * @noreturn
  */
-native void FF2_SetClientShield(int client, int entity, float health, float reduction=-1.0);
+native void FF2_SetClientShield(int client, int entity=0, float health=-1.0, float reduction=-1.0);
 
 /**
  * Removes a client's shield
