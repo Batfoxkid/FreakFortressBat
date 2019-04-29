@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."080"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."082"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -14214,13 +14214,19 @@ public int Native_GetClientShield(Handle plugin, int numParams)
 public int Native_SetClientShield(Handle plugin, int numParams)
 {
 	int client=GetNativeCell(1);
-	shield[client]=GetNativeCell(2);
-	shieldHP[client]=GetNativeCell(3)*GetConVarFloat(cvarShieldHealth)/100.0;
+	if(GetNativeCell(2)>0)
+	{
+		shield[client]=GetNativeCell(2);
+	}
+	if(GetNativeCell(3)>=0)
+	{
+		shieldHP[client]=GetNativeCell(3)*GetConVarFloat(cvarShieldHealth)/100.0;
+	}
 	if(GetNativeCell(4)>0)
 	{
 		shDmgReduction[client]=GetNativeCell(4);
 	}
-	else
+	else if(GetNativeCell(3)>0)
 	{
 		shDmgReduction[client]=GetNativeCell(3)*GetConVarFloat(cvarShieldResist)/100.0;
 	}
