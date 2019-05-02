@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."091"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."092"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -131,13 +131,13 @@ last time or to encourage others to do the same.
 #define CharsetCFG "characters.cfg"
 #define DebugLog "ff2_debug.log"
 #define DoorCFG "doors.cfg"
+#define ErrorLog "ff2_errors.log"
 #define MapCFG "maps.cfg"
 #define SpawnTeleportCFG "spawn_teleport.cfg"
 #define SpawnTeleportBlacklistCFG "spawn_teleport_blacklist.cfg"
 #define WeaponCFG "weapons.cfg"
 
 float shDmgReduction[MAXPLAYERS+1];
-char dLog[256];
 
 #if defined _steamtools_included
 bool steamtools=false;
@@ -305,6 +305,8 @@ ConVar cvarSelfHealing;
 ConVar cvarBotRage;
 ConVar cvarDamageToTele;
 ConVar cvarStatHud;
+ConVar cvarStatPlayers;
+ConVar cvarStatWin2Lose;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -578,6 +580,7 @@ static const char ff2versiontitles[][]=
 	"1.17.9",
 	"1.17.10",
 	"1.18.0",
+	"1.18.0",
 	"1.18.0"
 };
 
@@ -723,28 +726,34 @@ static const char ff2versiondates[][]=
 	"March 8, 2019",		//1.17.9
 	"March 8, 2019",		//1.17.9
 	"April 3, 2019",		//1.17.10
-	"Development",			//1.18.0
-	"Development"			//1.18.0
+	"May 6, 2019",			//1.18.0
+	"May 6, 2019",			//1.18.0
+	"May 6, 2019"			//1.18.0
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 141:  //1.18.0
+		case 142:  //1.18.0
 		{
 			DrawPanelText(panel, "1) [Core] Code is now in Transitional Syntax (Batfoxkid)");
 			DrawPanelText(panel, "2) [Bosses] Merged all default subplugins (Batfoxkid)");
-			DrawPanelText(panel, "3) [Bosses] Added new stun options (Batfoxkid from sarysa/SHADoW)");
-			DrawPanelText(panel, "4) [Gameplay] Added the ability to sap bosses or minions (Batfoxkid from SHADoW)");
-			DrawPanelText(panel, "5) [Bosses] Replaced 'ghost' with 'icon' setting for custom icon (Batfoxkid)");
+			DrawPanelText(panel, "3) [Gameplay] Added the StatTrak! (Batfoxkid from SHADoW)");
+			DrawPanelText(panel, "4) [Bosses] Added new stun options (Batfoxkid from sarysa/SHADoW)");
+			DrawPanelText(panel, "5) [Gameplay] Added the ability to sap bosses or minions (Batfoxkid from SHADoW)");
+		}
+		case 141:  //1.18.0
+		{
+			DrawPanelText(panel, "6) [Bosses] Replaced 'ghost' with 'icon' setting for custom icon (Batfoxkid)");
+			DrawPanelText(panel, "7) [Core] Added ff2_setcharge and ff2_addcharge (Batfoxkid)");
+			DrawPanelText(panel, "8) [Core] Debug commands use ShowActivity settings (Batfoxkid)");
+			DrawPanelText(panel, "9) [Bosses] Added 'healing' option to allow bosses to heal (Batfoxkid)");
+			DrawPanelText(panel, "10) [Gameplay] Bosses are now teleported to a random spawn when touching hazards (Chdata/sarysa/SHADoW)");	
 		}
 		case 140:  //1.18.0
 		{
-			DrawPanelText(panel, "6) [Core] Added ff2_setcharge and ff2_addcharge (Batfoxkid)");
-			DrawPanelText(panel, "7) [Core] Debug commands use ShowActivity settings (Batfoxkid)");
-			DrawPanelText(panel, "8) [Bosses] Added 'healing' option to allow bosses to heal (Batfoxkid)");
-			DrawPanelText(panel, "9) [Gameplay] Boss is now teleported to a random spawn when touching a 'trigger_hurt' location (Chdata/sarysa/SHADoW)");	
+			DrawPanelText(panel, "11) [Core] Error messages are moved into a custom file (SHADoW)");	
 		}
 		case 139:  //1.17.10
 		{
@@ -1808,6 +1817,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_SetClientShield", Native_SetClientShield);
 	CreateNative("FF2_RemoveClientShield", Native_RemoveClientShield);
 	CreateNative("FF2_Debug", Native_Debug);
+	CreateNative("FF2_SetCheats", Native_SetCheats);
+	CreateNative("FF2_GetCheats", Native_GetCheats);
 
 	PreAbility=CreateGlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
 	OnAbility=CreateGlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
@@ -1876,9 +1887,9 @@ public void OnPluginStart()
 			LogError("Failed to create directory at %s", pLog);
 	}
 
-	BuildPath(Path_SM, dLog, sizeof(dLog), "%s/%s", LogPath, DebugLog);
-	if(!FileExists(dLog))
-		OpenFile(dLog, "a+");
+	BuildPath(Path_SM, eLog, sizeof(eLog), "%s/%s", LogPath, ErrorLog);
+	if(!FileExists(eLog))
+		OpenFile(eLog, "a+");
 
 	cvarVersion=CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
 	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
@@ -1962,6 +1973,7 @@ public void OnPluginStart()
 	cvarBotRage=CreateConVar("ff2_bot_rage", "1", "0-Disable, 1-Bots can use rage when ready", _, true, 0.0, true, 1.0);
 	cvarDamageToTele=CreateConVar("ff2_tts_damage", "250.0", "Minimum damage boss needs to take in order to be teleported to spawn", _, true, 1.0);
 	cvarStatHud=CreateConVar("ff2_hud_stats", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client, 2-Show to anybody", _, true, -1.0, true, 2.0);
+	cvarStatPlayers=CreateConVar("ff2_stats_players", "6", "0-Disable, #-Players required to use StatTrak", _, true, 0.0, true, 34.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2132,7 +2144,7 @@ public void OnPluginStart()
 	AutoExecConfig(true, "FreakFortress2");
 
 	FF2Cookies = RegClientCookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
-	StatCookies = RegClientCookie("ff2_cookies_stats_beta", "Player's Statistics BETA", CookieAccess_Protected);
+	StatCookies = RegClientCookie("ff2_cookies_stats", "Player's Statistics", CookieAccess_Protected);
 	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
 
 	jumpHUD = CreateHudSynchronizer();
@@ -2148,7 +2160,7 @@ public void OnPluginStart()
 	cvarVersion.GetString(oldVersion, 64);
 	if(strcmp(oldVersion, PLUGIN_VERSION, false))
 	{
-		PrintToServer("[FF2] Warning: Your config may be outdated. Back up tf/cfg/sourcemod/FreakFortress2.cfg and delete it, and this plugin will generate a new one that you can then modify to your original values.");
+		LogToFile(eLog, "[Config] Warning: Your config may be outdated. Back up tf/cfg/sourcemod/FreakFortress2.cfg and delete it, and this plugin will generate a new one that you can then modify to your original values.");
 	}
 
 	LoadTranslations("freak_fortress_2.phrases");
@@ -2997,7 +3009,7 @@ public void CacheWeapons()
 	
 	if(!FileExists(config))
 	{
-		LogError("[FF2] Freak Fortress 2 disabled-can not find '%s'!", WeaponCFG);
+		LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-can not find '%s'!", WeaponCFG);
 		Enabled2=false;
 		return;
 	}
@@ -3005,7 +3017,7 @@ public void CacheWeapons()
 	kvWeaponMods = CreateKeyValues("Weapons");
 	if(!FileToKeyValues(kvWeaponMods, config))
 	{
-		LogError("[FF2] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
+		LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
 		Enabled2=false;
 		return;
 	}
@@ -3021,9 +3033,13 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	{
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, CharsetCFG);
 		if(FileExists(config))
-			LogError("[FF2] Freak Fortress 2 disabled-please move '%s' from '%s' to '%s'!", CharsetCFG, ConfigPath, DataPath);
+		{
+			LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-please move '%s' from '%s' to '%s'!", CharsetCFG, ConfigPath, DataPath);
+		}
 		else
-			LogError("[FF2] Freak Fortress 2 disabled-can not find '%s!", CharsetCFG);
+		{
+			LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-can not find '%s!", CharsetCFG);
+		}
 		Enabled2=false;
 		return;
 	}
@@ -3101,7 +3117,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 		int amount=ExplodeString(ChancesString, ";", stringChances, MAXSPECIALS*2, 8);
 		if(amount % 2)
 		{
-			LogError("[FF2 Bosses] Invalid chances string, disregarding chances");
+			LogToFile(eLog, "[Characters] Invalid chances string, disregarding chances");
 			strcopy(ChancesString, sizeof(ChancesString), "");
 			amount=0;
 		}
@@ -3114,7 +3130,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 			{
 				if(StringToInt(stringChances[chancesIndex])<=0)
 				{
-					LogError("[FF2 Bosses] Character %i cannot have a zero or negative chance, disregarding chances", chancesIndex-1);
+					LogToFile(eLog, "[Characters] Character %i cannot have a zero or negative chance, disregarding chances", chancesIndex-1);
 					strcopy(ChancesString, sizeof(ChancesString), "");
 					break;
 				}
@@ -3212,7 +3228,7 @@ public void LoadCharacter(const char[] character)
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s.cfg", ConfigPath, character);
 	if(!FileExists(config))
 	{
-		LogError("[FF2 Bosses] Character %s does not exist!", character);
+		LogToFile(eLog, "[Characters] Character %s does not exist!", character);
 		return;
 	}
 	BossKV[Specials]=CreateKeyValues("character");
@@ -3221,7 +3237,7 @@ public void LoadCharacter(const char[] character)
 	int version=KvGetNum(BossKV[Specials], "version", 1);
 	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
-		LogError("[FF2 Bosses] Character %s is only compatible with FF2 v%i!", character, version);
+		LogToFile(eLog, "[Boss] Character %s is only compatible with FF2 v%i!", character, version);
 		return;
 	}
 
@@ -3235,7 +3251,7 @@ public void LoadCharacter(const char[] character)
 			BuildPath(Path_SM, config, sizeof(config), "plugins/freaks/%s.ff2", plugin_name);
 			if(!FileExists(config))
 			{
-				LogError("[FF2 Bosses] Character %s needs plugin %s!", character, plugin_name);
+				LogToFile(eLog, "[Boss] Character %s needs plugin %s!", character, plugin_name);
 				return;
 			}
 		}
@@ -3274,7 +3290,7 @@ public void LoadCharacter(const char[] character)
 				}
 				else
 				{
-					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, config);
+					LogToFile(eLog, "[Boss] Character %s is missing file '%s'!", character, config);
 				}
 			}
 		}
@@ -3300,7 +3316,7 @@ public void LoadCharacter(const char[] character)
 					{
 						if(StrContains(key, ".phy")==-1)
 						{
-							LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+							LogToFile(eLog, "[Boss] Character %s is missing file '%s'!", character, key);
 						}
 					}
 				}
@@ -3323,7 +3339,7 @@ public void LoadCharacter(const char[] character)
 				}
 				else
 				{
-					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+					LogToFile(eLog, "[Boss] Character %s is missing file '%s'!", character, key);
 				}
 				Format(key, sizeof(key), "%s.vmt", config);
 				if(FileExists(key, true))
@@ -3332,7 +3348,7 @@ public void LoadCharacter(const char[] character)
 				}
 				else
 				{
-					LogError("[FF2 Bosses] Character %s is missing file '%s'!", character, key);
+					LogToFile(eLog, "[Boss] Character %s is missing file '%s'!", character, key);
 				}
 			}
 		}
@@ -3367,7 +3383,7 @@ public void PrecacheCharacter(int characterIndex)
 				}
 				else
 				{
-					LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
+					LogToFile(eLog, "[Boss] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
 				}
 			}
 		}
@@ -3390,7 +3406,7 @@ public void PrecacheCharacter(int characterIndex)
 					}
 					else
 					{
-						LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
+						LogToFile(eLog, "[Boss] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
 					}
 				}
 				else
@@ -3402,7 +3418,7 @@ public void PrecacheCharacter(int characterIndex)
 					}
 					else
 					{
-						LogError("[FF2 Bosses] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
+						LogToFile(eLog, "[Boss] Character %s is missing file '%s' in section '%s'!", bossName, filePath, section);
 					}
 				}
 			}
@@ -3617,11 +3633,11 @@ stock bool IsFF2Map()
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, MapCFG);
 		if(FileExists(config))
 		{
-			LogError("[FF2] Please move '%s' from '%s' to '%s'! Disabling Plugin!", MapCFG, ConfigPath, DataPath);
+			LogToFile(eLog, "[!!!] Please move '%s' from '%s' to '%s'! Disabling Plugin!", MapCFG, ConfigPath, DataPath);
 		}
 		else
 		{
-			LogError("[FF2] Unable to find %s, disabling plugin.", config);
+			LogToFile(eLog, "[!!!] Unable to find %s, disabling plugin.", config);
 		}
 		return false;
 	}
@@ -3629,7 +3645,7 @@ stock bool IsFF2Map()
 	Handle file=OpenFile(config, "r");
 	if(file==INVALID_HANDLE)
 	{
-		LogError("[FF2] Error reading maps from %s, disabling plugin.", config);
+		LogToFile(eLog, "[!!!] Error reading maps from %s, disabling plugin.", config);
 		return false;
 	}
 
@@ -3639,7 +3655,7 @@ stock bool IsFF2Map()
 		tries++;
 		if(tries==100)
 		{
-			LogError("[FF2] Breaking infinite loop when trying to check the map.");
+			LogToFile(eLog, "[!!!] Breaking infinite loop when trying to check the map.");
 			return false;
 		}
 
@@ -3702,7 +3718,7 @@ stock bool CheckToChangeMapDoors()
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, DoorCFG);
 		if(FileExists(config))
 		{
-			LogError("[FF2] Please move '%s' from '%s' to '%s'!", DoorCFG, ConfigPath, DataPath);
+			LogToFile(eLog, "[Doors] Please move '%s' from '%s' to '%s'!", DoorCFG, ConfigPath, DataPath);
 		}
 		if(!strncmp(currentmap, "vsh_lolcano_pb1", 15, false))
 		{
@@ -3751,11 +3767,11 @@ void CheckToTeleportToSpawn()
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, SpawnTeleportCFG);
 		if(FileExists(config))
 		{
-			LogError("[FF2] Please move '%s' from '%s' to '%s'!", SpawnTeleportCFG, ConfigPath, DataPath);
+			LogToFile(eLog, "[TTS] Please move '%s' from '%s' to '%s'!", SpawnTeleportCFG, ConfigPath, DataPath);
 		}
 		else
 		{
-			LogError("[FF2] Unable to find '%s', will not activate teleport to spawn.", config);
+			LogToFile(eLog, "[TTS] Unable to find '%s', will not activate teleport to spawn.", config);
 		}
 		return;
 	}
@@ -3782,7 +3798,7 @@ void CheckToTeleportToSpawn()
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportBlacklistCFG);
 	if(!FileExists(config))
 	{
-		LogError("[FF2] Unable to find %s, will not use map blacklist.", config);
+		LogToFile(eLog, "[TTS] Unable to find '%s', will not use map blacklist.", config);
 		return;
 	}
 
@@ -3983,7 +3999,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	PickCharacter(0, 0);
 	if((Special[0]<0) || !BossKV[Special[0]])
 	{
-		LogError("[FF2 Bosses] Couldn't find a boss!");
+		LogToFile(eLog, "[!!!] Couldn't find a boss!");
 		return Plugin_Continue;
 	}
 
@@ -4304,16 +4320,16 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		CheckToChangeMapDoors();
 		CheckToTeleportToSpawn();
 		FindCharacters();
-		ReloadConfigs=false;
+		ReloadConfigs = false;
 	}
 
-	executed=false;
-	executed2=false;
-	bool bossWin=false;
+	executed = false;
+	executed2 = false;
+	int bossWin = 0;
 	char sound[PLATFORM_MAX_PATH];
-	if((GetEventInt(event, "team")==BossTeam))
+	if((GetEventInt(event, "team") == BossTeam))
 	{
-		bossWin=true;
+		bossWin = 1;
 		if(RandomSound("sound_win", sound, sizeof(sound)))
 		{
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
@@ -4341,6 +4357,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	}
 	else
 	{
+		bossWin = -1;
 		if(RandomSound("sound_outtromusic_stalemate", sound, sizeof(sound)))
 		{
 			EmitSoundToAllExcept(SOUNDEXCEPT_MUSIC, sound, _, _, _, _, _, _, _, _, _, false);
@@ -4356,7 +4373,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	}
 
 	StopMusic();
-	DrawGameTimer=INVALID_HANDLE;
+	DrawGameTimer = INVALID_HANDLE;
 
 	bool isBossAlive;
 	for(int client; client<=MaxClients; client++)
@@ -4376,6 +4393,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			}
 			bossHasReloadAbility[client]=false;
 			bossHasRightMouseAbility[client]=false;
+			SaveClientStats(client);
 		}
 		else if(IsValidClient(client))
 		{
@@ -4387,6 +4405,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			KillstreakDamage[client]=0.0;
 			HazardDamage[client]=0.0;
 			SapperCooldown[client]=0.0;
+			SaveClientStats(client);
 		}
 
 		for(int timer; timer<=1; timer++)
@@ -4415,13 +4434,42 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		{
 			if(IsBoss(boss))
 			{
-				if(bossWin)
+				if(bossWin > 0)
 				{
 					AddClientStats(boss, STAT_WINS, 1);
 				}
-				else
+				else if(bossWin == 0)
 				{
 					AddClientStats(boss, STAT_LOSSES, 1);
+				}
+			}
+		}
+	}
+
+	int StatWin2Lose = GetConVarInt(cvarStatWin2Lose);
+	if(StatWin2Lose==2 || StatWin2Lose>3)
+	{
+		for(int boss; boss<=MaxClients; boss++)
+		{
+			if(IsBoss(boss))
+			{
+				FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
+				CSkipNextClient(boss);
+				FPrintToChatAll("%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+			}
+		}
+	}
+	else if(StatWin2Lose==1 || StatWin2Lose==3)
+	{
+		for(int boss; boss<=MaxClients; boss++)
+		{
+			if(IsBoss(boss))
+			{
+				FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
+				for(int client; client<=MaxClients; client++)
+				{
+					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
+						FPrintToChat("%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
 				}
 			}
 		}
@@ -4913,7 +4961,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			char bossName[64];
 			KvRewind(BossKV[Special[0]]);
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-			LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			Debug("{red}MALFUNCTION! NEED INPUT!");
 			if(MusicTimer[client]!=INVALID_HANDLE)
 			{
@@ -4980,7 +5028,7 @@ void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="
 			Format(artist[0], 256, "%T", "unknown_artist", client);
 			unknown2 = false;
 		}
-		if((GetConVarInt(cvarSongInfo) == 1) || (unknown1 && unknown2 && loop && (GetConVarInt(cvarSongInfo) == 0)))
+		if(GetConVarInt(cvarSongInfo)==1 || (unknown1 && unknown2 && loop && GetConVarInt(cvarSongInfo)==0))
 		{ 
 			FPrintToChat(client, "%t", "track_info", artist, name);
 		}
@@ -5263,6 +5311,12 @@ void SaveClientStats(int client)
 		return;
 	}
 
+	if(GetConVarInt(cvarStatPlayers) > playing)
+	{
+		PrintToConsole(client, "%t", "Low Players");
+		return;
+	}
+
 	Debug("StatTracker: Saved stats for %N", client);
 
 	char cookies[48];
@@ -5276,48 +5330,46 @@ void SaveClientStats(int client)
 
 void AddClientStats(int client, int type, int num)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client))
+	if(!IsValidClient(client) || CheatsUsed || GetConVarInt(cvarStatPlayers)>playing)
 		return;
-
-	if(CheatsUsed)
-	{
-		PrintToConsole(client, "%t", "Cheats Used");
-		return;
-	}
-
-	char cookies[48];
-	char cookieValues[8][6];
-	GetClientCookie(client, StatCookies, cookies, sizeof(cookies));
-	ExplodeString(cookies, " ", cookieValues, 8, 6);
-
-	Debug("StatTracker: Added %i in %i for %N", num, type, client);
 
 	switch(type)
 	{
 		case STAT_WINS:
+		{
 			BossWins[client] += num;
-
+			Debug("StatTracker: Added %i in boss wins for %N", num, client);
+		}
 		case STAT_LOSSES:
+		{
 			BossLosses[client] += num;
-
+			Debug("StatTracker: Added %i in boss losses for %N", num, client);
+		}
 		case STAT_KILLS:
+		{
 			BossKills[client] += num;
-
+			Debug("StatTracker: Added %i in boss kills for %N", num, client);
+		}
 		case STAT_DEATHS:
+		{
 			BossDeaths[client] += num;
-
+			Debug("StatTracker: Added %i in boss deaths for %N", num, client);
+		}
 		case STAT_SLAINS:
+		{
 			PlayerKills[client] += num;
-
+			Debug("StatTracker: Added %i in boss slains for %N", num, client);
+		}
 		case STAT_MVPS:
+		{
 			PlayerMVPs[client] += num;
-
+			Debug("StatTracker: Added %i in MVPs for %N", num, client);
+		}
 		default:
-			IntToString(StringToInt(cookieValues[6][0])+num, cookieValues[6][0], sizeof(cookieValues[][]));
+		{
+			Debug("StatTracker: Added %i in an unknown value for %N", num, client);
+		}
 	}
-
-	Format(cookies, sizeof(cookies), "%i %i %i %i %i %i %s %s", BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], PlayerKills[client], PlayerMVPs[client], cookieValues[6], cookieValues[7]);
-	SetClientCookie(client, StatCookies, cookies);
 }
 
 /*void SetClientStats(int client, int type, int num)
@@ -6845,7 +6897,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 	if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>1)
 	{
 		if(GetConVarInt(cvarHardcodeWep)<2)
-			LogError("[FF2] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
+			LogToFile(eLog, "[Weapons] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
 	}
 	else
 	{	
@@ -7676,7 +7728,7 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 			int attrib=StringToInt(weaponAttribsArray[i]);
 			if(!attrib)
 			{
-				LogError("Bad weapon attribute passed: %s ; %s", weaponAttribsArray[i], weaponAttribsArray[i+1]);
+				LogToFile(eLog, "[Weapons] Bad weapon attribute passed: %s ; %s", weaponAttribsArray[i], weaponAttribsArray[i+1]);
 				CloseHandle(weapon);
 				return INVALID_HANDLE;
 			}
@@ -10878,7 +10930,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker), attacker);
 					}
-					case 327:  //Claidheamh Mòr
+					case 327:  //Claidheamh MÃ²r
 					{
 						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
@@ -11993,7 +12045,7 @@ stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
 		{
 			if(!value)
 			{
-				LogError("[FF2 Bosses] Detected a divide by 0!");
+				LogToFile(eLog, "[Boss] Detected a divide by 0!");
 				bracket=0;
 				return;
 			}
@@ -12075,7 +12127,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 				OperateString(sumArray, bracket, value, sizeof(value), _operator);
 				if(GetArrayCell(_operator, bracket) != Operator_None)  //Something like (5*)
 				{
-					LogError("[FF2 Bosses] %s's %s formula has an invalid operator at character %i", bossName, key, i+1);
+					LogToFile(eLog, "[Boss] %s's %s formula has an invalid operator at character %i", bossName, key, i+1);
 					CloseHandle(sumArray);
 					CloseHandle(_operator);
 					return defaultValue;
@@ -12083,7 +12135,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 
 				if(--bracket<0)  //Something like (5))
 				{
-					LogError("[FF2 Bosses] %s's %s formula has an unbalanced parentheses at character %i", bossName, key, i+1);
+					LogToFile(eLog, "[Boss] %s's %s formula has an unbalanced parentheses at character %i", bossName, key, i+1);
 					CloseHandle(sumArray);
 					CloseHandle(_operator);
 					return defaultValue;
@@ -12138,7 +12190,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	CloseHandle(_operator);
 	if(result <= 0)
 	{
-		LogError("[FF2] %s has an invalid %s formula, using default!", bossName, key);
+		LogToFile(eLog, "[Boss] %s has an invalid %s formula, using default!", bossName, key);
 		return defaultValue;
 	}
 
@@ -12583,7 +12635,7 @@ void FindCompanion(int boss, int players, bool[] omit)
 			BossLivesMax[companion]=KvGetNum(BossKV[Special[companion]], "lives", 1);
 			if(BossLivesMax[companion]<=0)
 			{
-				LogError("[FF2 Bosses] Warning: Boss %s has an invalid amount of lives, setting to 1", companionName);
+				LogToFile(eLog, "[Boss] Boss %s has an invalid amount of lives, setting to 1", companionName);
 				BossLivesMax[companion]=1;
 			}
 			playersNeeded++;
@@ -12622,7 +12674,7 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int qual, c
 			int attrib=StringToInt(atts[i]);
 			if(!attrib)
 			{
-				LogError("Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
+				LogToFile(eLog, "[Boss] Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
 				CloseHandle(hWeapon);
 				return -1;
 			}
@@ -13480,7 +13532,7 @@ public Action Command_SkipSong(int client, int args)
 		{
 			char bossName[64];
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-			LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			if(MusicTimer[client]!=INVALID_HANDLE)
 			{
 				KillTimer(MusicTimer[client]);
@@ -13708,7 +13760,7 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 				{
 					char bossName[64];
 					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-					LogError("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, temp);
+					LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 					if(MusicTimer[param1]!=INVALID_HANDLE)
 					{
 						KillTimer(MusicTimer[param1]);
@@ -14396,7 +14448,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 	KvRewind(BossKV[Special[boss]]);
 	if(!BossKV[Special[boss]])
 	{
-		LogError("Failed KV: %i %i", boss, Special[boss]);
+		LogToFile(eLog, "[Boss] Failed KV: %i %i", boss, Special[boss]);
 		return false;
 	}
 
@@ -14627,9 +14679,9 @@ public int Native_Debug(Handle plugin, int numParams)
 	return GetConVarBool(cvarDebug);
 }
 
-public int Native_EnableCheats(Handle plugin, int numParams)
+public int Native_SetCheats(Handle plugin, int numParams)
 {
-	CheatsUsed = true;
+	CheatsUsed = GetNativeCell(1);
 }
 
 public int Native_GetCheats(Handle plugin, int numParams)
