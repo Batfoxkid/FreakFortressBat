@@ -408,6 +408,21 @@ native void FF2_RemoveClientShield(int client);
 native bool FF2_Debug();
 
 /**
+ * Sets the cheat status to turn of logging and statistics
+ *
+ * @param status	Disable statistics if true
+ * @noreturn
+ */
+native void FF2_SetCheats(bool status);
+
+/**
+ * Returns whether or not FF2 cheat commands was in the round
+ *
+ * @return			True if used, false otherwise
+ */
+native bool FF2_GetCheats();
+
+/**
  * FF2_ONABILITY IS KNOWN TO BE BUGGED AND WILL NOT BE FIXED TO PRESERVE BACKWARDS COMPATABILITY.  DO NOT USE IT.
  * Called when a Boss uses an ability (Rage, jump, teleport, etc)
  * Called every 0.2 seconds for charge abilities
