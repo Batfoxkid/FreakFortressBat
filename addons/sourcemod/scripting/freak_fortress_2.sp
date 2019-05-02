@@ -1863,6 +1863,7 @@ bool InfiniteRageActive[MAXPLAYERS+1]=false;
 
 // Boss Log
 char bLog[PLATFORM_MAX_PATH];
+char eLog[PLATFORM_MAX_PATH];
 char pLog[PLATFORM_MAX_PATH];
 
 // Stat Tracker
