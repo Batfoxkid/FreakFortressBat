@@ -4470,7 +4470,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				for(int client; client<=MaxClients; client++)
 				{
 					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
-						FPrintToChat("%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+						FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
 				}
 			}
 		}
