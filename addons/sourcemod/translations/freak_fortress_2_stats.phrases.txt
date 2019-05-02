@@ -4,58 +4,70 @@
 	{
 		"#format"	"{1:N},{2:d},{3:d}"
 		"en"		"{orange}{1}{default} has a total of {green}{2} wins {default}and {red}{3} losses{default}!"
+		"ru"		"У {orange}{1}{default} в итоге {green}{2} побед {default}и {red}{3} поражений{default}!"
 	}
 	"Cheats Used"	// Chat
 	{
 		"en"		"Cheat commands have been used this round, statistics aren't saved!"
+		"ru"		"Читы были использованы в этом раунде, статистика не сохранена!"
 	}
 	"Low Players"	// Chat
 	{
 		"en"		"There is not enough players in this round, statistics aren't saved!"
+		"ru"		"В этом раунде недостаточно игроков, статистика не сохранена!"
 	}
 	"Stats"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d}"
 		"en"		"Damage: {1} | Bosses Slain: {2} | MVPs: {3}"
+		"ru"		"Урон: {1} | Боссов убито: {2} | СЦИ: {3}"
 	}
 	"Stats Healing"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}"
+		"ru"		"Урон: {1} | Лечение: {2} | Боссов убито: {3} | СЦИ: {4}"
 	}
 	"Stats Boss"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}"
+		"ru"		"Побед: {1} | Поражений: {2} | Убийств: {3} | Смертей: {4}"
 	}
 	"Self Stats"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d}"
 		"en"		"You - Damage: {1} | Bosses Slain: {2} | MVPs: {3}\n"
+		"ru"		"Вы - Урон: {1} | Боссов убито: {2} | СЦИ: {3}\n"
 	}
 	"Self Stats Healing"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"You - Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}\n"
+		"ru"		"Вы - Урон: {1} | Лечение: {2} | Боссов убито: {3} | СЦИ: {4}\n"
 	}
 	"Self Stats Boss"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"You - Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}\n"
+		"ru"		"Вы - Побед: {1} | Поражений: {2} | Убийств: {3} | Смертей: {4}\n"
 	}
 	"Player Stats"	// HUD
 	{
 		"#format"	"{1:N},{2:d},{3:d},{4:d}"
 		"en"		"{1} - Damage: {2} | Bosses Slain: {3} | MVPs: {4}"
+		"ru"		"{1} - Урон: {2} | Боссов убито: {3} | СЦИ: {4}"
 	}
 	"Player Stats Healing"	// HUD
 	{
 		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d}"
 		"en"		"{1} - Damage: {2} | Healing: {3} | Bosses Slain: {4} | MVPs: {5}"
+		"ru"		"{1} - Урон: {2} | Лечение: {3} | Боссов убито: {4} | СЦИ: {5}"
 	}
 	"Player Stats Boss"	// HUD
 	{
 		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d}"
 		"en"		"{1} - Wins: {2} | Losses: {3} | Kills: {4} | Deaths: {5}"
+		"ru"		"{1} - Побед: {2} | Поражений: {3} | Убийств: {4} | Смертей: {5}"
 	}
 }
