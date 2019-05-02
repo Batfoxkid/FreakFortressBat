@@ -6,6 +6,11 @@
 		"en"		"{orange}{1}{default} has a total of {green}{2} wins {default}and {red}{3} losses{default}!"
 		"ru"		"У {orange}{1}{default} в итоге {green}{2} побед {default}и {red}{3} поражений{default}!"
 	}
+	"Win To Lose Self"	// Chat
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"You have a total of {green}{2} wins {default}and {red}{3} losses{default}!"
+	}
 	"Cheats Used"	// Chat
 	{
 		"en"		"Cheat commands have been used this round, statistics aren't saved!"
