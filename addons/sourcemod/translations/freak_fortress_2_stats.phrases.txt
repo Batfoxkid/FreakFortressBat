@@ -1,0 +1,61 @@
+"Phrases"
+{
+	"Win To Lose"	// Chat
+	{
+		"#format"	"{1:N},{2:d},{3:d}"
+		"en"		"{orange}{1}{default} has a total of {green}{2} wins {default}and {red}{3} losses{default}!"
+	}
+	"Cheats Used"	// Chat
+	{
+		"en"		"Cheat commands have been used this round, statistics aren't saved!"
+	}
+	"Low Players"	// Chat
+	{
+		"en"		"There is not enough players in this round, statistics aren't saved!"
+	}
+	"Stats"	// HUD
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"en"		"Damage: {1} | Bosses Slain: {2} | MVPs: {3}"
+	}
+	"Stats Healing"	// HUD
+	{
+		"#format"	"{1:d},{2:d},{3:d},{4:d}"
+		"en"		"Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}"
+	}
+	"Stats Boss"	// HUD
+	{
+		"#format"	"{1:d},{2:d},{3:d},{4:d}"
+		"en"		"Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}"
+	}
+	"Self Stats"	// HUD
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"en"		"You - Damage: {1} | Bosses Slain: {2} | MVPs: {3}\n"
+	}
+	"Self Stats Healing"	// HUD
+	{
+		"#format"	"{1:d},{2:d},{3:d},{4:d}"
+		"en"		"You - Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}\n"
+	}
+	"Self Stats Boss"	// HUD
+	{
+		"#format"	"{1:d},{2:d},{3:d},{4:d}"
+		"en"		"You - Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}\n"
+	}
+	"Player Stats"	// HUD
+	{
+		"#format"	"{1:N},{2:d},{3:d},{4:d}"
+		"en"		"{1} - Damage: {2} | Bosses Slain: {3} | MVPs: {4}"
+	}
+	"Player Stats Healing"	// HUD
+	{
+		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d}"
+		"en"		"{1} - Damage: {2} | Healing: {3} | Bosses Slain: {4} | MVPs: {5}"
+	}
+	"Player Stats Boss"	// HUD
+	{
+		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d}"
+		"en"		"{1} - Wins: {2} | Losses: {3} | Kills: {4} | Deaths: {5}"
+	}
+}
