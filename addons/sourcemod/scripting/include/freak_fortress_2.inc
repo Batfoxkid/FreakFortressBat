@@ -404,12 +404,10 @@ native void FF2_RemoveClientShield(int client);
 /**
  * Reports an error to FF2's error log
  *
- * @param buffer			Buffer for boss' character name
- * @param bufferLength		Length of buffer string
- *
+ * @param message		Message to error log
  * @noreturn
  */
-native void FF2_LogError(char[] buffer, int bufferLength);
+native void FF2_LogError(const char[] message, any ...);
 
 /**
  * Returns whether or not debug is enabled
