@@ -14740,10 +14740,11 @@ public int Native_RemoveClientShield(Handle plugin, int numParams)
 
 public int Native_LogError(Handle plugin, int numParams)
 {
-	int length=GetNativeCell(2);
-	char message[192];
-	SetNativeString(1, message, length);
-	LogToFile(eLog, "%s", message);
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH], message[192];
+	SetNativeString(1, message, sizeof(message));
+	Format(buffer, sizeof(buffer), "%s", message);
+	VFormat(buffer2, sizeof(buffer2), buffer, 2);
+	LogToFile(eLog, buffer2);
 }
 
 public int Native_Debug(Handle plugin, int numParams)
