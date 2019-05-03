@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."099"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."101"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1816,6 +1816,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_GetClientShield", Native_GetClientShield);
 	CreateNative("FF2_SetClientShield", Native_SetClientShield);
 	CreateNative("FF2_RemoveClientShield", Native_RemoveClientShield);
+	CreateNative("FF2_LogError", Native_LogError);
 	CreateNative("FF2_Debug", Native_Debug);
 	CreateNative("FF2_SetCheats", Native_SetCheats);
 	CreateNative("FF2_GetCheats", Native_GetCheats);
@@ -2146,7 +2147,7 @@ public void OnPluginStart()
 	AutoExecConfig(true, "FreakFortress2");
 
 	FF2Cookies = RegClientCookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
-	StatCookies = RegClientCookie("ff2_cookies_stats_beta", "Player's Statistics BETA", CookieAccess_Protected);
+	StatCookies = RegClientCookie("ff2_cookies_stats", "Player's Statistics", CookieAccess_Protected);
 	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
 
 	jumpHUD = CreateHudSynchronizer();
@@ -4430,7 +4431,9 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(!botBoss)
+	bool gainedPoint[MAXPLAYERS+1];
+	int statPlayers = GetConVarInt(cvarStatPlayers);
+	if(!botBoss && statPlayers<=playing && statPlayers>0)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -4439,24 +4442,25 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				if(bossWin > 0)
 				{
 					AddClientStats(boss, STAT_WINS, 1);
+					gainedPoint[boss]=true;
 				}
 				else if(bossWin == 0)
 				{
 					AddClientStats(boss, STAT_LOSSES, 1);
+					gainedPoint[boss]=true;
 				}
 			}
 		}
 	}
 
 	int StatWin2Lose = GetConVarInt(cvarStatWin2Lose);
-	int statPlayers = GetConVarInt(cvarStatPlayers);
 	if(StatWin2Lose==2 || StatWin2Lose>3)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
-				if((statPlayers<=playing && !botBoss) || StatWin2Lose>3)
+				if(gainedPoint[boss] || StatWin2Lose>3)
 				{
 					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
 					CSkipNextClient(boss);
@@ -4473,19 +4477,19 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			}
 		}
 	}
-	else if(StatWin2Lose==0 || StatWin2Lose==1 || StatWin2Lose==3)
+	else if(StatWin2Lose > -1)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
-				if((StatWin2Lose>0 && statPlayers<=playing && !botBoss) || StatWin2Lose==3)
+				if(StatWin2Lose>0 && (gainedPoint[boss] || StatWin2Lose>3))
 				{
 					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
 				}
 				for(int client; client<=MaxClients; client++)
 				{
-					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && IsValidClient(client))
+					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && IsValidClient(client) && (client!=boss || !(StatWin2Lose>0 && (gainedPoint[boss] || StatWin2Lose>3))))
 						FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
 				}
 			}
@@ -4558,15 +4562,15 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 	if(!botBoss && statPlayers>0)
 	{
-		if(statPlayers > playing)
+		if(statPlayers <= playing)
 		{
 			AddClientStats(top[0], STAT_MVPS, 1);
 		}
-		if(statPlayers*2 > playing)
+		if(statPlayers*2 <= playing)
 		{
 			AddClientStats(top[1], STAT_MVPS, 1);
 		}
-		if(statPlayers*3 > playing)
+		if(statPlayers*3 <= playing)
 		{
 			AddClientStats(top[2], STAT_MVPS, 1);
 		}
@@ -10964,7 +10968,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker), attacker);
 					}
-					case 327:  //Claidheamh Mòr
+					case 327:  //Claidheamh MÃ²r
 					{
 						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
@@ -14734,6 +14738,14 @@ public int Native_RemoveClientShield(Handle plugin, int numParams)
 	shield[client]=0;
 }
 
+public int Native_LogError(Handle plugin, int numParams)
+{
+	int length=GetNativeCell(2);
+	char message[192];
+	SetNativeString(1, message, length);
+	LogToFile(eLog, "%s", message);
+}
+
 public int Native_Debug(Handle plugin, int numParams)
 {
 	return GetConVarBool(cvarDebug);
@@ -14839,60 +14851,6 @@ public void OnTakeDamagePost(int client, int attacker, int inflictor, float dama
 	if(IsBoss(client))
 	{
 		UpdateHealthBar();
-	}
-}
-
-stock void FPrintToChat(int client, const char[] message, any ...)
-{
-	CCheckTrie();
-	if(client<=0 || client>MaxClients)
-	{
-		ThrowError("Invalid client index %i", client);
-	}
-	if(!IsClientInGame(client))
-	{
-		ThrowError("Client %i is not in game", client);
-	}
-	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
-	SetGlobalTransTarget(client);
-	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
-	VFormat(buffer2, sizeof(buffer2), buffer, 3);
-	CReplaceColorCodes(buffer2);
-	CSendMessage(client, buffer2);
-}
-
-stock void FPrintToChatAll(const char[] message, any ...)
-{
-	CCheckTrie();
-	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(!IsClientInGame(i) || CSkipList[i])
-		{
-			CSkipList[i] = false;
-			continue;
-		}
-		SetGlobalTransTarget(i);
-		Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
-		VFormat(buffer2, sizeof(buffer2), buffer, 2);
-		CReplaceColorCodes(buffer2);
-		CSendMessage(i, buffer2);
-	}
-}
-
-stock void FReplyToCommand(int client, const char[] message, any ...)
-{
-	char buffer[MAX_BUFFER_LENGTH];
-	SetGlobalTransTarget(client);
-	VFormat(buffer, sizeof(buffer), message, 3);
-	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
-	{
-		CRemoveTags(buffer, sizeof(buffer));
-		PrintToConsole(client, "[FF2] %s", buffer);
-	}
-	else
-	{
-		FPrintToChat(client, "%s", buffer);
 	}
 }
 
