@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."092"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."099"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1975,6 +1975,7 @@ public void OnPluginStart()
 	cvarDamageToTele=CreateConVar("ff2_tts_damage", "250.0", "Minimum damage boss needs to take in order to be teleported to spawn", _, true, 1.0);
 	cvarStatHud=CreateConVar("ff2_hud_stats", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client, 2-Show to anybody", _, true, -1.0, true, 2.0);
 	cvarStatPlayers=CreateConVar("ff2_stats_players", "6", "0-Disable, #-Players required to use StatTrak", _, true, 0.0, true, 34.0);
+	cvarStatWin2Lose=CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2145,7 +2146,7 @@ public void OnPluginStart()
 	AutoExecConfig(true, "FreakFortress2");
 
 	FF2Cookies = RegClientCookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
-	StatCookies = RegClientCookie("ff2_cookies_stats", "Player's Statistics", CookieAccess_Protected);
+	StatCookies = RegClientCookie("ff2_cookies_stats_beta", "Player's Statistics BETA", CookieAccess_Protected);
 	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
 
 	jumpHUD = CreateHudSynchronizer();
@@ -4448,28 +4449,43 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	}
 
 	int StatWin2Lose = GetConVarInt(cvarStatWin2Lose);
+	int statPlayers = GetConVarInt(cvarStatPlayers);
 	if(StatWin2Lose==2 || StatWin2Lose>3)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
-			if(IsBoss(boss))
+			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
-				FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
-				CSkipNextClient(boss);
-				FPrintToChatAll("%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+				if((statPlayers<=playing && !botBoss) || StatWin2Lose>3)
+				{
+					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
+					CSkipNextClient(boss);
+					FPrintToChatAll("%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+				}
+				else
+				{
+					for(int client; client<=MaxClients; client++)
+					{
+						if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
+							FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+					}
+				}
 			}
 		}
 	}
-	else if(StatWin2Lose==1 || StatWin2Lose==3)
+	else if(StatWin2Lose==0 || StatWin2Lose==1 || StatWin2Lose==3)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
-			if(IsBoss(boss))
+			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
-				FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
+				if((StatWin2Lose>0 && statPlayers<=playing && !botBoss) || StatWin2Lose==3)
+				{
+					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
+				}
 				for(int client; client<=MaxClients; client++)
 				{
-					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
+					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && IsValidClient(client))
 						FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
 				}
 			}
@@ -4540,14 +4556,28 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		CreateTimer(1.0, Timer_NineThousand, _, TIMER_FLAG_NO_MAPCHANGE);
 	}
 
+	if(!botBoss && statPlayers>0)
+	{
+		if(statPlayers > playing)
+		{
+			AddClientStats(top[0], STAT_MVPS, 1);
+		}
+		if(statPlayers*2 > playing)
+		{
+			AddClientStats(top[1], STAT_MVPS, 1);
+		}
+		if(statPlayers*3 > playing)
+		{
+			AddClientStats(top[2], STAT_MVPS, 1);
+		}
+	}
+
 	char leaders[3][32];
 	for(int i; i<=2; i++)
 	{
 		if(IsValidClient(top[i]))
 		{
 			GetClientName(top[i], leaders[i], 32);
-			if(!botBoss)
-				AddClientStats(top[i], STAT_MVPS, 1);
 		}
 		else
 		{
@@ -5303,7 +5333,7 @@ void SetupClientStats(int client)
 
 void SaveClientStats(int client)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client))
+	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client) || GetConVarInt(cvarStatPlayers)<1)
 		return;
 
 	if(CheatsUsed)
@@ -5331,7 +5361,7 @@ void SaveClientStats(int client)
 
 void AddClientStats(int client, int type, int num)
 {
-	if(!IsValidClient(client) || CheatsUsed || GetConVarInt(cvarStatPlayers)>playing)
+	if(!IsValidClient(client) || CheatsUsed || GetConVarInt(cvarStatPlayers)>playing || GetConVarInt(cvarStatPlayers)<1)
 		return;
 
 	switch(type)
@@ -8972,28 +9002,31 @@ public Action ClientTimer(Handle timer)
 				case TFClass_Medic:
 				{
 					int medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-					int charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
-					char mediclassname[64];
-					if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
+					if(IsValidEntity(medigun))
 					{
-						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+						int charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
+						char mediclassname[64];
+						if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 						{
-							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-							FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
-
-							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
+							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 							{
-								FakeClientCommandEx(client, "voicemenu 1 7");
-								FF2flags[client]|=FF2FLAG_UBERREADY;
+								SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
+								FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
+
+								if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
+								{
+									FakeClientCommandEx(client, "voicemenu 1 7");
+									FF2flags[client]|=FF2FLAG_UBERREADY;
+								}
 							}
 						}
-					}
-					else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
-					{
-						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+						else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
 						{
-							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
-								FF2flags[client]|=FF2FLAG_UBERREADY;
+							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+							{
+								if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
+									FF2flags[client]|=FF2FLAG_UBERREADY;
+							}
 						}
 					}
 				}
@@ -10931,7 +10964,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker), attacker);
 					}
-					case 327:  //Claidheamh MÃ²r
+					case 327:  //Claidheamh Mòr
 					{
 						if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0)
 						{
@@ -11503,43 +11536,68 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 			if(TellName)
 			{
 				if(Annotations==1)
+				{
 					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss Player", victim);
+				}
 				else if(Annotations==2)
+				{
 					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Boss Player", victim);
+				}
 				else
+				{
 					PrintHintText(attacker, "%t", "Goomba Stomp Boss Player", victim);
+				}
 			}
 			else
 			{
 				if(Annotations==1)
+				{
 					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss");
+				}
 				else if(Annotations==2)
+				{
 					ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Boss");
+				}
 				else
+				{
 					PrintHintText(attacker, "%t", "Goomba Stomp Boss");
+				}
 			}
 		}
 		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
 			{
-				char spcl[768];
+				char spcl[64];
+				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				if(Annotations==1)
+				{
 					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
+				}
 				else if(Annotations==2)
+				{
 					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", spcl);
+				}
 				else
+				{
 					PrintHintText(victim, "%t", "Goomba Stomped Player", spcl);
+				}
 			}
 			else
 			{
 				if(Annotations==1)
+				{
 					CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped");
+				}
 				else if(Annotations==2)
+				{
 					ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped");
+				}
 				else
+				{
 					PrintHintText(victim, "%t", "Goomba Stomped");
+				}
 			}
 		}
 		return Plugin_Changed;
@@ -11553,7 +11611,8 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		{
 			if(TellName)
 			{
-				char spcl[768];
+				char spcl[64];
+				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				if(Annotations==1)
 					CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Player", spcl);

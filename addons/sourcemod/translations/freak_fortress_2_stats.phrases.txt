@@ -1,4 +1,4 @@
-"Phrases"
+﻿"Phrases"
 {
 	"Win To Lose"	// Chat
 	{
@@ -9,7 +9,7 @@
 	"Win To Lose Self"	// Chat
 	{
 		"#format"	"{1:d},{2:d}"
-		"en"		"You have a total of {green}{2} wins {default}and {red}{3} losses{default}!"
+		"en"		"You have a total of {green}{1} wins {default}and {red}{2} losses{default}!"
 	}
 	"Cheats Used"	// Chat
 	{
