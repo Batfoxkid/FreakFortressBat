@@ -532,7 +532,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 					FF2_GetBossSpecial(boss, bossName, sizeof(bossName));
 					if(!FileExists(model, true))
 					{
-						LogError("[FF2 Bosses] Model '%s' doesn't exist!  Please check %s's config", model, bossName);
+						FF2_LogError("[Boss] Model '%s' doesn't exist!  Please check %s's config", model, bossName);
 						return;
 					}
 					else
@@ -657,7 +657,7 @@ public void OnProjectileSpawned(int entity)
 				{
 					char bossName[64];
 					FF2_GetBossSpecial(boss, bossName, sizeof(bossName));
-					LogError("[FF2 Bosses] Model %s (used by boss %s for ability %s) isn't precached!", model, bossName, PROJECTILE);
+					FF2_LogError("[Boss] Model %s (used by boss %s for ability %s) isn't precached!", model, bossName, PROJECTILE);
 				}
 			}
 		}
@@ -686,7 +686,7 @@ int SpawnManyObjects(char[] classname, int client, char[] model, int skin=0, int
 		int entity=CreateEntityByName(classname);
 		if(!IsValidEntity(entity))
 		{
-			LogError("[FF2] Invalid entity while spawning objects for New Defaults-check your configs!");
+			FF2_LogError("[Boss] Invalid entity while spawning objects for New Defaults-check your configs!");
 			continue;
 		}
 
@@ -1458,7 +1458,7 @@ stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
 		{
 			if(!value)
 			{
-				LogError("[FF2 Bosses] Detected a divide by 0 for rage_clone!");
+				FF2_LogError("[Boss] Detected a divide by 0 for rage_clone!");
 				bracket=0;
 				return;
 			}
@@ -1537,7 +1537,7 @@ public int ParseFormula(int boss, const char[] key, int defaultValue, int playin
 				OperateString(sumArray, bracket, value, sizeof(value), _operator);
 				if(GetArrayCell(_operator, bracket)!=Operator_None)  //Something like (5*)
 				{
-					LogError("[FF2 Bosses] %s's %s formula for rage_clone has an invalid operator at character %i", bossName, key, i+1);
+					FF2_LogError("[Boss] %s's %s formula for rage_clone has an invalid operator at character %i", bossName, key, i+1);
 					CloseHandle(sumArray);
 					CloseHandle(_operator);
 					return defaultValue;
@@ -1545,7 +1545,7 @@ public int ParseFormula(int boss, const char[] key, int defaultValue, int playin
 
 				if(--bracket<0)  //Something like (5))
 				{
-					LogError("[FF2 Bosses] %s's %s formula for rage_clone has an unbalanced parentheses at character %i", bossName, key, i+1);
+					FF2_LogError("[Boss] %s's %s formula for rage_clone has an unbalanced parentheses at character %i", bossName, key, i+1);
 					CloseHandle(sumArray);
 					CloseHandle(_operator);
 					return defaultValue;
@@ -1594,7 +1594,7 @@ public int ParseFormula(int boss, const char[] key, int defaultValue, int playin
 	CloseHandle(_operator);
 	if(result<=0)
 	{
-		LogError("[FF2 Bosses] %s has an invalid %s formula for rage_clone, using default health!", bossName, key);
+		FF2_LogError("[Boss] %s has an invalid %s formula for rage_clone, using default health!", bossName, key);
 		return defaultValue;
 	}
 	return result;
@@ -1979,7 +1979,7 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int quality
 			int attrib=StringToInt(attributes[i]);
 			if(!attrib)
 			{
-				LogError("Bad weapon attribute passed: %s ; %s", attributes[i], attributes[i+1]);
+				FF2_LogError("[Boss] Bad weapon attribute passed: %s ; %s", attributes[i], attributes[i+1]);
 				return -1;
 			}
 			TF2Items_SetAttribute(weapon, i2, attrib, StringToFloat(attributes[i+1]));
