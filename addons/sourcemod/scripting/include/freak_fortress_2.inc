@@ -402,6 +402,16 @@ native void FF2_SetClientShield(int client, int entity=0, float health=-1.0, flo
 native void FF2_RemoveClientShield(int client);
 
 /**
+ * Reports an error to FF2's error log
+ *
+ * @param buffer			Buffer for boss' character name
+ * @param bufferLength		Length of buffer string
+ *
+ * @noreturn
+ */
+native void FF2_LogError(char[] buffer, int bufferLength);
+
+/**
  * Returns whether or not debug is enabled
  * @return			True if enabled, false otherwise
  */
@@ -593,6 +603,65 @@ stock void Debug(char[] buffer, any ...)
 		VFormat(message, sizeof(message), buffer, 2);
 		CPrintToChatAll("{olive}[FF2 {darkorange}DEBUG{olive}]{default} %s", message);
 		PrintToServer("[FF2 DEBUG] %s", message);
+	}
+}
+
+/**
+ * Prints a More Colors message with FF2's prefix
+ *
+ * Uses the same params and return values as CPrintToChat, CPrintToChatAll, and CReplyToCommand
+ */
+stock void FPrintToChat(int client, const char[] message, any ...)
+{
+	CCheckTrie();
+	if(client<=0 || client>MaxClients)
+	{
+		ThrowError("Invalid client index %i", client);
+	}
+	if(!IsClientInGame(client))
+	{
+		ThrowError("Client %i is not in game", client);
+	}
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
+	SetGlobalTransTarget(client);
+	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
+	VFormat(buffer2, sizeof(buffer2), buffer, 3);
+	CReplaceColorCodes(buffer2);
+	CSendMessage(client, buffer2);
+}
+
+stock void FPrintToChatAll(const char[] message, any ...)
+{
+	CCheckTrie();
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(!IsClientInGame(i) || CSkipList[i])
+		{
+			CSkipList[i] = false;
+			continue;
+		}
+		SetGlobalTransTarget(i);
+		Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
+		VFormat(buffer2, sizeof(buffer2), buffer, 2);
+		CReplaceColorCodes(buffer2);
+		CSendMessage(i, buffer2);
+	}
+}
+
+stock void FReplyToCommand(int client, const char[] message, any ...)
+{
+	char buffer[MAX_BUFFER_LENGTH];
+	SetGlobalTransTarget(client);
+	VFormat(buffer, sizeof(buffer), message, 3);
+	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		CRemoveTags(buffer, sizeof(buffer));
+		PrintToConsole(client, "[FF2] %s", buffer);
+	}
+	else
+	{
+		FPrintToChat(client, "%s", buffer);
 	}
 }
 
