@@ -10,6 +10,7 @@
 	{
 		"#format"	"{1:d},{2:d}"
 		"en"		"You have a total of {green}{1} wins {default}and {red}{2} losses{default}!"
+		"ru"		"У вас в итоге {green}{2} побед {default}и {red}{3} поражений{default}!"
 	}
 	"Cheats Used"	// Chat
 	{
