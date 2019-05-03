@@ -920,7 +920,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 				if(solorage)
 				{
 					CreateTimer(duration, Timer_SoloRageResult, target);
-					CPrintToChatAll("%t%t", "Prefix", "Solo Rage", bossName);
+					FPrintToChatAll("%t", "Solo Rage", bossName);
 				}
 				TF2_StunPlayer(target, duration, slowdown, flagOverride, sounds ? client : 0);
 				if(strlen(particleEffect)>1)
@@ -937,11 +937,11 @@ public Action Timer_SoloRageResult(Handle timer, any client)
 
 	if(IsPlayerAlive(client))
 	{
-		CPrintToChatAll("%t%t", "Prefix", "Solo Rage Fail");
+		FPrintToChatAll("%t", "Solo Rage Fail");
 	}
 	else
 	{
-		CPrintToChatAll("%t%t", "Prefix", "Solo Rage Win");
+		FPrintToChatAll("%t", "Solo Rage Win");
 	}
 
 	return Plugin_Continue;
