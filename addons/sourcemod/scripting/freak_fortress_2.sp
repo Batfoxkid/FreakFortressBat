@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."103"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."105"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6544,9 +6544,13 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		dmgTriple[client]=GetConVarBool(cvarTripleWep);
 	}
 
-	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0 || KvGetNum(BossKV[Special[boss]], "rocketjump", -1)>=0)
+	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0)
 	{
 		selfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "knockback", -1));
+	}
+	else if(KvGetNum(BossKV[Special[boss]], "rocketjump", -1)>=0)
+	{
+		selfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "rocketjump", -1));
 	}
 	else
 	{
