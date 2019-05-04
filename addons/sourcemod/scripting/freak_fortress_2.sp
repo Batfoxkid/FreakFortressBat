@@ -6544,7 +6544,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		dmgTriple[client]=GetConVarBool(cvarTripleWep);
 	}
 
-	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0)
+	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0 || KvGetNum(BossKV[Special[boss]], "rocketjump", -1)>=0)
 	{
 		selfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "knockback", -1));
 	}
