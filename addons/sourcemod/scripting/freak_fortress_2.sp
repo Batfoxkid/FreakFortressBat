@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."105"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."109"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4461,7 +4461,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		{
 			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
-				if(gainedPoint[boss] || StatWin2Lose>3)
+				if(gainedPoint[boss] || StatWin2Lose>2)
 				{
 					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
 					CSkipNextClient(boss);
@@ -4484,7 +4484,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		{
 			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
-				if(StatWin2Lose>0 && (gainedPoint[boss] || StatWin2Lose>3))
+				if(StatWin2Lose>0 && (gainedPoint[boss] || StatWin2Lose>2))
 				{
 					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
 				}
@@ -8751,7 +8751,7 @@ public Action ClientTimer(Handle timer)
 						{
 							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
 							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
+								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 							}
 							else
 							{
@@ -8762,7 +8762,7 @@ public Action ClientTimer(Handle timer)
 						{
 							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
 							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
+								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 							}
 							else
 							{
