@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."113"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."114"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4253,56 +4253,43 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing)
+	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing2)
 	{
-		int nonbots=0;
-		for(int clients; clients<=MaxClients; clients++)
-		{
-			if(IsValidClient(clients))
-			{
-				if(!IsBoss(clients) && !IsFakeClient(clients))
-					nonbots++;
-			}
-		}
+		// Variables
+		char bossName[64], FormatedTime[64], MapName[64], Result[64], PlayerName[64], Authid[64];
 
-		if(GetConVarInt(cvarBossLog)<=nonbots)
+		// Set variables
+		int CurrentTime = GetTime();
+		FormatTime(FormatedTime, 100, "%X", CurrentTime);
+		GetCurrentMap(MapName, sizeof(MapName));
+		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+		for(int client; client<=MaxClients; client++)
 		{
-			// Variables
-			char bossName[64], FormatedTime[64], MapName[64], Result[64], PlayerName[64], Authid[64];
-
-			// Set variables
-			int CurrentTime = GetTime();
-			FormatTime(FormatedTime, 100, "%X", CurrentTime);
-			GetCurrentMap(MapName, sizeof(MapName));
-			Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
-			for(int client; client<=MaxClients; client++)
+			if(IsBoss(client))
 			{
-				if(IsBoss(client))
+				int boss=Boss[client];
+				if(!IsFakeClient(client))
 				{
-					int boss=Boss[client];
-					if(!IsFakeClient(client))
-					{
-						GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
-						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
-					}
-					else
-					{
-						Format(PlayerName, sizeof(PlayerName), "Bot");
-						Format(Authid, sizeof(Authid), "Bot");
-					}
-					KvRewind(BossKV[Special[boss]]);
-					KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
-					BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+					GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+					GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
 				}
+				else
+				{
+					Format(PlayerName, sizeof(PlayerName), "Bot");
+					Format(Authid, sizeof(Authid), "Bot");
+				}
+				KvRewind(BossKV[Special[boss]]);
+				KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
 			}
-
-			// Write
-			Handle bossLog = OpenFile(bLog, "a+");
-
-			WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
-			WriteFileLine(bossLog, "");
-			CloseHandle(bossLog);
 		}
+
+		// Write
+		Handle bossLog = OpenFile(bLog, "a+");
+
+		WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, MapName, PlayerName, Authid, Result);
+		WriteFileLine(bossLog, "");
+		CloseHandle(bossLog);
 	}
 
 	if(ReloadFF2)
