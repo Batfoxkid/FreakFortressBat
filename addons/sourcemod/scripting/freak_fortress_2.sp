@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."109"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."113"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -167,6 +167,7 @@ bool blueBoss;
 int OtherTeam=2;
 int BossTeam=3;
 int playing;
+int playing2;
 int healthcheckused;
 int RedAlivePlayers;
 int BlueAlivePlayers;
@@ -3895,6 +3896,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	}
 
 	playing=0;
+	playing2=0;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		Damage[client]=0;
@@ -3906,6 +3908,8 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		if(IsValidClient(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 		{
 			playing++;
+			if(!IsFakeClient(client))
+				playing2++;
 		}
 	}
 
@@ -3960,6 +3964,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	Enabled=true;
 	EnableSubPlugins();
 	CheckArena();
+	StopMusic();
 
 	bool[] omit = new bool[MaxClients+1];
 	Boss[0]=GetClientWithMostQueuePoints(omit);
@@ -4434,7 +4439,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 	bool gainedPoint[MAXPLAYERS+1];
 	int statPlayers = GetConVarInt(cvarStatPlayers);
-	if(!botBoss && statPlayers<=playing && statPlayers>0)
+	if(!botBoss && statPlayers<=playing2 && statPlayers>0)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -4471,7 +4476,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				{
 					for(int client; client<=MaxClients; client++)
 					{
-						if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
+						if(IsValidClient(client) && CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
 							FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
 					}
 				}
@@ -4563,15 +4568,15 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 	if(!botBoss && statPlayers>0)
 	{
-		if(statPlayers <= playing)
+		if(statPlayers <= playing2)
 		{
 			AddClientStats(top[0], STAT_MVPS, 1);
 		}
-		if(statPlayers*2 <= playing)
+		if(statPlayers*2 <= playing2)
 		{
 			AddClientStats(top[1], STAT_MVPS, 1);
 		}
-		if(statPlayers*3 <= playing)
+		if(statPlayers*3 <= playing2)
 		{
 			AddClientStats(top[2], STAT_MVPS, 1);
 		}
@@ -4900,6 +4905,7 @@ public Action StartBossTimer(Handle timer)
 	}
 
 	playing=0;
+	playing2=0;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
@@ -4909,16 +4915,18 @@ public Action StartBossTimer(Handle timer)
 			{
 				playing++;
 				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
+				if(!IsFakeClient(client))
+					playing2++;
 			}
 		}
 	}
 
-	int playing2=playing+1;
+	int players=playing+1;
 	for(int boss; boss<=MaxClients; boss++)
 	{
 		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 		{
-			BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing2))*(float(playing2)-1.0), 1.0341)+2046.0));
+			BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
 			BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
 			BossHealthLast[boss]=BossHealth[boss];
 		}
@@ -5124,7 +5132,7 @@ void StopMusic(int client=0, bool permanent=false)
 				}
 			}
 
-			strcopy(currentBGM[client], PLATFORM_MAX_PATH, "");
+			//strcopy(currentBGM[client], PLATFORM_MAX_PATH, "");
 			if(permanent)
 			{
 				playBGM[client]=false;
@@ -5347,7 +5355,7 @@ void SaveClientStats(int client)
 		return;
 	}
 
-	if(GetConVarInt(cvarStatPlayers) > playing)
+	if(GetConVarInt(cvarStatPlayers) > playing2)
 	{
 		PrintToConsole(client, "%t", "Low Players");
 		return;
@@ -5366,7 +5374,7 @@ void SaveClientStats(int client)
 
 void AddClientStats(int client, int type, int num)
 {
-	if(!IsValidClient(client) || CheatsUsed || GetConVarInt(cvarStatPlayers)>playing || GetConVarInt(cvarStatPlayers)<1)
+	if(!IsValidClient(client) || CheatsUsed || GetConVarInt(cvarStatPlayers)>playing2 || GetConVarInt(cvarStatPlayers)<1)
 		return;
 
 	switch(type)
@@ -7146,14 +7154,14 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 155:  //Southern Hospitality
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 149 ; 6 ; 1 ; 0.5 ; 408 ; 1", true);
+				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.6 ; 20 ; 1 ; 61 ; 1 ; 408 ; 1");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
 					return Plugin_Changed;
 				}
 			}
-			case 171, 325, 452, 648, 812, 833:  //Tribalman's Shiv, Boston Basher, Three-Rune Blade, Wrap Assassin, Guillotine(s)
+			case 171:  //Tribalman's Shiv
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 408 ; 1");
 				if(itemOverride!=INVALID_HANDLE)
@@ -7262,6 +7270,15 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 317:  //Candy Cane
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "740 ; 0.5 ; 239 ; 0.75", true);
+				if(itemOverride!=INVALID_HANDLE)
+				{
+					item=itemOverride;
+					return Plugin_Changed;
+				}
+			}
+			case 325, 452, 812, 833:  //Boston Basher, Three-Rune Blade, Flying Guillotine(s)
+			{
+				Handle itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 138 ; 0.67 ; 408 ; 1");
 				if(itemOverride!=INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7499,6 +7516,15 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 					return Plugin_Changed;
 				}
 			}
+			case 648:  //Wrap Assassin
+			{
+				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.53 ; 20 ; 1 ; 138 ; 0.67 ; 408 ; 1");
+				if(itemOverride!=INVALID_HANDLE)
+				{
+					item=itemOverride;
+					return Plugin_Changed;
+				}
+			}
 			case 656:  //Holiday Punch
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "178 ; 0.001", true);
@@ -7635,7 +7661,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			Handle itemOverride;
 			if(iItemDefinitionIndex==35)  //Kritzkrieg
 			{
-				itemOverride=PrepareItemHandle(item, _, _, "10 ; 1.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 547 ; 0.75");
+				itemOverride=PrepareItemHandle(item, _, _, "10 ; 2.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 314 ; 3 ; 547 ; 0.75");
 				//10: +125% faster charge rate
 				//11: +50% overheal bonus
 				//18: Kritzkrieg uber
@@ -12148,7 +12174,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	KvGetString(BossKV[Special[boss]], "name", bossName, sizeof(bossName), "=Failed name=");
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
-	int playing2 = playing + 1;
+	int players = playing + 1;
 	int size = 1;
 	int matchingBrackets;
 	for(int i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
@@ -12222,7 +12248,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 			}
 			case 'n', 'x':  //n and x denote player variables
 			{
-				Operate(sumArray, bracket, float(playing2), _operator);
+				Operate(sumArray, bracket, float(players), _operator);
 			}
 			case '+', '-', '*', '/', '^':
 			{
