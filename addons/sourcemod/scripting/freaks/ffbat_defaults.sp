@@ -883,7 +883,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 	{
 		for(int target=1; target<=MaxClients; target++)
 		{
-			if(IsClientInGame(target) && IsPlayerAlive(target) && ((friendly==1 || GetClientTeam(target)!=BossTeam) || target!=client))
+			if(IsClientInGame(target) && IsPlayerAlive(target) && target!=client && (friendly>0 || GetClientTeam(target)!=BossTeam))
 			{
 				GetEntPropVector(target, Prop_Send, "m_vecOrigin", targetPosition);
 				if((!TF2_IsPlayerInCondition(target, TFCond_Ubercharged) || (ignore>0 && ignore!=2)) && (!TF2_IsPlayerInCondition(target, TFCond_MegaHeal) || ignore>1) && GetVectorDistance(bossPosition, targetPosition)<=distance)
@@ -909,7 +909,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 	}
 	for(int target=1; target<=MaxClients; target++)
 	{
-		if(IsClientInGame(target) && IsPlayerAlive(target) && ((friendly==0 || GetClientTeam(target)!=BossTeam) && target!=client))
+		if(IsClientInGame(target) && IsPlayerAlive(target) && target!=client && (friendly>0 || GetClientTeam(target)!=BossTeam))
 		{
 			GetEntPropVector(target, Prop_Send, "m_vecOrigin", targetPosition);
 			if((!TF2_IsPlayerInCondition(target, TFCond_Ubercharged) || (ignore>0 && ignore!=2)) && (!TF2_IsPlayerInCondition(target, TFCond_MegaHeal) || ignore>1) && GetVectorDistance(bossPosition, targetPosition)<=distance)
@@ -1603,7 +1603,7 @@ public int ParseFormula(int boss, const char[] key, int defaultValue, int playin
 
 /*	Trade Spam	*/
 
-public Action Timer_Demopan_Rage(Handle timer, any count)  //TODO: Make this rage configurable
+public Action Timer_Demopan_Rage(Handle timer, any count)	//TODO: Make this rage configurable
 {
 	if(count==13)  //Rage has finished-reset it in 6 seconds (trade_0 is 100% transparent apparently)
 	{
@@ -1618,7 +1618,9 @@ public Action Timer_Demopan_Rage(Handle timer, any count)  //TODO: Make this rag
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client)!=BossTeam)
+			{
 				ClientCommand(client, overlay);
+			}
 		}
 		SetCommandFlags("r_screenoverlay", GetCommandFlags("r_screenoverlay") & FCVAR_CHEAT);  //Reset the cheat permissions
 
