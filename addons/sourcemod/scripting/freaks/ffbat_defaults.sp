@@ -132,7 +132,7 @@ public void OnPluginStart2()
 
 	int fversion[3];
 	FF2_GetForkVersion(fversion);
-	if(fversion[0]==1 && fversion[1]<18)
+	if(fversion[0]!=1 || fversion[1]<18)
 	{
 		PrintToServer("[FF2] Warning: This subplugin depends on at least Unofficial FF2 v1.18.0");
 		PrintToServer("[FF2] Warning: \"rage_stun\" args 10 and up are disabled");
