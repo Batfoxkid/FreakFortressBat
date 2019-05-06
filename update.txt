@@ -4,15 +4,21 @@
 	{
 		"Version"
 		{
-			"Latest"	"1.17.10"
-			"Previous"	"1.17.9"
+			"Latest"	"Unofficial 1.18.0"
+			"Previous"	"Unofficial 1.17.10"
 		}
 
-		"Notes"			"Added 'theme' setting for certain bosses blocked with ff2_theme"
-		"Notes"			"weapons.cfg is applied first than hardcoded, when enabled"
-		"Notes"			"Added Russian preference translations"
-		"Notes"			"Players with class info off won't view boss description in boss menu"
-		"Notes"			"Fixed sound_lastman playing multiple times in a round"
+		"Notes"			"Code is now in Transitional Syntax"
+		"Notes"			"Merged all default subplugins"
+		"Notes"			"Added the StatTrak!"
+		"Notes"			"Added new stun options"
+		"Notes"			"Added the ability to sap bosses or minions"
+		"Notes"			"Replaced 'ghost' with 'icon' setting for custom icon"
+		"Notes"			"Added ff2_setcharge and ff2_addcharge"
+		"Notes"			"Debug commands use ShowActivity settings"
+		"Notes"			"Added 'healing' option to allow bosses to heal"
+		"Notes"			"Bosses are now teleported to a random spawn when touching hazards"
+		"Notes"			"Error messages are moved into a custom file"
 	}
 
 	"Files"
@@ -21,16 +27,25 @@
 		{
 			"Plugin"	"Path_SM/plugins/freak_fortress_2.smx"
 			"Source"	"Path_SM/scripting/freak_fortress_2.sp"
+			"Plugin"	"Path_SM/plugins/freaks/ffbat_defaults.ff2"
+			"Source"	"Path_SM/scripting/freaks/ffbat_defaults.sp"
+			"Source"	"Path_SM/scripting/include/freak_fortress_2.inc"
+			"Source"	"Path_SM/scripting/include/freak_fortress_2_subplugin.inc"
+			"Source"	"Path_SM/scripting/include/freak_fortress_2_vsh_feedback.inc"
 			"Plugin"	"Path_SM/translations/freak_fortress_2.phrases.txt"
 			"Plugin"	"Path_SM/translations/freak_fortress_2_prefs.phrases.txt"
+			"Plugin"	"Path_SM/translations/freak_fortress_2_stats.phrases.txt"
 		}
 
 		"Plugin"		"Path_SM/plugins/freak_fortress_2.smx"
 		"Source"		"Path_SM/scripting/freak_fortress_2.sp"
+		"Plugin"		"Path_SM/plugins/freaks/ffbat_defaults.ff2"
+		"Source"		"Path_SM/scripting/freaks/ffbat_defaults.sp"
 		"Source"		"Path_SM/scripting/include/freak_fortress_2.inc"
 		"Source"		"Path_SM/scripting/include/freak_fortress_2_subplugin.inc"
 		"Source"		"Path_SM/scripting/include/freak_fortress_2_vsh_feedback.inc"
 		"Plugin"		"Path_SM/translations/freak_fortress_2.phrases.txt"
 		"Plugin"		"Path_SM/translations/freak_fortress_2_prefs.phrases.txt"
+		"Plugin"		"Path_SM/translations/freak_fortress_2_stats.phrases.txt"
 	}
 }
