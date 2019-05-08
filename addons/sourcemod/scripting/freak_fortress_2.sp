@@ -79,11 +79,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "18"
-#define FORK_STABLE_REVISION "0"
+#define FORK_STABLE_REVISION "1"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Build"
+#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."116"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -8298,7 +8298,41 @@ public Action Command_Charset(int client, int args)
 {
 	if(!args)
 	{
-		FReplyToCommand(client, "Usage: ff2_charset <charset>");
+		if(!client)
+		{
+			ReplyToCommand(client, "[SM] Usage: ff2_charset <charset>");
+			return Plugin_Handled;
+		}
+		if(IsVoteInProgress())
+		{
+			ReplyToCommand(client, "[SM] %t", "Vote in Progress");
+			return Plugin_Handled;
+		}
+
+		Handle menu=CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
+		SetMenuTitle(menu, "Charset");
+
+		char config[PLATFORM_MAX_PATH], charset[64];
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
+
+		Handle Kv=CreateKeyValues("");
+		FileToKeyValues(Kv, config);
+		int total, charsets;
+		AddMenuItem(menu, "Random", "Random");
+		do
+		{
+			total++;
+			KvGetSectionName(Kv, charset, sizeof(charset));
+			AddMenuItem(menu, charset, charset);
+
+			if(KvGetNum(Kv, "hidden", 0))
+				continue;
+
+			charsets++;
+			validCharsets[charsets]=total;
+		}
+		while(KvGotoNextKey(Kv));
+		CloseHandle(Kv);
 		return Plugin_Handled;
 	}
 
@@ -8337,11 +8371,66 @@ public Action Command_Charset(int client, int args)
 	return Plugin_Handled;
 }
 
+public int Command_CharsetH(Handle menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			FF2CharSet=choice ? choice-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;
+
+			char nextmap[32];
+			GetConVarString(cvarNextmap, nextmap, sizeof(nextmap));
+			GetMenuItem(menu, choice, FF2CharSetString, sizeof(FF2CharSetString));
+			FPrintToChat(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
+			isCharSetSelected=true;
+		}
+	}
+}
+
 public Action Command_LoadCharset(int client, int args)
 {
 	if(!args)
 	{
-		FReplyToCommand(client, "Usage: ff2_loadcharset <charset>");
+		if(!client)
+		{
+			ReplyToCommand(client, "[SM] Usage: ff2_loadcharset <charset>");
+			return Plugin_Handled;
+		}
+		if(IsVoteInProgress())
+		{
+			ReplyToCommand(client, "[SM] %t", "Vote in Progress");
+			return Plugin_Handled;
+		}
+
+		Handle menu=CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
+		SetMenuTitle(menu, "Charset");
+
+		char config[PLATFORM_MAX_PATH], charset[64];
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
+
+		Handle Kv=CreateKeyValues("");
+		FileToKeyValues(Kv, config);
+		int total, charsets;
+		AddMenuItem(menu, "Random", "Random");
+		do
+		{
+			total++;
+			KvGetSectionName(Kv, charset, sizeof(charset));
+			AddMenuItem(menu, charset, charset);
+
+			if(KvGetNum(Kv, "hidden", 0))
+				continue;
+
+			charsets++;
+			validCharsets[charsets]=total;
+		}
+		while(KvGotoNextKey(Kv));
+		CloseHandle(Kv);
 		return Plugin_Handled;
 	}
 	
@@ -8389,8 +8478,43 @@ public Action Command_LoadCharset(int client, int args)
 	return Plugin_Handled;
 }
 
+public int Command_LoadCharsetH(Handle menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			FF2CharSet = choice ? choice-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;
+
+			FF2CharSet = i;
+			LoadCharset = true;
+			if(CheckRoundState()==0 || CheckRoundState()==1)
+			{
+				FReplyToCommand(client, "The current character set is set to be switched to %i!", FF2CharSet);
+			}
+			else
+			{
+				FReplyToCommand(client, "Character set has been switched to %i", FF2CharSet);
+				FindCharacters();
+				strcopy(FF2CharSetString, 2, "");
+				LoadCharset = false;
+			}
+		}
+	}
+}
+
 public Action Command_ReloadFF2(int client, int args)
 {
+	if(ReloadFF2)
+	{
+		FReplyToCommand(client, "The plugin is no longer set to reload.");
+		ReloadFF2 = false;
+		return Plugin_Handled;
+	}
 	ReloadFF2 = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
@@ -8405,6 +8529,12 @@ public Action Command_ReloadFF2(int client, int args)
 
 public Action Command_ReloadCharset(int client, int args)
 {
+	if(LoadCharset)
+	{
+		FReplyToCommand(client, "Current character set no longer set to reload!");
+		LoadCharset = false;
+		return Plugin_Handled;
+	}
 	LoadCharset = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
@@ -8419,6 +8549,12 @@ public Action Command_ReloadCharset(int client, int args)
 
 public Action Command_ReloadFF2Weapons(int client, int args)
 {
+	if(ReloadWeapons)
+	{
+		FReplyToCommand(client, "%s is no longer set to reload!", WeaponCFG);
+		ReloadWeapons = false;
+		return Plugin_Handled;
+	}
 	ReloadWeapons = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
@@ -8433,6 +8569,12 @@ public Action Command_ReloadFF2Weapons(int client, int args)
 
 public Action Command_ReloadFF2Configs(int client, int args)
 {
+	if(ReloadConfigs)
+	{
+		FReplyToCommand(client, "All configs are no longer set to be reloaded!");
+		ReloadConfigs = false;
+		return Plugin_Handled;
+	}
 	ReloadConfigs = true;
 	if(CheckRoundState()==0 || CheckRoundState()==1)
 	{
@@ -8449,38 +8591,31 @@ public Action Command_ReloadFF2Configs(int client, int args)
 
 public Action Command_ReloadSubPlugins(int client, int args)
 {
-	if(Enabled)
+	if(!Enabled)
 	{
-		switch(args)
-		{
-			case 0: // Reload ALL subplugins
-			{
-				DisableSubPlugins(true);
-				EnableSubPlugins(true);
-				FReplyToCommand(client, "Reloaded subplugins!");
-			}
-			case 1: // Reload a specific subplugin
-			{
-				char pluginName[PLATFORM_MAX_PATH];
-				GetCmdArg(1, pluginName, sizeof(pluginName));
-				BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/freaks/%s.ff2", pluginName);
-				if(!FileExists(pluginName))
-				{
-					FReplyToCommand(client, "Subplugin %s does not exist!", pluginName);
-					return Plugin_Handled;
-				}	
-				ReplaceString(pluginName, sizeof(pluginName), "addons/sourcemod/plugins/freaks/", "freaks/", false);
-				ServerCommand("sm plugins unload %s", pluginName);
-				ServerCommand("sm plugins load %s", pluginName);
-				ReplaceString(pluginName, sizeof(pluginName), "freaks/", " ", false);
-				FReplyToCommand(client, "Reloaded subplugin %s!", pluginName);		
-			}
-			default:
-			{
-				ReplyToCommand(client, "[SM] Usage: ff2_reload_subplugins <plugin name> (omit <plugin name> to reload ALL subplugins)");	
-			}
-		}
+		FReplyToCommand(client, "Freak Fortress 2 isn't running!");
+		return Plugin_Handled;
 	}
+	if(!args) // Reload ALL subplugins
+	{
+		DisableSubPlugins(true);
+		EnableSubPlugins(true);
+		FReplyToCommand(client, "Reloaded all subplugins!");
+		return Plugin_Handled;
+	}
+	char pluginName[PLATFORM_MAX_PATH], pluginName2[PLATFORM_MAX_PATH];
+	GetCmdArg(1, pluginName, sizeof(pluginName));
+	Format(pluginName, sizeof(pluginName), "freaks/%s", pluginName);
+	BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/%s.ff2", pluginName2);
+	if(!FileExists(pluginName2))
+	{
+		FReplyToCommand(client, "Subplugin %s does not exist!", pluginName2);
+		return Plugin_Handled;
+	}	
+	ServerCommand("sm plugins unload %s", pluginName);
+	ServerCommand("sm plugins load %s", pluginName);
+	ReplaceString(pluginName, sizeof(pluginName), "freaks/", " ", false);
+	FReplyToCommand(client, "Reloaded subplugin %s!", pluginName);
 	return Plugin_Handled;
 }
 
