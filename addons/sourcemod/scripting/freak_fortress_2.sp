@@ -8489,8 +8489,6 @@ public int Command_LoadCharsetH(Handle menu, MenuAction action, int client, int 
 		case MenuAction_Select:
 		{
 			FF2CharSet = choice ? choice-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;
-
-			FF2CharSet = i;
 			LoadCharset = true;
 			if(CheckRoundState()==0 || CheckRoundState()==1)
 			{
