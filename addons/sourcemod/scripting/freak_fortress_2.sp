@@ -8221,11 +8221,11 @@ public int Command_SetNextBossH(Handle menu, MenuAction action, int client, int 
 				case 0: 
 				{
 					Incoming[0] = '\0';
-					FReplyToCommand(param1, "No override to the next boss");
+					FReplyToCommand(client, "No override to the next boss");
 				}
 				default:
 				{
-					choice2 = choice - 1;
+					int choice2 = choice - 1;
 					Incoming[0] = choice2;
 					char boss[64];
 					KvRewind(BossKV[choice2]);
@@ -10075,7 +10075,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 				KSpreeTimer[boss]=GetGameTime()+5.0;
 			}
 
-			if(IsValidClient[attacker] && !IsFakeClient(client))
+			if(IsValidClient(attacker) && !IsFakeClient(client))
 			{
 				BossKillsF[attacker]++;
 				if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
