@@ -2314,7 +2314,7 @@ public Action Command_AddRage(int client, int args)
 			BossCharge[Boss[client]][0]+=rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
-			CShowActivity(client, "%t", Self Rage Add", "_s", RoundFloat(rageMeter));
+			CShowActivity(client, "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
 			CheatsUsed = true;
 		}
 		return Plugin_Handled;
