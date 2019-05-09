@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -140,40 +140,40 @@ last time or to encourage others to do the same.
 float shDmgReduction[MAXPLAYERS+1];
 
 #if defined _steamtools_included
-bool steamtools=false;
+bool steamtools = false;
 #endif
 
 #if defined _tf2attributes_included
-bool tf2attributes=false;
+bool tf2attributes = false;
 #endif
 
 #if defined _goomba_included
-bool goomba=false;
+bool goomba = false;
 #endif
 
 #if defined _freak_fortress_2_kstreak_included
-bool kmerge=false;
+bool kmerge = false;
 #endif
 
 #if !defined _smac_included
-bool smac=false;
+bool smac = false;
 #endif
 
-bool isCapping=false;
+bool isCapping = false;
 
 int RPSWinner;
 int currentBossTeam;
 bool blueBoss;
-int OtherTeam=2;
-int BossTeam=3;
+int OtherTeam = 2;
+int BossTeam = 3;
 int playing;
 int playing2;
 int healthcheckused;
 int RedAlivePlayers;
 int BlueAlivePlayers;
 int RoundCount;
-int Companions=0;
-bool LastMan=true;
+int Companions = 0;
+bool LastMan = true;
 bool CheatsUsed;
 float rageMax[MAXPLAYERS+1];
 float rageMin[MAXPLAYERS+1];
@@ -187,7 +187,7 @@ int uberTarget[MAXPLAYERS+1];
 bool hadshield[MAXPLAYERS+1];
 int shield[MAXPLAYERS+1];
 int detonations[MAXPLAYERS+1];
-bool playBGM[MAXPLAYERS+1]=true;
+bool playBGM[MAXPLAYERS+1] = true;
 int Healing[MAXPLAYERS+1];
 float SapperCooldown[MAXPLAYERS+1];
 
@@ -427,20 +427,20 @@ static const char OTVoice[][] =
 
 enum WorldModelType
 {
-	ModelType_Normal = 0,
-	ModelType_PyroVision,
-	ModelType_HalloweenVision,
-	ModelType_RomeVision
+	ModelType_Normal = 0,		// Normal Worldmodel
+	ModelType_PyroVision,		// Pyro-Vision Worldmodel
+	ModelType_HalloweenVision,	// Halloween Worldmodel
+	ModelType_RomeVision		// Rome Worldmodel
 };
 
 enum Operators
 {
-	Operator_None = 0,
-	Operator_Add,
-	Operator_Subtract,
-	Operator_Multiply,
-	Operator_Divide,
-	Operator_Exponent,
+	Operator_None = 0,	// None, for checking valid brackets
+	Operator_Add,		// +
+	Operator_Subtract,	// -
+	Operator_Multiply,	// *
+	Operator_Divide,	// /
+	Operator_Exponent,	// ^
 };
 
 static const char ff2versiontitles[][] =
@@ -734,7 +734,7 @@ static const char ff2versiondates[][] =
 	"April 3, 2019",		//1.17.10
 	"May 6, 2019",			//1.18.0
 	"May 6, 2019",			//1.18.0
-	"Development"			//1.18.1
+	"May 21, 2019"			//1.18.1
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
@@ -744,6 +744,10 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		case 142:  //1.18.1
 		{
 			DrawPanelText(panel, "1) [Gameplay] Added market gardener/caber/goomba/killstreak killfeed counters (SHADoW)");
+			DrawPanelText(panel, "2) [Gameplay] Deadringers kills don't count towards StatTrak kills (Batfoxkid)");
+			DrawPanelText(panel, "3) [Core] Fixed ShowActivity for commands (Batfoxkid)");
+			DrawPanelText(panel, "4) [Core] Reduced bugs using reloading commands (Batfoxkid)");
+			DrawPanelText(panel, "5) [Core] Added a menu for some commands (Batfoxkid)");
 		}
 		case 141:  //1.18.0
 		{
@@ -1878,6 +1882,7 @@ char pLog[PLATFORM_MAX_PATH];
 int BossWins[MAXPLAYERS+1];
 int BossLosses[MAXPLAYERS+1];
 int BossKills[MAXPLAYERS+1];
+int BossKillsF[MAXPLAYERS+1];
 int BossDeaths[MAXPLAYERS+1];
 int PlayerKills[MAXPLAYERS+1];
 int PlayerMVPs[MAXPLAYERS+1];
@@ -2212,7 +2217,7 @@ public Action Command_SetRage(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
+				ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 			
@@ -2229,7 +2234,7 @@ public Action Command_SetRage(int client, int args)
 			BossCharge[Boss[client]][0]=rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
-			CShowActivity(client, "%t%t", "Prefix", "Self Rage Set", "_s", RoundFloat(rageMeter));
+			CShowActivity(client, "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
 			CheatsUsed = true;
 		}
 		return Plugin_Handled;
@@ -2269,11 +2274,11 @@ public Action Command_SetRage(int client, int args)
 		FReplyToCommand(client, "Set %d rage to %s", RoundFloat(rageMeter), target_name);
 		if(tn_is_ml)
 		{
-			CShowActivity(client, "%t%t", "Prefix", "Give Rage Set", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t", "Give Rage Set", target_name, RoundFloat(rageMeter));
 		}
 		else
 		{
-			CShowActivity(client, "%t%t", "Prefix", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
 		}
 		CheatsUsed = true;
 	}
@@ -2292,7 +2297,7 @@ public Action Command_AddRage(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
+				ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 			
@@ -2309,7 +2314,7 @@ public Action Command_AddRage(int client, int args)
 			BossCharge[Boss[client]][0]+=rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
-			CShowActivity(client, "%t%t", "Prefix", "Self Rage Add", "_s", RoundFloat(rageMeter));
+			CShowActivity(client, "%t", Self Rage Add", "_s", RoundFloat(rageMeter));
 			CheatsUsed = true;
 		}
 		return Plugin_Handled;
@@ -2349,11 +2354,11 @@ public Action Command_AddRage(int client, int args)
 		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
 		if(tn_is_ml)
 		{
-			CShowActivity(client, "%t%t", "Prefix", "Give Rage Add", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t", "Give Rage Add", target_name, RoundFloat(rageMeter));
 		}
 		else
 		{
-			CShowActivity(client, "%t%t", "Prefix", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
+			CShowActivity(client, "%t", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
 		}
 		CheatsUsed = true;
 	}
@@ -2372,7 +2377,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
+				ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 			
@@ -2388,7 +2393,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 				FReplyToCommand(client, "Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-				CShowActivity(client, "%t%t", "Prefix", "Self Infinite On", "_s");
+				CShowActivity(client, "%t", "Self Infinite On", "_s");
 				CheatsUsed = true;
 			}
 			else
@@ -2396,7 +2401,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 				InfiniteRageActive[client]=false;
 				FReplyToCommand(client, "Infinite RAGE deactivated");
 				LogAction(client, client, "\"%L\" deactivated infinite RAGE on themselves", client);
-				CShowActivity(client, "%t%t", "Prefix", "Self Infinite Off", "_s");
+				CShowActivity(client, "%t", "Self Infinite Off", "_s");
 			}
 		}
 		return Plugin_Handled;
@@ -2437,11 +2442,11 @@ public Action Command_SetInfiniteRage(int client, int args)
 			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			if(tn_is_ml)
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Infinite On", target_name);
+				CShowActivity(client, "%t", "Give Infinite On", target_name);
 			}
 			else
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Infinite On", "_s", target_name);
+				CShowActivity(client, "%t", "Give Infinite On", "_s", target_name);
 			}
 			CheatsUsed = true;
 		}
@@ -2452,11 +2457,11 @@ public Action Command_SetInfiniteRage(int client, int args)
 			LogAction(client, target_list[target], "\"%L\" deactivated infinite RAGE on \"%L\"", client, target_list[target]);
 			if(tn_is_ml)
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Infinite Off", target_name);
+				CShowActivity(client, "%t", "Give Infinite Off", target_name);
 			}
 			else
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Infinite Off", "_s", target_name);
+				CShowActivity(client, "%t", "Give Infinite Off", "_s", target_name);
 			}
 		}
 	}
@@ -2491,7 +2496,7 @@ public Action Command_AddCharge(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
+				ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 
@@ -2512,7 +2517,7 @@ public Action Command_AddCharge(int client, int args)
 				BossCharge[Boss[client]][abilitySlot]+=rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				CShowActivity(client, "%t%t", "Prefix", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
 			}
 			else
@@ -2561,11 +2566,11 @@ public Action Command_AddCharge(int client, int args)
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			if(tn_is_ml)
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Charge Add", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t", "Give Charge Add", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Charge Add", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t", "Give Charge Add", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			CheatsUsed = true;
 		}
@@ -2589,7 +2594,7 @@ public Action Command_SetCharge(int client, int args)
 		{
 			if(!IsValidClient(client))
 			{
-				ReplyToCommand(client, "[FF2] %t", "Command is in-game only");
+				ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 				return Plugin_Handled;
 			}
 
@@ -2610,7 +2615,7 @@ public Action Command_SetCharge(int client, int args)
 				BossCharge[Boss[client]][abilitySlot]=rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				CShowActivity(client, "%t%t", "Prefix", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
 			}
 			else
@@ -2659,11 +2664,11 @@ public Action Command_SetCharge(int client, int args)
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			if(tn_is_ml)
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				CShowActivity(client, "%t%t", "Prefix", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			CheatsUsed = true;
 		}
@@ -4304,33 +4309,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		CloseHandle(bossLog);
 	}
 
-	if(ReloadFF2)
-	{
-		ServerCommand("sm plugins reload freak_fortress_2");
-	}
-
-	if(LoadCharset)
-	{
-		LoadCharset=false;
-		FindCharacters();
-		strcopy(FF2CharSetString, 2, "");
-	}
-
-	if(ReloadWeapons)
-	{
-		CacheWeapons();
-		ReloadWeapons=false;
-	}
-
-	if(ReloadConfigs)
-	{
-		CacheWeapons();
-		CheckToChangeMapDoors();
-		CheckToTeleportToSpawn();
-		FindCharacters();
-		ReloadConfigs = false;
-	}
-
 	executed = false;
 	executed2 = false;
 	int bossWin = 0;
@@ -4613,6 +4591,33 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 			}
 		}
+	}
+
+	if(ReloadFF2)
+	{
+		ServerCommand("sm plugins reload freak_fortress_2");
+	}
+
+	if(LoadCharset)
+	{
+		LoadCharset=false;
+		FindCharacters();
+		strcopy(FF2CharSetString, 2, "");
+	}
+
+	if(ReloadWeapons)
+	{
+		CacheWeapons();
+		ReloadWeapons=false;
+	}
+
+	if(ReloadConfigs)
+	{
+		CacheWeapons();
+		CheckToChangeMapDoors();
+		CheckToTeleportToSpawn();
+		FindCharacters();
+		ReloadConfigs = false;
 	}
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -5338,6 +5343,7 @@ void SetupClientStats(int client)
 	BossWins[client] = StringToInt(cookieValues[0][0]);
 	BossLosses[client] = StringToInt(cookieValues[1][0]);
 	BossKills[client] = StringToInt(cookieValues[2][0]);
+	BossKillsF[client] = StringToInt(cookieValues[2][0]);
 	BossDeaths[client] = StringToInt(cookieValues[3][0]);
 	PlayerKills[client] = StringToInt(cookieValues[4][0]);
 	PlayerMVPs[client] =  StringToInt(cookieValues[5][0]);
@@ -8151,7 +8157,27 @@ public Action Command_SetNextBoss(int client, int args)
 
 	if(args<1)
 	{
-		FReplyToCommand(client, "Usage: ff2_special <boss>");
+		if(!IsValidClient(client))
+		{
+			ReplyToCommand(client, "[SM] Usage: ff2_special <boss>");
+			return Plugin_Handled;
+		}
+
+		Handle dMenu = CreateMenu(Command_SetNextBossH);
+		SetMenuTitle(dMenu, "Override Next Boss\n  Current Selection: %s", Incoming[0]);
+
+		Format(boss, sizeof(boss), "No Override");
+		AddMenuItem(dMenu, boss, boss);
+
+		for(int config; config<Specials; config++)
+		{
+			KvRewind(BossKV[config]);
+			KvGetString(BossKV[config], "name", boss, sizeof(boss));
+			AddMenuItem(dMenu, boss, boss);
+		}
+
+		SetMenuExitButton(dMenu, true);
+		DisplayMenu(dMenu, client, 20);
 		return Plugin_Handled;
 	}
 	GetCmdArgString(name, sizeof(name));
@@ -8160,17 +8186,17 @@ public Action Command_SetNextBoss(int client, int args)
 	{
 		KvRewind(BossKV[config]);
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
-		if(StrContains(boss, name, false)!=-1)
+		if(StrContains(boss, name, false) != -1)
 		{
-			Incoming[0]=config;
+			Incoming[0] = config;
 			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
 		}
 
 		KvGetString(BossKV[config], "filename", boss, sizeof(boss));
-		if(StrContains(boss, name, false)!=-1)
+		if(StrContains(boss, name, false) != -1)
 		{
-			Incoming[0]=config;
+			Incoming[0] = config;
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
@@ -8178,6 +8204,37 @@ public Action Command_SetNextBoss(int client, int args)
 	}
 	FReplyToCommand(client, "Boss could not be found!");
 	return Plugin_Handled;
+}
+
+public int Command_SetNextBossH(Handle menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			switch(choice)
+			{
+				case 0: 
+				{
+					Incoming[0] = '\0';
+					FReplyToCommand(param1, "No override to the next boss");
+				}
+				default:
+				{
+					choice2 = choice - 1;
+					Incoming[0] = choice2;
+					char boss[64];
+					KvRewind(BossKV[choice2]);
+					KvGetString(BossKV[choice2], "name", boss, sizeof(boss));
+					FReplyToCommand(client, "Set the next boss to %s", boss);
+				}
+			}
+		}
+	}
 }
 
 public Action Command_Points(int client, int args)
@@ -8345,6 +8402,9 @@ public Action Command_Charset(int client, int args)
 		}
 		while(KvGotoNextKey(Kv));
 		CloseHandle(Kv);
+
+		SetMenuExitButton(menu, true);
+		DisplayMenu(menu, client, 20);
 		return Plugin_Handled;
 	}
 
@@ -8443,6 +8503,9 @@ public Action Command_LoadCharset(int client, int args)
 		}
 		while(KvGotoNextKey(Kv));
 		CloseHandle(Kv);
+
+		SetMenuExitButton(menu, true);
+		DisplayMenu(menu, client, 20);
 		return Plugin_Handled;
 	}
 	
@@ -9334,7 +9397,7 @@ public Action BossTimer(Handle timer)
 					}
 					else
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+						FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
 					}
 				}
 			}
@@ -9357,8 +9420,8 @@ public Action BossTimer(Handle timer)
 		}
 		// Below 0, TF2's default speeds and whatever attributes or conditions
 
-		if(BossHealth[boss]<=0 && IsPlayerAlive(client))  //Wat.  TODO:  Investigate
-			BossHealth[boss]=1;
+		//if(BossHealth[boss]<=0 && IsPlayerAlive(client))  //Wat.  TODO:  Investigate
+			//BossHealth[boss]=1;
 
 		if(BossLivesMax[boss]>1)
 		{
@@ -9410,7 +9473,7 @@ public Action BossTimer(Handle timer)
 		if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 		{
 			SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
-			FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client]);
+			FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 		}
 
 		SetClientGlow(client, -0.2);
@@ -9939,7 +10002,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		return Plugin_Continue;
 
 	int client=GetClientOfUserId(GetEventInt(event, "userid"));
-	if(FakeDeath[client])
+	if(FakeDeath[client] && KillFeed>0)
 	{
 		FakeDeath[client] = false;
 		return Plugin_Stop;	// Dangerous?
@@ -10012,9 +10075,11 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 				KSpreeTimer[boss]=GetGameTime()+5.0;
 			}
 
-			if(!IsFakeClient(client))
+			if(IsValidClient[attacker] && !IsFakeClient(client))
 			{
-				AddClientStats(attacker, STAT_KILLS, 1);
+				BossKillsF[attacker]++;
+				if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+					AddClientStats(attacker, STAT_KILLS, 1);
 			}
 		}
 	}
@@ -10032,12 +10097,14 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 			EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
 		}
 
-		if(IsValidClient(attacker) && !IsFakeClient(client))
+		if(!IsFakeClient(client))
 			AddClientStats(attacker, STAT_SLAINS, 1);
+
+		if(!IsFakeClient(attacker))
+			AddClientStats(client, STAT_DEATHS, 1);
 
 		BossHealth[boss] = 0;
 		UpdateHealthBar();
-		AddClientStats(client, STAT_DEATHS, 1);
 		Stabbed[boss] = 0.0;
 		Marketed[boss] = 0.0;
 		Cabered[boss] = 0.0;
@@ -10134,10 +10201,8 @@ public Action OnDeployBackup(Handle event, const char[] name, bool dontBroadcast
 
 public Action Timer_CheckAlivePlayers(Handle timer)
 {
-	if(CheckRoundState()==2)
-	{
+	if(CheckRoundState() == 2)
 		return Plugin_Continue;
-	}
 
 	RedAlivePlayers=0;
 	BlueAlivePlayers=0;
@@ -10145,11 +10210,11 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	{
 		if(IsClientInGame(client) && IsPlayerAlive(client))
 		{
-			if(GetClientTeam(client)==OtherTeam)
+			if(GetClientTeam(client) == OtherTeam)
 			{
 				RedAlivePlayers++;
 			}
-			else if(GetClientTeam(client)==BossTeam)
+			else if(GetClientTeam(client) == BossTeam)
 			{
 				BlueAlivePlayers++;
 			}
