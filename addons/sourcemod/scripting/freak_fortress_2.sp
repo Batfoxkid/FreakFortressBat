@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -9939,13 +9939,11 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		return Plugin_Continue;
 
 	int client=GetClientOfUserId(GetEventInt(event, "userid"));
-
 	if(FakeDeath[client])
 	{
 		FakeDeath[client] = false;
-		return Plugin_Continue;
+		return Plugin_Stop;	// Dangerous?
 	}
-
 	int attacker=GetClientOfUserId(GetEventInt(event, "attacker"));
 	char sound[PLATFORM_MAX_PATH];
 	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
