@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -221,9 +221,11 @@ bool emitRageSound[MAXPLAYERS+1];
 bool bossHasReloadAbility[MAXPLAYERS+1];
 bool bossHasRightMouseAbility[MAXPLAYERS+1];
 bool SpawnTeleOnTriggerHurt = false;
+bool FakeDeath[MAXPLAYERS+1] = false;
+bool KillFeeded[MAXPLAYERS+1] = true;
 
 int timeleft;
-int cursongId[MAXPLAYERS+1]=1;
+int cursongId[MAXPLAYERS+1] = 1;
 
 ConVar cvarVersion;
 ConVar cvarPointDelay;
@@ -308,6 +310,7 @@ ConVar cvarDamageToTele;
 ConVar cvarStatHud;
 ConVar cvarStatPlayers;
 ConVar cvarStatWin2Lose;
+ConVar cvarKillFeed;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -321,43 +324,44 @@ Handle infoHUD;
 Handle statHUD;
 //Handle lifeHUD;
 
-bool Enabled=true;
-bool Enabled2=true;
-int PointDelay=6;
-int PointTime=45;
-float Announce=120.0;
-int AliveToEnable=5;
+bool Enabled = true;
+bool Enabled2 = true;
+int PointDelay = 6;
+int PointTime = 45;
+float Announce = 120.0;
+int AliveToEnable = 5;
 int PointType;
 int arenaRounds;
 float circuitStun;
-int countdownPlayers=1;
-int countdownTime=120;
-int countdownHealth=2000;
-bool countdownOvertime=false;
+int countdownPlayers = 1;
+int countdownTime = 120;
+int countdownHealth = 2000;
+bool countdownOvertime = false;
 bool SpecForceBoss;
-int lastPlayerGlow=1;
-bool bossTeleportation=true;
+int lastPlayerGlow = 1;
+bool bossTeleportation = true;
 int shieldCrits;
 int allowedDetonations;
-float GoombaDamage=0.05;
-float reboundPower=300.0;
+float GoombaDamage = 0.05;
+float reboundPower = 300.0;
 bool canBossRTD;
-float SniperDamage=2.5;
-float SniperMiniDamage=2.1;
-float BowDamage=1.25;
-float BowDamageNon=0.0;
-float BowDamageMini=0.0;
-float SniperClimbDamage=15.0;
-float SniperClimbDelay=1.56;
-int QualityWep=5;
-int PointsInterval=600;
-float PointsInterval2=600.0;
-int PointsMin=10;
-int PointsDamage=0;
-int PointsExtra=10;
-bool DuoMin=false;
-bool TellName=false;
-int Annotations=0;
+float SniperDamage = 2.5;
+float SniperMiniDamage = 2.1;
+float BowDamage = 1.25;
+float BowDamageNon = 0.0;
+float BowDamageMini = 0.0;
+float SniperClimbDamage = 15.0;
+float SniperClimbDelay = 1.56;
+int QualityWep = 5;
+int PointsInterval = 600;
+float PointsInterval2 = 600.0;
+int PointsMin = 10;
+int PointsDamage = 0;
+int PointsExtra = 10;
+bool DuoMin = false;
+bool TellName = false;
+int Annotations = 0;
+int KillFeed = 0;
 
 Handle MusicTimer[MAXPLAYERS+1];
 Handle BossInfoTimer[MAXPLAYERS+1][2];
@@ -367,7 +371,7 @@ Handle doorCheckTimer;
 int botqueuepoints;
 float HPTime;
 char currentmap[99];
-bool checkDoors=false;
+bool checkDoors = false;
 bool bMedieval;
 bool firstBlood;
 
@@ -384,23 +388,23 @@ bool areSubPluginsEnabled;
 int FF2CharSet;
 int validCharsets[64];
 char FF2CharSetString[42];
-bool isCharSetSelected=false;
+bool isCharSetSelected = false;
 
-int healthBar=-1;
-int g_Monoculus=-1;
+int healthBar = -1;
+int g_Monoculus = -1;
 
-static bool executed=false;
-static bool executed2=false;
-static bool ReloadFF2=false;
-static bool ReloadWeapons=false;
-static bool ReloadConfigs=false;
-bool LoadCharset=false;
-static bool HasSwitched=false;
+static bool executed = false;
+static bool executed2 = false;
+static bool ReloadFF2 = false;
+static bool ReloadWeapons = false;
+static bool ReloadConfigs = false;
+bool LoadCharset = false;
+static bool HasSwitched = false;
 
 Handle hostName;
 char oldName[256];
 int changeGamemode;
-Handle kvWeaponMods=INVALID_HANDLE;
+Handle kvWeaponMods = INVALID_HANDLE;
 
 bool IsBossSelected[MAXPLAYERS+1];
 bool dmgTriple[MAXPLAYERS+1];
@@ -413,7 +417,8 @@ int SelfHealing[MAXPLAYERS+1];
 float LifeHealing[MAXPLAYERS+1];
 float OverHealing[MAXPLAYERS+1];
 
-static const char OTVoice[][] = {
+static const char OTVoice[][] =
+{
     "vo/announcer_overtime.mp3",
     "vo/announcer_overtime2.mp3",
     "vo/announcer_overtime3.mp3",
@@ -422,7 +427,7 @@ static const char OTVoice[][] = {
 
 enum WorldModelType
 {
-	ModelType_Normal=0,
+	ModelType_Normal = 0,
 	ModelType_PyroVision,
 	ModelType_HalloweenVision,
 	ModelType_RomeVision
@@ -430,7 +435,7 @@ enum WorldModelType
 
 enum Operators
 {
-	Operator_None=0,
+	Operator_None = 0,
 	Operator_Add,
 	Operator_Subtract,
 	Operator_Multiply,
@@ -438,7 +443,7 @@ enum Operators
 	Operator_Exponent,
 };
 
-static const char ff2versiontitles[][]=
+static const char ff2versiontitles[][] =
 {
 	"1.0",
 	"1.01",
@@ -582,10 +587,10 @@ static const char ff2versiontitles[][]=
 	"1.17.10",
 	"1.18.0",
 	"1.18.0",
-	"1.18.0"
+	"1.18.1"
 };
 
-static const char ff2versiondates[][]=
+static const char ff2versiondates[][] =
 {
 	"April 6, 2012",			//1.0
 	"April 14, 2012",		//1.01
@@ -729,32 +734,33 @@ static const char ff2versiondates[][]=
 	"April 3, 2019",		//1.17.10
 	"May 6, 2019",			//1.18.0
 	"May 6, 2019",			//1.18.0
-	"May 6, 2019"			//1.18.0
+	"Development"			//1.18.1
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 142:  //1.18.0
+		case 142:  //1.18.1
+		{
+			DrawPanelText(panel, "1) [Gameplay] Added market gardener/caber/goomba/killstreak killfeed counters (SHADoW)");
+		}
+		case 141:  //1.18.0
 		{
 			DrawPanelText(panel, "1) [Core] Code is now in Transitional Syntax (Batfoxkid)");
 			DrawPanelText(panel, "2) [Bosses] Merged all default subplugins (Batfoxkid)");
 			DrawPanelText(panel, "3) [Gameplay] Added the StatTrak! (Batfoxkid from SHADoW)");
 			DrawPanelText(panel, "4) [Bosses] Added new stun options (Batfoxkid from sarysa/SHADoW)");
 			DrawPanelText(panel, "5) [Gameplay] Added the ability to sap bosses or minions (Batfoxkid from SHADoW)");
-		}
-		case 141:  //1.18.0
-		{
 			DrawPanelText(panel, "6) [Bosses] Replaced 'ghost' with 'icon' setting for custom icon (Batfoxkid)");
-			DrawPanelText(panel, "7) [Core] Added ff2_setcharge and ff2_addcharge (Batfoxkid)");
-			DrawPanelText(panel, "8) [Core] Debug commands use ShowActivity settings (Batfoxkid)");
-			DrawPanelText(panel, "9) [Bosses] Added 'healing' option to allow bosses to heal (Batfoxkid)");
-			DrawPanelText(panel, "10) [Gameplay] Bosses are now teleported to a random spawn when touching hazards (Chdata/sarysa/SHADoW)");	
 		}
 		case 140:  //1.18.0
 		{
-			DrawPanelText(panel, "11) [Core] Error messages are moved into a custom file (SHADoW)");	
+			DrawPanelText(panel, "7) [Core] Added ff2_setcharge and ff2_addcharge (Batfoxkid)");
+			DrawPanelText(panel, "8) [Core] Debug commands use ShowActivity settings (Batfoxkid)");
+			DrawPanelText(panel, "9) [Bosses] Added 'healing' option to allow bosses to heal (Batfoxkid)");
+			DrawPanelText(panel, "10) [Gameplay] Bosses are now teleported to a random spawn when touching hazards (Chdata/sarysa/SHADoW)");
+			DrawPanelText(panel, "11) [Core] Error messages are moved into a custom file (SHADoW)");
 		}
 		case 139:  //1.17.10
 		{
@@ -1894,90 +1900,90 @@ public void OnPluginStart()
 	if(!FileExists(eLog))
 		OpenFile(eLog, "a+");
 
-	cvarVersion=CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
-	cvarPointType=CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
-	cvarPointDelay=CreateConVar("ff2_point_delay", "6", "Seconds to add to ff2_point_time per player");
-	cvarPointTime=CreateConVar("ff2_point_time", "45", "Time before unlocking the control point");
-	cvarAliveToEnable=CreateConVar("ff2_point_alive", "5", "The control point will only activate when there are this many people or less left alive", _, true, 0.0, true, 34.0);
-	cvarAnnounce=CreateConVar("ff2_announce", "120", "Amount of seconds to wait until FF2 info is displayed again.  0 to disable", _, true, 0.0);
-	cvarEnabled=CreateConVar("ff2_enabled", "1", "0-Disable FF2 (WHY?), 1-Enable FF2", FCVAR_DONTRECORD, true, 0.0, true, 1.0);
-	cvarCrits=CreateConVar("ff2_crits", "0", "Can the boss get random crits?", _, true, 0.0, true, 1.0);
-	cvarArenaRounds=CreateConVar("ff2_arena_rounds", "1", "Number of rounds to make arena before switching to FF2 (helps for slow-loading players)", _, true, 0.0);
-	cvarCircuitStun=CreateConVar("ff2_circuit_stun", "0", "Amount of seconds the Short Circuit stuns the boss for.  0 to disable", _, true, 0.0);
-	cvarCountdownPlayers=CreateConVar("ff2_countdown_players", "1", "Amount of players until the countdown timer starts (0 to disable)", _, true, 0.0, true, 34.0);
-	cvarCountdownTime=CreateConVar("ff2_countdown", "120", "Amount of seconds until the round ends in a stalemate");
-	cvarCountdownHealth=CreateConVar("ff2_countdown_health", "2000", "Amount of health the Boss has remaining until the countdown stops", _, true, 0.0);
-	cvarCountdownResult=CreateConVar("ff2_countdown_result", "0", "0-Kill players when the countdown ends, 1-End the round in a stalemate", _, true, 0.0, true, 1.0);
-	cvarSpecForceBoss=CreateConVar("ff2_spec_force_boss", "0", "0-Spectators are excluded from the queue system, 1-Spectators are counted in the queue system", _, true, 0.0, true, 1.0);
-	cvarEnableEurekaEffect=CreateConVar("ff2_enable_eureka", "0", "0-Disable the Eureka Effect, 1-Enable the Eureka Effect", _, true, 0.0, true, 1.0);
-	cvarForceBossTeam=CreateConVar("ff2_force_team", "0", "0-Boss is always on Blu, 1-Boss is on a random team each round, 2-Boss is always on Red", _, true, 0.0, true, 3.0);
-	cvarHealthBar=CreateConVar("ff2_health_bar", "0", "0-Disable the health bar, 1-Show the health bar", _, true, 0.0, true, 1.0);
-	cvarLastPlayerGlow=CreateConVar("ff2_last_player_glow", "1", "How many players left before outlining everyone", _, true, 0.0, true, 34.0);
-	cvarBossTeleporter=CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
-	cvarBossSuicide=CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
-	cvarPreroundBossDisconnect=CreateConVar("ff2_replace_disconnected_boss", "0", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
-	cvarCaberDetonations=CreateConVar("ff2_caber_detonations", "1", "Amount of times somebody can detonate the Ullapool Caber", _, true, 1.0);
-	cvarShieldCrits=CreateConVar("ff2_shield_crits", "0", "0 to disable grenade launcher crits when equipping a shield, 1 for minicrits, 2 for crits", _, true, 0.0, true, 2.0);
-	cvarGoombaDamage=CreateConVar("ff2_goomba_damage", "0.05", "How much the Goomba damage should be multipled by when goomba stomping the boss (requires Goomba Stomp)", _, true, 0.01, true, 1.0);
-	cvarGoombaRebound=CreateConVar("ff2_goomba_jump", "300.0", "How high players should rebound after goomba stomping the boss (requires Goomba Stomp)", _, true, 0.0);
-	cvarBossRTD=CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
-	cvarDeadRingerHud=CreateConVar("ff2_deadringer_hud", "1", "Dead Ringer indicator? 0 to disable, 1 to enable", _, true, 0.0, true, 1.0);
-	cvarUpdater=CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
-	cvarDebug=CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
-	cvarDmg2KStreak=CreateConVar("ff2_dmg_kstreak", "250", "Minimum damage to increase killstreak count", _, true, 0.0);
-	cvarAirStrike=CreateConVar("ff2_dmg_airstrike", "250", "Minimum damage to increase head count for the Air-Strike", _, true, 0.0);
-	cvarSniperDamage=CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
-	cvarSniperMiniDamage=CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
-	cvarBowDamage=CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier", _, true, 0.0);
-	cvarBowDamageNon=CreateConVar("ff2_bow_dmg_non", "0.0", "If not zero Huntsman has no crit boost, Huntsman normal non-crit multiplier", _, true, 0.0);
-	cvarBowDamageMini=CreateConVar("ff2_bow_dmg_mini", "0.0", "If not zero Huntsman is mini-crit boosted, Huntsman normal mini-crit multiplier", _, true, 0.0);
-	cvarSniperClimbDamage=CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb", _, true, 0.0);
-	cvarSniperClimbDelay=CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs", _, true, 0.0);
-	cvarStrangeWep=CreateConVar("ff2_strangewep", "1", "0-Disable Boss Weapon Stranges, 1-Enable Boss Weapon Stranges", _, true, 0.0, true, 1.0);
-	cvarQualityWep=CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
-	cvarTripleWep=CreateConVar("ff2_triplewep", "1", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
-	cvarHardcodeWep=CreateConVar("ff2_hardcodewep", "1", "0-Only Use Config, 1-Use Alongside Hardcoded, 2-Only Use Hardcoded", _, true, 0.0, true, 2.0);
-	cvarSelfKnockback=CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
-	cvarFF2TogglePrefDelay=CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
-	cvarNameChange=CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
-	cvarKeepBoss=CreateConVar("ff2_boss_keep", "0", "-1-Players can't choose the same boss twice, 0-Nothing, 1-Players keep their current boss selection", _, true, -1.0, true, 1.0);
-	cvarSelectBoss=CreateConVar("ff2_boss_select", "1", "0-Disable, 1-Players can select bosses", _, true, 0.0, true, 1.0);
-	cvarToggleBoss=CreateConVar("ff2_boss_toggle", "1", "0-Disable, 1-Players can toggle being the boss", _, true, 0.0, true, 1.0);
-	cvarDuoBoss=CreateConVar("ff2_boss_companion", "1", "0-Disable, 1-Players can toggle being a companion", _, true, 0.0, true, 1.0);
-	cvarPointsInterval=CreateConVar("ff2_points_interval", "600", "Every this damage gives a point", _, true, 1.0);
-	cvarPointsDamage=CreateConVar("ff2_points_damage", "0", "Damage required to earn queue points", _, true, 0.0);
-	cvarPointsMin=CreateConVar("ff2_points_queue", "10", "Minimum queue points earned", _, true, 0.0);
-	cvarPointsExtra=CreateConVar("ff2_points_bonus", "10", "Maximum queue points earned", _, true, 0.0);
-	cvarAdvancedMusic=CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
-	cvarSongInfo=CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
-	cvarDuoRandom=CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
-	cvarDuoMin=CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 1.0, true, 34.0);
-	//cvarNewDownload=CreateConVar("ff2_new_download", "0", "0-Default disable extra checkers, 1-Default enable extra checkers", _, true, 0.0, true, 1.0);
-	cvarDuoRestore=CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
-	cvarLowStab=CreateConVar("ff2_low_stab", "0", "0-Disable, 1-Low-player count stabs, market, and caber do more damage", _, true, 0.0, true, 1.0);
-	cvarGameText=CreateConVar("ff2_text_game", "0", "For game messages: 0-Use HUD texts, 1-Use game_text_tf entities, 2-Include boss intro and timer too", _, true, 0.0, true, 2.0);
-	cvarAnnotations=CreateConVar("ff2_text_msg", "0", "For backstabs and such: 0-Use hint texts, 1-Use annotations, 2-Use game_text_tf entities", _, true, 0.0, true, 2.0);
-	cvarTellName=CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
-	cvarShieldType=CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted or melee hit, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
-	cvarShieldHealth=CreateConVar("ff2_shield_health", "500", "Maximum amount of health a Shield has if ff2_shield_type is 3 or 4", _, true, 0.0);
-	cvarShieldResist=CreateConVar("ff2_shield_resistance", "0.75", "Maximum amount (inverted) precentage of damage resistance a Shield has if ff2_shield_type is 3 or 4", _, true, 0.0, true, 1.0);
-	cvarCountdownOvertime=CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
-	cvarBossLog=CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
-	cvarBossDesc=CreateConVar("ff2_boss_desc", "1", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
-	cvarRPSPoints=CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
-	cvarRPSLimit=CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
-	cvarRPSDivide=CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
-	cvarHealingHud=CreateConVar("ff2_hud_heal", "0", "0-Disable, 1-Show player's healing in damage HUD with they done healing, 2-Always show", _, true, 0.0, true, 2.0);
-	cvarSteamTools=CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
-	cvarSappers=CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
-	cvarSapperCooldown=CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
-	cvarTheme=CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
-	cvarSelfHealing=CreateConVar("ff2_healing", "0", "0-Block Boss Healing, 1-Allow Self-Healing, 2-Allow Non-Self Healing, 3-Allow All Healing", _, true, 0.0, true, 3.0);
-	cvarBotRage=CreateConVar("ff2_bot_rage", "1", "0-Disable, 1-Bots can use rage when ready", _, true, 0.0, true, 1.0);
-	cvarDamageToTele=CreateConVar("ff2_tts_damage", "250.0", "Minimum damage boss needs to take in order to be teleported to spawn", _, true, 1.0);
-	cvarStatHud=CreateConVar("ff2_hud_stats", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client, 2-Show to anybody", _, true, -1.0, true, 2.0);
-	cvarStatPlayers=CreateConVar("ff2_stats_players", "6", "0-Disable, #-Players required to use StatTrak", _, true, 0.0, true, 34.0);
-	cvarStatWin2Lose=CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
+	cvarVersion = CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
+	cvarPointType = CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
+	cvarPointDelay = CreateConVar("ff2_point_delay", "6", "Seconds to add to ff2_point_time per player");
+	cvarPointTime = CreateConVar("ff2_point_time", "45", "Time before unlocking the control point");
+	cvarAliveToEnable = CreateConVar("ff2_point_alive", "5", "The control point will only activate when there are this many people or less left alive", _, true, 0.0, true, 34.0);
+	cvarAnnounce = CreateConVar("ff2_announce", "120", "Amount of seconds to wait until FF2 info is displayed again.  0 to disable", _, true, 0.0);
+	cvarEnabled = CreateConVar("ff2_enabled", "1", "0-Disable FF2 (WHY?), 1-Enable FF2", FCVAR_DONTRECORD, true, 0.0, true, 1.0);
+	cvarCrits = CreateConVar("ff2_crits", "0", "Can the boss get random crits?", _, true, 0.0, true, 1.0);
+	cvarArenaRounds = CreateConVar("ff2_arena_rounds", "1", "Number of rounds to make arena before switching to FF2 (helps for slow-loading players)", _, true, 0.0);
+	cvarCircuitStun = CreateConVar("ff2_circuit_stun", "0", "Amount of seconds the Short Circuit stuns the boss for.  0 to disable", _, true, 0.0);
+	cvarCountdownPlayers = CreateConVar("ff2_countdown_players", "1", "Amount of players until the countdown timer starts (0 to disable)", _, true, 0.0, true, 34.0);
+	cvarCountdownTime = CreateConVar("ff2_countdown", "120", "Amount of seconds until the round ends in a stalemate");
+	cvarCountdownHealth = CreateConVar("ff2_countdown_health", "2000", "Amount of health the Boss has remaining until the countdown stops", _, true, 0.0);
+	cvarCountdownResult = CreateConVar("ff2_countdown_result", "0", "0-Kill players when the countdown ends, 1-End the round in a stalemate", _, true, 0.0, true, 1.0);
+	cvarSpecForceBoss = CreateConVar("ff2_spec_force_boss", "0", "0-Spectators are excluded from the queue system, 1-Spectators are counted in the queue system", _, true, 0.0, true, 1.0);
+	cvarEnableEurekaEffect = CreateConVar("ff2_enable_eureka", "0", "0-Disable the Eureka Effect, 1-Enable the Eureka Effect", _, true, 0.0, true, 1.0);
+	cvarForceBossTeam = CreateConVar("ff2_force_team", "0", "0-Boss is always on Blu, 1-Boss is on a random team each round, 2-Boss is always on Red", _, true, 0.0, true, 3.0);
+	cvarHealthBar = CreateConVar("ff2_health_bar", "0", "0-Disable the health bar, 1-Show the health bar", _, true, 0.0, true, 1.0);
+	cvarLastPlayerGlow = CreateConVar("ff2_last_player_glow", "1", "How many players left before outlining everyone", _, true, 0.0, true, 34.0);
+	cvarBossTeleporter = CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
+	cvarBossSuicide = CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
+	cvarPreroundBossDisconnect = CreateConVar("ff2_replace_disconnected_boss", "0", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
+	cvarCaberDetonations = CreateConVar("ff2_caber_detonations", "1", "Amount of times somebody can detonate the Ullapool Caber", _, true, 1.0);
+	cvarShieldCrits = CreateConVar("ff2_shield_crits", "0", "0 to disable grenade launcher crits when equipping a shield, 1 for minicrits, 2 for crits", _, true, 0.0, true, 2.0);
+	cvarGoombaDamage = CreateConVar("ff2_goomba_damage", "0.05", "How much the Goomba damage should be multipled by when goomba stomping the boss (requires Goomba Stomp)", _, true, 0.01, true, 1.0);
+	cvarGoombaRebound = CreateConVar("ff2_goomba_jump", "300.0", "How high players should rebound after goomba stomping the boss (requires Goomba Stomp)", _, true, 0.0);
+	cvarBossRTD = CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
+	cvarDeadRingerHud = CreateConVar("ff2_deadringer_hud", "1", "Dead Ringer indicator? 0 to disable, 1 to enable", _, true, 0.0, true, 1.0);
+	cvarUpdater = CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
+	cvarDebug = CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
+	cvarDmg2KStreak = CreateConVar("ff2_dmg_kstreak", "250", "Minimum damage to increase killstreak count", _, true, 0.0);
+	cvarAirStrike = CreateConVar("ff2_dmg_airstrike", "250", "Minimum damage to increase head count for the Air-Strike", _, true, 0.0);
+	cvarSniperDamage = CreateConVar("ff2_sniper_dmg", "2.5", "Sniper Rifle normal multiplier", _, true, 0.0);
+	cvarSniperMiniDamage = CreateConVar("ff2_sniper_dmg_mini", "2.1", "Sniper Rifle mini-crit multiplier", _, true, 0.0);
+	cvarBowDamage = CreateConVar("ff2_bow_dmg", "1.25", "Huntsman critical multiplier", _, true, 0.0);
+	cvarBowDamageNon = CreateConVar("ff2_bow_dmg_non", "0.0", "If not zero Huntsman has no crit boost, Huntsman normal non-crit multiplier", _, true, 0.0);
+	cvarBowDamageMini = CreateConVar("ff2_bow_dmg_mini", "0.0", "If not zero Huntsman is mini-crit boosted, Huntsman normal mini-crit multiplier", _, true, 0.0);
+	cvarSniperClimbDamage = CreateConVar("ff2_sniper_climb_dmg", "15.0", "Damage taken during climb", _, true, 0.0);
+	cvarSniperClimbDelay = CreateConVar("ff2_sniper_climb_delay", "1.56", "0-Disable Climbing, Delay between climbs", _, true, 0.0);
+	cvarStrangeWep = CreateConVar("ff2_strangewep", "1", "0-Disable Boss Weapon Stranges, 1-Enable Boss Weapon Stranges", _, true, 0.0, true, 1.0);
+	cvarQualityWep = CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
+	cvarTripleWep = CreateConVar("ff2_triplewep", "1", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
+	cvarHardcodeWep = CreateConVar("ff2_hardcodewep", "1", "0-Only Use Config, 1-Use Alongside Hardcoded, 2-Only Use Hardcoded", _, true, 0.0, true, 2.0);
+	cvarSelfKnockback = CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
+	cvarFF2TogglePrefDelay = CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
+	cvarNameChange = CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
+	cvarKeepBoss = CreateConVar("ff2_boss_keep", "0", "-1-Players can't choose the same boss twice, 0-Nothing, 1-Players keep their current boss selection", _, true, -1.0, true, 1.0);
+	cvarSelectBoss = CreateConVar("ff2_boss_select", "1", "0-Disable, 1-Players can select bosses", _, true, 0.0, true, 1.0);
+	cvarToggleBoss = CreateConVar("ff2_boss_toggle", "1", "0-Disable, 1-Players can toggle being the boss", _, true, 0.0, true, 1.0);
+	cvarDuoBoss = CreateConVar("ff2_boss_companion", "1", "0-Disable, 1-Players can toggle being a companion", _, true, 0.0, true, 1.0);
+	cvarPointsInterval = CreateConVar("ff2_points_interval", "600", "Every this damage gives a point", _, true, 1.0);
+	cvarPointsDamage = CreateConVar("ff2_points_damage", "0", "Damage required to earn queue points", _, true, 0.0);
+	cvarPointsMin = CreateConVar("ff2_points_queue", "10", "Minimum queue points earned", _, true, 0.0);
+	cvarPointsExtra = CreateConVar("ff2_points_bonus", "10", "Maximum queue points earned", _, true, 0.0);
+	cvarAdvancedMusic = CreateConVar("ff2_advanced_music", "1", "0-Use classic menu, 1-Use new menu", _, true, 0.0, true, 1.0);
+	cvarSongInfo = CreateConVar("ff2_song_info", "0", "-1-Never show song and artist in chat, 0-Only if boss has song and artist, 1-Always show song and artist in chat", _, true, -1.0, true, 1.0);
+	cvarDuoRandom = CreateConVar("ff2_companion_random", "0", "0-Next player in queue, 1-Random player is the companion", _, true, 0.0, true, 1.0);
+	cvarDuoMin = CreateConVar("ff2_companion_min", "4", "Minimum players required to enable duos", _, true, 1.0, true, 34.0);
+	cvarDuoRestore = CreateConVar("ff2_companion_restore", "0", "0-Disable, 1-Companions don't lose queue points", _, true, 0.0, true, 1.0);
+	cvarLowStab = CreateConVar("ff2_low_stab", "0", "0-Disable, 1-Low-player count stabs, market, and caber do more damage", _, true, 0.0, true, 1.0);
+	cvarGameText = CreateConVar("ff2_text_game", "0", "For game messages: 0-Use HUD texts, 1-Use game_text_tf entities, 2-Include boss intro and timer too", _, true, 0.0, true, 2.0);
+	cvarAnnotations = CreateConVar("ff2_text_msg", "0", "For backstabs and such: 0-Use hint texts, 1-Use annotations, 2-Use game_text_tf entities", _, true, 0.0, true, 2.0);
+	cvarTellName = CreateConVar("ff2_text_names", "0", "For backstabs and such: 0-Don't show player/boss names, 1-Show player/boss names", _, true, 0.0, true, 1.0);
+	cvarShieldType = CreateConVar("ff2_shield_type", "1", "0-None, 1-Breaks on any hit, 2-Breaks if it'll kill, 3-Breaks if shield HP is depleted or melee hit, 4-Breaks if shield or player HP is depleted", _, true, 0.0, true, 4.0);
+	cvarShieldHealth = CreateConVar("ff2_shield_health", "500", "Maximum amount of health a Shield has if ff2_shield_type is 3 or 4", _, true, 0.0);
+	cvarShieldResist = CreateConVar("ff2_shield_resistance", "0.75", "Maximum amount (inverted) precentage of damage resistance a Shield has if ff2_shield_type is 3 or 4", _, true, 0.0, true, 1.0);
+	cvarCountdownOvertime = CreateConVar("ff2_countdown_overtime", "0", "0-Disable, 1-Delay 'ff2_countdown_result' action until control point is no longer being captured", _, true, 0.0, true, 1.0);
+	cvarBossLog = CreateConVar("ff2_boss_log", "0", "0-Disable, #-Players required to enable logging", _, true, 0.0, true, 34.0);
+	cvarBossDesc = CreateConVar("ff2_boss_desc", "1", "0-Disable, 1-Show boss description before selecting a boss", _, true, 0.0, true, 1.0);
+	cvarRPSPoints = CreateConVar("ff2_rps_points", "0", "0-Disable, #-Queue points awarded / removed upon RPS", _, true, 0.0);
+	cvarRPSLimit = CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
+	cvarRPSDivide = CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
+	cvarHealingHud = CreateConVar("ff2_hud_heal", "0", "0-Disable, 1-Show player's healing in damage HUD with they done healing, 2-Always show", _, true, 0.0, true, 2.0);
+	cvarSteamTools = CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
+	cvarSappers = CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
+	cvarSapperCooldown = CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
+	cvarTheme = CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
+	cvarSelfHealing = CreateConVar("ff2_healing", "0", "0-Block Boss Healing, 1-Allow Self-Healing, 2-Allow Non-Self Healing, 3-Allow All Healing", _, true, 0.0, true, 3.0);
+	cvarBotRage = CreateConVar("ff2_bot_rage", "1", "0-Disable, 1-Bots can use rage when ready", _, true, 0.0, true, 1.0);
+	cvarDamageToTele = CreateConVar("ff2_tts_damage", "250.0", "Minimum damage boss needs to take in order to be teleported to spawn", _, true, 1.0);
+	cvarStatHud = CreateConVar("ff2_hud_stats", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client, 2-Show to anybody", _, true, -1.0, true, 2.0);
+	cvarStatPlayers = CreateConVar("ff2_stats_players", "6", "0-Disable, #-Players required to use StatTrak", _, true, 0.0, true, 34.0);
+	cvarStatWin2Lose = CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
+	cvarKillFeed = CreateConVar("ff2_kill_feed", "0", "0-Disable, 1-Killstreak Events, 2-High-Damage Events, 3-Both", _, true, 0.0, true, 3.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2040,6 +2046,7 @@ public void OnPluginStart()
 	HookConVarChange(cvarPointsExtra, CvarChange);
 	HookConVarChange(cvarAnnotations, CvarChange);
 	HookConVarChange(cvarTellName, CvarChange);
+	HookConVarChange(cvarKillFeed, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -2893,6 +2900,7 @@ public void EnableFF2()
 	allowedDetonations=GetConVarInt(cvarCaberDetonations);
 	Annotations=GetConVarInt(cvarAnnotations);
 	TellName=GetConVarBool(cvarTellName);
+	KillFeed=GetConVarInt(cvarKillFeed);
 
 
 	//Set some Valve cvars to what we want them to be
@@ -3533,6 +3541,10 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	else if(convar==cvarTellName)
 	{
 		TellName=view_as<bool>(StringToInt(newValue));
+	}
+	else if(convar==cvarKillFeed)
+	{
+		KillFeed=StringToInt(newValue);
 	}
 	else if(convar==cvarUpdater)
 	{
@@ -9924,14 +9936,21 @@ public Action OverTimeAlert(Handle timer)
 public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroadcast)
 {
 	if(!Enabled || CheckRoundState()!=1)
+		return Plugin_Continue;
+
+	int client=GetClientOfUserId(GetEventInt(event, "userid"));
+
+	if(FakeDeath[client])
 	{
+		FakeDeath[client] = false;
 		return Plugin_Continue;
 	}
 
-	int client=GetClientOfUserId(GetEventInt(event, "userid")), attacker=GetClientOfUserId(GetEventInt(event, "attacker"));
+	int attacker=GetClientOfUserId(GetEventInt(event, "attacker"));
 	char sound[PLATFORM_MAX_PATH];
 	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	DoOverlay(client, "");
+
 	if(!IsBoss(client))
 	{
 		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
@@ -10552,15 +10571,13 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 	if(IsValidClient(attacker) && IsValidClient(client) && client!=attacker && damage>0 && GetClientTeam(attacker)==OtherTeam)
 	{
 		int i;
-		float position[3];
-		GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
 		if(GetConVarFloat(cvarAirStrike)>0)  //Air Strike-moved from OTD
 		{
 			int weapon=GetPlayerWeaponSlot(attacker, TFWeaponSlot_Primary);
 			if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104)
 			{
 				AirstrikeDamage[attacker]+=damage;
-				while(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && i<26)
+				while(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && i<5)
 				{
 					i++;
 					SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
@@ -10568,15 +10585,75 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 				}
 			}
 		}
+		i = 0;
 		if(GetConVarFloat(cvarDmg2KStreak)>0)
 		{
 			KillstreakDamage[attacker]+=damage;
-			while(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && i<26)
+			while(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && i<21)
 			{
 				i++;
 				SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
 				KillstreakDamage[attacker]-=GetConVarFloat(cvarDmg2KStreak);
 			}
+			if(KillFeed>0 && KillFeed!=2 && !KillFeeded[attacker] && !(GetEntProp(attacker, Prop_Send, "m_nStreaks") % 5) && i>0)
+			{
+				FakeDeath[client] = true;
+				Handle hStreak = CreateEvent("player_death", true);
+				switch(TF2_GetPlayerClass(attacker))
+				{
+					case TFClass_Scout:
+					{
+						SetEventString(hStreak, "weapon", "bat");
+						SetEventString(hStreak, "weapon_logclassname", "bat");
+					}
+					case TFClass_Soldier:
+					{
+						SetEventString(hStreak, "weapon", "shovel");
+						SetEventString(hStreak, "weapon_logclassname", "shovel");
+					}
+					case TFClass_Pyro:
+					{
+						SetEventString(hStreak, "weapon", "fireaxe");
+						SetEventString(hStreak, "weapon_logclassname", "fireaxe");
+					}
+					case TFClass_DemoMan:
+					{
+						SetEventString(hStreak, "weapon", "bottle");
+						SetEventString(hStreak, "weapon_logclassname", "bottle");
+					}
+					case TFClass_Heavy:
+					{
+						SetEventString(hStreak, "weapon", "fists");
+						SetEventString(hStreak, "weapon_logclassname", "fists");
+					}
+					case TFClass_Engineer:
+					{
+						SetEventString(hStreak, "weapon", "wrench");
+						SetEventString(hStreak, "weapon_logclassname", "wrench");
+					}
+					case TFClass_Medic:
+					{
+						SetEventString(hStreak, "weapon", "bonesaw");
+						SetEventString(hStreak, "weapon_logclassname", "bonesaw");
+					}
+					case TFClass_Sniper:
+					{
+						SetEventString(hStreak, "weapon", "kukri");
+						SetEventString(hStreak, "weapon_logclassname", "kukri");
+					}
+					case TFClass_Spy:
+					{
+						SetEventString(hStreak, "weapon", "knife");
+						SetEventString(hStreak, "weapon_logclassname", "knife");
+					}
+				}
+				SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
+				SetEventInt(hStreak, "userid", GetClientUserId(client));
+				SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
+				SetEventInt(hStreak, "kill_streak_wep", GetEntProp(attacker, Prop_Send, "m_nStreaks"));
+				FireEvent(hStreak);
+			}
+
 		}
 		if(SapperCooldown[attacker]>0.0)
 		{
@@ -11091,6 +11168,21 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								}
 							}
 
+							if(KillFeed>1)
+							{
+								FakeDeath[client] = true;
+								Handle hStreak = CreateEvent("player_death", true);
+								SetEventString(hStreak, "weapon", "ullapool_caber_explosion");
+								SetEventString(hStreak, "weapon_logclassname", "ullapool_caber_explosion");
+								SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
+								SetEventInt(hStreak, "userid", GetClientUserId(client));
+								SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
+								SetEventInt(hStreak, "kill_streak_wep", view_as<int>(Cabered[client]));
+								FireEvent(hStreak);
+								KillFeeded = true;
+								CreateTimer(0.2, Timer_KillFeeded, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
+							}
+
 							EmitSoundToClient(attacker, "ambient/lightsoff.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "ambient/lightson.wav", _, _, _, _, 0.6, _, _, position, _, false);
 
@@ -11197,9 +11289,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						//if(FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING)
                         			{
 							if(GetConVarBool(cvarLowStab))
+							{
 								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
+							}
 							else
+							{
 								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
+							}
 							damagetype|=DMG_CRIT;
 
 							if(RemoveCond(attacker, TFCond_Parachute))	// If you parachuted to do this, remove your parachute.
@@ -11254,6 +11350,21 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									else
 										PrintHintText(client, "%t", "Market Gardened");
 								}
+							}
+
+							if(KillFeed>1)
+							{
+								FakeDeath[client] = true;
+								Handle hStreak = CreateEvent("player_death", true);
+								SetEventString(hStreak, "weapon", "market_gardener");
+								SetEventString(hStreak, "weapon_logclassname", "market_gardener");
+								SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
+								SetEventInt(hStreak, "userid", GetClientUserId(client));
+								SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
+								SetEventInt(hStreak, "kill_streak_wep", view_as<int>(Marketed[client]));
+								FireEvent(hStreak);
+								KillFeeded[attacker] = true;
+								CreateTimer(0.2, Timer_KillFeeded, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
 							}
 
 							EmitSoundToClient(attacker, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
@@ -11807,6 +11918,19 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 					PrintHintText(victim, "%t", "Goomba Stomped Boss");
 			}
 		}
+		if(KillFeed>1)
+		{
+			FakeDeath[victim] = true;
+			Handle hStreak = CreateEvent("player_death", true);
+			SetEventString(hStreak, "weapon", "taunt_scout");
+			SetEventString(hStreak, "weapon_logclassname", "goomba");
+			SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
+			SetEventInt(hStreak, "userid", GetClientUserId(victim));
+			SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
+			FireEvent(hStreak);
+			KillFeeded = true;
+			CreateTimer(0.2, Timer_KillFeeded, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
+		}
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -11817,6 +11941,15 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 	if(IsBoss(victim))
 	{
 		UpdateHealthBar();
+	}
+}
+
+public Action Timer_KillFeeded(Handle timer, int userid)
+{
+	int client=GetClientOfUserId(userid);
+	if(IsValidClient(client))
+	{
+		KillFeeded[client] = false;
 	}
 }
 
