@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."009"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -221,8 +221,6 @@ bool emitRageSound[MAXPLAYERS+1];
 bool bossHasReloadAbility[MAXPLAYERS+1];
 bool bossHasRightMouseAbility[MAXPLAYERS+1];
 bool SpawnTeleOnTriggerHurt = false;
-bool FakeDeath[MAXPLAYERS+1] = false;
-bool KillFeeded[MAXPLAYERS+1] = true;
 
 int timeleft;
 int cursongId[MAXPLAYERS+1] = 1;
@@ -310,7 +308,6 @@ ConVar cvarDamageToTele;
 ConVar cvarStatHud;
 ConVar cvarStatPlayers;
 ConVar cvarStatWin2Lose;
-ConVar cvarKillFeed;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -361,7 +358,6 @@ int PointsExtra = 10;
 bool DuoMin = false;
 bool TellName = false;
 int Annotations = 0;
-int KillFeed = 0;
 
 Handle MusicTimer[MAXPLAYERS+1];
 Handle BossInfoTimer[MAXPLAYERS+1][2];
@@ -743,11 +739,10 @@ stock void FindVersionData(Handle panel, int versionIndex)
 	{
 		case 142:  //1.18.1
 		{
-			DrawPanelText(panel, "1) [Gameplay] Added market gardener/caber/goomba/killstreak killfeed counters (SHADoW)");
-			DrawPanelText(panel, "2) [Gameplay] Deadringers kills don't count towards StatTrak kills (Batfoxkid)");
-			DrawPanelText(panel, "3) [Core] Fixed ShowActivity for commands (Batfoxkid)");
-			DrawPanelText(panel, "4) [Core] Reduced bugs using reloading commands (Batfoxkid)");
-			DrawPanelText(panel, "5) [Core] Added a menu for some commands (Batfoxkid)");
+			DrawPanelText(panel, "1) [Gameplay] Deadringers kills don't count towards StatTrak kills (Batfoxkid)");
+			DrawPanelText(panel, "2) [Core] Fixed ShowActivity for commands (Batfoxkid)");
+			DrawPanelText(panel, "3) [Core] Reduced bugs using reloading commands (Batfoxkid)");
+			DrawPanelText(panel, "4) [Core] Added a menu for some commands (Batfoxkid)");
 		}
 		case 141:  //1.18.0
 		{
@@ -1988,7 +1983,6 @@ public void OnPluginStart()
 	cvarStatHud = CreateConVar("ff2_hud_stats", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client, 2-Show to anybody", _, true, -1.0, true, 2.0);
 	cvarStatPlayers = CreateConVar("ff2_stats_players", "6", "0-Disable, #-Players required to use StatTrak", _, true, 0.0, true, 34.0);
 	cvarStatWin2Lose = CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
-	cvarKillFeed = CreateConVar("ff2_kill_feed", "0", "0-Disable, 1-Killstreak Events, 2-High-Damage Events, 3-Both", _, true, 0.0, true, 3.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2051,7 +2045,6 @@ public void OnPluginStart()
 	HookConVarChange(cvarPointsExtra, CvarChange);
 	HookConVarChange(cvarAnnotations, CvarChange);
 	HookConVarChange(cvarTellName, CvarChange);
-	HookConVarChange(cvarKillFeed, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -2905,8 +2898,6 @@ public void EnableFF2()
 	allowedDetonations=GetConVarInt(cvarCaberDetonations);
 	Annotations=GetConVarInt(cvarAnnotations);
 	TellName=GetConVarBool(cvarTellName);
-	KillFeed=GetConVarInt(cvarKillFeed);
-
 
 	//Set some Valve cvars to what we want them to be
 	SetConVarInt(FindConVar("tf_arena_use_queue"), 0);
@@ -3546,10 +3537,6 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	else if(convar==cvarTellName)
 	{
 		TellName=view_as<bool>(StringToInt(newValue));
-	}
-	else if(convar==cvarKillFeed)
-	{
-		KillFeed=StringToInt(newValue);
 	}
 	else if(convar==cvarUpdater)
 	{
@@ -10001,13 +9988,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 	if(!Enabled || CheckRoundState()!=1)
 		return Plugin_Continue;
 
-	int client=GetClientOfUserId(GetEventInt(event, "userid"));
-	if(FakeDeath[client] && KillFeed>0)
-	{
-		FakeDeath[client] = false;
-		return Plugin_Stop;	// Dangerous?
-	}
-	int attacker=GetClientOfUserId(GetEventInt(event, "attacker"));
+	int client=GetClientOfUserId(GetEventInt(event, "userid")), attacker=GetClientOfUserId(GetEventInt(event, "attacker"));
 	char sound[PLATFORM_MAX_PATH];
 	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	DoOverlay(client, "");
@@ -10658,65 +10639,6 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 				SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
 				KillstreakDamage[attacker]-=GetConVarFloat(cvarDmg2KStreak);
 			}
-			if(KillFeed>0 && KillFeed!=2 && !KillFeeded[attacker] && !(GetEntProp(attacker, Prop_Send, "m_nStreaks") % 5) && i>0)
-			{
-				FakeDeath[client] = true;
-				Handle hStreak = CreateEvent("player_death", true);
-				switch(TF2_GetPlayerClass(attacker))
-				{
-					case TFClass_Scout:
-					{
-						SetEventString(hStreak, "weapon", "bat");
-						SetEventString(hStreak, "weapon_logclassname", "bat");
-					}
-					case TFClass_Soldier:
-					{
-						SetEventString(hStreak, "weapon", "shovel");
-						SetEventString(hStreak, "weapon_logclassname", "shovel");
-					}
-					case TFClass_Pyro:
-					{
-						SetEventString(hStreak, "weapon", "fireaxe");
-						SetEventString(hStreak, "weapon_logclassname", "fireaxe");
-					}
-					case TFClass_DemoMan:
-					{
-						SetEventString(hStreak, "weapon", "bottle");
-						SetEventString(hStreak, "weapon_logclassname", "bottle");
-					}
-					case TFClass_Heavy:
-					{
-						SetEventString(hStreak, "weapon", "fists");
-						SetEventString(hStreak, "weapon_logclassname", "fists");
-					}
-					case TFClass_Engineer:
-					{
-						SetEventString(hStreak, "weapon", "wrench");
-						SetEventString(hStreak, "weapon_logclassname", "wrench");
-					}
-					case TFClass_Medic:
-					{
-						SetEventString(hStreak, "weapon", "bonesaw");
-						SetEventString(hStreak, "weapon_logclassname", "bonesaw");
-					}
-					case TFClass_Sniper:
-					{
-						SetEventString(hStreak, "weapon", "kukri");
-						SetEventString(hStreak, "weapon_logclassname", "kukri");
-					}
-					case TFClass_Spy:
-					{
-						SetEventString(hStreak, "weapon", "knife");
-						SetEventString(hStreak, "weapon_logclassname", "knife");
-					}
-				}
-				SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
-				SetEventInt(hStreak, "userid", GetClientUserId(client));
-				SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
-				SetEventInt(hStreak, "kill_streak_wep", GetEntProp(attacker, Prop_Send, "m_nStreaks"));
-				FireEvent(hStreak);
-			}
-
 		}
 		if(SapperCooldown[attacker]>0.0)
 		{
@@ -11231,21 +11153,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								}
 							}
 
-							if(KillFeed>1)
-							{
-								FakeDeath[client] = true;
-								Handle hStreak = CreateEvent("player_death", true);
-								SetEventString(hStreak, "weapon", "ullapool_caber_explosion");
-								SetEventString(hStreak, "weapon_logclassname", "ullapool_caber_explosion");
-								SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
-								SetEventInt(hStreak, "userid", GetClientUserId(client));
-								SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
-								SetEventInt(hStreak, "kill_streak_wep", view_as<int>(Cabered[client]));
-								FireEvent(hStreak);
-								KillFeeded = true;
-								CreateTimer(0.2, Timer_KillFeeded, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
-							}
-
 							EmitSoundToClient(attacker, "ambient/lightsoff.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "ambient/lightson.wav", _, _, _, _, 0.6, _, _, position, _, false);
 
@@ -11413,21 +11320,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									else
 										PrintHintText(client, "%t", "Market Gardened");
 								}
-							}
-
-							if(KillFeed>1)
-							{
-								FakeDeath[client] = true;
-								Handle hStreak = CreateEvent("player_death", true);
-								SetEventString(hStreak, "weapon", "market_gardener");
-								SetEventString(hStreak, "weapon_logclassname", "market_gardener");
-								SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
-								SetEventInt(hStreak, "userid", GetClientUserId(client));
-								SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
-								SetEventInt(hStreak, "kill_streak_wep", view_as<int>(Marketed[client]));
-								FireEvent(hStreak);
-								KillFeeded[attacker] = true;
-								CreateTimer(0.2, Timer_KillFeeded, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
 							}
 
 							EmitSoundToClient(attacker, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
@@ -11981,19 +11873,6 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 					PrintHintText(victim, "%t", "Goomba Stomped Boss");
 			}
 		}
-		if(KillFeed>1)
-		{
-			FakeDeath[victim] = true;
-			Handle hStreak = CreateEvent("player_death", true);
-			SetEventString(hStreak, "weapon", "taunt_scout");
-			SetEventString(hStreak, "weapon_logclassname", "goomba");
-			SetEventInt(hStreak, "attacker", GetClientUserId(attacker));
-			SetEventInt(hStreak, "userid", GetClientUserId(victim));
-			SetEventInt(hStreak, "death_flags", TF_DEATHFLAG_DEADRINGER);
-			FireEvent(hStreak);
-			KillFeeded = true;
-			CreateTimer(0.2, Timer_KillFeeded, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
-		}
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -12004,15 +11883,6 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 	if(IsBoss(victim))
 	{
 		UpdateHealthBar();
-	}
-}
-
-public Action Timer_KillFeeded(Handle timer, int userid)
-{
-	int client=GetClientOfUserId(userid);
-	if(IsValidClient(client))
-	{
-		KillFeeded[client] = false;
 	}
 }
 
