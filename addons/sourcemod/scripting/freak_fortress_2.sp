@@ -3395,7 +3395,7 @@ public void PrecacheCharacter(int characterIndex)
 				}
 			}
 		}
-		else if(StrEqual(section, "mod_precache") || !StrContains(section, "sound_") || StrEqual(section, "catch_phrase"))
+		else if(StrEqual(section, "mod_precache") || !StrContains(section, "sound_") || !StrContains(section, "catch_"))
 		{
 			for(int i=1; ; i++)
 			{
@@ -12585,9 +12585,7 @@ stock int GetAbilityArgumentString(int index, const char[] plugin_name, const ch
 stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 {
 	if(boss<0 || Special[boss]<0 || !BossKV[Special[boss]])
-	{
 		return false;
-	}
 
 	KvRewind(BossKV[Special[boss]]);
 	if(!KvJumpToKey(BossKV[Special[boss]], sound))
@@ -12610,9 +12608,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	}
 
 	if(!sounds)
-	{
 		return false;  //Found sound, but no sounds inside of it
-	}
 
 	IntToString(GetRandomInt(1, sounds), key, sizeof(key));
 	KvGetString(BossKV[Special[boss]], key, file, length);  //Populate file
@@ -12622,15 +12618,11 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 stock bool RandomSoundAbility(const char[] sound, char[] file, int length, int boss=0, int slot=0)
 {
 	if(boss<0 || Special[boss]<0 || !BossKV[Special[boss]])
-	{
 		return false;
-	}
 
 	KvRewind(BossKV[Special[boss]]);
 	if(!KvJumpToKey(BossKV[Special[boss]], sound))
-	{
 		return false;  //Sound doesn't exist
-	}
 
 	char key[10];
 	int sounds, matches, match[MAXRANDOMS];
@@ -12639,9 +12631,7 @@ stock bool RandomSoundAbility(const char[] sound, char[] file, int length, int b
 		IntToString(sounds, key, 4);
 		KvGetString(BossKV[Special[boss]], key, file, length);
 		if(!file[0])
-		{
 			break;  //Assume that there's no more sounds
-		}
 
 		Format(key, sizeof(key), "slot%i", sounds);
 		if(KvGetNum(BossKV[Special[boss]], key, 0)==slot)
@@ -12652,9 +12642,42 @@ stock bool RandomSoundAbility(const char[] sound, char[] file, int length, int b
 	}
 
 	if(!matches)
-	{
 		return false;  //Found sound, but no sounds inside of it
+
+	IntToString(match[GetRandomInt(0, matches-1)], key, 4);
+	KvGetString(BossKV[Special[boss]], key, file, length);  //Populate file
+	return true;
+}
+
+stock bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0, const char[] oldFile)
+{
+	if(boss<0 || Special[boss]<0 || !BossKV[Special[boss]])
+		return false;
+
+	KvRewind(BossKV[Special[boss]]);
+	if(!KvJumpToKey(BossKV[Special[boss]], sound))
+		return false;  //Sound doesn't exist
+
+	char key[10], replacement[PLATFORM_MAX_PATH];
+	int sounds, matches, match[MAXRANDOMS];
+	while(++sounds)
+	{
+		IntToString(sounds, key, 4);
+		KvGetString(BossKV[Special[boss]], key, file, length);
+		if(!file[0])
+			break;  //Assume that there's no more sounds
+
+		Format(key, sizeof(key), "vo%i", sounds);
+		KvGetString(BossKV[Special[boss]], key, replacement, sizeof(replacement));
+		if(StrEqual(replacement, oldFile, false))
+		{
+			match[matches]=sounds;  //Found a match: let's store it in the array
+			matches++;
+		}
 	}
+
+	if(!matches)
+		return false;  //Found sound, but no sounds inside of it
 
 	IntToString(match[GetRandomInt(0, matches-1)], key, 4);
 	KvGetString(BossKV[Special[boss]], key, file, length);  //Populate file
@@ -12811,9 +12834,7 @@ public bool PickCharacter(int boss, int companion)
 		}
 
 		if(character==Specials)  //Companion not found
-		{
 			return false;
-		}
 	}
 
 	//All of the following uses `companion` because it will always be the boss index we want
@@ -12930,9 +12951,7 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int qual, c
 {
 	Handle hWeapon=TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
 	if(hWeapon==INVALID_HANDLE)
-	{
 		return -1;
-	}
 
 	TF2Items_SetClassname(hWeapon, name);
 	TF2Items_SetItemIndex(hWeapon, index);
@@ -12942,9 +12961,7 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int qual, c
 	int count=ExplodeString(att, ";", atts, 32, 32);
 
 	if(count % 2)
-	{
 		--count;
-	}
 
 	if(count>0)
 	{
@@ -12978,18 +12995,16 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int qual, c
 public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 {
 	if(IsValidClient(client) && (action==MenuAction_Select || (action==MenuAction_Cancel && selection==MenuCancel_Exit)))
-	{
 		FF2flags[client]|=FF2FLAG_CLASSHELPED;
-	}
+
 	return;
 }
 
 public int QueuePanelH(Handle menu, MenuAction action, int client, int selection)
 {
 	if(action==MenuAction_Select && selection==10)
-	{
 		TurnToZeroPanel(client, client);
-	}
+
 	return false;
 }
 
@@ -12997,9 +13012,7 @@ public int QueuePanelH(Handle menu, MenuAction action, int client, int selection
 public Action QueuePanelCmd(int client, int args)
 {
 	if(!Enabled2)
-	{
 		return Plugin_Continue;
-	}
 
 	char text[64];
 	int items;
@@ -13055,9 +13068,7 @@ public Action QueuePanelCmd(int client, int args)
 public Action ResetQueuePointsCmd(int client, int args)
 {
 	if(!Enabled2)
-	{
 		return Plugin_Continue;
-	}
 
 	if(client && !args)  //Normal players
 	{
@@ -13131,9 +13142,7 @@ public int TurnToZeroPanelH(Handle menu, MenuAction action, int client, int posi
 public Action TurnToZeroPanel(int client, int target)
 {
 	if(!Enabled2)
-	{
 		return Plugin_Continue;
-	}
 
 	if(!client)
 	{
@@ -13173,14 +13182,10 @@ public Action TurnToZeroPanel(int client, int target)
 bool GetClientClassInfoCookie(int client)
 {
 	if(!IsValidClient(client) || IsFakeClient(client))
-	{
 		return false;
-	}
 
 	if(!AreClientCookiesCached(client))
-	{
 		return true;
-	}
 
 	char cookies[24];
 	char cookieValues[8][5];
@@ -13192,14 +13197,10 @@ bool GetClientClassInfoCookie(int client)
 int GetClientQueuePoints(int client)
 {
 	if(!IsValidClient(client) || !AreClientCookiesCached(client))
-	{
 		return 0;
-	}
 
 	if(IsFakeClient(client))
-	{
 		return botqueuepoints;
-	}
 
 	char cookies[24], cookieValues[8][5];
 	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
@@ -13226,9 +13227,7 @@ stock bool IsBoss(int client)
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(Boss[boss]==client)
-			{
 				return true;
-			}
 		}
 	}
 	return false;
@@ -13256,41 +13255,31 @@ public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
 		switch(selection)
 		{
 			case 1:
-			{
 				Command_GetHP(client);
-			}
+
 			case 2:
-			{
 				Command_SetMyBoss(client, 0);
-			}
+
 			case 3:
-			{
 				HelpPanelClass(client);
-			}
+
 			case 4:
-			{
 				NewPanel(client, maxVersion);
-			}
+
 			case 5:
-			{
 				QueuePanelCmd(client, 0);
-			}
+
 			case 6:
-			{
 				MusicTogglePanel(client);
-			}
+
 			case 7:
-			{
 				VoiceTogglePanel(client);
-			}
+
 			case 8:
-			{
 				HelpPanel3(client);
-			}
+
 			default:
-			{
 				return;
-			}
 		}
 	}
 }
@@ -13338,18 +13327,29 @@ public int NewPanelH(Handle menu, MenuAction action, int param1, int param2)
 			case 1:
 			{
 				if(curHelp[param1]<=0)
+				{
 					NewPanel(param1, 0);
+				}
 				else
+				{
 					NewPanel(param1, --curHelp[param1]);
+				}
 			}
 			case 2:
 			{
 				if(curHelp[param1]>=maxVersion)
+				{
 					NewPanel(param1, maxVersion);
+				}
 				else
+				{
 					NewPanel(param1, ++curHelp[param1]);
+				}
 			}
-			default: return;
+			default:
+			{
+				return;
+			}
 		}
 	}
 }
@@ -13357,9 +13357,7 @@ public int NewPanelH(Handle menu, MenuAction action, int param1, int param2)
 public Action NewPanelCmd(int client, int args)
 {
 	if(!IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	NewPanel(client, maxVersion);
 	return Plugin_Handled;
@@ -13368,9 +13366,7 @@ public Action NewPanelCmd(int client, int args)
 public Action NewPanel(int client, int versionIndex)
 {
 	if(!Enabled2)
-	{
 		return Plugin_Continue;
-	}
 
 	curHelp[client]=versionIndex;
 	Handle panel=CreatePanel();
@@ -13410,9 +13406,7 @@ public Action NewPanel(int client, int versionIndex)
 public Action HelpPanel3Cmd(int client, int args)
 {
 	if(!IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
@@ -13429,9 +13423,7 @@ public Action HelpPanel3Cmd(int client, int args)
 public Action HelpPanel3(int client)
 {
 	if(!Enabled2)
-	{
 		return Plugin_Continue;
-	}
 
 	Handle panel=CreatePanel();
 	SetPanelTitle(panel, "Turn the Freak Fortress 2 class info...");
@@ -13487,9 +13479,7 @@ void ToggleClassInfo(int client)
 public Action Command_HelpPanelClass(int client, int args)
 {
 	if(!IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	HelpPanelClass(client);
 	return Plugin_Handled;
@@ -13498,9 +13488,7 @@ public Action Command_HelpPanelClass(int client, int args)
 public Action HelpPanelClass(int client)
 {
 	if(!Enabled)
-	{
 		return Plugin_Continue;
-	}
 
 	int boss=GetBossIndex(client);
 	if(boss!=-1)
@@ -13515,45 +13503,34 @@ public Action HelpPanelClass(int client)
 	switch(class)
 	{
 		case TFClass_Scout:
-		{
 			Format(text, sizeof(text), "%T", "help_scout", client);
-		}
+
 		case TFClass_Soldier:
-		{
 			Format(text, sizeof(text), "%T", "help_soldier", client);
-		}
+
 		case TFClass_Pyro:
-		{
 			Format(text, sizeof(text), "%T", "help_pyro", client);
-		}
+
 		case TFClass_DemoMan:
-		{
 			Format(text, sizeof(text), "%T", "help_demo", client);
-		}
+
 		case TFClass_Heavy:
-		{
 			Format(text, sizeof(text), "%T", "help_heavy", client);
-		}
+
 		case TFClass_Engineer:
-		{
 			Format(text, sizeof(text), "%T", "help_eggineer", client);
-		}
+
 		case TFClass_Medic:
-		{
 			Format(text, sizeof(text), "%T", "help_medic", client);
-		}
+
 		case TFClass_Sniper:
-		{
 			Format(text, sizeof(text), "%T", "help_sniper", client);
-		}
+
 		case TFClass_Spy:
-		{
 			Format(text, sizeof(text), "%T", "help_spie", client);
-		}
+
 		default:
-		{
 			Format(text, sizeof(text), "");
-		}
 	}
 
 	Format(text, sizeof(text), "%T\n%s", "help_melee", client, text);
@@ -13568,9 +13545,7 @@ public Action HelpPanelClass(int client)
 void HelpPanelBoss(int boss)
 {
 	if(!IsValidClient(Boss[boss]))
-	{
 		return;
-	}
 
 	char text[512], language[20];
 	GetLanguageInfo(GetClientLanguage(Boss[boss]), language, 8, text, 8);
@@ -13582,9 +13557,7 @@ void HelpPanelBoss(int boss)
 	{
 		KvGetString(BossKV[Special[boss]], "description_en", text, sizeof(text));  //Default to English if their language isn't available
 		if(!text[0])
-		{
 			return;
-		}
 	}
 	ReplaceString(text, sizeof(text), "\\n", "\n");
 
@@ -13598,9 +13571,7 @@ void HelpPanelBoss(int boss)
 public Action MusicTogglePanelCmd(int client, int args)
 {
 	if(!IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	if(args)
 	{
@@ -13630,9 +13601,7 @@ public Action MusicTogglePanelCmd(int client, int args)
 public Action MusicTogglePanel(int client)
 {
 	if(!Enabled || !IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
@@ -13647,24 +13616,27 @@ public Action MusicTogglePanel(int client)
 	{
 		char title[128];
 		Handle togglemusic = CreateMenu(MusicTogglePanelH);
-		Format(title,sizeof(title), "%T", "theme_menu", client);
+		SetGlobalTransTarget(client);
+		Format(title, sizeof(title), "%t", "theme_menu");
 		SetMenuTitle(togglemusic, title, title);
 		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
-			Format(title, sizeof(title), "%T", "themes_disable", client);
-		else
-			Format(title, sizeof(title), "%T", "themes_enable", client);
-		AddMenuItem(togglemusic, title, title);
-		if(CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 		{
-			Format(title, sizeof(title), "%T", "theme_skip", client);
+			Format(title, sizeof(title), "%t", "themes_disable");
 			AddMenuItem(togglemusic, title, title);
-			Format(title, sizeof(title), "%T", "theme_shuffle", client);
+			Format(title, sizeof(title), "%t", "theme_skip");
+			AddMenuItem(togglemusic, title, title);
+			Format(title, sizeof(title), "%t", "theme_shuffle");
 			AddMenuItem(togglemusic, title, title);
 			if(GetConVarInt(cvarSongInfo)>=0)
 			{
-				Format(title, sizeof(title), "%T", "theme_select", client);
+				Format(title, sizeof(title), "%t", "theme_select");
 				AddMenuItem(togglemusic, title, title);
 			}
+		}
+		else
+		{
+			Format(title, sizeof(title), "%t", "themes_enable");
+			AddMenuItem(togglemusic, title, title);
 		}
 		SetMenuExitButton(togglemusic, true);
 		DisplayMenu(togglemusic, client, MENU_TIME_FOREVER);
@@ -13703,9 +13675,18 @@ public int MusicTogglePanelH(Handle menu, MenuAction action, int client, int sel
 					ToggleBGM(client, CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? false : true);               
 					FPrintToChat(client, "%t", "ff2_music", !CheckSoundException(client, SOUNDEXCEPT_MUSIC) ? "off" : "on");	// And here too
 				}
-				case 1: Command_SkipSong(client, 0);
-				case 2: Command_ShuffleSong(client, 0);
-				case 3: Command_Tracklist(client, 0);
+				case 1:
+				{
+					Command_SkipSong(client, 0);
+				}
+				case 2:
+				{
+					Command_ShuffleSong(client, 0);
+				}
+				case 3: 
+				{
+					Command_Tracklist(client, 0);
+				}
 			}
 		}
 	}
@@ -13770,9 +13751,7 @@ public Action Command_SkipSong(int client, int args)
 
 		cursongId[client]++;
 		if(cursongId[client]>=index)
-		{
 			cursongId[client]=1;
-		}
 
 		char lives[256];
 		Format(lives, sizeof(lives), "life%i", cursongId[client]);
@@ -13815,9 +13794,7 @@ public Action Command_SkipSong(int client, int args)
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			if(MusicTimer[client]!=INVALID_HANDLE)
-			{
 				KillTimer(MusicTimer[client]);
-			}
 		}
 	}
 	return Plugin_Handled;
@@ -13844,9 +13821,7 @@ public Action Command_ShuffleSong(int client, int args)
 	}
 
 	if(!GetConVarBool(cvarAdvancedMusic))
-	{
 		return Plugin_Handled;
-	}
 
 	FReplyToCommand(client, "%t", "track_shuffle");
 	StartMusic(client);
@@ -13874,9 +13849,7 @@ public Action Command_Tracklist(int client, int args)
 	}
 
 	if(!GetConVarBool(cvarAdvancedMusic) || (GetConVarInt(cvarSongInfo)<0))
-	{
 		return Plugin_Handled;
-	}
 
 	char id3[6][256];
 	Handle trackList = CreateMenu(Command_TrackListH);
@@ -13907,10 +13880,8 @@ public Action Command_Tracklist(int client, int args)
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(strlen(lives))
 			{
-				if(StringToInt(lives)!=BossLives[Special[0]])
-				{
+				if(StringToInt(lives) != BossLives[Special[0]])
 					continue;
-				}
 			}
 			Format(id3[0], sizeof(id3[]), "name%i", trackIdx);
 			KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
@@ -13918,13 +13889,11 @@ public Action Command_Tracklist(int client, int args)
 			KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
 			GetSongTime(trackIdx, id3[5], sizeof(id3[]));
 			if(!id3[3])
-			{
 				Format(id3[3], sizeof(id3[]), "%t", "unknown_artist");
-			}
+
 			if(!id3[2])
-			{
 				Format(id3[2], sizeof(id3[]), "%t", "unknown_song");
-			}
+
 			Format(id3[4], sizeof(id3[]), "%s - %s (%s)", id3[3], id3[2], id3[5]);
 			CRemoveTags(id3[4], sizeof(id3[]));
 			AddMenuItem(trackList, id3[4], id3[4]);
@@ -13997,7 +13966,6 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 		{
 			CloseHandle(menu);
 		}
-
 		case MenuAction_Select:
 		{
 			StopMusic(param1, true);
@@ -14029,9 +13997,8 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 						if(StringToInt(lives)!=BossLives[Special[0]])
 						{
 							if(MusicTimer[param1]!=INVALID_HANDLE)
-							{
 								KillTimer(MusicTimer[param1]);
-							}
+
 							return;
 						}
 					}
@@ -14043,9 +14010,7 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 					LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 					if(MusicTimer[param1]!=INVALID_HANDLE)
-					{
 						KillTimer(MusicTimer[param1]);
-					}
 				}
 			}
 		}
@@ -14056,9 +14021,7 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 public Action VoiceTogglePanelCmd(int client, int args)
 {
 	if(!IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
@@ -14075,9 +14038,7 @@ public Action VoiceTogglePanelCmd(int client, int args)
 public Action VoiceTogglePanel(int client)
 {
 	if(!Enabled || !IsValidClient(client))
-	{
 		return Plugin_Continue;
-	}
 
 	Handle panel=CreatePanel();
 	SetPanelTitle(panel, "Turn the Freak Fortress 2 voices...");
@@ -14103,9 +14064,7 @@ public int VoiceTogglePanelH(Handle menu, MenuAction action, int client, int sel
 
 		FPrintToChat(client, "%t", "ff2_voice", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
 		if(selection==2)
-		{
 			FPrintToChat(client, "%t", "ff2_voice2");
-		}
 	}
 }
 
@@ -14129,19 +14088,21 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 #endif
 {
 	if(!Enabled || !IsValidClient(client) || channel<1)
-	{
 		return Plugin_Continue;
-	}
 
-	int boss=GetBossIndex(client);
-	if(boss==-1)
-	{
+	int boss = GetBossIndex(client);
+	if(boss == -1)
 		return Plugin_Continue;
-	}
 
 	if(channel==SNDCHAN_VOICE && !(FF2flags[Boss[boss]] & FF2FLAG_TALKING))
 	{
 		char newSound[PLATFORM_MAX_PATH];
+		if(RandomSoundVo("catch_replace", newSound, PLATFORM_MAX_PATH, boss, sound))
+		{
+			strcopy(sound, PLATFORM_MAX_PATH, newSound);
+			return Plugin_Changed;
+		}
+
 		if(RandomSound("catch_phrase", newSound, PLATFORM_MAX_PATH, boss))
 		{
 			strcopy(sound, PLATFORM_MAX_PATH, newSound);
@@ -14149,9 +14110,7 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 		}
 
 		if(bBlockVoice[Special[boss]])
-		{
 			return Plugin_Stop;
-		}
 	}
 	return Plugin_Continue;
 }
@@ -14162,9 +14121,8 @@ stock int GetHealingTarget(int client, bool checkgun=false)
 	if(!checkgun)
 	{
 		if(GetEntProp(medigun, Prop_Send, "m_bHealing"))
-		{
 			return GetEntPropEnt(medigun, Prop_Send, "m_hHealingTarget");
-		}
+
 		return -1;
 	}
 
@@ -14175,9 +14133,7 @@ stock int GetHealingTarget(int client, bool checkgun=false)
 		if(!strcmp(classname, "tf_weapon_medigun", false))
 		{
 			if(GetEntProp(medigun, Prop_Send, "m_bHealing"))
-			{
 				return GetEntPropEnt(medigun, Prop_Send, "m_hHealingTarget");
-			}
 		}
 	}
 	return -1;
@@ -14186,26 +14142,18 @@ stock int GetHealingTarget(int client, bool checkgun=false)
 stock bool IsValidClient(int client, bool replaycheck=true)
 {
 	if(client<=0 || client>MaxClients)
-	{
 		return false;
-	}
 
 	if(!IsClientInGame(client))
-	{
 		return false;
-	}
 
 	if(GetEntProp(client, Prop_Send, "m_bIsCoaching"))
-	{
 		return false;
-	}
 
 	if(replaycheck)
 	{
 		if(IsClientSourceTV(client) || IsClientReplay(client))
-		{
 			return false;
-		}
 	}
 	return true;
 }
@@ -14218,9 +14166,7 @@ public void CvarChangeNextmap(Handle convar, const char[] oldValue, const char[]
 public Action Timer_DisplayCharsetVote(Handle timer)
 {
 	if(isCharSetSelected)
-	{
 		return Plugin_Continue;
-	}
 
 	if(IsVoteInProgress())
 	{
@@ -14242,9 +14188,8 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	{
 		total++;
 		if(KvGetNum(Kv, "hidden", 0))  //Hidden charsets are hidden for a reason :P
-		{
 			continue;
-		}
+
 		charsets++;
 		validCharsets[charsets]=total;
 
@@ -14261,9 +14206,8 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		VoteMenuToAll(menu, voteDuration ? GetConVarInt(voteDuration) : 20);
 	}
 	if(charsets<3)
-	{
 		RemoveMenuItem(menu, 0);
-	}
+
 	return Plugin_Continue;
 }
 public int Handler_VoteCharset(Handle menu, MenuAction action, int param1, int param2)
@@ -14299,9 +14243,7 @@ public Action Command_Say(int client, int args)
 {
 	char chat[128];
 	if(GetCmdArgString(chat, sizeof(chat))<1 || !client)
-	{
 		return Plugin_Continue;
-	}
 
 	if(!strcmp(chat, "\"nextmap\"") && FF2CharSetString[0])
 	{
@@ -14333,9 +14275,7 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 	Call_Finish();
 
 	if(!enabled)
-	{
 		return false;
-	}
 
 	Action action=Plugin_Continue;
 	Call_StartForward(OnAbility);
@@ -14485,10 +14425,11 @@ public void SwitchTeams(int bossteam, int otherteam, bool respawn)
 
 			if(respawn)
 			{
-				for(int client=1;client<=MaxClients;client++)
+				for(int client=1; client<=MaxClients; client++)
 				{
 					if(!IsValidClient(client) || GetClientTeam(client)<=view_as<int>(TFTeam_Spectator) || TF2_GetPlayerClass(client)==TFClass_Unknown)
 						continue;
+
 					TF2_RespawnPlayer(client);
 				}
 			}
@@ -14515,6 +14456,7 @@ stock void RemoveShield(int client, int attacker, float position[3])
 	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
 	if(GetConVarInt(cvarShieldType)==3)
 		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 1.0);
+
 	shieldHP[client]=0.0;
 	shield[client]=0;
 	CreateTimer(1.0, Timer_RemoveStun, client, TIMER_FLAG_NO_MAPCHANGE);
@@ -14523,9 +14465,8 @@ stock void RemoveShield(int client, int attacker, float position[3])
 public Action Timer_RemoveStun(Handle timer, int client)
 {
 	if(RemoveCond(client, TFCond_Dazed))
-	{
 		return Plugin_Continue;
-	}
+
 	return Plugin_Continue;
 }
 
@@ -14541,10 +14482,10 @@ public int Native_FF2Version(Handle plugin, int numParams)
 	version[1]=StringToInt(MINOR_REVISION);
 	version[2]=StringToInt(STABLE_REVISION);
 	SetNativeArray(1, version, sizeof(version));
-	#if !defined DEV_REVISION
-		return false;
+	#if defined DEV_REVISION
+	return true;
 	#else
-		return true;
+	return false;
 	#endif
 }
 
@@ -14555,10 +14496,10 @@ public int Native_ForkVersion(Handle plugin, int numParams)
 	fversion[1]=StringToInt(FORK_MINOR_REVISION);
 	fversion[2]=StringToInt(FORK_STABLE_REVISION);
 	SetNativeArray(1, fversion, sizeof(fversion));
-	#if !defined FORK_SUB_REVISION
-		return false;
+	#if defined FORK_DEV_REVISION
+	return true;
 	#else
-		return true;
+	return false;
 	#endif
 }
 
@@ -14566,9 +14507,8 @@ public int Native_GetBoss(Handle plugin, int numParams)
 {
 	int boss=GetNativeCell(1);
 	if(boss>=0 && boss<=MaxClients && IsValidClient(Boss[boss]))
-	{
 		return GetClientUserId(Boss[boss]);
-	}
+
 	return -1;
 }
 
@@ -14669,9 +14609,8 @@ public int Native_SetBossRageDamage(Handle plugin, int numParams)
 public int Native_GetRoundState(Handle plugin, int numParams)
 {
 	if(CheckRoundState()<=0)
-	{
 		return 0;
-	}
+
 	return CheckRoundState();
 }
 
@@ -14683,13 +14622,14 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 	char ability_name[64];
 	GetNativeString(3,ability_name,64);
 
-	if(!BossKV[Special[index]]) return view_as<int>(0.0);
+	if(!BossKV[Special[index]])
+		return view_as<int>(0.0);
+
 	KvRewind(BossKV[Special[index]]);
 	float see;
 	if(!ability_name[0])
-	{
 		return view_as<int>(KvGetFloat(BossKV[Special[index]],"ragedist",400.0));
-	}
+
 	char s[10];
 	for(int i=1; i<MAXRANDOMS; i++)
 	{
@@ -14722,9 +14662,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 	GetNativeString(2, pluginName, sizeof(pluginName));
 	GetNativeString(3, abilityName, sizeof(abilityName));
 	if(boss==-1 || Special[boss]==-1 || !BossKV[Special[boss]])
-	{
 		return false;
-	}
 
 	KvRewind(BossKV[Special[boss]]);
 	if(!BossKV[Special[boss]])
@@ -14746,9 +14684,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 				char pluginName2[64];
 				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName2, sizeof(pluginName2));
 				if(!pluginName[0] || !pluginName2[0] || StrEqual(pluginName, pluginName2))  //Make sure the plugin names are equal
-				{
 					return true;
-				}
 			}
 			KvGoBack(BossKV[Special[boss]]);
 		}
@@ -14760,8 +14696,8 @@ public int Native_DoAbility(Handle plugin, int numParams)
 {
 	char plugin_name[64];
 	char ability_name[64];
-	GetNativeString(2,plugin_name,64);
-	GetNativeString(3,ability_name,64);
+	GetNativeString(2, plugin_name, 64);
+	GetNativeString(3, ability_name, 64);
 	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
@@ -14769,39 +14705,38 @@ public int Native_GetAbilityArgument(Handle plugin, int numParams)
 {
 	char plugin_name[64];
 	char ability_name[64];
-	GetNativeString(2,plugin_name,64);
-	GetNativeString(3,ability_name,64);
-	return GetAbilityArgument(GetNativeCell(1),plugin_name,ability_name,GetNativeCell(4),GetNativeCell(5));
+	GetNativeString(2, plugin_name, 64);
+	GetNativeString(3, ability_name, 64);
+	return GetAbilityArgument(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
 public int Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 {
 	char plugin_name[64];
 	char ability_name[64];
-	GetNativeString(2,plugin_name,64);
-	GetNativeString(3,ability_name,64);
-	return view_as<int>(GetAbilityArgumentFloat(GetNativeCell(1),plugin_name,ability_name,GetNativeCell(4),GetNativeCell(5)));
+	GetNativeString(2, plugin_name, 64);
+	GetNativeString(3, ability_name, 64);
+	return view_as<int>(GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5)));
 }
 
 public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
 {
 	char plugin_name[64];
-	GetNativeString(2,plugin_name,64);
+	GetNativeString(2, plugin_name, 64);
 	char ability_name[64];
-	GetNativeString(3,ability_name,64);
-	int dstrlen=GetNativeCell(6);
+	GetNativeString(3, ability_name, 64);
+	int dstrlen = GetNativeCell(6);
 	char[] s = new char[dstrlen+1];
-	GetAbilityArgumentString(GetNativeCell(1),plugin_name,ability_name,GetNativeCell(4),s,dstrlen);
-	SetNativeString(5,s,dstrlen);
+	GetAbilityArgumentString(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), s, dstrlen);
+	SetNativeString(5, s, dstrlen);
 }
 
 public int Native_GetDamage(Handle plugin, int numParams)
 {
-	int client=GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(!IsValidClient(client))
-	{
 		return 0;
-	}
+
 	return Damage[client];
 }
 
@@ -14834,9 +14769,8 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 		if(index!=-1 && index<Specials)
 		{
 			if(BossKV[index]!=INVALID_HANDLE)
-			{
 				KvRewind(BossKV[index]);
-			}
+
 			return view_as<int>(BossKV[index]);
 		}
 	}
@@ -14845,9 +14779,8 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 		if(index!=-1 && index<=MaxClients && Special[index]!=-1 && Special[index]<MAXSPECIALS)
 		{
 			if(BossKV[Special[index]]!=INVALID_HANDLE)
-			{
 				KvRewind(BossKV[Special[index]]);
-			}
+
 			return view_as<int>(BossKV[Special[index]]);
 		}
 	}
@@ -14911,15 +14844,19 @@ public int Native_SetClientGlow(Handle plugin, int numParams)
 
 public int Native_GetClientShield(Handle plugin, int numParams)
 {
-	int client=GetNativeCell(1);
-	if(hadshield[client])
+	int client = GetNativeCell(1);
+	if(IsValidClient(client) && hadshield[client])
 	{
 		if(shield[client])
 		{
-			if(GetConVarInt(cvarShieldType)>2)
+			if(GetConVarInt(cvarShieldType) > 2)
+			{
 				return RoundToFloor(shieldHP[client]/GetConVarFloat(cvarShieldHealth)*100.0);
+			}
 			else
+			{
 				return 100;
+			}
 		}
 		return 0;
 	}
@@ -14928,31 +14865,35 @@ public int Native_GetClientShield(Handle plugin, int numParams)
 
 public int Native_SetClientShield(Handle plugin, int numParams)
 {
-	int client=GetNativeCell(1);
-	if(GetNativeCell(2)>0)
+	int client = GetNativeCell(1);
+	if(IsValidClient(client))
 	{
-		shield[client]=GetNativeCell(2);
-	}
-	if(GetNativeCell(3)>=0)
-	{
-		shieldHP[client]=GetNativeCell(3)*GetConVarFloat(cvarShieldHealth)/100.0;
-	}
-	if(GetNativeCell(4)>0)
-	{
-		shDmgReduction[client]=GetNativeCell(4);
-	}
-	else if(GetNativeCell(3)>0)
-	{
-		shDmgReduction[client]=GetNativeCell(3)*GetConVarFloat(cvarShieldResist)/100.0;
+		if(GetNativeCell(2) > 0)
+			shield[client] = GetNativeCell(2);
+
+		if(GetNativeCell(3) >= 0)
+			shieldHP[client] = GetNativeCell(3)*GetConVarFloat(cvarShieldHealth)/100.0;
+
+		if(GetNativeCell(4) > 0)
+		{
+			shDmgReduction[client] = GetNativeCell(4);
+		}
+		else if(GetNativeCell(3) > 0)
+		{
+			shDmgReduction[client] = GetNativeCell(3)*GetConVarFloat(cvarShieldResist)/100.0;
+		}
 	}
 }
 
 public int Native_RemoveClientShield(Handle plugin, int numParams)
 {
-	int client=GetNativeCell(1);
-	TF2_RemoveWearable(client, shield[client]);
-	shieldHP[client]=0.0;
-	shield[client]=0;
+	int client = GetNativeCell(1);
+	if(IsValidClient(client))
+	{
+		TF2_RemoveWearable(client, shield[client]);
+		shieldHP[client] = 0.0;
+		shield[client] = 0;
+	}
 }
 
 public int Native_LogError(Handle plugin, int numParams)
@@ -14988,7 +14929,7 @@ public Action VSH_OnIsSaxtonHaleModeEnabled(int &result)
 {
 	if((!result || result==1) && Enabled)
 	{
-		result=2;
+		result = 2;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -14998,7 +14939,7 @@ public Action VSH_OnGetSaxtonHaleTeam(int &result)
 {
 	if(Enabled)
 	{
-		result=BossTeam;
+		result = BossTeam;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -15008,7 +14949,7 @@ public Action VSH_OnGetSaxtonHaleUserId(int &result)
 {
 	if(Enabled && IsClientConnected(Boss[0]))
 	{
-		result=GetClientUserId(Boss[0]);
+		result = GetClientUserId(Boss[0]);
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -15018,7 +14959,7 @@ public Action VSH_OnGetSpecialRoundIndex(int &result)
 {
 	if(Enabled)
 	{
-		result=Special[0];
+		result = Special[0];
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -15028,7 +14969,7 @@ public Action VSH_OnGetSaxtonHaleHealth(int &result)
 {
 	if(Enabled)
 	{
-		result=BossHealth[0];
+		result = BossHealth[0];
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -15038,7 +14979,7 @@ public Action VSH_OnGetSaxtonHaleHealthMax(int &result)
 {
 	if(Enabled)
 	{
-		result=BossHealthMax[0];
+		result = BossHealthMax[0];
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -15048,7 +14989,7 @@ public Action VSH_OnGetClientDamage(int client, int &result)
 {
 	if(Enabled)
 	{
-		result=Damage[client];
+		result = Damage[client];
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -15058,7 +14999,7 @@ public Action VSH_OnGetRoundState(int &result)
 {
 	if(Enabled)
 	{
-		result=CheckRoundState();
+		result = CheckRoundState();
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -15077,20 +15018,14 @@ public void OnEntityCreated(int entity, const char[] classname)
 	if(GetConVarBool(cvarHealthBar))
 	{
 		if(StrEqual(classname, HEALTHBAR_CLASS))
-		{
-			healthBar=entity;
-		}
+			healthBar = entity;
 
 		if(!IsValidEntity(g_Monoculus) && StrEqual(classname, MONOCULUS))
-		{
-			g_Monoculus=entity;
-		}
+			g_Monoculus = entity;
 	}
 
 	if(StrContains(classname, "item_healthkit")!=-1 || StrContains(classname, "item_ammopack")!=-1 || StrEqual(classname, "tf_ammo_pack"))
-	{
 		SDKHook(entity, SDKHook_Spawn, OnItemSpawned);
-	}
 }
 
 public void OnEntityDestroyed(int entity)
@@ -15099,9 +15034,7 @@ public void OnEntityDestroyed(int entity)
 	{
 		g_Monoculus=FindEntityByClassname(-1, MONOCULUS);
 		if(g_Monoculus==entity)
-		{
 			g_Monoculus=FindEntityByClassname(entity, MONOCULUS);
-		}
 	}
 }
 
@@ -15159,9 +15092,7 @@ void FindHealthBar()
 {
 	healthBar=FindEntityByClassname(-1, HEALTHBAR_CLASS);
 	if(!IsValidEntity(healthBar))
-	{
 		healthBar=CreateEntityByName(HEALTHBAR_CLASS);
-	}
 }
 
 public void HealthbarEnableChanged(Handle convar, const char[] oldValue, const char[] newValue)
@@ -15179,9 +15110,7 @@ public void HealthbarEnableChanged(Handle convar, const char[] oldValue, const c
 void UpdateHealthBar()
 {
 	if(!Enabled || !GetConVarBool(cvarHealthBar) || IsValidEntity(g_Monoculus) || !IsValidEntity(healthBar) || CheckRoundState()==-1)
-	{
 		return;
-	}
 
 	int healthAmount, maxHealthAmount, bosses, healthPercent;
 	for(int boss; boss<=MaxClients; boss++)
@@ -15215,9 +15144,7 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 	{
 		GlowTimer[client]+=time1;
 		if(time2>=0)
-		{
 			GlowTimer[client]=time2;
-		}
 
 		if(GlowTimer[client]<=0.0)
 		{
