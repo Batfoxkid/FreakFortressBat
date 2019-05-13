@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."011"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -7044,15 +7044,15 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 43:  //Killing Gloves of Boxing
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.15 ; 77 ; 0 ; 109 ; 0.5 ; 177 ; 2 ; 205 ; 0.7 ; 206 ; 0.7 ; 239 ; 0.25 ; 442 ; 1.35 ; 443 ; 1.1 ; 800 ; 0");
+				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.2 ; 77 ; 0 ; 109 ; 0.5 ; 177 ; 2 ; 205 ; 0.7 ; 206 ; 0.7 ; 239 ; 0.6 ; 442 ; 1.35 ; 443 ; 1.1 ; 800 ; 0");
 				// 16: +50 HP on hit
-				// 69: -85% health from healers
+				// 69: -80% health from healers
 				// 77: -100% max primary ammo
 				// 109: -50% health from packs
 				// 177: -100% weapon switch speed
 				// 205: -30% damage from ranged while active
 				// 206: -30% damage from melee while active
-				// 239: -75% uber for healer
+				// 239: -40% uber for healer
 				// 442: +35% speed
 				// 443: +10% jump
 				// 800: -100% max overheal
@@ -7309,15 +7309,15 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 348:  //Sharpened Volcano Fragment
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 35 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.25 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
-				// 16: +35 HP on hit
+				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 30 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.67 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
+				// 16: +30 HP on hit
 				// 69: -66% health from healers
 				// 77: -100% max primary ammo
 				// 109: -50% health from packs
 				// 773: -50% deploy speed
 				// 205: -20% damage from ranged while active
 				// 206: -40% damage from melee while active
-				// 239: -75% uber for healer
+				// 239: -33% uber for healer
 				// 442: +15% speed
 				// 443: +15% jump
 				// 800: -66% max overheal
