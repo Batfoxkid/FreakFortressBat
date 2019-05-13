@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."013"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1917,7 +1917,7 @@ public void OnPluginStart()
 	cvarSpecForceBoss = CreateConVar("ff2_spec_force_boss", "0", "0-Spectators are excluded from the queue system, 1-Spectators are counted in the queue system", _, true, 0.0, true, 1.0);
 	cvarEnableEurekaEffect = CreateConVar("ff2_enable_eureka", "0", "0-Disable the Eureka Effect, 1-Enable the Eureka Effect", _, true, 0.0, true, 1.0);
 	cvarForceBossTeam = CreateConVar("ff2_force_team", "0", "0-Boss is always on Blu, 1-Boss is on a random team each round, 2-Boss is always on Red", _, true, 0.0, true, 3.0);
-	cvarHealthBar = CreateConVar("ff2_health_bar", "0", "0-Disable the health bar, 1-Show the health bar", _, true, 0.0, true, 1.0);
+	cvarHealthBar = CreateConVar("ff2_health_bar", "0", "0-Disable the health bar, 1-Show the health bar without lives, 2-Show the health bar with lives", _, true, 0.0, true, 2.0);
 	cvarLastPlayerGlow = CreateConVar("ff2_last_player_glow", "1", "How many players left before outlining everyone", _, true, 0.0, true, 34.0);
 	cvarBossTeleporter = CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
 	cvarBossSuicide = CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
@@ -15015,7 +15015,7 @@ public void OnTakeDamagePost(int client, int attacker, int inflictor, float dama
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if(GetConVarBool(cvarHealthBar))
+	if(GetConVarInt(cvarHealthBar)>0)
 	{
 		if(StrEqual(classname, HEALTHBAR_CLASS))
 			healthBar = entity;
@@ -15097,7 +15097,7 @@ void FindHealthBar()
 
 public void HealthbarEnableChanged(Handle convar, const char[] oldValue, const char[] newValue)
 {
-	if(Enabled && GetConVarBool(cvarHealthBar) && IsValidEntity(healthBar))
+	if(Enabled && GetConVarInt(cvarHealthBar)>0 && IsValidEntity(healthBar))
 	{
 		UpdateHealthBar();
 	}
@@ -15109,7 +15109,7 @@ public void HealthbarEnableChanged(Handle convar, const char[] oldValue, const c
 
 void UpdateHealthBar()
 {
-	if(!Enabled || !GetConVarBool(cvarHealthBar) || IsValidEntity(g_Monoculus) || !IsValidEntity(healthBar) || CheckRoundState()==-1)
+	if(!Enabled || GetConVarInt(cvarHealthBar)<1 || IsValidEntity(g_Monoculus) || !IsValidEntity(healthBar) || CheckRoundState()==-1)
 		return;
 
 	int healthAmount, maxHealthAmount, bosses, healthPercent;
@@ -15118,8 +15118,16 @@ void UpdateHealthBar()
 		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 		{
 			bosses++;
-			healthAmount+=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
-			maxHealthAmount+=BossHealthMax[boss];
+			if(GetConVarInt(cvarHealthBar)>1)
+			{
+				healthAmount+=BossHealth[boss];
+				maxHealthAmount+=BossHealthMax[boss]*(BossLives[boss]-1);
+			}
+			else
+			{
+				healthAmount+=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+				maxHealthAmount+=BossHealthMax[boss];
+			}
 		}
 	}
 
