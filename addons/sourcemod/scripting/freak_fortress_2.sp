@@ -9951,7 +9951,7 @@ public Action OverTimeAlert(Handle timer)
 		char OTAlerting[PLATFORM_MAX_PATH];
 		strcopy(OTAlerting, sizeof(OTAlerting), OTVoice[GetRandomInt(0, sizeof(OTVoice)-1)]);	
 		EmitSoundToAll(OTAlerting);
-		if(GetConVarInt(FindConVar("tf_overtime_nag")))=
+		if(GetConVarInt(FindConVar("tf_overtime_nag")))
 			OTCount=GetRandomInt(-3, 0);
 
 		return Plugin_Continue;
@@ -9966,7 +9966,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 	if(!Enabled || CheckRoundState()!=1)
 		return Plugin_Continue;
 
-	int client = GetClientOfUserId(GetEventInt(event, "userid"))
+	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	char sound[PLATFORM_MAX_PATH];
 	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -11490,7 +11490,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
 						}
 					}
-					swtich(index)
+					switch(index)
 					{
 						case 225, 574:	//Your Eternal Reward, Wanga Prick
 						{
@@ -11498,8 +11498,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						case 356:	//Conniver's Kunai
 						{
-							int health=GetClientHealth(attacker)+200;
-							if(health>600)
+							int health = GetClientHealth(attacker)+200;
+							if(health > 600)
 								health=600;
 
 							SetEntityHealth(attacker, health);
