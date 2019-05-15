@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."014"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."017"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -746,6 +746,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 			DrawPanelText(panel, "2) [Core] Fixed ShowActivity for commands (Batfoxkid)");
 			DrawPanelText(panel, "3) [Core] Reduced bugs using reloading commands (Batfoxkid)");
 			DrawPanelText(panel, "4) [Core] Added a menu for some commands (Batfoxkid)");
+			DrawPanelText(panel, "5) [Gameplay] Boss health bar turns green on major damage or during healing (Batfoxkid)");
 		}
 		case 141:  //1.18.0
 		{
@@ -2231,14 +2232,7 @@ public Action Command_SetRage(int client, int args)
 			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
 			CheatsUsed = true;
-			if(tn_is_ml)
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Self Rage Set", RoundFloat(rageMeter));
-			}
-			else
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Self Rage Set", "_s", RoundFloat(rageMeter));
-			}
+			ShowActivity2(client, "[SM] ", "%t", "Self Rage Set", client, RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2281,7 +2275,7 @@ public Action Command_SetRage(int client, int args)
 		}
 		else
 		{
-			ShowActivity2(client, "[SM] ", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
+			ShowActivity2(client, "[SM] ", "%t", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
 		}
 		CheatsUsed = true;
 	}
@@ -2318,14 +2312,7 @@ public Action Command_AddRage(int client, int args)
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
 			CheatsUsed = true;
-			if(tn_is_ml)
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Self Rage Add", RoundFloat(rageMeter));
-			}
-			else
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Self Rage Add", "_s", RoundFloat(rageMeter));
-			}
+			ShowActivity2(client, "[SM] ", "%t", "Self Rage Add", client, RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2364,11 +2351,11 @@ public Action Command_AddRage(int client, int args)
 		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
 		if(tn_is_ml)
 		{
-			ShowActivity2(client, "[SM] ", "Give Rage Add", target_name, RoundFloat(rageMeter));
+			ShowActivity2(client, "[SM] ", "%t", "Give Rage Add", target_name, RoundFloat(rageMeter));
 		}
 		else
 		{
-			ShowActivity2(client, "[SM] ", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
+			ShowActivity2(client, "[SM] ", "%t", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
 		}
 		CheatsUsed = true;
 	}
@@ -2404,14 +2391,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 				CheatsUsed = true;
-				if(tn_is_ml)
-				{
-					ShowActivity2(client, "[SM] ", "%t", "Self Infinite On");
-				}
-				else
-				{
-					ShowActivity2(client, "[SM] ", "%t", "Self Infinite On", "_s");
-				}
+				ShowActivity2(client, "[SM] ", "%t", "Self Infinite On", client);
 			}
 			else
 			{
@@ -2419,14 +2399,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 				FReplyToCommand(client, "Infinite RAGE deactivated");
 				LogAction(client, client, "\"%L\" deactivated infinite RAGE on themselves", client);
 				CheatsUsed = true;
-				if(tn_is_ml)
-				{
-					ShowActivity2(client, "[SM] ", "%t", "Self Infinite Off");
-				}
-				else
-				{
-					ShowActivity2(client, "[SM] ", "%t", "Self Infinite Off", "_s");
-				}
+				ShowActivity2(client, "[SM] ", "%t", "Self Infinite Off", client);
 			}
 		}
 		return Plugin_Handled;
@@ -2543,14 +2516,7 @@ public Action Command_AddCharge(int client, int args)
 				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
-				if(tn_is_ml)
-				{
-					ShowActivity2(client, "[SM] ", "%t", "Self Charge Set", RoundFloat(rageMeter), abilitySlot);
-				}
-				else
-				{
-					ShowActivity2(client, "[SM] ", "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
-				}
+				ShowActivity2(client, "[SM] ", "%t", "Self Charge Set", client, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
@@ -2647,7 +2613,7 @@ public Action Command_SetCharge(int client, int args)
 				BossCharge[Boss[client]][abilitySlot]=rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				CShowActivity(client, "%t", "Self Charge Set", "_s", RoundFloat(rageMeter), abilitySlot);
+				CShowActivity(client, "%t", "Self Charge Set", client, RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
 			}
 			else
@@ -2696,11 +2662,11 @@ public Action Command_SetCharge(int client, int args)
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			if(tn_is_ml)
 			{
-				CShowActivity(client, "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
+				ShowActivity2(client, "[SM] ", "%t", "Give Charge Set", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
-				CShowActivity(client, "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
+				ShowActivity2(client, "[SM] ", "%t", "Give Charge Set", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
 			}
 			CheatsUsed = true;
 		}
@@ -2984,9 +2950,7 @@ public void EnableFF2()
 	for(int client; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
-		{
 			OnClientPostAdminCheck(client);
-		}
 	}
 }
 
@@ -3041,9 +3005,7 @@ public void DisableFF2()
 
 	#if defined _steamtools_included
 	if(steamtools && GetConVarBool(cvarSteamTools))
-	{
 		Steam_SetGameDescription("Team Fortress");
-	}
 	#endif
 
 	changeGamemode=0;
@@ -9697,7 +9659,7 @@ public void TF2_OnConditionAdded(int client, TFCond condition)
 		{
 			TF2_RemoveCondition(client, condition);
 		}
-		else if(IsBoss(client) && condition==TFCond_Healing)
+		else if(IsBoss(client) && SelfHealing[client]>0 && (condition==TFCond_Healing || condition== TFCond_RadiusHealOnDamage || condition==TFCond_HalloweenQuickHeal || condition==TFCond_KingAura))
 		{
 			HealthBarModeC[client] = true;
 		}
@@ -9716,7 +9678,7 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 		{
 			TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.01);
 		}
-		else if(IsBoss(client) && condition==TFCond_Healing)
+		else if(IsBoss(client) && (condition==TFCond_Healing || condition== TFCond_RadiusHealOnDamage || condition==TFCond_HalloweenQuickHeal || condition==TFCond_KingAura))
 		{
 			HealthBarModeC[client] = false;
 		}
@@ -11174,6 +11136,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 										default:
 											PrintHintText(attacker, "%t", "Caber Player", spcl);
+									}
 								}
 								else
 								{
@@ -11187,6 +11150,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 										default:
 											PrintHintText(attacker, "%t", "Caber");
+									}
 								}
 							}
 							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
@@ -11203,6 +11167,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 										default:
 											PrintHintText(client, "%t", "Cabered Player", attacker);
+									}
 								}
 								else
 								{
@@ -11216,6 +11181,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 										default:
 											PrintHintText(client, "%t", "Cabered");
+									}
 								}
 							}
 
@@ -11232,7 +11198,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							if(allowedDetonations<3)
 							{
 								HealthBarMode = true;
-								CreateTimer(2.0, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+								CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 							}
 							return Plugin_Changed;
 						}
@@ -11425,7 +11391,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							}
 
 							HealthBarMode = true;
-							CreateTimer(2.0, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+							CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 							return Plugin_Changed;
 						}
 					}
@@ -11635,7 +11601,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						Stabbed[boss]++;
 
 					HealthBarMode = true;
-					CreateTimer(2.0, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					return Plugin_Changed;
 				}
 				else if(bIsTelefrag)
@@ -11763,7 +11729,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 
 					HealthBarMode = true;
-					CreateTimer(2.0, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					return Plugin_Changed;
 				}
 			}
@@ -12030,7 +11996,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 			}
 		}
 		HealthBarMode = true;
-		CreateTimer(2.0, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
