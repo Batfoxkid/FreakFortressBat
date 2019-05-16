@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."028"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."031"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -326,6 +326,7 @@ Handle healthHUD;
 
 bool Enabled = true;
 bool Enabled2 = true;
+bool EnabledDesc = false;
 int PointDelay = 6;
 int PointTime = 45;
 float Announce = 120.0;
@@ -2877,43 +2878,44 @@ public void OnPluginEnd()
 
 public void EnableFF2()
 {
-	Enabled=true;
-	Enabled2=true;
+	Enabled = true;
+	Enabled2 = true;
+	EnabledDesc = true;
 
 	//Cache cvars
 	SetConVarString(FindConVar("ff2_version"), PLUGIN_VERSION);
-	Announce=GetConVarFloat(cvarAnnounce);
-	PointType=GetConVarInt(cvarPointType);
-	PointDelay=GetConVarInt(cvarPointDelay);
-	GoombaDamage=GetConVarFloat(cvarGoombaDamage);
-	reboundPower=GetConVarFloat(cvarGoombaRebound);
-	SniperDamage=GetConVarFloat(cvarSniperDamage);
-	SniperMiniDamage=GetConVarFloat(cvarSniperMiniDamage);
-	BowDamage=GetConVarFloat(cvarBowDamage);
-	BowDamageNon=GetConVarFloat(cvarBowDamageNon);
-	BowDamageMini=GetConVarFloat(cvarBowDamageMini);
-	SniperClimbDamage=GetConVarFloat(cvarSniperClimbDamage);
-	SniperClimbDelay=GetConVarFloat(cvarSniperClimbDelay);
-	QualityWep=GetConVarInt(cvarQualityWep);
-	canBossRTD=GetConVarBool(cvarBossRTD);
-	AliveToEnable=GetConVarInt(cvarAliveToEnable);
-	PointsInterval=GetConVarInt(cvarPointsInterval);
-	PointsInterval2=GetConVarFloat(cvarPointsInterval);
-	PointsDamage=GetConVarInt(cvarPointsDamage);
-	PointsMin=GetConVarInt(cvarPointsMin);
-	PointsExtra=GetConVarInt(cvarPointsExtra);
-	arenaRounds=GetConVarInt(cvarArenaRounds);
-	circuitStun=GetConVarFloat(cvarCircuitStun);
-	countdownHealth=GetConVarInt(cvarCountdownHealth);
-	countdownPlayers=GetConVarInt(cvarCountdownPlayers);
-	countdownTime=GetConVarInt(cvarCountdownTime);
-	countdownOvertime=GetConVarBool(cvarCountdownOvertime);
-	lastPlayerGlow=GetConVarInt(cvarLastPlayerGlow);
-	bossTeleportation=GetConVarBool(cvarBossTeleporter);
-	shieldCrits=GetConVarInt(cvarShieldCrits);
-	allowedDetonations=GetConVarInt(cvarCaberDetonations);
-	Annotations=GetConVarInt(cvarAnnotations);
-	TellName=GetConVarBool(cvarTellName);
+	Announce = GetConVarFloat(cvarAnnounce);
+	PointType = GetConVarInt(cvarPointType);
+	PointDelay = GetConVarInt(cvarPointDelay);
+	GoombaDamage = GetConVarFloat(cvarGoombaDamage);
+	reboundPower = GetConVarFloat(cvarGoombaRebound);
+	SniperDamage = GetConVarFloat(cvarSniperDamage);
+	SniperMiniDamage = GetConVarFloat(cvarSniperMiniDamage);
+	BowDamage = GetConVarFloat(cvarBowDamage);
+	BowDamageNon = GetConVarFloat(cvarBowDamageNon);
+	BowDamageMini = GetConVarFloat(cvarBowDamageMini);
+	SniperClimbDamage = GetConVarFloat(cvarSniperClimbDamage);
+	SniperClimbDelay = GetConVarFloat(cvarSniperClimbDelay);
+	QualityWep = GetConVarInt(cvarQualityWep);
+	canBossRTD = GetConVarBool(cvarBossRTD);
+	AliveToEnable = GetConVarInt(cvarAliveToEnable);
+	PointsInterval = GetConVarInt(cvarPointsInterval);
+	PointsInterval2 = GetConVarFloat(cvarPointsInterval);
+	PointsDamage = GetConVarInt(cvarPointsDamage);
+	PointsMin = GetConVarInt(cvarPointsMin);
+	PointsExtra = GetConVarInt(cvarPointsExtra);
+	arenaRounds = GetConVarInt(cvarArenaRounds);
+	circuitStun = GetConVarFloat(cvarCircuitStun);
+	countdownHealth = GetConVarInt(cvarCountdownHealth);
+	countdownPlayers = GetConVarInt(cvarCountdownPlayers);
+	countdownTime = GetConVarInt(cvarCountdownTime);
+	countdownOvertime = GetConVarBool(cvarCountdownOvertime);
+	lastPlayerGlow = GetConVarInt(cvarLastPlayerGlow);
+	bossTeleportation = GetConVarBool(cvarBossTeleporter);
+	shieldCrits = GetConVarInt(cvarShieldCrits);
+	allowedDetonations = GetConVarInt(cvarCaberDetonations);
+	Annotations = GetConVarInt(cvarAnnotations);
+	TellName = GetConVarBool(cvarTellName);
 
 	//Set some Valve cvars to what we want them to be
 	SetConVarInt(FindConVar("tf_arena_use_queue"), 0);
@@ -2928,8 +2930,8 @@ public void EnableFF2()
         MyAddServerTag("hale");
         MyAddServerTag("vsh");
 
-	float time=Announce;
-	if(time>1.0)
+	float time = Announce;
+	if(time > 1.0)
 	{
 		CreateTimer(time, Timer_Announce, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
@@ -2949,7 +2951,7 @@ public void EnableFF2()
 	}
 	#endif
 
-	bMedieval=FindEntityByClassname(-1, "tf_logic_medieval")!=-1 || GetConVarBool(FindConVar("tf_medieval"));
+	bMedieval = FindEntityByClassname(-1, "tf_logic_medieval")!=-1 || GetConVarBool(FindConVar("tf_medieval"));
 	FindHealthBar();
 
 	#if defined _steamtools_included
@@ -2972,8 +2974,8 @@ public void EnableFF2()
 
 public void DisableFF2()
 {
-	Enabled=false;
-	Enabled2=false;
+	Enabled = false;
+	Enabled2 = false;
 
 	DisableSubPlugins();
 
@@ -2988,35 +2990,35 @@ public void DisableFF2()
         MyRemoveServerTag("hale");
         MyRemoveServerTag("vsh");
 
-	if(doorCheckTimer!=INVALID_HANDLE)
+	if(doorCheckTimer != INVALID_HANDLE)
 	{
 		KillTimer(doorCheckTimer);
-		doorCheckTimer=INVALID_HANDLE;
+		doorCheckTimer = INVALID_HANDLE;
 	}
 
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
 		{
-			if(BossInfoTimer[client][1]!=INVALID_HANDLE)
+			if(BossInfoTimer[client][1] != INVALID_HANDLE)
 			{
 				KillTimer(BossInfoTimer[client][1]);
-				BossInfoTimer[client][1]=INVALID_HANDLE;
+				BossInfoTimer[client][1] = INVALID_HANDLE;
 			}
 		}
 
-		if(MusicTimer[client]!=INVALID_HANDLE)
+		if(MusicTimer[client] != INVALID_HANDLE)
 		{
 			KillTimer(MusicTimer[client]);
-			MusicTimer[client]=INVALID_HANDLE;
+			MusicTimer[client] = INVALID_HANDLE;
 		}
 
-		bossHasReloadAbility[client]=false;
-		bossHasRightMouseAbility[client]=false;
+		bossHasReloadAbility[client] = false;
+		bossHasRightMouseAbility[client] = false;
 	}
 
 	#if !defined _smac_included
-	if(smac && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE)
+	if(smac && FindPluginByFile("smac_cvars.smx") != INVALID_HANDLE)
 	{
 		ServerCommand("smac_addcvar sv_cheats replicated ban 0 0");
 		ServerCommand("smac_addcvar host_timescale replicated ban 1.0 1.0");
@@ -3024,11 +3026,14 @@ public void DisableFF2()
 	#endif
 
 	#if defined _steamtools_included
-	if(steamtools && GetConVarBool(cvarSteamTools))
+	if(EnabledDesc && steamtools && GetConVarBool(cvarSteamTools))
+	{
 		Steam_SetGameDescription("Team Fortress");
+	}
 	#endif
 
-	changeGamemode=0;
+	EnabledDesc = false;
+	changeGamemode = 0;
 }
 
 public void CacheWeapons()
@@ -3872,15 +3877,16 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	if(!GetConVarBool(cvarEnabled))
 	{
 		#if defined _steamtools_included
-		if(steamtools && GetConVarBool(cvarSteamTools))
+		if(EnabledDesc && steamtools && GetConVarBool(cvarSteamTools))
 		{
 			Steam_SetGameDescription("Team Fortress");
 		}
 		#endif
-		Enabled2=false;
+		Enabled2 = false;
+		EnabledDesc = false;
 	}
 
-	Enabled=Enabled2;
+	Enabled = Enabled2;
 	if(!Enabled)
 	{
 		return Plugin_Continue;
@@ -3891,7 +3897,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		DeleteFile("bNextMapToFF2");
 	}
 
-	currentBossTeam=GetRandomInt(1,2);
+	currentBossTeam = GetRandomInt(1,2);
 	switch(GetConVarInt(cvarForceBossTeam))
 	{
 		case 1:
