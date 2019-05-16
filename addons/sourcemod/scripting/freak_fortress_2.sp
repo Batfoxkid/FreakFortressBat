@@ -8116,13 +8116,13 @@ public Action Command_GetHPCmd(int client, int args)
 {
 	if(!IsValidClient(client))
 	{
-		ReplayToCommand(client, "[SM] %t", "Command is in-game only");
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 		return Plugin_Handled;
 	}
 
 	if(!Enabled2)
 	{
-		FReplayToCommand(client, "%t", "FF2 Disabled");
+		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
@@ -8812,15 +8812,16 @@ public void OnClientPostAdminCheck(int client)
 		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
 		if(buffer[0] && GetConVarBool(cvarSelectBoss))
 		{
-			char companionName[64];
+			char boss[64], companionName[64];
 			for(int config; config<Specials; config++)
 			{
 				KvRewind(BossKV[config]);
 				KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
+				KvGetString(BossKV[config], "name", boss, sizeof(boss));
 				if(KvGetNum(BossKV[config], "blocked", 0))
 					continue;
 
-				if(StrEqual(buffer, name, false))
+				if(StrEqual(boss, buffer, false))
 				{
 					if(strlen(companionName))
 						break;
@@ -13675,7 +13676,7 @@ public Action Command_HelpPanelClass(int client, int args)
 
 	if(!Enabled)
 	{
-		FReplayToCommand(client, "%t", "FF2 Disabled");
+		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
@@ -13917,7 +13918,7 @@ public Action Command_SkipSong(int client, int args)
 
 	if(!Enabled)
 	{
-		FReplayToCommand(client, "%t", "FF2 Disabled");
+		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
@@ -14020,7 +14021,7 @@ public Action Command_ShuffleSong(int client, int args)
 
 	if(!Enabled)
 	{
-		FReplayToCommand(client, "%t", "FF2 Disabled");
+		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
@@ -14054,7 +14055,7 @@ public Action Command_Tracklist(int client, int args)
 
 	if(!Enabled)
 	{
-		FReplayToCommand(client, "%t", "FF2 Disabled");
+		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
