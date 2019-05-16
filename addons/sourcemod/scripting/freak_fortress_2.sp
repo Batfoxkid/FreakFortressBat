@@ -5514,7 +5514,7 @@ public Action Command_SetMyBoss(int client, int args)
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 
-			if(StrEquals(boss, name, false))
+			if(StrEqual(boss, name, false))
 			{
 				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
@@ -5585,7 +5585,7 @@ public Action Command_SetMyBoss(int client, int args)
 			}
 
 			KvGetString(BossKV[config], "filename", boss, sizeof(boss));
-			if(StrEquals(boss, name, false))
+			if(StrEqual(boss, name, false))
 			{
 				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
@@ -5937,7 +5937,7 @@ public Action ConfirmBoss(int client)
 	{
 		KvRewind(BossKV[config]);
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
-		if(StrEquals(boss, cIncoming[client], false))
+		if(StrEqual(boss, cIncoming[client], false))
 		{
 			KvRewind(BossKV[config]);
 			KvGetString(BossKV[config], language, text, sizeof(text));
@@ -5975,15 +5975,14 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 		{
 			CloseHandle(menu);
 		}
-		
 		case MenuAction_Select:
 		{
 			switch(param2)
 			{
 				case 0: 
 				{
-					IsBossSelected[param1]=true;
-					xIncoming[param1]=cIncoming[param1];
+					IsBossSelected[param1] = true;
+					strcopy(xIncoming[param1], sizeof(xIncoming[]), cIncoming[param1]);
 					SaveKeepBossCookie(param1);
 					FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 				}
@@ -6089,9 +6088,9 @@ bool BossTheme(int config)
 	return false;
 }
 
-void SaveBossCookie(client)
+void SaveKeepBossCookie(int client)
 {
-	if(!AreClientCookiesCached(client) || GetConVarInt(cvarKeepBoss)<1 || !GetConVarBool(cvarSelectBoss))
+	if(!AreClientCookiesCached(client) || !GetConVarBool(cvarSelectBoss))
 		return;
 
 	SetClientCookie(client, SelectionCookie, xIncoming[client]);
@@ -8813,15 +8812,15 @@ public void OnClientPostAdminCheck(int client)
 		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
 		if(buffer[0] && GetConVarBool(cvarSelectBoss))
 		{
+			char companionName[64];
 			for(int config; config<Specials; config++)
 			{
 				KvRewind(BossKV[config]);
 				KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-				KvGetString(BossKV[config], "name", boss, sizeof(boss));
 				if(KvGetNum(BossKV[config], "blocked", 0))
 					continue;
 
-				if(StrEquals(buffer, name, false))
+				if(StrEqual(buffer, name, false))
 				{
 					if(strlen(companionName))
 						break;
