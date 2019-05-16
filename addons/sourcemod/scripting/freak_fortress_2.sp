@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."017"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."027"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -311,6 +311,7 @@ ConVar cvarDamageToTele;
 ConVar cvarStatHud;
 ConVar cvarStatPlayers;
 ConVar cvarStatWin2Lose;
+ConVar cvarHealthHud;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -322,7 +323,7 @@ Handle timeleftHUD;
 Handle abilitiesHUD;
 Handle infoHUD;
 Handle statHUD;
-//Handle lifeHUD;
+Handle healthHUD;
 
 bool Enabled = true;
 bool Enabled2 = true;
@@ -380,6 +381,7 @@ int tf_arena_first_blood;
 int mp_forcecamera;
 int tf_dropped_weapon_lifetime;
 char mp_humans_must_join_team[16];
+ConVar cvarTags;
 
 Handle cvarNextmap;
 bool areSubPluginsEnabled;
@@ -743,10 +745,10 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		case 142:  //1.18.1
 		{
 			DrawPanelText(panel, "1) [Gameplay] Deadringers kills don't count towards StatTrak kills (Batfoxkid)");
-			DrawPanelText(panel, "2) [Core] Fixed ShowActivity for commands (Batfoxkid)");
-			DrawPanelText(panel, "3) [Core] Reduced bugs using reloading commands (Batfoxkid)");
-			DrawPanelText(panel, "4) [Core] Added a menu for some commands (Batfoxkid)");
-			DrawPanelText(panel, "5) [Gameplay] Boss health bar turns green on major damage or during healing (Batfoxkid)");
+			DrawPanelText(panel, "2) [Gameplay] Added/updated ConVars for the Health Bar (Batfoxkid)");
+			DrawPanelText(panel, "3) [Gameplay] Boss health bar turns green during markets, cabers, stabs, goombas, or healing (Batfoxkid)");
+			DrawPanelText(panel, "4) [Core] Reduced bugs using reloading commands (Batfoxkid)");
+			DrawPanelText(panel, "5) [Core] Added a menu for some commands (Batfoxkid)");
 		}
 		case 141:  //1.18.0
 		{
@@ -1987,6 +1989,7 @@ public void OnPluginStart()
 	cvarStatHud = CreateConVar("ff2_hud_stats", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client, 2-Show to anybody", _, true, -1.0, true, 2.0);
 	cvarStatPlayers = CreateConVar("ff2_stats_players", "6", "0-Disable, #-Players required to use StatTrak", _, true, 0.0, true, 34.0);
 	cvarStatWin2Lose = CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
+	cvarHealthHud = CreateConVar("ff2_hud_health", "0", "0-Disable, 1-Show boss's lives left, 2-Show boss's total health", _, true, 0.0, true, 2.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2025,6 +2028,7 @@ public void OnPluginStart()
 	HookConVarChange(cvarEnabled, CvarChange);
 	HookConVarChange(cvarAnnounce, CvarChange);
 	HookConVarChange(cvarCircuitStun, CvarChange);
+	HookConVarChange(cvarHealthBar, CvarChange);
 	HookConVarChange(cvarLastPlayerGlow, CvarChange);
 	HookConVarChange(cvarSpecForceBoss, CvarChange);
 	HookConVarChange(cvarBossTeleporter, CvarChange);
@@ -2049,6 +2053,7 @@ public void OnPluginStart()
 	HookConVarChange(cvarPointsExtra, CvarChange);
 	HookConVarChange(cvarAnnotations, CvarChange);
 	HookConVarChange(cvarTellName, CvarChange);
+	HookConVarChange(cvarHealthHud, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -2168,7 +2173,7 @@ public void OnPluginStart()
 	timeleftHUD = CreateHudSynchronizer();
 	infoHUD = CreateHudSynchronizer();
 	statHUD = CreateHudSynchronizer();
-	//lifeHUD = CreateHudSynchronizer();
+	healthHUD = CreateHudSynchronizer();
 
 	char oldVersion[64];
 	cvarVersion.GetString(oldVersion, 64);
@@ -2912,6 +2917,11 @@ public void EnableFF2()
 	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), 0);
 	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
+	cvarTags = FindConVar("sv_tags");
+        MyAddServerTag("ff2");
+        MyAddServerTag("hale");
+        MyAddServerTag("vsh");
+
 	float time=Announce;
 	if(time>1.0)
 	{
@@ -2967,6 +2977,10 @@ public void DisableFF2()
 	SetConVarInt(FindConVar("mp_forcecamera"), mp_forcecamera);
 	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), tf_dropped_weapon_lifetime);
 	SetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team);
+
+        MyRemoveServerTag("ff2");
+        MyRemoveServerTag("hale");
+        MyRemoveServerTag("vsh");
 
 	if(doorCheckTimer!=INVALID_HANDLE)
 	{
@@ -3448,6 +3462,10 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	else if(convar==cvarCircuitStun)
 	{
 		circuitStun=StringToFloat(newValue);
+	}
+	else if(convar==cvarHealthBar || convar==cvarHealthHud)
+	{
+		UpdateHealthBar();
 	}
 	else if(convar==cvarLastPlayerGlow)
 	{
@@ -4927,6 +4945,7 @@ public Action StartBossTimer(Handle timer)
 	CreateTimer(0.2, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, Timer_StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.2, GlobalTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
 	if(PointType==0)
 	{
@@ -6378,8 +6397,7 @@ void EquipBoss(int boss)
 			}
 
 			int weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
-			SetWeaponAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", 0));
-			SetWeaponClip(client, weapon, KvGetNum(BossKV[Special[boss]], "clip", 0));
+			FF2_SetAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", -1), KvGetNum(BossKV[Special[boss]], "clip", -1));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -8064,7 +8082,7 @@ public Action Timer_Uber(Handle timer, any medigunid)
 
 public Action Command_GetHPCmd(int client, int args)
 {
-	if(!IsValidClient(client) || !Enabled || CheckRoundState()!=1)
+	if(!IsValidClient(client) || !Enabled || CheckRoundState()!=1 || GetConVarInt(cvarHealthHud)>1)
 		return Plugin_Continue;
 
 	Command_GetHP(client);
@@ -8080,20 +8098,20 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 		{
 			if(IsBoss(target))
 			{
-				int boss=Boss[target];
+				int boss = Boss[target];
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "name", name, sizeof(name), "=Failed name=");
-				if(BossLives[boss]>1)
+				if(BossLives[boss] > 1)
 				{
 					Format(lives, sizeof(lives), "x%i", BossLives[boss]);
 				}
 				else
 				{
-					lives[0]='\0';
+					lives[0] = '\0';
 				}
 				Format(text, sizeof(text), "%s\n%t", text, "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 				FPrintToChatAll("%t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
-				BossHealthLast[boss]=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+				BossHealthLast[boss] = BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 			}
 		}
 
@@ -8119,15 +8137,15 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 			}
 		}
 
-		if(GetGameTime()>=HPTime)
+		if(GetGameTime() >= HPTime)
 		{
 			healthcheckused++;
-			HPTime=GetGameTime()+(healthcheckused<3 ? 20.0 : 80.0);
+			HPTime = GetGameTime()+(healthcheckused<3 ? 20.0 : 80.0);
 		}
 		return Plugin_Continue;
 	}
 
-	if(RedAlivePlayers>1)
+	if(RedAlivePlayers > 1)
 	{
 		char waitTime[128];
 		for(int target; target<=MaxClients; target++)
@@ -9513,7 +9531,7 @@ public Action BossTimer(Handle timer)
 		if(RedAlivePlayers<=lastPlayerGlow)
 			SetClientGlow(client, 0.5, 3.0);
 
-		if(RedAlivePlayers==1 && !executed2)
+		if(RedAlivePlayers==1 && !executed2 && GetConVarInt(cvarHealthHud)<2)
 		{
 			char message[512], name[64];
 			for(int target; target<=MaxClients; target++)  //TODO: Why is this for loop needed when we're already in a boss for loop
@@ -9583,6 +9601,105 @@ public Action BossTimer(Handle timer)
 	return Plugin_Continue;
 }
 
+public Action GlobalTimer(Handle timer)
+{
+	int HealthHud = GetConVarInt(cvarHealthHud);
+
+	if(!Enabled || CheckRoundState()==2 || CheckRoundState()==-1 || HealthHud<1)
+		return Plugin_Stop;
+
+	if(CheckRoundState() == 0)
+		return Plugin_Continue;
+
+	//int HealthBar = GetConVarInt(cvarHealthBar);
+	int current, max, bosses, target, lives;
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client))
+		{
+			if(IsPlayerAlive(client))
+			{
+				if(HealthBarMode)
+				{
+					SetHudTextParams(-1.0, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+				}
+				else
+				{
+					SetHudTextParams(-1.0, 0.12, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+				}
+			}
+			else
+			{
+				if(HealthBarMode)
+				{
+					SetHudTextParams(-1.0, 0.21, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+				}
+				else
+				{
+					SetHudTextParams(-1.0, 0.21, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+				}
+			}
+
+			if(HealthHud < 2)	// I have no idea for companions with lives
+			{
+				for(int boss; boss<=MaxClients; boss++)
+				{
+					target=Boss[boss];
+					if(IsBoss(target))
+					{
+						current += BossLives[boss];
+						max += BossLivesMax[boss];
+						bosses++;
+					}
+				}
+
+				if(current > bosses)
+				{
+					FF2_ShowSyncHudText(client, healthHUD, "%t", "Boss Lives Left", current, max);
+				}
+			}
+			/*else if(HealthBar > 1)	// Decided against it, even as a ConVar
+			{
+				for(int boss; boss<=MaxClients; boss++)
+				{
+					target=Boss[boss];
+					if(IsBoss(target))
+					{
+						current += BossHealth[boss];
+						max += BossHealthMax[boss]*BossLivesMax[boss];
+					}
+				}
+
+				FF2_ShowSyncHudText(client, healthHUD, "%i / %i", current, max);
+			}*/
+			else
+			{
+				for(int boss; boss<=MaxClients; boss++)
+				{
+					target=Boss[boss];
+					if(IsBoss(target))
+					{
+						current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+						max += BossHealthMax[boss];
+						lives += BossLives[boss];
+						bosses++;
+					}
+				}
+
+				if(lives > bosses)
+				{
+					FF2_ShowSyncHudText(client, healthHUD, "%i / %ix%i", current, max, lives);
+				}
+				else
+				{
+					FF2_ShowSyncHudText(client, healthHUD, "%i / %i", current, max);
+				}
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
 public Action Timer_RPS(Handle timer, int client)
 {
 	if(!IsValidClient(client))
@@ -9598,13 +9715,13 @@ public Action Timer_RPS(Handle timer, int client)
 		RPSLosses[client]=0;
 
 	if(RPSHealth[client]==-1)
-		RPSHealth[client]=FF2_GetBossHealth(boss);
+		RPSHealth[client]=BossHealth[boss];
 
 	if(RPSLosses[client]>=GetConVarInt(cvarRPSLimit))
 	{
 		if(IsValidClient(RPSWinner) && FF2_GetBossHealth(boss)>1349)
 		{
-			SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float(FF2_GetBossHealth(boss)), DMG_GENERIC, -1);
+			SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float(BossHealth[boss]), DMG_GENERIC, -1);
 		}
 		else // Winner disconnects?
 		{
@@ -9992,7 +10109,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 				firstBlood=false;
 			}
 
-			if(RedAlivePlayers!=1 && KSpreeCount[boss]<2 && firstBloodSound)  //Don't conflict with end-of-round sounds, killing spree, or first blood
+			if(RedAlivePlayers>2 && KSpreeCount[boss]<2 && firstBloodSound)  //Don't conflict with end-of-round sounds, killing spree, or first blood
 			{
 				int ClassKill = GetRandomInt(0, 1);
 				char classnames[][] = {"", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
@@ -10019,7 +10136,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 				KSpreeCount[boss] = 1;
 			}
 
-			if(RedAlivePlayers!=1 && KSpreeCount[boss]==3)
+			if(RedAlivePlayers>2 && KSpreeCount[boss]==3)
 			{
 				if(RandomSound("sound_kspree", sound, sizeof(sound), boss))
 				{
@@ -10291,7 +10408,7 @@ public Action Timer_DrawGame(Handle timer)
 	{
 		if(IsValidClient(client))
 		{
-			if(!Companions && GetConVarInt(cvarGameText)>0 && RedAlivePlayers==1)
+			if(!Companions && GetConVarInt(cvarGameText)>0 && RedAlivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -11682,8 +11799,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 						BossHealth[boss] -= RoundFloat(damage);
 						BossCharge[boss][0] += damage*100.0/BossRageDamage[boss];
-						//if(BossHealth[boss] <= 0)  //Wat
-							//damage *= 5;
+						if(BossHealth[boss] <= 0)
+							damage *= 5;
 
 						if(BossCharge[boss][0] > rageMax[client])
 							BossCharge[boss][0] = rageMax[client];
@@ -11751,8 +11868,11 @@ public Action TF2_OnPlayerTeleport(int client, int teleporter, bool &result)
 	return Plugin_Continue;
 }
 
-public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
+public Action OnStomp(int attackerid, int victimid, float &damageMultiplier, float &damageBonus, float &JumpPower)
 {
+	int attacker = GetClientOfUserId(attackerid);
+	int victim = GetClientOfUserId(victimid);
+
 	if(!Enabled || !IsValidClient(attacker) || !IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
 
@@ -13251,7 +13371,7 @@ public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
 		switch(selection)
 		{
 			case 1:
-				Command_GetHP(client);
+				Command_GetHPCmd(client, 0);
 
 			case 2:
 				Command_SetMyBoss(client, 0);
@@ -15009,6 +15129,42 @@ public void OnTakeDamagePost(int client, int attacker, int inflictor, float dama
 	}
 }
 
+stock void MyAddServerTag(const char[] tag)
+{
+	char currtags[128];
+	if(cvarTags == INVALID_HANDLE)
+		return;
+
+	GetConVarString(cvarTags, currtags, sizeof(currtags));
+	if(StrContains(currtags, tag) > -1)
+		return;
+
+	char newtags[128];
+	Format(newtags, sizeof(newtags), "%s%s%s", currtags, (currtags[0]!=0) ? "," : "", tag);
+	int flags = GetConVarFlags(cvarTags);
+	SetConVarFlags(cvarTags, flags & ~FCVAR_NOTIFY);
+	SetConVarString(cvarTags, newtags);
+	SetConVarFlags(cvarTags, flags);
+}
+
+stock void MyRemoveServerTag(const char[] tag)
+{
+	char newtags[128];
+	if (cvarTags == INVALID_HANDLE)
+		return;
+
+	GetConVarString(cvarTags, newtags, sizeof(newtags));
+	if(StrContains(newtags, tag) == -1)
+		return;
+
+	ReplaceString(newtags, sizeof(newtags), tag, "");
+	ReplaceString(newtags, sizeof(newtags), ",,", "");
+	int flags = GetConVarFlags(cvarTags);
+	SetConVarFlags(cvarTags, flags & ~FCVAR_NOTIFY);
+	SetConVarString(cvarTags, newtags);
+	SetConVarFlags(cvarTags, flags);
+}
+
 public Action Timer_HealthBarMode(Handle timer, bool set)
 {
 	if(set && !HealthBarMode)
@@ -15133,7 +15289,7 @@ void UpdateHealthBar()
 			if(GetConVarInt(cvarHealthBar)>1)
 			{
 				healthAmount+=BossHealth[boss];
-				maxHealthAmount+=BossHealthMax[boss]*(BossLives[boss]-1);
+				maxHealthAmount+=BossHealthMax[boss]*BossLivesMax[boss];
 			}
 			else
 			{
