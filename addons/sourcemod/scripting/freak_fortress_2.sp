@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."027"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."028"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -138,8 +138,6 @@ last time or to encourage others to do the same.
 #define SpawnTeleportBlacklistCFG "spawn_teleport_blacklist.cfg"
 #define WeaponCFG "weapons.cfg"
 
-float shDmgReduction[MAXPLAYERS+1];
-
 #if defined _steamtools_included
 bool steamtools = false;
 #endif
@@ -187,12 +185,13 @@ int curHelp[MAXPLAYERS+1];
 int uberTarget[MAXPLAYERS+1];
 bool hadshield[MAXPLAYERS+1];
 int shield[MAXPLAYERS+1];
+float shieldHP[MAXPLAYERS+1];
+float shDmgReduction[MAXPLAYERS+1];
 int detonations[MAXPLAYERS+1];
 bool playBGM[MAXPLAYERS+1] = true;
 int Healing[MAXPLAYERS+1];
 float SapperCooldown[MAXPLAYERS+1];
 
-float shieldHP[MAXPLAYERS+1];
 char currentBGM[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 
 int FF2flags[MAXPLAYERS+1];
@@ -1769,6 +1768,8 @@ char ChancesString[512];
 int chances[MAXSPECIALS*2];  //This is multiplied by two because it has to hold both the boss indices and chances
 int chancesIndex;
 
+bool LateLoaded;
+
 public Plugin myinfo=
 {
 	name		=	"Freak Fortress 2",
@@ -1833,15 +1834,15 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_SetCheats", Native_SetCheats);
 	CreateNative("FF2_GetCheats", Native_GetCheats);
 
-	PreAbility=CreateGlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
-	OnAbility=CreateGlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
-	OnMusic=CreateGlobalForward("FF2_OnMusic", ET_Hook, Param_String, Param_FloatByRef);
-	OnTriggerHurt=CreateGlobalForward("FF2_OnTriggerHurt", ET_Hook, Param_Cell, Param_Cell, Param_FloatByRef);
-	OnSpecialSelected=CreateGlobalForward("FF2_OnSpecialSelected", ET_Hook, Param_Cell, Param_CellByRef, Param_String, Param_Cell);  //Boss, character index, character name, preset
-	OnAddQueuePoints=CreateGlobalForward("FF2_OnAddQueuePoints", ET_Hook, Param_Array);
-	OnLoadCharacterSet=CreateGlobalForward("FF2_OnLoadCharacterSet", ET_Hook, Param_CellByRef, Param_String);
-	OnLoseLife=CreateGlobalForward("FF2_OnLoseLife", ET_Hook, Param_Cell, Param_CellByRef, Param_Cell);  //Boss, lives left, max lives
-	OnAlivePlayersChanged=CreateGlobalForward("FF2_OnAlivePlayersChanged", ET_Hook, Param_Cell, Param_Cell);  //Players, bosses
+	PreAbility = CreateGlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
+	OnAbility = CreateGlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
+	OnMusic = CreateGlobalForward("FF2_OnMusic", ET_Hook, Param_String, Param_FloatByRef);
+	OnTriggerHurt = CreateGlobalForward("FF2_OnTriggerHurt", ET_Hook, Param_Cell, Param_Cell, Param_FloatByRef);
+	OnSpecialSelected = CreateGlobalForward("FF2_OnSpecialSelected", ET_Hook, Param_Cell, Param_CellByRef, Param_String, Param_Cell);  //Boss, character index, character name, preset
+	OnAddQueuePoints = CreateGlobalForward("FF2_OnAddQueuePoints", ET_Hook, Param_Array);
+	OnLoadCharacterSet = CreateGlobalForward("FF2_OnLoadCharacterSet", ET_Hook, Param_CellByRef, Param_String);
+	OnLoseLife = CreateGlobalForward("FF2_OnLoseLife", ET_Hook, Param_Cell, Param_CellByRef, Param_Cell);  //Boss, lives left, max lives
+	OnAlivePlayersChanged = CreateGlobalForward("FF2_OnAlivePlayersChanged", ET_Hook, Param_Cell, Param_Cell);  //Players, bosses
 
 	RegPluginLibrary("freak_fortress_2");
 
@@ -1854,6 +1855,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	MarkNativeAsOptional("TF2Attrib_SetByDefIndex");
 	MarkNativeAsOptional("TF2Attrib_RemoveByDefIndex");
 	#endif
+
+	LateLoaded = late;
 	return APLRes_Success;
 }
 
@@ -1868,6 +1871,7 @@ char cIncoming[MAXPLAYERS+1][700];
 #define TOGGLE_TEMP 3
 
 Handle LastPlayedCookie=INVALID_HANDLE;
+Handle SelectionCookie=INVALID_HANDLE;
 
 ClientPoint[MAXPLAYERS+1];
 ClientID[MAXPLAYERS+1];
@@ -2165,6 +2169,7 @@ public void OnPluginStart()
 	FF2Cookies = RegClientCookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
 	StatCookies = RegClientCookie("ff2_cookies_stats", "Player's Statistics", CookieAccess_Protected);
 	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
+	SelectionCookie = RegClientCookie("ff2_boss_selection", "Player's Boss Selection", CookieAccess_Protected);
 
 	jumpHUD = CreateHudSynchronizer();
 	rageHUD = CreateHudSynchronizer();
@@ -2178,14 +2183,15 @@ public void OnPluginStart()
 	char oldVersion[64];
 	cvarVersion.GetString(oldVersion, 64);
 	if(strcmp(oldVersion, PLUGIN_VERSION, false))
-	{
 		LogToFile(eLog, "[Config] Warning: Your config may be outdated. Back up tf/cfg/sourcemod/FreakFortress2.cfg and delete it, and this plugin will generate a new one that you can then modify to your original values.");
-	}
 
 	LoadTranslations("freak_fortress_2.phrases");
 	LoadTranslations("freak_fortress_2_prefs.phrases");
 	LoadTranslations("freak_fortress_2_stats.phrases");
 	LoadTranslations("common.phrases");
+
+	if(LateLoaded)
+		OnMapStart();
 
 	AddNormalSoundHook(HookSound);
 
@@ -3944,7 +3950,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		SetControlPoint(true);
 		return Plugin_Continue;
 	}
-	else if(RoundCount<arenaRounds)  //We're still in arena mode
+	else if(RoundCount<arenaRounds && !LateLoaded)  //We're still in arena mode
 	{
 		FPrintToChatAll("%t", "arena_round", arenaRounds-RoundCount);
 		Enabled=false;
@@ -4957,7 +4963,7 @@ public Action StartBossTimer(Handle timer)
 public Action Timer_PrepareBGM(Handle timer, any userid)
 {
 	int client=GetClientOfUserId(userid);
-	if(CheckRoundState()!=1 || !client || MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
+	if(!Enabled || CheckRoundState()!=1 || !client || MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
 	{
 		MusicTimer[client]=INVALID_HANDLE;
 		return;
@@ -5098,6 +5104,9 @@ void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="
 
 void StartMusic(int client=0)
 {
+	if(!Enabled)
+		return;
+
 	if(client<=0)  //Start music for all clients
 	{
 		StopMusic();
@@ -5280,9 +5289,7 @@ int GetClientPreferences(int client, int type)
 void SetClientPreferences(int client, int type, int enable)
 {
 	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client))
-	{
 		return;
-	}
 
 	char cookies[24];
 	char cookieValues[8][5];
@@ -5298,11 +5305,13 @@ void SetClientPreferences(int client, int type, int enable)
 		{
 			cookieValues[4][0]='2';
 			xIncoming[client][0] = '\0';
+			SaveKeepBossCookie(client);
 		}
 		else if(enable==TOGGLE_TEMP)
 		{
 			cookieValues[4][0]='3';
 			xIncoming[client][0] = '\0';
+			SaveKeepBossCookie(client);
 		}
 		else
 		{
@@ -5319,11 +5328,13 @@ void SetClientPreferences(int client, int type, int enable)
 		{
 			cookieValues[5][0]='2';
 			xIncoming[client][0] = '\0';
+			SaveKeepBossCookie(client);
 		}
 		else if(enable==TOGGLE_TEMP)
 		{
 			cookieValues[5][0]='3';
 			xIncoming[client][0] = '\0';
+			SaveKeepBossCookie(client);
 		}
 		else
 		{
@@ -5485,6 +5496,12 @@ public Action Command_SetMyBoss(int client, int args)
 		return Plugin_Handled;
 	}
 
+	if(!Enabled2 && GetConVarInt(cvarKeepBoss)<1)	// Allow players to choose a boss when Keep Boss is on since it stays between maps
+	{
+		FReplyToCommand(client, "%t", "FF2 Disabled");
+		return Plugin_Handled;
+	}
+
 	if(args)
 	{
 		char name[64], boss[64], companionName[64];
@@ -5497,7 +5514,7 @@ public Action Command_SetMyBoss(int client, int args)
 			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(KvGetNum(BossKV[config], "blocked", 0)) continue;
 
-			if(StrContains(boss, name, false)!=-1)
+			if(StrEquals(boss, name, false))
 			{
 				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
@@ -5568,7 +5585,7 @@ public Action Command_SetMyBoss(int client, int args)
 			}
 
 			KvGetString(BossKV[config], "filename", boss, sizeof(boss));
-			if(StrContains(boss, name, false)!=-1)
+			if(StrEquals(boss, name, false))
 			{
 				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
@@ -5635,6 +5652,7 @@ public Action Command_SetMyBoss(int client, int args)
 				}
 				IsBossSelected[client]=true;
 				strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
+				SaveKeepBossCookie(client);
 				FReplyToCommand(client, "%t", "to0_boss_selected", boss);
 				return Plugin_Handled;
 			}
@@ -5648,10 +5666,10 @@ public Action Command_SetMyBoss(int client, int args)
 
 	SetGlobalTransTarget(client);
 	SetMenuTitle(dMenu, "%t", "ff2_boss_selection", xIncoming[client]);
-	
+
 	Format(boss, sizeof(boss), "%t", "to0_random");
 	AddMenuItem(dMenu, boss, boss);
-	
+
 	if(GetConVarBool(cvarToggleBoss))
 	{
 		if(GetClientPreferences(client, PREF_BOSS)<2)
@@ -5779,6 +5797,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				{
 					IsBossSelected[param1]=true;
 					xIncoming[param1][0] = '\0';
+					SaveKeepBossCookie(param1);
 					FReplyToCommand(param1, "%t", "to0_comfirmrandom");
 					return;
 				}
@@ -5804,6 +5823,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+							SaveKeepBossCookie(param1);
 							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 						}
 						else
@@ -5835,6 +5855,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+							SaveKeepBossCookie(param1);
 							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 						}
 						else
@@ -5857,6 +5878,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 						{
 							IsBossSelected[param1]=true;
 							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+							SaveKeepBossCookie(param1);
 							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 						}
 						else
@@ -5870,6 +5892,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						SaveKeepBossCookie(param1);
 						FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 					else
@@ -5885,6 +5908,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 					{
 						IsBossSelected[param1]=true;
 						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+						SaveKeepBossCookie(param1);
 						FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 					}
 					else
@@ -5913,7 +5937,7 @@ public Action ConfirmBoss(int client)
 	{
 		KvRewind(BossKV[config]);
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
-		if(StrContains(boss, cIncoming[client], false)!=-1)
+		if(StrEquals(boss, cIncoming[client], false))
 		{
 			KvRewind(BossKV[config]);
 			KvGetString(BossKV[config], language, text, sizeof(text));
@@ -5960,6 +5984,7 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 				{
 					IsBossSelected[param1]=true;
 					xIncoming[param1]=cIncoming[param1];
+					SaveKeepBossCookie(param1);
 					FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
 				}
 				default:
@@ -6064,10 +6089,18 @@ bool BossTheme(int config)
 	return false;
 }
 
+void SaveBossCookie(client)
+{
+	if(!AreClientCookiesCached(client) || GetConVarInt(cvarKeepBoss)<1 || !GetConVarBool(cvarSelectBoss))
+		return;
+
+	SetClientCookie(client, SelectionCookie, xIncoming[client]);
+}
+
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
 	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
-	if(!boss && strlen(xIncoming[client]))
+	if(!boss && strlen(xIncoming[client]) && GetConVarBool(cvarSelectBoss))
 	{
 		if(preset)
 		{
@@ -8082,7 +8115,19 @@ public Action Timer_Uber(Handle timer, any medigunid)
 
 public Action Command_GetHPCmd(int client, int args)
 {
-	if(!IsValidClient(client) || !Enabled || CheckRoundState()!=1 || GetConVarInt(cvarHealthHud)>1)
+	if(!IsValidClient(client))
+	{
+		ReplayToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!Enabled2)
+	{
+		FReplayToCommand(client, "%t", "FF2 Disabled");
+		return Plugin_Handled;
+	}
+
+	if(CheckRoundState()!=1 || GetConVarInt(cvarHealthHud)>1)
 		return Plugin_Continue;
 
 	Command_GetHP(client);
@@ -8246,9 +8291,6 @@ public int Command_SetNextBossH(Handle menu, MenuAction action, int client, int 
 
 public Action Command_Points(int client, int args)
 {
-	if(!Enabled2)
-		return Plugin_Continue;
-
 	if(args!=2)
 	{
 		FReplyToCommand(client, "Usage: ff2_addpoints <target> <points>");
@@ -8673,7 +8715,7 @@ public Action Command_ReloadSubPlugins(int client, int args)
 {
 	if(!Enabled)
 	{
-		FReplyToCommand(client, "Freak Fortress 2 isn't running!");
+		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 	if(!args) // Reload ALL subplugins
@@ -8751,6 +8793,7 @@ public void OnClientPostAdminCheck(int client)
 	FF2flags[client]=0;
 	Damage[client]=0;
 	uberTarget[client]=-1;
+	xIncoming[client][0] = '\0';
 
 	if(AreClientCookiesCached(client))
 	{
@@ -8766,6 +8809,39 @@ public void OnClientPostAdminCheck(int client)
 			//Boss wins | boss losses | boss kills | boss deaths | player kills | player MVPs | UNUSED
 
 		SetupClientStats(client);
+
+		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
+		if(buffer[0] && GetConVarBool(cvarSelectBoss))
+		{
+			for(int config; config<Specials; config++)
+			{
+				KvRewind(BossKV[config]);
+				KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
+				KvGetString(BossKV[config], "name", boss, sizeof(boss));
+				if(KvGetNum(BossKV[config], "blocked", 0))
+					continue;
+
+				if(StrEquals(buffer, name, false))
+				{
+					if(strlen(companionName))
+						break;
+
+					if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+					   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+					   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
+						break;
+
+					if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+						break;
+
+					if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
+						break;
+
+					strcopy(xIncoming[client], sizeof(xIncoming[]), buffer);
+					break;
+				}
+			}
+		}
 	}
 
 	//We use the 0th index here because client indices can change.
@@ -12802,6 +12878,11 @@ stock bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0
 
 void ForceTeamWin(int team)
 {
+	char temp[PLATFORM_MAX_PATH];
+	GetCurrentMap(temp, sizeof(temp));
+	if(!strlen(temp))
+		return;
+
 	int entity = FindEntityByClassname2(-1, "team_control_point_master");
 	if(!IsValidEntity(entity))
 	{
@@ -13127,9 +13208,6 @@ public int QueuePanelH(Handle menu, MenuAction action, int client, int selection
 
 public Action QueuePanelCmd(int client, int args)
 {
-	if(!Enabled2)
-		return Plugin_Continue;
-
 	char text[64];
 	int items;
 	bool[] added = new bool[MaxClients+1];
@@ -13183,9 +13261,6 @@ public Action QueuePanelCmd(int client, int args)
 
 public Action ResetQueuePointsCmd(int client, int args)
 {
-	if(!Enabled2)
-		return Plugin_Continue;
-
 	if(client && !args)  //Normal players
 	{
 		TurnToZeroPanel(client, client);
@@ -13257,9 +13332,6 @@ public int TurnToZeroPanelH(Handle menu, MenuAction action, int client, int posi
 
 public Action TurnToZeroPanel(int client, int target)
 {
-	if(!Enabled2)
-		return Plugin_Continue;
-
 	if(!client)
 	{
 		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
@@ -13377,22 +13449,22 @@ public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
 				Command_SetMyBoss(client, 0);
 
 			case 3:
-				HelpPanelClass(client);
+				Command_HelpPanelClass(client, 0);
 
 			case 4:
-				NewPanel(client, maxVersion);
+				NewPanelCmd(client, 0);
 
 			case 5:
 				QueuePanelCmd(client, 0);
 
 			case 6:
-				MusicTogglePanel(client);
+				MusicTogglePanelCmd(client, 0);
 
 			case 7:
-				VoiceTogglePanel(client);
+				VoiceTogglePanelCmd(client, 0);
 
 			case 8:
-				HelpPanel3(client);
+				HelpPanel3Cmd(client, 0);
 
 			default:
 				return;
@@ -13402,36 +13474,38 @@ public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
 
 public Action FF2Panel(int client, int args)  //._.
 {
-	if(Enabled2 && IsValidClient(client, false))
+	if(!IsValidClient(client, false))
 	{
-		Handle panel=CreatePanel();
-		char text[256];
-		SetGlobalTransTarget(client);
-		Format(text, sizeof(text), "%T", "menu_1", client);  //What's up?
-		SetPanelTitle(panel, text);
-		Format(text, sizeof(text), "%T", "menu_2", client);  //Investigate the boss's current health level (/ff2hp)
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_3", client);  //Boss Preferences (/ff2boss)
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_7", client);  //Changes to my class in FF2 (/ff2classinfo)
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_4", client);  //What's new? (/ff2new).
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_5", client);  //Queue points
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_8", client);  //Toggle music (/ff2music)
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_9", client);  //Toggle monologues (/ff2voice)
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_9a", client);  //Toggle info about changes of classes in FF2
-		DrawPanelItem(panel, text);
-		Format(text, sizeof(text), "%T", "menu_6", client);  //Exit
-		DrawPanelItem(panel, text);
-		SendPanelToClient(panel, client, FF2PanelH, MENU_TIME_FOREVER);
-		CloseHandle(panel);
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 		return Plugin_Handled;
 	}
-	return Plugin_Continue;
+
+	Handle panel=CreatePanel();
+	char text[256];
+	SetGlobalTransTarget(client);
+	Format(text, sizeof(text), "%t", "menu_1");  //What's up?
+	SetPanelTitle(panel, text);
+	Format(text, sizeof(text), "%t", "menu_2");  //Investigate the boss's current health level (/ff2hp)
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_3");  //Boss Preferences (/ff2boss)
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_7");  //Changes to my class in FF2 (/ff2classinfo)
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_4");  //What's new? (/ff2new).
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_5");  //Queue points
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_8");  //Toggle music (/ff2music)
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_9");  //Toggle monologues (/ff2voice)
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_9a");  //Toggle info about changes of classes in FF2
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_6");  //Exit
+	DrawPanelItem(panel, text);
+	SendPanelToClient(panel, client, FF2PanelH, MENU_TIME_FOREVER);
+	CloseHandle(panel);
+	return Plugin_Handled;
 }
 
 public int NewPanelH(Handle menu, MenuAction action, int param1, int param2)
@@ -13473,7 +13547,10 @@ public int NewPanelH(Handle menu, MenuAction action, int param1, int param2)
 public Action NewPanelCmd(int client, int args)
 {
 	if(!IsValidClient(client))
-		return Plugin_Continue;
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
 
 	NewPanel(client, maxVersion);
 	return Plugin_Handled;
@@ -13481,9 +13558,6 @@ public Action NewPanelCmd(int client, int args)
 
 public Action NewPanel(int client, int versionIndex)
 {
-	if(!Enabled2)
-		return Plugin_Continue;
-
 	curHelp[client]=versionIndex;
 	Handle panel=CreatePanel();
 	char whatsNew[90];
@@ -13522,7 +13596,10 @@ public Action NewPanel(int client, int versionIndex)
 public Action HelpPanel3Cmd(int client, int args)
 {
 	if(!IsValidClient(client))
-		return Plugin_Continue;
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
 
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
@@ -13538,9 +13615,6 @@ public Action HelpPanel3Cmd(int client, int args)
 
 public Action HelpPanel3(int client)
 {
-	if(!Enabled2)
-		return Plugin_Continue;
-
 	Handle panel=CreatePanel();
 	SetPanelTitle(panel, "Turn the Freak Fortress 2 class info...");
 	DrawPanelItem(panel, "On");
@@ -13595,7 +13669,16 @@ void ToggleClassInfo(int client)
 public Action Command_HelpPanelClass(int client, int args)
 {
 	if(!IsValidClient(client))
-		return Plugin_Continue;
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!Enabled)
+	{
+		FReplayToCommand(client, "%t", "FF2 Disabled");
+		return Plugin_Handled;
+	}
 
 	HelpPanelClass(client);
 	return Plugin_Handled;
@@ -13687,7 +13770,10 @@ void HelpPanelBoss(int boss)
 public Action MusicTogglePanelCmd(int client, int args)
 {
 	if(!IsValidClient(client))
-		return Plugin_Continue;
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
 
 	if(args)
 	{
@@ -13716,9 +13802,6 @@ public Action MusicTogglePanelCmd(int client, int args)
 
 public Action MusicTogglePanel(int client)
 {
-	if(!Enabled || !IsValidClient(client))
-		return Plugin_Continue;
-
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
 		Handle panel=CreatePanel();
@@ -13830,15 +13913,24 @@ public Action Command_SkipSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!Enabled || CheckRoundState()!=1)
+	if(!GetConVarBool(cvarAdvancedMusic))
+		return Plugin_Continue;
+
+	if(!Enabled)
 	{
-		FReplyToCommand(client, "%t", "ff2_please wait");
+		FReplayToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
 	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !CheckSoundException(client, SOUNDEXCEPT_MUSIC))
 	{
 		FReplyToCommand(client, "%t", "ff2_music_disabled");
+		return Plugin_Handled;
+	}
+
+	if(CheckRoundState()!=1)
+	{
+		FReplyToCommand(client, "%t", "ff2_please wait");
 		return Plugin_Handled;
 	}
 
@@ -13924,9 +14016,12 @@ public Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!Enabled || CheckRoundState()!=1)
+	if(!GetConVarBool(cvarAdvancedMusic))
+		return Plugin_Continue;
+
+	if(!Enabled)
 	{
-		FReplyToCommand(client, "%t", "ff2_please wait");
+		FReplayToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
@@ -13936,8 +14031,11 @@ public Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!GetConVarBool(cvarAdvancedMusic))
+	if(CheckRoundState()!=1)
+	{
+		FReplyToCommand(client, "%t", "ff2_please wait");
 		return Plugin_Handled;
+	}
 
 	FReplyToCommand(client, "%t", "track_shuffle");
 	StartMusic(client);
@@ -13952,9 +14050,12 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!Enabled || CheckRoundState()!=1)
+	if(!GetConVarBool(cvarAdvancedMusic) || GetConVarInt(cvarSongInfo)<0)
+		return Plugin_Continue;
+
+	if(!Enabled)
 	{
-		FReplyToCommand(client, "%t", "ff2_please wait");
+		FReplayToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
@@ -13964,8 +14065,11 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!GetConVarBool(cvarAdvancedMusic) || (GetConVarInt(cvarSongInfo)<0))
+	if(CheckRoundState()!=1)
+	{
+		FReplyToCommand(client, "%t", "ff2_please wait");
 		return Plugin_Handled;
+	}
 
 	char id3[6][256];
 	Handle trackList = CreateMenu(Command_TrackListH);
@@ -14137,7 +14241,10 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 public Action VoiceTogglePanelCmd(int client, int args)
 {
 	if(!IsValidClient(client))
-		return Plugin_Continue;
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
 
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
@@ -14153,9 +14260,6 @@ public Action VoiceTogglePanelCmd(int client, int args)
 
 public Action VoiceTogglePanel(int client)
 {
-	if(!Enabled || !IsValidClient(client))
-		return Plugin_Continue;
-
 	Handle panel=CreatePanel();
 	SetPanelTitle(panel, "Turn the Freak Fortress 2 voices...");
 	DrawPanelItem(panel, "On");
