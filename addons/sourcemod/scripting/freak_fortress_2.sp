@@ -83,7 +83,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."031"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."033"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -8723,6 +8723,7 @@ public Action Command_ReloadSubPlugins(int client, int args)
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
+
 	if(!args) // Reload ALL subplugins
 	{
 		DisableSubPlugins(true);
@@ -8730,19 +8731,20 @@ public Action Command_ReloadSubPlugins(int client, int args)
 		FReplyToCommand(client, "Reloaded all subplugins!");
 		return Plugin_Handled;
 	}
-	char pluginName[PLATFORM_MAX_PATH], pluginName2[PLATFORM_MAX_PATH];
+
+	char pluginName[PLATFORM_MAX_PATH];
 	GetCmdArg(1, pluginName, sizeof(pluginName));
-	Format(pluginName, sizeof(pluginName), "freaks/%s", pluginName);
-	BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/%s.ff2", pluginName2);
-	if(!FileExists(pluginName2))
+	BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/freaks/%s.ff2", pluginName);
+	if(!FileExists(pluginName))
 	{
-		FReplyToCommand(client, "Subplugin %s does not exist!", pluginName2);
+		FReplyToCommand(client, "Subplugin %s does not exist!", pluginName);
 		return Plugin_Handled;
 	}	
+	ReplaceString(pluginName, sizeof(pluginName), "addons/sourcemod/plugins/freaks/", "freaks/", false);
 	ServerCommand("sm plugins unload %s", pluginName);
 	ServerCommand("sm plugins load %s", pluginName);
 	ReplaceString(pluginName, sizeof(pluginName), "freaks/", " ", false);
-	FReplyToCommand(client, "Reloaded subplugin %s!", pluginName);
+	FReplyToCommand(client, "Reloaded subplugin %s!", pluginName);	
 	return Plugin_Handled;
 }
 
@@ -8751,7 +8753,9 @@ public Action Command_Point_Disable(int client, int args)
 	if(Enabled)
 	{
 		SetControlPoint(false);
+		return Plugin_Handled;
 	}
+	FReplyToCommand(client, "%t", "FF2 Disabled");
 	return Plugin_Handled;
 }
 
@@ -8760,7 +8764,9 @@ public Action Command_Point_Enable(int client, int args)
 	if(Enabled)
 	{
 		SetControlPoint(true);
+		return Plugin_Handled;
 	}
+	FReplyToCommand(client, "%t", "FF2 Disabled");
 	return Plugin_Handled;
 }
 
@@ -9714,11 +9720,11 @@ public Action GlobalTimer(Handle timer)
 			{
 				if(HealthBarMode)
 				{
-					SetHudTextParams(-1.0, 0.21, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					SetHudTextParams(-1.0, 0.22, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
 				}
 				else
 				{
-					SetHudTextParams(-1.0, 0.21, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+					SetHudTextParams(-1.0, 0.22, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
 				}
 			}
 
@@ -11950,13 +11956,12 @@ public Action TF2_OnPlayerTeleport(int client, int teleporter, bool &result)
 	return Plugin_Continue;
 }
 
-public Action OnStomp(int attackerid, int victimid, float &damageMultiplier, float &damageBonus, float &JumpPower)
+public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
 {
-	int attacker = GetClientOfUserId(attackerid);
-	int victim = GetClientOfUserId(victimid);
-
 	if(!Enabled || !IsValidClient(attacker) || !IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
+
+	int attacker2 = GetClientOfUserId(attacker);
 
 	if(IsBoss(attacker))
 	{
@@ -12014,7 +12019,7 @@ public Action OnStomp(int attackerid, int victimid, float &damageMultiplier, flo
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
+						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped Player", spcl);
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", spcl);
@@ -12028,7 +12033,7 @@ public Action OnStomp(int attackerid, int victimid, float &damageMultiplier, flo
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped");
+						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped");
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped");
@@ -12086,7 +12091,7 @@ public Action OnStomp(int attackerid, int victimid, float &damageMultiplier, flo
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
+						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss Player", attacker);
@@ -12100,7 +12105,7 @@ public Action OnStomp(int attackerid, int victimid, float &damageMultiplier, flo
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss");
+						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped Boss");
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss");
@@ -13680,7 +13685,7 @@ public Action Command_HelpPanelClass(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!Enabled)
+	if(!Enabled2)
 	{
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
