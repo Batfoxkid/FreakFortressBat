@@ -67,7 +67,6 @@ last time or to encourage others to do the same.
 #tryinclude <rtd2>
 #endif
 #tryinclude <tf2attributes>
-#tryinclude <updater>
 #tryinclude <freak_fortress_2_kstreak>
 #define REQUIRE_PLUGIN
 
@@ -83,15 +82,13 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."033"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."037"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
 #else
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION..."-"...BUILD_NUMBER
 #endif
-
-#define UPDATE_URL "http://batfoxkid.github.io/FreakFortressBat/update.txt"
 
 /*
     And now, let's report its version as the latest public FF2 version
@@ -253,7 +250,6 @@ ConVar cvarGoombaDamage;
 ConVar cvarGoombaRebound;
 ConVar cvarBossRTD;
 ConVar cvarDeadRingerHud;
-ConVar cvarUpdater;
 ConVar cvarDebug;
 ConVar cvarPreroundBossDisconnect;
 ConVar cvarCaberDetonations;
@@ -1939,7 +1935,6 @@ public void OnPluginStart()
 	cvarGoombaRebound = CreateConVar("ff2_goomba_jump", "300.0", "How high players should rebound after goomba stomping the boss (requires Goomba Stomp)", _, true, 0.0);
 	cvarBossRTD = CreateConVar("ff2_boss_rtd", "0", "Can the boss use rtd? 0 to disallow boss, 1 to allow boss (requires RTD)", _, true, 0.0, true, 1.0);
 	cvarDeadRingerHud = CreateConVar("ff2_deadringer_hud", "1", "Dead Ringer indicator? 0 to disable, 1 to enable", _, true, 0.0, true, 1.0);
-	cvarUpdater = CreateConVar("ff2_updater", "1", "0-Disable Updater support, 1-Enable automatic updating (recommended, requires Updater)", _, true, 0.0, true, 1.0);
 	cvarDebug = CreateConVar("ff2_debug", "0", "0-Disable FF2 debug output, 1-Enable debugging (not recommended)", _, true, 0.0, true, 1.0);
 	cvarDmg2KStreak = CreateConVar("ff2_dmg_kstreak", "250", "Minimum damage to increase killstreak count", _, true, 0.0);
 	cvarAirStrike = CreateConVar("ff2_dmg_airstrike", "250", "Minimum damage to increase head count for the Air-Strike", _, true, 0.0);
@@ -2042,7 +2037,6 @@ public void OnPluginStart()
 	HookConVarChange(cvarGoombaDamage, CvarChange);
 	HookConVarChange(cvarGoombaRebound, CvarChange);
 	HookConVarChange(cvarBossRTD, CvarChange);
-	HookConVarChange(cvarUpdater, CvarChange);
 	HookConVarChange(cvarNextmap=FindConVar("sm_nextmap"), CvarChangeNextmap);
 	HookConVarChange(cvarSniperDamage, CvarChange);
 	HookConVarChange(cvarSniperMiniDamage, CvarChange);
@@ -2743,13 +2737,6 @@ public void OnLibraryAdded(const char[] name)
 	}
 	#endif
 
-	#if defined _updater_included && !defined FORK_DEV_REVISION
-	if(StrEqual(name, "updater") && GetConVarBool(cvarUpdater))
-	{
-		Updater_AddPlugin(UPDATE_URL);
-	}
-	#endif
-
 	#if defined _freak_fortress_2_kstreak_included
 	if(!strcmp(name, "ff2_kstreak_pref", false))
 	{
@@ -2788,13 +2775,6 @@ public void OnLibraryRemoved(const char[] name)
 	}
 	#endif
 
-	#if defined _updater_included
-	if(StrEqual(name, "updater"))
-	{
-		Updater_RemovePlugin();
-	}
-	#endif
-
 	#if defined _freak_fortress_2_kstreak_included
 	if(!strcmp(name, "ff2_kstreak_pref", false))
 	{
@@ -2821,13 +2801,6 @@ public void OnConfigsExecuted()
 	{
 		DisableFF2();
 	}
-
-	#if defined _updater_included && !defined FORK_DEV_REVISION
-	if(LibraryExists("updater") && GetConVarBool(cvarUpdater))
-	{
-		Updater_AddPlugin(UPDATE_URL);
-	}
-	#endif
 }
 
 public void OnMapStart()
@@ -3567,12 +3540,6 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	{
 		TellName=view_as<bool>(StringToInt(newValue));
 	}
-	else if(convar==cvarUpdater)
-	{
-		#if defined _updater_included && !defined FORK_DEV_REVISION
-		GetConVarInt(cvarUpdater) ? Updater_AddPlugin(UPDATE_URL) : Updater_RemovePlugin();
-		#endif
-	}
 	else if(convar==cvarEnabled)
 	{
 		StringToInt(newValue) ? (changeGamemode=Enabled ? 0 : 1) : (changeGamemode=!Enabled ? 0 : 2);
@@ -3956,7 +3923,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		SetControlPoint(true);
 		return Plugin_Continue;
 	}
-	else if(RoundCount<arenaRounds && !LateLoaded)  //We're still in arena mode
+	else if(RoundCount<arenaRounds)  //We're still in arena mode
 	{
 		FPrintToChatAll("%t", "arena_round", arenaRounds-RoundCount);
 		Enabled=false;
@@ -4669,7 +4636,14 @@ public Action CompanionMenu(int client, int args)
 		Format(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
 		Format(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection For Map");
-		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
+		if(Enabled2)
+		{
+			AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
+		}
+		else
+		{
+			AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption, ITEMDRAW_DISABLED);
+		}
 
 		SetMenuExitButton(menu, true);
 		DisplayMenu(menu, client, 20);
@@ -4714,7 +4688,14 @@ public Action BossMenu(int client, int args)
 		Format(menuoption, sizeof(menuoption), "%t", "Disable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
 		Format(menuoption, sizeof(menuoption), "%t", "Disable Queue Points For This Map");
-		AddMenuItem(menu, "Boss Toggle", menuoption);
+		if(Enabled2)
+		{
+			AddMenuItem(menu, "Boss Toggle", menuoption);
+		}
+		else
+		{
+			AddMenuItem(menu, "Boss Toggle", menuoption, ITEMDRAW_DISABLED);
+		}
 
 		SetMenuExitButton(menu, true);
 		DisplayMenu(menu, client, 20);
@@ -5502,14 +5483,14 @@ public Action Command_SetMyBoss(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!Enabled2 && GetConVarInt(cvarKeepBoss)<1)	// Allow players to choose a boss when Keep Boss is on since it stays between maps
-	{
-		FReplyToCommand(client, "%t", "FF2 Disabled");
-		return Plugin_Handled;
-	}
-
 	if(args)
 	{
+		if(!Enabled2)
+		{
+			FReplyToCommand(client, "%t", "FF2 Disabled");
+			return Plugin_Handled;
+		}
+
 		char name[64], boss[64], companionName[64];
 		GetCmdArgString(name, sizeof(name));
 		
@@ -5673,8 +5654,16 @@ public Action Command_SetMyBoss(int client, int args)
 	SetGlobalTransTarget(client);
 	SetMenuTitle(dMenu, "%t", "ff2_boss_selection", xIncoming[client]);
 
-	Format(boss, sizeof(boss), "%t", "to0_random");
-	AddMenuItem(dMenu, boss, boss);
+	if(Enabled2)
+	{
+		Format(boss, sizeof(boss), "%t", "to0_random");
+		AddMenuItem(dMenu, boss, boss);
+	}
+	else
+	{
+		Format(boss, sizeof(boss), "%t", "to0_random");
+		AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+	}
 
 	if(GetConVarBool(cvarToggleBoss))
 	{
