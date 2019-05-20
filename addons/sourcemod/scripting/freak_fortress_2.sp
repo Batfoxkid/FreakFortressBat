@@ -80,9 +80,9 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "18"
 #define FORK_STABLE_REVISION "1"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "Build"
+//#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."037"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."045"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5358,16 +5358,33 @@ void SaveClientStats(int client)
 	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client) || GetConVarInt(cvarStatPlayers)<1)
 		return;
 
-	if(CheatsUsed)
+	if(GetConVarInt(cvarStatWin2Lose)>2)
 	{
-		PrintToConsole(client, "%t", "Cheats Used");
-		return;
-	}
+		if(CheatsUsed)
+		{
+			PrintToConsole(client, "%t", "Cheats Used");
+			return;
+		}
 
-	if(GetConVarInt(cvarStatPlayers) > playing2)
+		if(GetConVarInt(cvarStatPlayers) > playing2)
+		{
+			PrintToConsole(client, "%t", "Low Players");
+			return;
+		}
+	}
+	else if(GetConVarInt(cvarStatWin2Lose)>0 || GetConVarInt(cvarStatHud)>0)
 	{
-		PrintToConsole(client, "%t", "Low Players");
-		return;
+		if(CheatsUsed)
+		{
+			FPrintToChat(client, "%t", "Cheats Used");
+			return;
+		}
+
+		if(GetConVarInt(cvarStatPlayers) > playing2)
+		{
+			FPrintToChat(client, "%t", "Low Players");
+			return;
+		}
 	}
 
 	Debug("StatTracker: Saved stats for %N", client);
@@ -9689,7 +9706,7 @@ public Action GlobalTimer(Handle timer)
 		return Plugin_Continue;
 
 	//int HealthBar = GetConVarInt(cvarHealthBar);
-	int current, max, bosses, target, lives;
+	int current, max, bosses, lives, boss;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
@@ -9719,11 +9736,11 @@ public Action GlobalTimer(Handle timer)
 
 			if(HealthHud < 2)	// I have no idea for companions with lives
 			{
-				for(int boss; boss<=MaxClients; boss++)
+				for(int clients=1; clients<=MaxClients; clients++)
 				{
-					target=Boss[boss];
-					if(IsBoss(target))
+					if(IsBoss(clients))
 					{
+						boss = GetBossIndex(clients);
 						current += BossLives[boss];
 						max += BossLivesMax[boss];
 						bosses++;
@@ -9737,11 +9754,11 @@ public Action GlobalTimer(Handle timer)
 			}
 			/*else if(HealthBar > 1)	// Decided against it, even as a ConVar
 			{
-				for(int boss; boss<=MaxClients; boss++)
+				for(int clients=1; clients<=MaxClients; clients++)
 				{
-					target=Boss[boss];
-					if(IsBoss(target))
+					if(IsBoss(clients))
 					{
+						boss = GetBossIndex(clients);
 						current += BossHealth[boss];
 						max += BossHealthMax[boss]*BossLivesMax[boss];
 					}
@@ -9751,11 +9768,11 @@ public Action GlobalTimer(Handle timer)
 			}*/
 			else
 			{
-				for(int boss; boss<=MaxClients; boss++)
+				for(int clients=1; clients<=MaxClients; clients++)
 				{
-					target=Boss[boss];
-					if(IsBoss(target))
+					if(IsBoss(clients))
 					{
+						boss = GetBossIndex(clients);
 						current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 						max += BossHealthMax[boss];
 						lives += BossLives[boss];
@@ -10823,21 +10840,28 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 	if(IsBoss(client))
 	{
 		int boss = GetBossIndex(client);
-		int formula = RoundToFloor(BossHealthMax[boss]+(BossHealthMax[boss]*BossLivesMax[boss]*LifeHealing[client])+(BossHealthMax[boss]*OverHealing[client]));
+		int health = BossHealth[boss];
+		int totalhealth = BossHealthMax[boss]*BossLivesMax[boss];
+
+		/*int maxlives = BossLivesMax[boss];
+		int maxhealth = BossHealthMax[boss];
+		int liveslost = (BossLives[boss]-maxlives)*-1;
+		int formula = RoundToFloor(totalhealth+(liveslost*maxhealth*LifeHealing[client])+(totalhealth*OverHealing[client]));*/
+
 		if(client==healer && (SelfHealing[client]==1 || SelfHealing[client]>2))
 		{
-			BossHealth[boss] += heals;
-			if(BossHealth[boss] > formula)
+			health += heals;
+			if(health > totalhealth)
 			{
-				BossHealth[boss] = formula;
+				health = totalhealth;
 			}
 		}
 		else if(client!=healer && SelfHealing[client]>1)
 		{
-			BossHealth[boss] += heals;
-			if(BossHealth[boss] > formula)
+			health += heals;
+			if(health > totalhealth)
 			{
-				BossHealth[boss] = formula;
+				health = totalhealth;
 			}
 		}
 		return Plugin_Continue;
