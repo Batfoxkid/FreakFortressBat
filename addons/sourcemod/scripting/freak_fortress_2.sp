@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."045"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."046"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -738,13 +738,18 @@ stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 142:  //1.18.1
+		case 143:  //1.18.1
 		{
 			DrawPanelText(panel, "1) [Gameplay] Deadringers kills don't count towards StatTrak kills (Batfoxkid)");
 			DrawPanelText(panel, "2) [Gameplay] Added/updated ConVars for the Health Bar (Batfoxkid)");
 			DrawPanelText(panel, "3) [Gameplay] Boss health bar turns green during markets, cabers, stabs, goombas, or healing (Batfoxkid)");
-			DrawPanelText(panel, "4) [Core] Reduced bugs using reloading commands (Batfoxkid)");
-			DrawPanelText(panel, "5) [Core] Added a menu for some commands (Batfoxkid)");
+			DrawPanelText(panel, "4) [Core] Made FF2 more multi-gamemode friendly (Batfoxkid)");
+			DrawPanelText(panel, "5) [Core] Added menus for some commands (Batfoxkid)");
+		}
+		case 142:  //1.18.1
+		{
+			DrawPanelText(panel, "6) [Core] Removed Updater and ShowActivity on commands (Batfoxkid)");
+			DrawPanelText(panel, "7) [Bosses] Added catch_replace to replace specific class voicelines (Batfoxkid)");
 		}
 		case 141:  //1.18.0
 		{
@@ -2238,7 +2243,6 @@ public Action Command_SetRage(int client, int args)
 			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
 			CheatsUsed = true;
-			ShowActivity2(client, "[SM] ", "%t", "Self Rage Set", client, RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2275,14 +2279,6 @@ public Action Command_SetRage(int client, int args)
 		BossCharge[Boss[target_list[target]]][0]=rageMeter;
 		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Set %d rage to %s", RoundFloat(rageMeter), target_name);
-		if(tn_is_ml)
-		{
-			ShowActivity2(client, "[SM] ", "%t", "Give Rage Set", target_name, RoundFloat(rageMeter));
-		}
-		else
-		{
-			ShowActivity2(client, "[SM] ", "%t", "Give Rage Set", "_s", target_name, RoundFloat(rageMeter));
-		}
 		CheatsUsed = true;
 	}
 	return Plugin_Handled;
@@ -2318,7 +2314,6 @@ public Action Command_AddRage(int client, int args)
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
 			CheatsUsed = true;
-			ShowActivity2(client, "[SM] ", "%t", "Self Rage Add", client, RoundFloat(rageMeter));
 		}
 		return Plugin_Handled;
 	}
@@ -2355,14 +2350,6 @@ public Action Command_AddRage(int client, int args)
 		BossCharge[Boss[target_list[target]]][0]+=rageMeter;
 		LogAction(client, target_list[target], "\"%L\" added %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
-		if(tn_is_ml)
-		{
-			ShowActivity2(client, "[SM] ", "%t", "Give Rage Add", target_name, RoundFloat(rageMeter));
-		}
-		else
-		{
-			ShowActivity2(client, "[SM] ", "%t", "Give Rage Add", "_s", target_name, RoundFloat(rageMeter));
-		}
 		CheatsUsed = true;
 	}
 	return Plugin_Handled;
@@ -2397,7 +2384,6 @@ public Action Command_SetInfiniteRage(int client, int args)
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 				CheatsUsed = true;
-				ShowActivity2(client, "[SM] ", "%t", "Self Infinite On", client);
 			}
 			else
 			{
@@ -2405,7 +2391,6 @@ public Action Command_SetInfiniteRage(int client, int args)
 				FReplyToCommand(client, "Infinite RAGE deactivated");
 				LogAction(client, client, "\"%L\" deactivated infinite RAGE on themselves", client);
 				CheatsUsed = true;
-				ShowActivity2(client, "[SM] ", "%t", "Self Infinite Off", client);
 			}
 		}
 		return Plugin_Handled;
@@ -2444,14 +2429,6 @@ public Action Command_SetInfiniteRage(int client, int args)
 			FReplyToCommand(client, "Infinite RAGE activated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
 			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-			if(tn_is_ml)
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Give Infinite On", target_name);
-			}
-			else
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Give Infinite On", "_s", target_name);
-			}
 			CheatsUsed = true;
 		}
 		else
@@ -2459,14 +2436,6 @@ public Action Command_SetInfiniteRage(int client, int args)
 			InfiniteRageActive[target_list[target]]=false;	
 			FReplyToCommand(client, "Infinite RAGE deactivated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" deactivated infinite RAGE on \"%L\"", client, target_list[target]);
-			if(tn_is_ml)
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Give Infinite Off", target_name);
-			}
-			else
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Give Infinite Off", "_s", target_name);
-			}
 		}
 	}
 	return Plugin_Handled;
@@ -2522,7 +2491,6 @@ public Action Command_AddCharge(int client, int args)
 				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
-				ShowActivity2(client, "[SM] ", "%t", "Self Charge Set", client, RoundFloat(rageMeter), abilitySlot);
 			}
 			else
 			{
@@ -2568,14 +2536,6 @@ public Action Command_AddCharge(int client, int args)
 			BossCharge[Boss[target_list[target]]][abilitySlot]+=rageMeter;
 			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]), RoundFloat(rageMeter));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
-			if(tn_is_ml)
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Give Charge Add", target_name, RoundFloat(rageMeter), abilitySlot);
-			}
-			else
-			{
-				ShowActivity2(client, "[SM] ", "%t", "Give Charge Add", "_s", target_name, RoundFloat(rageMeter), abilitySlot);
-			}
 			CheatsUsed = true;
 		}
 		else
@@ -2618,8 +2578,7 @@ public Action Command_SetCharge(int client, int args)
 			{
 				BossCharge[Boss[client]][abilitySlot]=rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
-				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);	
-				CShowActivity(client, "%t", "Self Charge Set", client, RoundFloat(rageMeter), abilitySlot);
+				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
 			}
 			else
@@ -5671,15 +5630,15 @@ public Action Command_SetMyBoss(int client, int args)
 	SetGlobalTransTarget(client);
 	SetMenuTitle(dMenu, "%t", "ff2_boss_selection", xIncoming[client]);
 
-	if(Enabled2)
+	if(!Enabled2 || Specials<1)
 	{
 		Format(boss, sizeof(boss), "%t", "to0_random");
-		AddMenuItem(dMenu, boss, boss);
+		AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
 	}
 	else
 	{
 		Format(boss, sizeof(boss), "%t", "to0_random");
-		AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+		AddMenuItem(dMenu, boss, boss);
 	}
 
 	if(GetConVarBool(cvarToggleBoss))
@@ -8807,9 +8766,9 @@ public void OnClientPostAdminCheck(int client)
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 
-	FF2flags[client]=0;
-	Damage[client]=0;
-	uberTarget[client]=-1;
+	FF2flags[client] = 0;
+	Damage[client] = 0;
+	uberTarget[client] = -1;
 	xIncoming[client][0] = '\0';
 
 	if(AreClientCookiesCached(client))
