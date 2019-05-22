@@ -4,21 +4,18 @@
 	{
 		"Version"
 		{
-			"Latest"	"Unofficial 1.18.0"
-			"Previous"	"Unofficial 1.17.10"
+			"Latest"	"Unofficial 1.18.1"
+			"Previous"	"Unofficial 1.18.0"
 		}
 
-		"Notes"			"Code is now in Transitional Syntax"
-		"Notes"			"Merged all default subplugins"
-		"Notes"			"Added the StatTrak!"
+		"Notes"			"Deadringers kills don't count towards StatTrak kills"
+		"Notes"			"Added/updated ConVars for the Health Bar"
+		"Notes"			"Boss health bar turns green during markets, cabers, stabs, goombas, or healing"
 		"Notes"			"Added new stun options"
-		"Notes"			"Added the ability to sap bosses or minions"
-		"Notes"			"Replaced 'ghost' with 'icon' setting for custom icon"
-		"Notes"			"Added ff2_setcharge and ff2_addcharge"
-		"Notes"			"Debug commands use ShowActivity settings"
-		"Notes"			"Added 'healing' option to allow bosses to heal"
-		"Notes"			"Bosses are now teleported to a random spawn when touching hazards"
-		"Notes"			"Error messages are moved into a custom file"
+		"Notes"			"Made FF2 more multi-gamemode friendly"
+		"Notes"			"Added menus for some commands"
+		"Notes"			"Removed Updater and ShowActivity on commands"
+		"Notes"			"Added catch_replace to replace specific class voicelines"
 	}
 
 	"Files"
@@ -29,12 +26,8 @@
 			"Source"	"Path_SM/scripting/freak_fortress_2.sp"
 			"Plugin"	"Path_SM/plugins/freaks/ffbat_defaults.ff2"
 			"Source"	"Path_SM/scripting/freaks/ffbat_defaults.sp"
-			"Source"	"Path_SM/scripting/include/freak_fortress_2.inc"
-			"Source"	"Path_SM/scripting/include/freak_fortress_2_subplugin.inc"
-			"Source"	"Path_SM/scripting/include/freak_fortress_2_vsh_feedback.inc"
 			"Plugin"	"Path_SM/translations/freak_fortress_2.phrases.txt"
 			"Plugin"	"Path_SM/translations/freak_fortress_2_prefs.phrases.txt"
-			"Plugin"	"Path_SM/translations/freak_fortress_2_stats.phrases.txt"
 		}
 
 		"Plugin"		"Path_SM/plugins/freak_fortress_2.smx"
