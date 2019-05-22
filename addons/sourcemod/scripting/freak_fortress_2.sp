@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."046"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."047"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -584,6 +584,7 @@ static const char ff2versiontitles[][] =
 	"1.17.10",
 	"1.18.0",
 	"1.18.0",
+	"1.18.1",
 	"1.18.1"
 };
 
@@ -731,6 +732,7 @@ static const char ff2versiondates[][] =
 	"April 3, 2019",		//1.17.10
 	"May 6, 2019",			//1.18.0
 	"May 6, 2019",			//1.18.0
+	"May 21, 2019",			//1.18.1
 	"May 21, 2019"			//1.18.1
 };
 
