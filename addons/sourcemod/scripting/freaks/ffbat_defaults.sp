@@ -119,7 +119,7 @@ public Plugin myinfo=
 {
 	name		=	"Unofficial Freak Fortress 2: Defaults",
 	author		=	"Many many people",
-	description	=	"FF2: Combined subplugin of default abilties",
+	description	=	"FF2: Combined subplugin of default abilities",
 	version		=	PLUGIN_VERSION
 };
 

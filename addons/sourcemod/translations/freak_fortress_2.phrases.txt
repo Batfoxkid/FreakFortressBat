@@ -10,11 +10,15 @@
 		"en"		"Type {olive}/ff2{default} in chat to open the menu"
 		"ru"		"Введи {olive}/ff2{default} в чате, чтобы открыть меню"
 	}
-	"nextmap_ff2"	// Deprecated
+	"nextmap_ff2"	// Deprecated, TODO: Use this?
 	{
 		"#format"	"{1:s}"
 		"en"		"The gamemode will be {olive}Freak Fortress 2{default} on {olive}{1}{default}"
 		"ru"		"{olive}Freak Fortress 2{default} будет запущен на карте {olive}{1}{default}"
+	}
+	"FF2 Disabled"	// Chat
+	{
+		"en"		"{olive}Freak Fortress 2{default} is currently disabled"
 	}
 	"wait_hp"	// Chat
 	{
@@ -356,31 +360,31 @@
 	}
 	"Give Charge Set"	// Chat
 	{
-		"#format"	"{1:t},{2:i},{3:i}"
+		"#format"	"{1:s},{2:i},{3:i}"
 		"en"		"gave {1} {2} charge to slot {3}"
 		"ru"		"выдал для {1} {2} заряда в слот {3}"
 	}
 	"Give Infinite Off"	// Chat
 	{
-		"#format"	"{1:t}"
+		"#format"	"{1:s}"
 		"en"		"deactivated infinite RAGE on {1}"
 		"ru"		"отключил бесконечную ЯРОСТЬ для {1}"
 	}
 	"Give Infinite On"	// Chat
 	{
-		"#format"	"{1:t}"
+		"#format"	"{1:s}"
 		"en"		"activated infinite RAGE on {1}"
 		"ru"		"включил бесконечную ЯРОСТЬ для {1}"
 	}
 	"Give Rage Add"	// Chat
 	{
-		"#format"	"{1:i},{2:t}"
+		"#format"	"{1:i},{2:s}"
 		"en"		"added {1} RAGE to {2}"
 		"ru"		"добавил {1} ЯРОСТИ для {2}" // i'm not sure about %% after {1}
 	}
 	"Give Rage Set"	// Chat
 	{
-		"#format"	"{1:i},{2:t}"
+		"#format"	"{1:i},{2:s}"
 		"en"		"set {1} RAGE to {2}"
 		"ru"		"установил {1} ЯРОСТИ для {2}"
 	}

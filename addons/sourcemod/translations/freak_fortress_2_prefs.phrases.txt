@@ -111,14 +111,14 @@
 	}
 	"to0_comfirmrandom"
 	{
-		"en"		"{olive}[FF2]{default} You will become a random boss. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to select a boss."
-		"ru"		"{olive}[FF2]{default} Ты станешь случайным боссом. Передумал? Введи {olive}/ff2boss{default} или {olive}/ff2boss <имя босса>{default}, чтобы выбрать босса."
+		"en"		"You will become a random boss. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to select a boss."
+		"ru"		"Ты станешь случайным боссом. Передумал? Введи {olive}/ff2boss{default} или {olive}/ff2boss <имя босса>{default}, чтобы выбрать босса."
 	}
 	"to0_boss_selected"
 	{
 		"#format"	"{1:s}"
-		"en"		"{olive}[FF2]{default} You have selected {1}. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to change your boss."
-		"ru"		"{olive}[FF2]{default} Ты выбрал {1}. Передумал? Введи {olive}/ff2boss{default} или {olive}/ff2boss <имя босса>{default}, чтобы выбрать босса."
+		"en"		"You have selected {1}. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to change your boss."
+		"ru"		"Ты выбрал {1}. Передумал? Введи {olive}/ff2boss{default} или {olive}/ff2boss <имя босса>{default}, чтобы выбрать босса."
 	}
 	"ff2_changedifficulty_denied"
 	{
