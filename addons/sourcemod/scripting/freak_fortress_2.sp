@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."048"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."049"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1996,7 +1996,7 @@ public void OnPluginStart()
 	cvarStatHud = CreateConVar("ff2_hud_stats", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client, 2-Show to anybody", _, true, -1.0, true, 2.0);
 	cvarStatPlayers = CreateConVar("ff2_stats_players", "6", "0-Disable, #-Players required to use StatTrak", _, true, 0.0, true, 34.0);
 	cvarStatWin2Lose = CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
-	cvarHealthHud = CreateConVar("ff2_hud_health", "0", "0-Disable, 1-Show boss's lives left, 2-Show boss's total health", _, true, 0.0, true, 2.0);
+	cvarHealthHud = CreateConVar("ff2_hud_health", "0", "0-Disable, 1-Show boss's lives left, 2-Show boss's total health", _, true, 0.0, true, 4.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -8103,7 +8103,7 @@ public Action Command_GetHPCmd(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(CheckRoundState()!=1 || GetConVarInt(cvarHealthHud)>1)
+	if(CheckRoundState()!=1 || GetConVarInt(cvarHealthHud)==2 || GetConVarInt(cvarHealthHud)>3)
 		return Plugin_Continue;
 
 	Command_GetHP(client);
@@ -9590,7 +9590,7 @@ public Action BossTimer(Handle timer)
 		if(RedAlivePlayers<=lastPlayerGlow)
 			SetClientGlow(client, 0.5, 3.0);
 
-		if(RedAlivePlayers==1 && !executed2 && GetConVarInt(cvarHealthHud)<2)
+		if(RedAlivePlayers==1 && !executed2 && GetConVarInt(cvarHealthHud)!=2 && GetConVarInt(cvarHealthHud)<4)
 		{
 			char message[512], name[64];
 			for(int target; target<=MaxClients; target++)  //TODO: Why is this for loop needed when we're already in a boss for loop
@@ -9667,7 +9667,7 @@ public Action GlobalTimer(Handle timer)
 	if(!Enabled || CheckRoundState()==2 || CheckRoundState()==-1 || HealthHud<1)
 		return Plugin_Stop;
 
-	if(CheckRoundState() == 0)
+	if(CheckRoundState()==0 || (HealthHud>2 && Companions))
 		return Plugin_Continue;
 
 	//int HealthBar = GetConVarInt(cvarHealthBar);
@@ -9699,39 +9699,43 @@ public Action GlobalTimer(Handle timer)
 				}
 			}
 
-			if(HealthHud < 2)	// I have no idea for companions with lives
+			if(HealthHud > 3)
 			{
 				for(int clients=1; clients<=MaxClients; clients++)
 				{
 					if(IsBoss(clients))
 					{
 						boss = GetBossIndex(clients);
-						current += BossLives[boss];
-						max += BossLivesMax[boss];
-						bosses++;
+						current = BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+						max = BossHealthMax[boss];
+						lives = BossLives[boss];
 					}
 				}
 
-				if(current > bosses)
+				if(lives > 1)
 				{
-					FF2_ShowSyncHudText(client, healthHUD, "%t", "Boss Lives Left", current, max);
+					FF2_ShowSyncHudText(client, healthHUD, "%i / %ix%i", current, max, lives);
+				}
+				else
+				{
+					FF2_ShowSyncHudText(client, healthHUD, "%i / %i", current, max);
 				}
 			}
-			/*else if(HealthBar > 1)	// Decided against it, even as a ConVar
+			else if(HealthHud > 2)
 			{
 				for(int clients=1; clients<=MaxClients; clients++)
 				{
 					if(IsBoss(clients))
 					{
 						boss = GetBossIndex(clients);
-						current += BossHealth[boss];
-						max += BossHealthMax[boss]*BossLivesMax[boss];
+						current = BossLives[boss];
+						max = BossLivesMax[boss];
+						break;
 					}
 				}
-
-				FF2_ShowSyncHudText(client, healthHUD, "%i / %i", current, max);
-			}*/
-			else
+				FF2_ShowSyncHudText(client, healthHUD, "%t", "Boss Lives Left", current, max);
+			}
+			else if(HealthHud > 1)
 			{
 				for(int clients=1; clients<=MaxClients; clients++)
 				{
@@ -9752,6 +9756,24 @@ public Action GlobalTimer(Handle timer)
 				else
 				{
 					FF2_ShowSyncHudText(client, healthHUD, "%i / %i", current, max);
+				}
+			}
+			else
+			{
+				for(int clients=1; clients<=MaxClients; clients++)
+				{
+					if(IsBoss(clients))
+					{
+						boss = GetBossIndex(clients);
+						current += BossLives[boss];
+						max += BossLivesMax[boss];
+						bosses++;
+					}
+				}
+
+				if(current > bosses)
+				{
+					FF2_ShowSyncHudText(client, healthHUD, "%t", "Boss Lives Left", current, max);
 				}
 			}
 		}
@@ -10270,9 +10292,9 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 
 public Action Timer_Damage(Handle timer, any userid)
 {
-	int client=GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(IsValidClient(client, false))
-		FPrintToChat(client, "{olive}%t. %t{default}", "damage", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
+		FPrintToChat(client, "{olive}%t. %t{default}", "damage", Damage[client], "scores", RoundToFloor(Damage[client]/PointsInterval2));
 
 	return Plugin_Continue;
 }
@@ -11295,11 +11317,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							EmitSoundToClient(attacker, "ambient/lightsoff.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "ambient/lightson.wav", _, _, _, _, 0.6, _, _, position, _, false);
 
-							char sound[PLATFORM_MAX_PATH];
-							if(RandomSound("sound_cabered", sound, sizeof(sound)))
+							
+							if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 							{
-								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
-								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+								char sound[PLATFORM_MAX_PATH];
+								if(RandomSound("sound_cabered", sound, sizeof(sound)))
+								{
+									EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+									EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+								}
 							}
 
 							if(allowedDetonations < 3)
@@ -11481,11 +11507,14 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							EmitSoundToClient(attacker, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
 
-							char sound[PLATFORM_MAX_PATH];
-							if(RandomSound("sound_marketed", sound, sizeof(sound)))
+							if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 							{
-								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
-								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+								char sound[PLATFORM_MAX_PATH];
+								if(RandomSound("sound_marketed", sound, sizeof(sound)))
+								{
+									EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+									EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, _, _, _, false);
+								}
 							}
 
 							HealthBarMode = true;
@@ -11666,11 +11695,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							}
 						}
 
-						char sound[PLATFORM_MAX_PATH];
-						if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
+						
+						if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 						{
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-							EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+							char sound[PLATFORM_MAX_PATH];
+							if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
+							{
+								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+								EmitSoundToAllExcept(SOUNDEXCEPT_VOICE, sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+							}
 						}
 					}
 					switch(index)
