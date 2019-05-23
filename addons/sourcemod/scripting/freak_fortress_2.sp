@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."047"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."048"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -8051,31 +8051,35 @@ public Action OnUberDeployed(Handle event, const char[] name, bool dontBroadcast
 
 public Action Timer_Uber(Handle timer, any medigunid)
 {
-	int medigun=EntRefToEntIndex(medigunid);
+	int medigun = EntRefToEntIndex(medigunid);
 	if(medigun && IsValidEntity(medigun) && CheckRoundState()==1)
 	{
-		int client=GetEntPropEnt(medigun, Prop_Send, "m_hOwnerEntity");
-		float charge=GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel");
+		int client = GetEntPropEnt(medigun, Prop_Send, "m_hOwnerEntity");
+		float charge = GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel");
 		if(IsValidClient(client, false) && IsPlayerAlive(client) && GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon")==medigun)
 		{
-			int target=GetHealingTarget(client);
-			if(charge>0.05)
+			int target = GetHealingTarget(client);
+			if(charge > 0.05)
 			{
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5);
-					uberTarget[client]=target;
+					uberTarget[client] = target;
 				}
 				else
 				{
-					uberTarget[client]=-1;
+					uberTarget[client] = -1;
 				}
 			}
 			else
 			{
 				return Plugin_Stop;
 			}
+		}
+		else if(charge <= 0.05)
+		{
+			return Plugin_Stop;
 		}
 	}
 	else
