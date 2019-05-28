@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6640,9 +6640,9 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		PointTime = GetConVarInt(cvarPointTime);
 	}
 
-	if(KvGetNum(BossKV[Special[boss]], "pointalive", -1) >= 0)	// Can't be below 0, it's players/ratio
+	if(KvGetFloat(BossKV[Special[boss]], "pointalive", -1.0) >= 0)	// Can't be below 0, it's players/ratio
 	{
-		AliveToEnable = KvGetFloat(BossKV[Special[boss]], "pointalive", -1);
+		AliveToEnable = KvGetFloat(BossKV[Special[boss]], "pointalive", -1.0);
 	}
 	else
 	{
@@ -6658,9 +6658,9 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		countdownHealth = GetConVarInt(cvarCountdownHealth);
 	}
 
-	if(KvGetNum(BossKV[Special[boss]], "countdownalive", -1) >= 0)	// Yet again, can't be below 0
+	if(KvGetFloat(BossKV[Special[boss]], "countdownalive", -1.0) >= 0)	// Yet again, can't be below 0
 	{
-		countdownPlayers = KvGetFloat(BossKV[Special[boss]], "countdownalive", -1);
+		countdownPlayers = KvGetFloat(BossKV[Special[boss]], "countdownalive", -1.0);
 	}
 	else
 	{
