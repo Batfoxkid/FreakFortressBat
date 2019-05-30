@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -137,6 +137,7 @@ last time or to encourage others to do the same.
 
 #if defined _steamtools_included
 bool steamtools = false;
+bool EnabledDesc = false;
 #endif
 
 #if defined _tf2attributes_included
@@ -322,7 +323,6 @@ Handle healthHUD;
 
 bool Enabled = true;
 bool Enabled2 = true;
-bool EnabledDesc = false;
 int PointDelay = 6;
 int PointTime = 45;
 float Announce = 120.0;
@@ -2824,7 +2824,6 @@ public void EnableFF2()
 {
 	Enabled = true;
 	Enabled2 = true;
-	EnabledDesc = true;
 
 	//Cache cvars
 	SetConVarString(FindConVar("ff2_version"), PLUGIN_VERSION);
@@ -2899,6 +2898,7 @@ public void EnableFF2()
 	FindHealthBar();
 
 	#if defined _steamtools_included
+	EnabledDesc = true;
 	if(steamtools && GetConVarBool(cvarSteamTools))
 	{
 		char gameDesc[64];
@@ -2974,9 +2974,9 @@ public void DisableFF2()
 	{
 		Steam_SetGameDescription("Team Fortress");
 	}
+	EnabledDesc = false;
 	#endif
 
-	EnabledDesc = false;
 	changeGamemode = 0;
 }
 
@@ -3834,9 +3834,10 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		{
 			Steam_SetGameDescription("Team Fortress");
 		}
-		#endif
-		Enabled2 = false;
 		EnabledDesc = false;
+		#endif
+
+		Enabled2 = false;
 	}
 
 	Enabled = Enabled2;
