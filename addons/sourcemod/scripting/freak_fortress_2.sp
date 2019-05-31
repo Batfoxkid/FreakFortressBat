@@ -6,7 +6,7 @@
         Programmer, modeller, mapper, painter
              Author of Demoman The Pirate
          One of two creators of Floral Defence
-	      
+
       And notoriously famous for creating plugins
       with terrible code and then abandoning them.
 
@@ -30,7 +30,7 @@
 
 
 
- 
+
  I'm not sure how long FF2 (or TF2 in general) is going to
 last, but I would hate to see this plugin go, it's one of
 my all time favorite gamemodes. I just love the concept of
@@ -80,9 +80,9 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "18"
 #define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "Build"
+//#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -108,12 +108,12 @@ last time or to encourage others to do the same.
 #define PREF_DUO	2
 #define PREF_BOSS	3
 
-#define STAT_WINS		4
-#define STAT_LOSSES		5
-#define STAT_KILLS		6
-#define STAT_DEATHS		7
-#define STAT_SLAINS		8
-#define STAT_MVPS		9
+#define STAT_WINS	4
+#define STAT_LOSSES	5
+#define STAT_KILLS	6
+#define STAT_DEATHS	7
+#define STAT_SLAINS	8
+#define STAT_MVPS	9
 
 #define HEALTHBAR_CLASS "monster_resource"
 #define HEALTHBAR_PROPERTY "m_iBossHealthPercentageByte"
@@ -745,6 +745,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		{
 			DrawPanelText(panel, "1) [Gameplay] Fixed Health HUD values being higher for most players (Batfoxkid)");
 			DrawPanelText(panel, "2) [Gameplay] Ullapool Caber detonations message doesn't show for one-shot Cabers (Batfoxkid)");
+			DrawPanelText(panel, "3) [Gameplay] Fixed boss healing (again) (Batfoxkid)");
 		}
 		case 143:  //1.18.1
 		{
@@ -10868,7 +10869,7 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 	{
 		int boss = GetBossIndex(client);
 		int health = BossHealth[boss];
-		int totalhealth = BossHealthMax[boss]*BossLivesMax[boss];
+		int totalhealth = BossHealthMax[boss]*BossLives[boss];
 
 		/*int maxlives = BossLivesMax[boss];
 		int maxhealth = BossHealthMax[boss];
@@ -10891,6 +10892,7 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 				health = totalhealth;
 			}
 		}
+		BossHealth[boss] = health;
 		return Plugin_Continue;
 	}
 
@@ -10998,8 +11000,14 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		foundDmgCustom=true;
 	}
 
-	if((attacker<=0 || client==attacker) && IsBoss(client) && !(FF2flags[client] & FF2FLAG_ALLOW_BOSS_ROCKETJUMPING))
+	if((attacker<=0 || client==attacker) && IsBoss(client) && damagetype & DMG_FALL)
+	{
 		return Plugin_Handled;
+	}
+	else if((attacker<=0 || client==attacker) && IsBoss(client) && !(FF2flags[client] & FF2FLAG_ALLOW_BOSS_ROCKETJUMPING))
+	{
+		return Plugin_Handled;
+	}
 
 	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 		return Plugin_Continue;
