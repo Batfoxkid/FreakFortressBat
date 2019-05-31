@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10429,12 +10429,12 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	{
 		if(AliveToEnable < 1)
 		{
-			if((RedAlivePlayers/playing) > AliveToEnable)
+			if((RedAlivePlayers/playing) <= AliveToEnable)
 				return Plugin_Continue;
 		}
 		else
 		{
-			if(RedAlivePlayers > AliveToEnable)
+			if(RedAlivePlayers <= AliveToEnable)
 				return Plugin_Continue;
 		}
 
