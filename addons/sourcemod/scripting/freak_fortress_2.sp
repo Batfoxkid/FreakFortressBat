@@ -78,11 +78,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "18"
-#define FORK_STABLE_REVISION "2"
+#define FORK_STABLE_REVISION "3"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -585,7 +585,8 @@ static const char ff2versiontitles[][] =
 	"1.18.0",
 	"1.18.1",
 	"1.18.1",
-	"1.18.2"
+	"1.18.2",
+	"1.18.3"
 };
 
 static const char ff2versiondates[][] =
@@ -734,18 +735,24 @@ static const char ff2versiondates[][] =
 	"May 6, 2019",			//1.18.0
 	"May 21, 2019",			//1.18.1
 	"May 21, 2019",			//1.18.1
-	"May 31, 2019"			//1.18.2
+	"May 31, 2019",			//1.18.2
+	"June 1, 2019"			//1.18.2
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 145:  //1.18.3
+		{
+			DrawPanelText(panel, "1) [Core] Fixed serious issue with player alive based events (Batfoxkid)");
+		}
 		case 144:  //1.18.2
 		{
 			DrawPanelText(panel, "1) [Gameplay] Fixed Health HUD values being higher for most players (Batfoxkid)");
 			DrawPanelText(panel, "2) [Gameplay] Ullapool Caber detonations message doesn't show for one-shot Cabers (Batfoxkid)");
 			DrawPanelText(panel, "3) [Gameplay] Fixed boss healing (again) (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Player alive ConVars can now be a ratio (Batfoxkid)");
 		}
 		case 143:  //1.18.1
 		{
@@ -9229,7 +9236,7 @@ public Action ClientTimer(Handle timer)
 			{
 				if(lastPlayerGlow < 1)
 				{
-					if((RedAlivePlayers/playing) <= lastPlayerGlow)
+					if(float(RedAlivePlayers)/playing <= lastPlayerGlow)
 						SetClientGlow(client, 0.5, 3.0);
 				}
 				else if(RedAlivePlayers <= lastPlayerGlow)
@@ -9623,7 +9630,7 @@ public Action BossTimer(Handle timer)
 		{
 			if(lastPlayerGlow < 1)
 			{
-				if((RedAlivePlayers/playing) <= lastPlayerGlow)
+				if(float(RedAlivePlayers)/playing <= lastPlayerGlow)
 					SetClientGlow(client, 0.5, 3.0);
 			}
 			else if(RedAlivePlayers <= lastPlayerGlow)
@@ -10401,7 +10408,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	{
 		if(countdownPlayers < 1)
 		{
-			if((countdownPlayers/playing) <= RedAlivePlayers)
+			if(float(RedAlivePlayers)/playing <= countdownPlayers)
 			{
 				if(FindEntityByClassname2(-1, "team_control_point") != -1)
 				{
@@ -10413,7 +10420,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 		}
 		else
 		{
-			if(countdownPlayers <= RedAlivePlayers)
+			if(RedAlivePlayers <= countdownPlayers)
 			{
 				if(FindEntityByClassname2(-1, "team_control_point") != -1)
 				{
@@ -10429,12 +10436,13 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	{
 		if(AliveToEnable < 1)
 		{
-			if((RedAlivePlayers/playing) <= AliveToEnable)
+			Debug("%f | %i", float(RedAlivePlayers)/playing, float(RedAlivePlayers)/playing);
+			if(float(RedAlivePlayers)/playing > AliveToEnable)
 				return Plugin_Continue;
 		}
 		else
 		{
-			if(RedAlivePlayers <= AliveToEnable)
+			if(RedAlivePlayers > AliveToEnable)
 				return Plugin_Continue;
 		}
 
@@ -10474,7 +10482,21 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 
 public Action Timer_DrawGame(Handle timer)
 {
-	if(BossHealth[0]<countdownHealth || CheckRoundState()!=1 || RedAlivePlayers>countdownPlayers)
+	if(BossHealth[0]<countdownHealth || CheckRoundState()!=1)
+	{
+		executed2 = false;
+		return Plugin_Stop;
+	}
+
+	if(countdownPlayers < 1)
+	{
+		if(float(RedAlivePlayers)/playing > countdownPlayers)
+		{
+			executed2 = false;
+			return Plugin_Stop;
+		}
+	}
+	else if(RedAlivePlayers > countdownPlayers)
 	{
 		executed2 = false;
 		return Plugin_Stop;
