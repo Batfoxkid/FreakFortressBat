@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -12034,8 +12034,6 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	if(!Enabled || !IsValidClient(attacker) || !IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
 
-	int attacker2 = GetClientOfUserId(attacker);
-
 	if(IsBoss(attacker))
 	{
 		int boss = GetBossIndex(attacker);
@@ -12092,7 +12090,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped Player", spcl);
+						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", spcl);
@@ -12106,7 +12104,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped");
+						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped");
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped");
@@ -12164,7 +12162,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
+						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss Player", attacker);
@@ -12178,7 +12176,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker2, true, 5.0, "%t", "Goomba Stomped Boss");
+						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss");
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss");
