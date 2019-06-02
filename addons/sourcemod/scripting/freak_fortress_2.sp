@@ -78,11 +78,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "18"
-#define FORK_STABLE_REVISION "3"
+#define FORK_STABLE_REVISION "4"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -406,6 +406,7 @@ Handle kvWeaponMods = INVALID_HANDLE;
 bool IsBossSelected[MAXPLAYERS+1];
 bool dmgTriple[MAXPLAYERS+1];
 bool randomCrits[MAXPLAYERS+1];
+bool SelfKnockback[MAXPLAYERS+1];
 bool SapperBoss[MAXPLAYERS+1];
 bool SapperMinion;
 char BossIcon[64];
@@ -586,7 +587,8 @@ static const char ff2versiontitles[][] =
 	"1.18.1",
 	"1.18.1",
 	"1.18.2",
-	"1.18.3"
+	"1.18.3",
+	"1.18.4"
 };
 
 static const char ff2versiondates[][] =
@@ -736,13 +738,18 @@ static const char ff2versiondates[][] =
 	"May 21, 2019",			//1.18.1
 	"May 21, 2019",			//1.18.1
 	"May 31, 2019",			//1.18.2
-	"June 1, 2019"			//1.18.2
+	"June 1, 2019",			//1.18.3
+	"June 2, 2019"			//1.18.4
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 146:  //1.18.4
+		{
+			DrawPanelText(panel, "1) [Core] Fixed serious issues caused by boss rocket jumping FF2 flag (Batfoxkid)");
+		}
 		case 145:  //1.18.3
 		{
 			DrawPanelText(panel, "1) [Core] Fixed serious issue with player alive based events (Batfoxkid)");
@@ -6581,35 +6588,17 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		dmgTriple[client] = GetConVarBool(cvarTripleWep);
 	}
 
-	if(KvGetNum(BossKV[Special[boss]], "knockback", -1) >= 0)
+	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0)
 	{
-		if(KvGetNum(BossKV[Special[boss]], "knockback", -1) > 0)
-		{
-			FF2flags[client] |= FF2FLAG_ALLOW_BOSS_ROCKETJUMPING; 
-		}
-		else
-		{
-			FF2flags[client] |= ~FF2FLAG_ALLOW_BOSS_ROCKETJUMPING; 
-		}
+		SelfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "knockback", -1));
 	}
-	else if(KvGetNum(BossKV[Special[boss]], "rocketjump", -1) >= 0)
+	else if(KvGetNum(BossKV[Special[boss]], "rocketjump", -1)>=0)
 	{
-		if(KvGetNum(BossKV[Special[boss]], "rocketjump", -1) > 0)
-		{
-			FF2flags[client] |= FF2FLAG_ALLOW_BOSS_ROCKETJUMPING; 
-		}
-		else
-		{
-			FF2flags[client] |= ~FF2FLAG_ALLOW_BOSS_ROCKETJUMPING; 
-		}
-	}
-	else if(GetConVarBool(cvarSelfKnockback))
-	{
-		FF2flags[client] |= FF2FLAG_ALLOW_BOSS_ROCKETJUMPING; 
+		SelfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "rocketjump", -1));
 	}
 	else
 	{
-		FF2flags[client] |= ~FF2FLAG_ALLOW_BOSS_ROCKETJUMPING; 
+		SelfKnockback[client]=GetConVarBool(cvarSelfKnockback);
 	}
 
 	if(KvGetNum(BossKV[Special[boss]], "crits", -1) >= 0)
@@ -8951,7 +8940,7 @@ public Action OnPostInventoryApplication(Handle event, const char[] name, bool d
 	{
 		if(!(FF2flags[client] & FF2FLAG_HASONGIVED))
 		{
-			FF2flags[client] |= FF2FLAG_HASONGIVED;
+			FF2flags[client]|=FF2FLAG_HASONGIVED;
 			RemovePlayerBack(client, {57, 133, 405, 444, 608, 642}, 7);
 			RemovePlayerTarge(client);
 			TF2_RemoveAllWeapons(client);
@@ -8961,8 +8950,8 @@ public Action OnPostInventoryApplication(Handle event, const char[] name, bool d
 		CreateTimer(0.2, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 
-	FF2flags[client] &= ~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS|FF2FLAG_ROCKET_JUMPING|FF2FLAG_ALLOW_BOSS_ROCKETJUMPING);
-	FF2flags[client] |= FF2FLAG_USEBOSSTIMER;
+	FF2flags[client]&=~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS|FF2FLAG_ROCKET_JUMPING);
+	FF2flags[client]|=FF2FLAG_USEBOSSTIMER;
 	return Plugin_Continue;
 }
 
@@ -9564,7 +9553,7 @@ public Action BossTimer(Handle timer)
 							EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
 						}
 					}
-					FF2flags[client] &= ~FF2FLAG_TALKING;
+					FF2flags[client]&=~FF2FLAG_TALKING;
 					emitRageSound[boss]=false;
 				}
 			}
@@ -11026,7 +11015,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 	{
 		return Plugin_Handled;
 	}
-	else if((attacker<=0 || client==attacker) && IsBoss(client) && !(FF2flags[client] & FF2FLAG_ALLOW_BOSS_ROCKETJUMPING))
+	else if((attacker<=0 || client==attacker) && IsBoss(client) && !SelfKnockback[client])
 	{
 		return Plugin_Handled;
 	}
