@@ -656,7 +656,7 @@
 	}
 	"Goomba Stomped Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"
+		"#format"	"{1:s}"
 		"en"		"Ouch! {1} goomba stomped you! Watch your head!"
 		"ru"		"Ай! {1} раздавил тебя! Береги голову!"
 	}
