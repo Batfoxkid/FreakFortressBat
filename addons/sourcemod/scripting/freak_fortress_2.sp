@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -587,7 +587,8 @@ static const char ff2versiontitles[][] =
 	"1.18.1",
 	"1.18.1",
 	"1.18.2",
-	"1.18.3"
+	"1.18.3",
+	"1.18.4"
 };
 
 static const char ff2versiondates[][] =
@@ -737,13 +738,18 @@ static const char ff2versiondates[][] =
 	"May 21, 2019",			//1.18.1
 	"May 21, 2019",			//1.18.1
 	"May 31, 2019",			//1.18.2
-	"June 1, 2019"			//1.18.2
+	"June 1, 2019",			//1.18.3
+	"June 2, 2019"			//1.18.4
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 146:  //1.18.4
+		{
+			DrawPanelText(panel, "1) [Core] Fixed serious issues caused by boss rocket jumping FF2 flag (Batfoxkid)");
+		}
 		case 145:  //1.18.3
 		{
 			DrawPanelText(panel, "1) [Core] Fixed serious issue with player alive based events (Batfoxkid)");
