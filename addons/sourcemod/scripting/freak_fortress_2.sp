@@ -78,11 +78,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "18"
-#define FORK_STABLE_REVISION "4"
+#define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Build"
+#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."100"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -588,7 +588,8 @@ static const char ff2versiontitles[][] =
 	"1.18.1",
 	"1.18.2",
 	"1.18.3",
-	"1.18.4"
+	"1.18.4",
+	"1.18.5"
 };
 
 static const char ff2versiondates[][] =
@@ -739,13 +740,19 @@ static const char ff2versiondates[][] =
 	"May 21, 2019",			//1.18.1
 	"May 31, 2019",			//1.18.2
 	"June 1, 2019",			//1.18.3
-	"June 2, 2019"			//1.18.4
+	"June 2, 2019",			//1.18.4
+	"Development"			//1.18.5
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 147:  //1.18.5
+		{
+			DrawPanelText(panel, "1) [Gameplay] Added the ability to look at teammates to see their stats (Marxvee)");
+			DrawPanelText(panel, "2) [Gameplay] Fixed healing done tracking more then max player's health (Marxvee)");
+		}
 		case 146:  //1.18.4
 		{
 			DrawPanelText(panel, "1) [Core] Fixed serious issues caused by boss rocket jumping FF2 flag (Batfoxkid)");
@@ -805,11 +812,11 @@ stock void FindVersionData(Handle panel, int versionIndex)
 			DrawPanelText(panel, "2) [Gameplay] Adjusted some hardcoded weapons (Batfoxkid)");
 			DrawPanelText(panel, "3) [Gameplay] Fixed pickups when FF2 is disabled (Batfoxkid)");
 			DrawPanelText(panel, "4) [Gameplay] Cvar for RPS queue point betting and boss limiter (Batfoxkid/SHADoW)");
-			DrawPanelText(panel, "5) [Gameplay] Cvar to show healing done (Vee)");
+			DrawPanelText(panel, "5) [Gameplay] Cvar to show healing done (Marxvee)");
 		}
 		case 137:  //1.17.9
 		{
-			DrawPanelText(panel, "6) [Gameplay] Candy Cane Scouts gain healing credit (Vee)");
+			DrawPanelText(panel, "6) [Gameplay] Candy Cane Scouts gain healing credit (Marxvee)");
 			DrawPanelText(panel, "7) [Gameplay] Fix shields against critical hits (Batfoxkid)");
 			DrawPanelText(panel, "8) [Gameplay] Made Killstreaker and Airstrike damage more accurate (Batfoxkid)");
 			DrawPanelText(panel, "9) [Gameplay] Cvar for Airstrike damage to gain a head (Batfoxkid)");
@@ -8976,126 +8983,110 @@ public Action ClientTimer(Handle timer)
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
 		{
 			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
-			if(!IsPlayerAlive(client))
+			int observer;
+			if(IsPlayerAlive(client))
 			{
-				int observer=GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-				if(IsValidClient(observer) && !IsBoss(observer) && observer!=client)
+				observer = GetClientAimTarget(client, true);
+			}
+			else if(!IsPlayerAlive(client))
+			{
+				observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
+			}
+
+			if(IsValidClient(observer) && !IsBoss(observer) && observer!=client)
+			{
+				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 				{
-					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+					if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
 					{
-						if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
+						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
 						{
-							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
-						}
-						else if(Healing[client]>0 && HealHud==1)
-						{
-							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
-						}
-						else if(Healing[observer]>0 && HealHud==1)
-						{
-							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
+							FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
 						}
 						else
 						{
-							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						}
+					}
+					else if(Healing[client]>0 && HealHud==1)
+					{
+						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						}
+					}
+					else if(Healing[observer]>0 && HealHud==1)
+					{
+						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
 						}
 					}
 					else
 					{
-						if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
+						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
 						{
-							FF2_ShowSyncHudText(client, statHUD, "%t %t | %t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-						}
-						else if(Healing[client]>0 && HealHud==1)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t %t | %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer]);
-						}
-						else if(Healing[observer]>0 && HealHud==1)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t | %t %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
 						}
 						else
 						{
-							FF2_ShowSyncHudText(client, statHUD, "%t | %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer]);
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
 						}
 					}
 				}
-				else if(IsValidClient(observer) && IsBoss(observer) && observer!=client)
+				else
 				{
-					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+					if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud==2)
-						{
-							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
-							}
-						}
-						else
-						{
-							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
-							}
-						}
+						FF2_ShowSyncHudText(client, statHUD, "%t %t | %t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					}
+					else if(Healing[client]>0 && HealHud==1)
+					{
+						FF2_ShowSyncHudText(client, statHUD, "%t %t | %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer]);
+					}
+					else if(Healing[observer]>0 && HealHud==1)
+					{
+						FF2_ShowSyncHudText(client, statHUD, "%t | %t %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
 					}
 					else
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud==2)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
-						}
+						FF2_ShowSyncHudText(client, statHUD, "%t | %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer]);
 					}
 				}
-				else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+			}
+			else if(IsValidClient(observer) && IsBoss(observer) && observer!=client)
+			{
+				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 				{
 					if((Healing[client]>0 && HealHud==1) || HealHud==2)
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
+						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+						}
 					}
 					else
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
+						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+						}
 					}
 				}
 				else
@@ -9109,26 +9100,28 @@ public Action ClientTimer(Handle timer)
 						FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
 					}
 				}
-				continue;
 			}
-			if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+			else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 			{
 				if((Healing[client]>0 && HealHud==1) || HealHud==2)
 				{
-					FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
+					FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, statHUD, "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
+					FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 				}
-			}
-			else if((Healing[client]>0 && HealHud==1) || HealHud==2)
-			{
-				FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
+				if((Healing[client]>0 && HealHud==1) || HealHud==2)
+				{
+					FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+				}
+				else
+				{
+					FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
+				}
 			}
 
 			TFClassType class=TF2_GetPlayerClass(client);
@@ -10910,7 +10903,15 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 	if(client == healer)
 		return Plugin_Continue;
 
-	Healing[healer] += heals;
+	int missinghealth = GetEntProp(client, Prop_Data, "m_iMaxHealth")-GetClientHealth(client);
+	if(heals > missinghealth)
+	{
+		heals = missinghealth;
+	}
+	if(heals > 0)
+	{
+		Healing[healer] += heals;
+	}
 	return Plugin_Continue;
 }
 
