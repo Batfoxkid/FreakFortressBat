@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."013"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -296,6 +296,7 @@ ConVar cvarStatPlayers;
 ConVar cvarStatWin2Lose;
 ConVar cvarHealthHud;
 ConVar cvarLookHud;
+ConVar cvarBossVsBoss;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -311,6 +312,7 @@ Handle healthHUD;
 
 bool Enabled = true;
 bool Enabled2 = true;
+bool Enabled3 = false;
 int PointDelay = 6;
 int PointTime = 45;
 float Announce = 120.0;
@@ -739,7 +741,7 @@ static const char ff2versiondates[][] =
 	"May 31, 2019",			//1.18.2
 	"June 1, 2019",			//1.18.3
 	"June 2, 2019",			//1.18.4
-	"Development"			//1.18.5
+	"June 12, 2019"			//1.18.5
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
@@ -2037,6 +2039,7 @@ public void OnPluginStart()
 	cvarStatWin2Lose = CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
 	cvarHealthHud = CreateConVar("ff2_hud_health", "0", "0-Disable, 1-Show boss's lives left, 2-Show boss's total health", _, true, 0.0, true, 2.0);
 	cvarLookHud = CreateConVar("ff2_hud_aiming", "0.0", "-1-No Range Limit, 0-Disable, #-Show teammate's stats by looking at them within this range", _, true, -1.0);
+	cvarBossVsBoss = CreateConVar("ff2_boss_vs_boss", "0", "[EXPERIMENTAL] 0-Always Boss vs Players, #-Chance of Boss vs Boss, 100-Always Boss vs Boss", _, true, 0.0, true, 100.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2858,6 +2861,7 @@ public void EnableFF2()
 {
 	Enabled = true;
 	Enabled2 = true;
+	Enabled3 = false;
 
 	//Cache cvars
 	SetConVarString(FindConVar("ff2_version"), PLUGIN_VERSION);
@@ -2954,6 +2958,7 @@ public void DisableFF2()
 {
 	Enabled = false;
 	Enabled2 = false;
+	Enabled3 = false;
 
 	DisableSubPlugins();
 
@@ -3574,10 +3579,7 @@ public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionTyp
 	if(type==Detection_CvarViolation)
 	{
 		Debug("SMAC: Cheat was a cvar violation!");
-		char cvar[PLATFORM_MAX_PATH];
-		KvGetString(info, "cvar", cvar, sizeof(cvar));
-		Debug("Cvar was %s", cvar);
-		if((StrEqual(cvar, "sv_cheats") || StrEqual(cvar, "host_timescale")) && !(FF2flags[Boss[client]] & FF2FLAG_CHANGECVAR))
+		if((FF2flags[Boss[client]] & FF2FLAG_CHANGECVAR))
 		{
 			Debug("SMAC: Ignoring violation");
 			return Plugin_Stop;
@@ -3866,41 +3868,32 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	{
 		#if defined _steamtools_included
 		if(EnabledDesc && steamtools && GetConVarBool(cvarSteamTools))
-		{
 			Steam_SetGameDescription("Team Fortress");
-		}
+
 		EnabledDesc = false;
 		#endif
-
 		Enabled2 = false;
+		Enabled3 = false;
 	}
 
 	Enabled = Enabled2;
 	if(!Enabled)
-	{
 		return Plugin_Continue;
-	}
 
 	if(FileExists("bNextMapToFF2"))
-	{
 		DeleteFile("bNextMapToFF2");
-	}
 
 	currentBossTeam = GetRandomInt(1, 2);
 	switch(GetConVarInt(cvarForceBossTeam))
 	{
 		case 1:
-		{
 			blueBoss=view_as<bool>(GetRandomInt(0, 1));
-		}
+
 		case 2:
-		{
 			blueBoss=false;
-		}
+
 		default:
-		{
 			blueBoss=true;
-		}
 	}
 
 	if(blueBoss)
@@ -3922,12 +3915,12 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	playing2=0;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		Damage[client]=0;
-		Healing[client]=0;
-		uberTarget[client]=-1;
-		emitRageSound[client]=true;
-		AirstrikeDamage[client]=0.0;
-		KillstreakDamage[client]=0.0;
+		Damage[client] = 0;
+		Healing[client] = 0;
+		uberTarget[client] = -1;
+		emitRageSound[client] = true;
+		AirstrikeDamage[client] = 0.0;
+		KillstreakDamage[client] = 0.0;
 		if(IsValidClient(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 		{
 			playing++;
@@ -3940,7 +3933,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	{
 		FPrintToChatAll("%t", "needmoreplayers");
 		SetConVarString(hostName, oldName);
-		Enabled=false;
+		Enabled = false;
 		DisableSubPlugins();
 		SetControlPoint(true);
 		return Plugin_Continue;
@@ -3948,7 +3941,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	else if(RoundCount<arenaRounds)  //We're still in arena mode
 	{
 		FPrintToChatAll("%t", "arena_round", arenaRounds-RoundCount);
-		Enabled=false;
+		Enabled = false;
 		DisableSubPlugins();
 		SetArenaCapEnableTime(60.0);
 		CreateTimer(71.0, Timer_EnableCap, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -3969,7 +3962,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 				}
 				SetEntProp(client, Prop_Send, "m_lifeState", 0);
 				TF2_RespawnPlayer(client);
-				toRed=!toRed;
+				toRed = !toRed;
 			}
 		}
 		return Plugin_Continue;
@@ -3984,24 +3977,42 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	Enabled=true;
+	if(!Enabled3 && GetConVarInt(cvarBossVsBoss)>0 && DuoMin)	// I know this gets fired twice
+	{
+		if(MaxClients > 15)
+		{
+			Enabled3 = GetRandomInt(0, 99) < GetConVarInt(cvarBossVsBoss);
+		}
+		else
+		{
+			LogToFile(eLog, "[!!!] Can't enable Boss vs Boss mode, need above 16 max players");
+		}
+	}
+
+	Enabled = true;
 	EnableSubPlugins();
 	CheckArena();
 	StopMusic();
 
 	bool[] omit = new bool[MaxClients+1];
-	Boss[0]=GetClientWithMostQueuePoints(omit);
-	omit[Boss[0]]=true;
+	Boss[0] = GetClientWithMostQueuePoints(omit);
+	omit[Boss[0]] = true;
+	if(Enabled3)
+	{
+		Boss[10] = GetClientWithMostQueuePoints(omit);
+		omit[Boss[10]] = true;
+		CheatsUsed = true;
+	}
 
 	bool teamHasPlayers[TFTeam];
 	for(int client=1; client<=MaxClients; client++)  //Find out if each team has at least one player on it
 	{
 		if(IsValidClient(client))
 		{
-			TFTeam team=view_as<TFTeam>(GetClientTeam(client));
-			if(team>TFTeam_Spectator)
+			TFTeam team = view_as<TFTeam>(GetClientTeam(client));
+			if(team > TFTeam_Spectator)
 			{
-				teamHasPlayers[team]=true;
+				teamHasPlayers[team] = true;
 			}
 
 			if(teamHasPlayers[TFTeam_Blue] && teamHasPlayers[TFTeam_Red])
@@ -4014,15 +4025,18 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	if(!teamHasPlayers[TFTeam_Blue] || !teamHasPlayers[TFTeam_Red])  //If there's an empty team make sure it gets populated
 	{
 		if(IsValidClient(Boss[0]) && GetClientTeam(Boss[0])!=BossTeam)
-		{
 			AssignTeam(Boss[0], BossTeam);
-		}
 
-		for(int client=1; client<=MaxClients; client++)
+		if(Enabled3 && IsValidClient(Boss[10]) && GetClientTeam(Boss[10])!=OtherTeam)
 		{
-			if(IsValidClient(client) && !IsBoss(client) && GetClientTeam(client)!=OtherTeam)
+			AssignTeam(Boss[10], OtherTeam);
+		}
+		else if(!Enabled3)
+		{
+			for(int client=1; client<=MaxClients; client++)
 			{
-				CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+				if(IsValidClient(client) && !IsBoss(client) && GetClientTeam(client)!=OtherTeam)
+					CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 			}
 		}
 		return Plugin_Continue;  //NOTE: This is needed because OnRoundStart gets fired a second time once both teams have players
@@ -4035,17 +4049,29 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	Companions=0;
+	if(Enabled3)
+	{
+		PickCharacter(10, 10);
+		if((Special[10]<0) || !BossKV[Special[10]])
+		{
+			LogToFile(eLog, "[!!!] Couldn't find a boss!");
+			return Plugin_Continue;
+		}
+	}
+
+	Companions = 0;
 	FindCompanion(0, playing, omit);  //Find companions for the boss!
+	if(Enabled3)
+		FindCompanion(10, playing, omit);
 
 	for(int boss; boss<=MaxClients; boss++)
 	{
-		BossInfoTimer[boss][0]=INVALID_HANDLE;
-		BossInfoTimer[boss][1]=INVALID_HANDLE;
+		BossInfoTimer[boss][0] = INVALID_HANDLE;
+		BossInfoTimer[boss][1] = INVALID_HANDLE;
 		if(Boss[boss])
 		{
 			CreateTimer(0.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
-			BossInfoTimer[boss][0]=CreateTimer(30.2, BossInfoTimer_Begin, boss, TIMER_FLAG_NO_MAPCHANGE);
+			BossInfoTimer[boss][0] = CreateTimer(30.2, BossInfoTimer_Begin, boss, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 
@@ -4057,9 +4083,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	for(int entity=MaxClients+1; entity<MAXENTITIES; entity++)
 	{
 		if(!IsValidEntity(entity))
-		{
 			continue;
-		}
 
 		char classname[64];
 		GetEntityClassname(entity, classname, sizeof(classname));
@@ -4118,7 +4142,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 			if(ToggleBoss[client] == Setting_On)
 			{
 				int index = -1;
-				for(int i = 1; i < MAXPLAYERS+1; i++)
+				for(int i=1; i<MAXPLAYERS+1; i++)
 				{
 					if(ClientID[i] == client)
 					{
@@ -4255,25 +4279,24 @@ public void CheckArena()
 public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 {
 	RoundCount++;
-	Companions=0;
-	SapperMinion=false;
-	LastMan=true;
+	Companions = 0;
+	SapperMinion = false;
+	LastMan = true;
+	Enabled3 = false;
 	if(HasSwitched)
-		HasSwitched=false;
+		HasSwitched = false;
 
 	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
 	{
-		DuoMin=true;
+		DuoMin = true;
 	}
 	else if(playing<GetConVarInt(cvarDuoMin) && DuoMin)
 	{
-		DuoMin=false;
+		DuoMin = false;
 	}
 
 	if(!Enabled)
-	{
 		return Plugin_Continue;
-	}
 
 	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing2)
 	{
@@ -4322,9 +4345,8 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	{
 		bossWin = 1;
 		if(RandomSound("sound_win", sound, sizeof(sound)))
-		{
 			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-		}
+
 		if(RandomSound("sound_outtromusic_win", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
@@ -4373,28 +4395,26 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			SetClientGlow(Boss[client], 0.0, 0.0);
 			SDKUnhook(client, SDKHook_GetMaxHealth, OnGetMaxHealth);  //Temporary:  Used to prevent boss overheal
 			if(IsPlayerAlive(Boss[client]))
-			{
-				isBossAlive=true;
-			}
+				isBossAlive = true;
 
 			for(int slot=1; slot<8; slot++)
 			{
-				BossCharge[client][slot]=0.0;
+				BossCharge[client][slot] = 0.0;
 			}
-			bossHasReloadAbility[client]=false;
-			bossHasRightMouseAbility[client]=false;
+			bossHasReloadAbility[client] = false;
+			bossHasRightMouseAbility[client] = false;
 			SaveClientStats(client);
 		}
 		else if(IsValidClient(client))
 		{
 			SetClientGlow(client, 0.0, 0.0);
-			hadshield[client]=false;
-			shield[client]=0;
-			detonations[client]=0;
-			AirstrikeDamage[client]=0.0;
-			KillstreakDamage[client]=0.0;
-			HazardDamage[client]=0.0;
-			SapperCooldown[client]=0.0;
+			hadshield[client] = false;
+			shield[client] = 0;
+			detonations[client] = 0;
+			AirstrikeDamage[client] = 0.0;
+			KillstreakDamage[client] = 0.0;
+			HazardDamage[client] = 0.0;
+			SapperCooldown[client] = 0.0;
 			SaveClientStats(client);
 		}
 
@@ -6465,8 +6485,17 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	}
 
 	KvRewind(BossKV[Special[boss]]);
-	if(GetClientTeam(client) != BossTeam)
-		AssignTeam(client, BossTeam);
+	if(Enabled3)
+	{
+		int ForcedTeam = boss>9 ? OtherTeam : BossTeam;
+		if(GetClientTeam(client) != ForcedTeam)
+			AssignTeam(client, ForcedTeam);
+	}
+	else
+	{
+		if(GetClientTeam(client) != BossTeam)
+			AssignTeam(client, BossTeam);
+	}
 
 	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900) == 1)	// If 1, toggle infinite rage
 	{
@@ -6647,7 +6676,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 			FF2flags[client] |= FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
 	}
 
-	if(!HasSwitched)
+	if(!HasSwitched && !Enabled3)
 	{
 		switch(KvGetNum(BossKV[Special[boss]], "bossteam", 0))
 		{
@@ -6702,9 +6731,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	while((entity=FindEntityByClassname2(entity, "tf_powerup_bottle")) != -1)
 	{
 		if(IsBoss(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")))
-		{
 			TF2_RemoveWearable(client, entity);
-		}
 	}
 
 	EquipBoss(boss);
@@ -7765,24 +7792,18 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 
 public Action Timer_MakeNotBoss(Handle timer, any userid)
 {
-	int client=GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!IsValidClient(client) || !IsPlayerAlive(client) || CheckRoundState()==2 || IsBoss(client) || (FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
-	{
 		return Plugin_Continue;
-	}
 
 	if(!IsVoteInProgress() && ToggleInfo[client] && !(FF2flags[client] & FF2FLAG_CLASSHELPED))
-	{
 		HelpPanelClass(client);
-	}
 
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);  //This really shouldn't be needed but I've been noticing players who still have glow
 
 	SetEntityHealth(client, GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iMaxHealth", _, client)); //Temporary: Reset health to avoid an overheal bug
-	if(GetClientTeam(client)==BossTeam)
-	{
+	if(!Enabled3 && GetClientTeam(client)==BossTeam)
 		AssignTeam(client, OtherTeam);
-	}
 
 	CreateTimer(0.1, Timer_CheckItems, userid, TIMER_FLAG_NO_MAPCHANGE);
 	return Plugin_Continue;
@@ -7795,8 +7816,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 		return Plugin_Continue;
 
 	SetEntityRenderColor(client, 255, 255, 255, 255);
-	hadshield[client]=false;
-	shield[client]=0;
+	hadshield[client] = false;
+	shield[client] = 0;
 	int[] civilianCheck = new int[MaxClients+1];
 
 	int weapon=GetPlayerWeaponSlot(client, 4);
@@ -10005,6 +10026,9 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	// autoteam doesn't come with arguments
 	if(StrEqual(command, "autoteam", false))
 	{
+		if(Enabled3)
+			return Plugin_Handled;
+
 		int team=view_as<int>(TFTeam_Unassigned), oldTeam=GetClientTeam(client);
 		if(IsBoss(client))
 		{
@@ -10023,6 +10047,14 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 
 	if(!args)
 		return Plugin_Continue;
+
+	if(Enabled3)
+	{
+		if(StrEqual(teamString, "spectate", false) && !IsBoss(client))
+			return Plugin_Continue;
+
+		return Plugin_Handled;
+	}
 
 	int team=view_as<int>(TFTeam_Unassigned), oldTeam=GetClientTeam(client);
 	char teamString[10];
@@ -10173,7 +10205,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		if(IsBoss(attacker))
 		{
 			int boss = GetBossIndex(attacker);
-			bool firstBloodSound  = true;
+			bool firstBloodSound = true;
 			if(firstBlood)	//TF_DEATHFLAG_FIRSTBLOOD is broken
 			{
 				if(RandomSound("sound_first_blood", sound, sizeof(sound), boss))
@@ -10364,9 +10396,19 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	Call_PushCell(BlueAlivePlayers);
 	Call_Finish();
 
+	if(!RedAlivePlayers && !BlueAlivePlayers)
+	{
+		ForceTeamWin(0);
+		return Plugin_Continue;
+	}
 	if(!RedAlivePlayers)
 	{
 		ForceTeamWin(BossTeam);
+		return Plugin_Continue;
+	}
+	if(!BlueAlivePlayers)
+	{
+		ForceTeamWin(OtherTeam);
 		return Plugin_Continue;
 	}
 
@@ -11013,7 +11055,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 	float position[3];
 	GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
-	if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==3) // Absorbs damage from bosses AND minions
+	if(IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client) && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==3) // Absorbs damage from bosses AND minions
 	{
 		if(!(damagetype & DMG_CLUB) && shieldHP[client]>0.0 && RoundToFloor(damage)<GetClientHealth(client))
 		{
@@ -11042,7 +11084,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			return Plugin_Stop;					
 		}
 	}
-	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==4)
+	else if(IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client) && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==4)
 	{
 		if(damagetype & DMG_CRIT)
 		{
@@ -11077,7 +11119,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 		return Plugin_Changed;
 	}
-	else if(IsValidClient(attacker) && GetClientTeam(attacker)==BossTeam && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==2)
+	else if(IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client) && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==2)
 	{
 		if(damagetype & DMG_CRIT)
 		{
@@ -11092,9 +11134,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		if(health <= damage)
 			RemoveShield(client, attacker, position);
 	}
-	if(IsBoss(attacker))
+	if(IsBoss(attacker) && IsValidClient(client))
 	{
-		if(IsValidClient(client) && !IsBoss(client) && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
+		int boss = GetBossIndex(client);
+		if(boss<0 && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
 		{
 			if(TF2_IsPlayerInCondition(client, TFCond_DefenseBuffed))
 			{
@@ -11126,6 +11169,353 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			{
 				damage *= 3;
 				return Plugin_Changed;
+			}
+		}
+		else if(boss >= 0)
+		{
+			if(attacker <= MaxClients)
+			{
+				bool bIsTelefrag, bIsBackstab;
+				if(dmgCustomInOTD)
+				{
+					if(damagecustom == TF_CUSTOM_BACKSTAB)
+					{
+						bIsBackstab = true;
+					}
+					else if(damagecustom == TF_CUSTOM_TELEFRAG)
+					{
+						bIsTelefrag = true;
+					}
+				}
+				else if(weapon!=4095 && IsValidEntity(weapon) && weapon==GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee) && damage>1000.0)
+				{
+					char classname[32];
+					if(GetEntityClassname(weapon, classname, sizeof(classname)) && !StrContains(classname, "tf_weapon_knife", false))
+						bIsBackstab = true;
+				}
+				else if(!IsValidEntity(weapon) && (damagetype & DMG_CRUSH)==DMG_CRUSH && damage==1000.0)
+				{
+					bIsTelefrag = true;
+				}
+
+				if(bIsBackstab)
+				{
+					if(GetConVarBool(cvarLowStab))
+					{
+						damage = (BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/5;
+					}
+					else
+					{
+						damage = BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
+					}
+					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
+					damagecustom = 0;
+
+					EmitSoundToClient(client, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
+					EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
+					SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+1.5);
+					SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", GetGameTime()+1.5);
+					SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.5);
+
+					int viewmodel = GetEntPropEnt(attacker, Prop_Send, "m_hViewModel");
+					if(viewmodel>MaxClients && IsValidEntity(viewmodel) && TF2_GetPlayerClass(attacker)==TFClass_Spy)
+					{
+						int melee = GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Melee);
+						int animation = 41;
+						switch(melee)
+						{
+							case 225, 356, 423, 461, 574, 649, 1071, 30758:  //Your Eternal Reward, Conniver's Kunai, Saxxy, Wanga Prick, Big Earner, Spy-cicle, Golden Frying Pan, Prinny Machete
+								animation=15;
+
+							case 638:  //Sharp Dresser
+								animation=31;
+						}
+						SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
+					}
+
+					if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					{
+						if(TellName)
+						{
+							char spcl[768];
+							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+							switch(Annotations)
+							{
+								case 1:
+									CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Backstab Player", spcl);
+
+								case 2:
+									ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab Player", spcl);
+
+								default:
+									PrintHintText(attacker, "%t", "Backstab Player", spcl);
+							}
+						}
+						else
+						{
+							switch(Annotations)
+							{
+								case 1:
+									CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Backstab");
+
+								case 2:
+									ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Backstab");
+
+								default:
+									PrintHintText(attacker, "%t", "Backstab");
+							}
+						}
+					}
+
+					/*int aList[16];
+					float aValues[16];
+					Address aAddress;
+					bool aSlient;
+					int iCount = TF2Attrib_ListDefIndices(iEntity, iAttribList);
+					if(iCount > 0)
+					{
+						for(int i; i<iCount; i++)
+						{
+							aAddress = TF2Attrib_GetByDefIndex(iEntity, aList[i]);
+							aValues[i] = TF2Attrib_GetValue(aAddress);
+							switch(aList[i])
+							{
+								case 154:
+								{
+									if(aValues[i])
+										CreateTimer(0.3, Timer_DisguiseBackstab, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
+								}
+								case 156:
+								{
+									if(aValues[i])
+										aSlient = true;
+								}
+								case 217:
+								{
+									if(aValues[i]>0 && (SelfHealing[attacker]==1 || SelfHealing[attacker]>2))
+										BossHealth[GetBossIndex(attacker)] += RoundToFloor(damage*3.0*aValues[i]);
+								}
+							}
+						}
+					}*/
+
+					if(/*!aSlient*/ bIsBackstab)
+					{
+						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
+
+						if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+						{
+							if(TellName)
+							{
+								char spcl[768];
+								KvGetString(BossKV[Special[GetBossIndex(attacker)]], "name", spcl, sizeof(spcl), "=Failed name=");
+								switch(Annotations)
+								{
+									case 1:
+										CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed Player", spcl);
+
+									case 2:
+										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed Player", spcl);
+
+									default:
+										PrintHintText(client, "%t", "Backstabbed Player", spcl);
+								}
+							}
+							else
+							{
+								switch(Annotations)
+								{
+									case 1:
+										CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed");
+
+									case 2:
+										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed");
+
+									default:
+										PrintHintText(client, "%t", "Backstabbed");
+								}
+							}
+						}
+
+						if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
+						{
+							char sound[PLATFORM_MAX_PATH];
+							if(RandomSound("sound_stabbed_boss", sound, sizeof(sound), boss))
+							{
+								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+							}
+							else if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
+							{
+								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+							}
+						}
+
+						HealthBarMode = true;
+						CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+					}
+
+					if(Stabbed[boss] < 3)
+						Stabbed[boss]++;
+
+					return Plugin_Changed;
+				}
+				else if(bIsTelefrag)
+				{
+					damagecustom = 0;
+					if(!IsPlayerAlive(attacker))
+					{
+						damage = 1.0;
+						return Plugin_Changed;
+					}
+					damage = (BossHealth[boss]>9001 ? 9001.0 : float(GetEntProp(Boss[boss], Prop_Send, "m_iHealth"))+90.0);
+
+					for(int all; all<=MaxClients; all++)
+					{
+						if(IsValidClient(all) && IsPlayerAlive(all))
+						{
+							if(!(FF2flags[all] & FF2FLAG_HUDDISABLED))
+							{
+								switch(Annotations)
+								{
+									case 1:
+										CreateAttachedAnnotation(all, client, true, 5.0, "%t", "Telefrag Global");
+
+									case 2:
+										ShowGameText(all, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Global");
+
+									default:
+										PrintHintText(all, "%t", "Telefrag Global");
+								}
+							}
+						}
+					}
+
+					int teleowner = FindTeleOwner(attacker);
+					if(IsValidClient(teleowner) && teleowner!=attacker)
+					{
+						if(GetClientTeam(teleowner) == GetClientTeam(attacker))
+							Damage[teleowner] += 9001*3/5;
+
+						if(!(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
+						{
+							switch(Annotations)
+							{
+								case 1:
+									CreateAttachedAnnotation(teleowner, client, true, 5.0, "%t", "Telefrag Assist");
+
+								case 2:
+									ShowGameText(teleowner, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Assist");
+
+								default:
+									PrintHintText(teleowner, "%t", "Telefrag Assist");
+							}
+						}
+					}
+
+					if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					{
+						if(TellName)
+						{
+							char spcl[768];
+							KvRewind(BossKV[Special[boss]]);
+							KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+							switch(Annotations)
+							{
+								case 1:
+									CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
+
+								case 2:
+									ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag Player", spcl);
+
+								default:
+									PrintHintText(attacker, "%t", "Telefrag Player", spcl);
+							}
+						}
+						else
+						{
+							switch(Annotations)
+							{
+								case 1:
+									CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag");
+
+								case 2:
+									ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Telefrag");
+
+								default:
+									PrintHintText(attacker, "%t", "Telefrag");
+							}
+						}
+					}
+
+					if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+					{
+						if(TellName)
+						{
+							int boss2 = GetBossIndex(attacker);
+							KvRewind(BossKV[Special[boss2]]);
+							KvGetString(BossKV[Special[boss2]], "name", spcl, sizeof(spcl), "=Failed name=");
+							switch(Annotations)
+							{
+								case 1:
+									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged Player", spcl);
+
+								case 2:
+									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged Player", spcl);
+
+								default:
+									PrintHintText(client, "%t", "Telefrged Player", spcl);
+							}
+						}
+						else
+						{
+							switch(Annotations)
+							{
+								case 1:
+									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged");
+
+								case 2:
+									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged");
+
+								default:
+									PrintHintText(client, "%t", "Telefraged");
+							}
+						}
+					}
+
+					char sound[PLATFORM_MAX_PATH];
+					if(RandomSound("sound_telefraged", sound, sizeof(sound)))
+						EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+
+					HealthBarMode = true;
+					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+					return Plugin_Changed;
+				}
+
+				if(damagetype & DMG_CRIT)
+				{
+					if(damage > 333)
+					{
+						damage = 333.0;
+						return Plugin_Changed;
+					}
+				}
+				else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed) || TF2_IsPlayerInCondition(attacker, TFCond_NoHealingDamageBuff))
+				{
+					if(damage > 740)
+					{
+						damage = 740.0;
+						return Plugin_Changed;
+					}
+				}
+				else
+				{
+					if(damage > 999)
+					{
+						damage = 999.0;
+						return Plugin_Changed;
+					}
+				}
 			}
 		}
 	}
@@ -11296,86 +11686,83 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							if(Cabered[client] < 5)
 								Cabered[client]++;
 
-							if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
-							{
-								if(TellName)
-								{
-									char spcl[768];
-									KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
-									switch(Annotations)
-									{
-										case 1:
-											CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber Player", spcl);
-
-										case 2:
-											ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber Player", spcl);
-
-										default:
-											PrintHintText(attacker, "%t", "Caber Player", spcl);
-									}
-								}
-								else
-								{
-									switch(Annotations)
-									{
-										case 1:
-											CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Caber");
-
-										case 2:
-											ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber");
-
-										default:
-											PrintHintText(attacker, "%t", "Caber");
-									}
-								}
-							}
-							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
-							{
-								if(TellName)
-								{
-									switch(Annotations)
-									{
-										case 1:
-											CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Cabered Player", attacker);
-
-										case 2:
-											ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Cabered Player", attacker);
-
-										default:
-											PrintHintText(client, "%t", "Cabered Player", attacker);
-									}
-								}
-								else
-								{
-									switch(Annotations)
-									{
-										case 1:
-											CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Cabered");
-
-										case 2:
-											ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Cabered");
-
-										default:
-											PrintHintText(client, "%t", "Cabered");
-									}
-								}
-							}
-
-							EmitSoundToClient(attacker, "ambient/lightsoff.wav", _, _, _, _, 0.6, _, _, position, _, false);
-							EmitSoundToClient(client, "ambient/lightson.wav", _, _, _, _, 0.6, _, _, position, _, false);
-
-							
-							if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
-							{
-								char sound[PLATFORM_MAX_PATH];
-								if(RandomSound("sound_cabered", sound, sizeof(sound)))
-								{
-									EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-								}
-							}
-
 							if(allowedDetonations < 3)
 							{
+								if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+								{
+									if(TellName)
+									{
+										char spcl[768];
+										KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+										switch(Annotations)
+										{
+											case 1:
+												CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Caber Player", spcl);
+
+											case 2:
+												ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber Player", spcl);
+
+											default:
+												PrintHintText(attacker, "%t", "Caber Player", spcl);
+										}
+									}
+									else
+									{
+										switch(Annotations)
+										{
+											case 1:
+												CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Caber");
+
+											case 2:
+												ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Caber");
+
+											default:
+												PrintHintText(attacker, "%t", "Caber");
+										}
+									}
+								}
+								if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+								{
+									if(TellName)
+									{
+										switch(Annotations)
+										{
+											case 1:
+												CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Cabered Player", attacker);
+
+											case 2:
+												ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Cabered Player", attacker);
+
+											default:
+												PrintHintText(client, "%t", "Cabered Player", attacker);
+										}
+									}
+									else
+									{
+										switch(Annotations)
+										{
+											case 1:
+												CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Cabered");
+
+											case 2:
+												ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Cabered");
+
+											default:
+												PrintHintText(client, "%t", "Cabered");
+										}
+									}
+								}
+
+								EmitSoundToClient(attacker, "ambient/lightsoff.wav", _, _, _, _, 0.6, _, _, position, _, false);
+								EmitSoundToClient(client, "ambient/lightson.wav", _, _, _, _, 0.6, _, _, position, _, false);
+
+								if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
+								{
+									char sound[PLATFORM_MAX_PATH];
+									if(RandomSound("sound_cabered", sound, sizeof(sound)))
+										EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+								}
+
 								HealthBarMode = true;
 								CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 							}
@@ -11471,11 +11858,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
                         			{
 							if(GetConVarBool(cvarLowStab))
 							{
-								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
+								damage = (Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
 							}
 							else
 							{
-								damage=(Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
+								damage = (Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
 							}
 							damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 
@@ -11508,7 +11895,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									switch(Annotations)
 									{
 										case 1:
-											CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener");
+											CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Market Gardener");
 
 										case 2:
 											ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Market Gardener");
@@ -11525,7 +11912,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									switch(Annotations)
 									{
 										case 1:
-											CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Market Gardened Player", attacker);
+											CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Market Gardened Player", attacker);
 
 										case 2:
 											ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Market Gardened Player", attacker);
@@ -11539,7 +11926,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									switch(Annotations)
 									{
 										case 1:
-											CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Market Gardened");
+											CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Market Gardened");
 
 										case 2:
 											ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Market Gardened");
@@ -11712,16 +12099,18 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							if(TellName)
 							{
+								char spcl[768];
+								GetClientName(attacker, spcl, sizeof(spcl));
 								switch(Annotations)
 								{
 									case 1:
-										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Backstabbed Player", attacker);
+										CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed Player", spcl);
 
 									case 2:
-										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed Player", attacker);
+										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed Player", spcl);
 
 									default:
-										PrintHintText(client, "%t", "Backstabbed Player", attacker);
+										PrintHintText(client, "%t", "Backstabbed Player", spcl);
 								}
 							}
 							else
@@ -11729,7 +12118,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								switch(Annotations)
 								{
 									case 1:
-										CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Backstabbed");
+										CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed");
 
 									case 2:
 										ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Backstabbed");
@@ -11749,6 +12138,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
 							}
 						}
+
+						HealthBarMode = true;
+						CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					}
 					switch(index)
 					{
@@ -11760,7 +12152,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							int health = GetClientHealth(attacker)+200;
 							if(health > 600)
-								health=600;
+								health = 600;
 
 							SetEntityHealth(attacker, health);
 						}
@@ -11777,8 +12169,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(Stabbed[boss] < 3)
 						Stabbed[boss]++;
 
-					HealthBarMode = true;
-					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					return Plugin_Changed;
 				}
 				else if(bIsTelefrag)
@@ -11815,7 +12205,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					int teleowner=FindTeleOwner(attacker);
 					if(IsValidClient(teleowner) && teleowner!=attacker)
 					{
-						Damage[teleowner]+=9001*3/5;
+						if(GetClientTeam(teleowner) == GetClientTeam(attacker))
+							Damage[teleowner] += 9001*3/5;
+
 						if(!(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 						{
 							switch(Annotations)
@@ -11870,16 +12262,18 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(TellName)
 						{
+							char spcl[768];
+							GetClientName(attacker, spcl, sizeof(spcl));
 							switch(Annotations)
 							{
 								case 1:
-									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged Player", attacker);
+									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged Player", spcl);
 
 								case 2:
-									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged Player", attacker);
+									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged Player", spcl);
 
 								default:
-									PrintHintText(client, "%t", "Telefrged Player", attacker);
+									PrintHintText(client, "%t", "Telefrged Player", spcl);
 							}
 						}
 						else
@@ -12018,9 +12412,10 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	if(!Enabled || !IsValidClient(attacker) || !IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
 
+	int boss;
+	char spcl[64];
 	if(IsBoss(attacker))
 	{
-		int boss = GetBossIndex(attacker);
 		if(shield[victim])
 		{
 			float position[3];
@@ -12037,16 +12432,26 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		{
 			if(TellName)
 			{
+				if(IsBoss(victim))
+				{
+					boss = GetBossIndex(victim);
+					KvRewind(BossKV[Special[boss]]);
+					KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+				}
+				else
+				{
+					GetClientName(victim, spcl, sizeof(spcl));
+				}
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss Player", victim);
+						CreateAttachedAnnotation(attacker, victim, true, 3.0, "%t", "Goomba Stomp Boss Player", spcl);
 
 					case 2:
-						ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Boss Player", victim);
+						ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Boss Player", spcl);
 
 					default:
-						PrintHintText(attacker, "%t", "Goomba Stomp Boss Player", victim);
+						PrintHintText(attacker, "%t", "Goomba Stomp Boss Player", spcl);
 				}
 			}
 			else
@@ -12054,7 +12459,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(attacker, victim, true, 5.0, "%t", "Goomba Stomp Boss");
+						CreateAttachedAnnotation(attacker, victim, true, 3.0, "%t", "Goomba Stomp Boss");
 
 					case 2:
 						ShowGameText(attacker, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomp Boss");
@@ -12068,7 +12473,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		{
 			if(TellName)
 			{
-				char spcl[64];
+				boss = GetBossIndex(attacker);
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				switch(Annotations)
@@ -12102,14 +12507,13 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	}
 	else if(IsBoss(victim))
 	{
-		int boss = GetBossIndex(victim);
 		damageMultiplier = GoombaDamage;
 		JumpPower = reboundPower;
 		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
 			{
-				char spcl[64];
+				boss = GetBossIndex(victim);
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
 				switch(Annotations)
@@ -12143,16 +12547,26 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		{
 			if(TellName)
 			{
+				if(IsBoss(attacker))
+				{
+					boss = GetBossIndex(attacker);
+					KvRewind(BossKV[Special[boss]]);
+					KvGetString(BossKV[Special[boss]], "name", spcl, sizeof(spcl), "=Failed name=");
+				}
+				else
+				{
+					GetClientName(attacker, spcl, sizeof(spcl));
+				}
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss Player", attacker);
+						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped Boss Player", spcl);
 
 					case 2:
-						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss Player", attacker);
+						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss Player", spcl);
 
 					default:
-						PrintHintText(victim, "%t", "Goomba Stomped Boss Player", attacker);
+						PrintHintText(victim, "%t", "Goomba Stomped Boss Player", spcl);
 				}
 			}
 			else
@@ -12160,7 +12574,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Boss");
+						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped Boss");
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Boss");
@@ -12464,7 +12878,7 @@ public void Timer_NoAttacking(any ref)
 	SetNextAttack(weapon, SniperClimbDelay);
 }
 
-stock int GetClientWithMostQueuePoints(bool[] omit)
+stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 {
 	int winner;
 	for(int client=1; client<=MaxClients; client++)
@@ -12480,6 +12894,9 @@ stock int GetClientWithMostQueuePoints(bool[] omit)
 	}
 	if(!winner)	// Ignore the boss toggle pref if we can't find available clients
 	{
+		if(!ignorePrefs)
+			return -1;
+
 		for(int client=1; client<MaxClients; client++)
 		{
 			if(IsValidClient(client) && !omit[client])
@@ -12728,13 +13145,17 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	CloseHandle(_operator);
 	if(result <= 0)
 	{
-		LogToFile(eLog, "[Boss] %s has an invalid %s formula, using default!", bossName, key);
+		LogToFile(eLog, "[Boss] %s has an invalid %s, using default!", bossName, key);
 		return defaultValue;
 	}
 
-	if(bMedieval && StrContains(key, "ragedamage", false))
+	if(StrContains(key, "ragedamage", false))
 	{
-		return RoundFloat(result/3.6);  //TODO: Make this configurable
+		if(bMedieval)
+			return RoundFloat(result/3.6);  //TODO: Make this configurable
+
+		if(Enabled3)
+			return RoundFloat(result/1.8);
 	}
 	return result;
 }
@@ -13277,14 +13698,14 @@ public Action QueuePanelCmd(int client, int args)
 	int items;
 	bool[] added = new bool[MaxClients+1];
 
-	Handle panel=CreatePanel();
+	Handle panel = CreatePanel();
 	Format(text, sizeof(text), "%T", "thequeue", client);  //"Boss Queue"
 	SetPanelTitle(panel, text);
 	for(int boss; boss<=MaxClients; boss++)  //Add the current bosses to the top of the list
 	{
 		if(IsBoss(boss))
 		{
-			added[boss]=true;  //Don't want the bosses to show up again in the actual queue list
+			added[boss] = true;  //Don't want the bosses to show up again in the actual queue list
 			Format(text, sizeof(text), "%N-%i", boss, QueuePoints[boss]);
 			DrawPanelItem(panel, text);
 			items++;
@@ -13294,7 +13715,7 @@ public Action QueuePanelCmd(int client, int args)
 	DrawPanelText(panel, "---");
 	do
 	{
-		int target=GetClientWithMostQueuePoints(added);  //Get whoever has the highest queue points out of those who haven't been listed yet
+		int target = GetClientWithMostQueuePoints(added, false);  //Get whoever has the highest queue points out of those who haven't been listed yet
 		if(!IsValidClient(target))  //When there's no players left, fill up the rest of the list with blank lines
 		{
 			DrawPanelItem(panel, "");
@@ -13303,7 +13724,7 @@ public Action QueuePanelCmd(int client, int args)
 		}
 
 		Format(text, sizeof(text), "%N-%i", target, QueuePoints[target]);
-		if(client!=target)
+		if(client != target)
 		{
 			DrawPanelItem(panel, text);
 			items++;
@@ -13314,7 +13735,7 @@ public Action QueuePanelCmd(int client, int args)
 		}
 		added[target]=true;
 	}
-	while(items<9);
+	while(items < 9);
 
 	Format(text, sizeof(text), "%T (%T)", "your_points", client, QueuePoints[client], "to0", client);  //"Your queue point(s) is {1} (set to 0)"
 	DrawPanelItem(panel, text);
