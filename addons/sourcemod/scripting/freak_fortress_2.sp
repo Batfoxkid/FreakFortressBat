@@ -143,8 +143,9 @@ bool kmerge = false;
 bool smac = false;
 #endif
 
-bool isCapping = false;
+bool TimesTen = false;
 
+bool isCapping = false;
 int RPSWinner;
 int currentBossTeam;
 bool blueBoss;
@@ -297,6 +298,7 @@ ConVar cvarStatWin2Lose;
 ConVar cvarHealthHud;
 ConVar cvarLookHud;
 ConVar cvarBossVsBoss;
+ConVar cvarTimesTen;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -384,6 +386,7 @@ static bool executed = false;
 static bool executed2 = false;
 static bool ReloadFF2 = false;
 static bool ReloadWeapons = false;
+static bool ConfigWeapons = false;
 static bool ReloadConfigs = false;
 bool LoadCharset = false;
 static bool HasSwitched = false;
@@ -2040,6 +2043,7 @@ public void OnPluginStart()
 	cvarHealthHud = CreateConVar("ff2_hud_health", "0", "0-Disable, 1-Show boss's lives left, 2-Show boss's total health", _, true, 0.0, true, 2.0);
 	cvarLookHud = CreateConVar("ff2_hud_aiming", "0.0", "-1-No Range Limit, 0-Disable, #-Show teammate's stats by looking at them within this range", _, true, -1.0);
 	cvarBossVsBoss = CreateConVar("ff2_boss_vs_boss", "0", "[EXPERIMENTAL] 0-Always Boss vs Players, #-Chance of Boss vs Boss, 100-Always Boss vs Boss", _, true, 0.0, true, 100.0);
+	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2256,6 +2260,8 @@ public void OnPluginStart()
 	#if defined _tf2attributes_included
 	tf2attributes = LibraryExists("tf2attributes");
 	#endif
+
+	TimesTen = LibraryExists("tf2x10");
 }
 
 public Action Command_SetRage(int client, int args)
@@ -2716,35 +2722,40 @@ public void OnLibraryAdded(const char[] name)
 	#if defined _steamtools_included
 	if(!strcmp(name, "SteamTools", false))
 	{
-		steamtools=true;
+		steamtools = true;
 	}
 	#endif
 
 	#if defined _tf2attributes_included
 	if(!strcmp(name, "tf2attributes", false))
 	{
-		tf2attributes=true;
+		tf2attributes = true;
 	}
 	#endif
 
 	#if defined _goomba_included
 	if(!strcmp(name, "goomba", false))
 	{
-		goomba=true;
+		goomba = true;
 	}
 	#endif
+
+	if(!strcmp(name, "tf2x10", false))
+	{
+		TimesTen = true;
+	}
 
 	#if !defined _smac_included
 	if(!strcmp(name, "smac", false))
 	{
-		smac=true;
+		smac = true;
 	}
 	#endif
 
 	#if defined _freak_fortress_2_kstreak_included
 	if(!strcmp(name, "ff2_kstreak_pref", false))
 	{
-		kmerge=view_as<bool>(FF2_KStreak_Merge());
+		kmerge = view_as<bool>(FF2_KStreak_Merge());
 	}
 	#endif
 }
@@ -2754,35 +2765,40 @@ public void OnLibraryRemoved(const char[] name)
 	#if defined _steamtools_included
 	if(!strcmp(name, "SteamTools", false))
 	{
-		steamtools=false;
+		steamtools = false;
 	}
 	#endif
 
 	#if defined _tf2attributes_included
 	if(!strcmp(name, "tf2attributes", false))
 	{
-		tf2attributes=false;
+		tf2attributes = false;
 	}
 	#endif
 
 	#if defined _goomba_included
 	if(!strcmp(name, "goomba", false))
 	{
-		goomba=false;
+		goomba = false;
 	}
 	#endif
+
+	if(!strcmp(name, "tf2x10", false))
+	{
+		TimesTen = false;
+	}
 
 	#if !defined _smac_included
 	if(!strcmp(name, "smac", false))
 	{
-		smac=false;
+		smac = false;
 	}
 	#endif
 
 	#if defined _freak_fortress_2_kstreak_included
 	if(!strcmp(name, "ff2_kstreak_pref", false))
 	{
-		kmerge=false;
+		kmerge = false;
 	}
 	#endif
 }
@@ -2940,7 +2956,14 @@ public void EnableFF2()
 	if(steamtools && GetConVarBool(cvarSteamTools))
 	{
 		char gameDesc[64];
-		Format(gameDesc, sizeof(gameDesc), "Freak Fortress 2 (%s)", PLUGIN_VERSION);
+		if(TimesTen)
+		{
+			Format(gameDesc, sizeof(gameDesc), "Freak Fortress 2 x10 (%s)", PLUGIN_VERSION);
+		}
+		else
+		{
+			Format(gameDesc, sizeof(gameDesc), "Freak Fortress 2 (%s)", PLUGIN_VERSION);
+		}
 		Steam_SetGameDescription(gameDesc);
 	}
 	#endif
@@ -3022,23 +3045,30 @@ public void DisableFF2()
 
 public void CacheWeapons()
 {
+	if(GetConVarInt(cvarHardcodeWep)>1)
+	{
+		ConfigWeapons = false;
+		return;
+	}
+
 	char config[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, WeaponCFG);
 	
 	if(!FileExists(config))
 	{
-		LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-can not find '%s'!", WeaponCFG);
-		Enabled2=false;
+		LogToFile(eLog, "[Weapons] Could not find '%s'!", WeaponCFG);
+		ConfigWeapons = false;
 		return;
 	}
 	
 	kvWeaponMods = CreateKeyValues("Weapons");
 	if(!FileToKeyValues(kvWeaponMods, config))
 	{
-		LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
-		Enabled2=false;
+		LogToFile(eLog, "[Weapons] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
+		ConfigWeapons = false;
 		return;
 	}
+	ConfigWeapons = true;
 }
 
 public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextKey
@@ -6920,13 +6950,16 @@ stock int GetRandBlockCellEx(ArrayList hArray, int iBlock=0, bool bAsChar=false,
 
 public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDefinitionIndex, Handle &item)
 {
-	if(!Enabled)
+	if(!Enabled || TimesTen)
 		return Plugin_Continue;
 
-	if(kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>1)
+	if(!ConfigWeapons)
 	{
-		if(GetConVarInt(cvarHardcodeWep) < 2)
-			LogToFile(eLog, "[Weapons] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
+		// Nothin
+	}
+	else if(kvWeaponMods == null)
+	{
+		LogToFile(eLog, "[Weapons] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
 	}
 	else
 	{	
@@ -7000,6 +7033,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 		}
 		KvGoBack(kvWeaponMods);
 	}
+
 	if(GetConVarInt(cvarHardcodeWep)>0)
 	{
 		switch(iItemDefinitionIndex)
@@ -13143,12 +13177,22 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	int result = RoundFloat(GetArrayCell(sumArray, 0));
 	CloseHandle(sumArray);
 	CloseHandle(_operator);
+
+	float addition = GetConVarFloat(cvarTimesTen);
 	if(result <= 0)
 	{
 		LogToFile(eLog, "[Boss] %s has an invalid %s, using default!", bossName, key);
+		if(TimesTen && addition!=1 && addition>0)
+			return defaultValue*addition;
+
 		return defaultValue;
 	}
 
+	if(TimesTen && addition!=1 && addition>0)
+	{
+		result *= addition;
+	}
+	
 	if(StrContains(key, "ragedamage", false))
 	{
 		if(bMedieval)
