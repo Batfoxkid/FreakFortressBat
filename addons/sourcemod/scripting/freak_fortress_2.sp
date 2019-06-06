@@ -13184,7 +13184,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	{
 		LogToFile(eLog, "[Boss] %s has an invalid %s, using default!", bossName, key);
 		if(TimesTen && addition!=1 && addition>0)
-			return defaultValue*addition;
+			return RoundFloat(defaultValue*addition);
 
 		return defaultValue;
 	}
