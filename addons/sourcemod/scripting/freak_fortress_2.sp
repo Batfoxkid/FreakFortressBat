@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -435,7 +435,7 @@ enum CookieStats
 	Cookie_BossKills,	// Boss Kills
 	Cookie_BossDeaths,	// Boss Deaths
 	Cookie_PlayerKills,	// Player Boss Kills
-	Cookie_PlayerMvps,	// Player MVPs
+	Cookie_PlayerMvps	// Player MVPs
 };
 
 static const char ff2versiontitles[][] =
@@ -2983,6 +2983,7 @@ public void DisableFF2()
 				KillTimer(BossInfoTimer[client][1]);
 				BossInfoTimer[client][1] = INVALID_HANDLE;
 			}
+			SaveClientPreferences(client);
 		}
 
 		if(MusicTimer[client] != INVALID_HANDLE)
@@ -4810,7 +4811,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 					add_points2[client]=add_points[client];
 				}
 			}
-			else if(!IsFakeClient(client) && (GetClientTeam(client)>view_as<int>(TFTeam_Spectator) || SpecForceBoss))
+			else if(GetClientTeam(client)>view_as<int>(TFTeam_Spectator) || SpecForceBoss)
 			{
 				if(damage2>=PointsDamage)
 				{
@@ -5282,7 +5283,7 @@ void SaveClientPreferences(int client)
 	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
 	ExplodeString(cookies, " ", cookieValues, 8, 5);
 
-	Format(cookies, sizeof(cookies), "%i %i %i %i %i %i %s %s", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(cookieValues[5]), cookieValues[6], cookieValues[7]);
+	Format(cookies, sizeof(cookies), "%i %i %i %i %i %i %s %s", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(ToggleBoss[client]), cookieValues[6], cookieValues[7]);
 	SetClientCookie(client, FF2Cookies, cookies);
 }
 
@@ -8886,195 +8887,194 @@ public Action ClientTimer(Handle timer)
 	{
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
 		{
-			if(IsFakeClient(client))
-				continue;
-
-			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
-			int observer;
-			if(IsPlayerAlive(client) && LookHud!=0)
+			if(!IsFakeClient(client))
 			{
-				observer = GetClientAimTarget(client, true);
-				if(!IsValidClient(observer) || observer==client)
+				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
+				int observer;
+				if(IsPlayerAlive(client) && LookHud!=0)
 				{
-					observer = 0;
+					observer = GetClientAimTarget(client, true);
+					if(!IsValidClient(observer) || observer==client)
+					{
+						observer = 0;
+					}
+					else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)!=TF2_GetClientTeam(observer))
+					{
+						observer = 0;
+					}
+					else if(LookHud > 0)
+					{
+						float position[3], position2[3], distance;
+						GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
+						GetEntPropVector(observer, Prop_Send, "m_vecOrigin", position2);
+						distance = GetVectorDistance(position, position2);
+						if(distance > LookHud)
+							observer = 0;
+					}
 				}
-				else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)==TF2_GetClientTeam(observer))
+				else if(!IsPlayerAlive(client))
 				{
-					observer = 0;
-				}
-				else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)==TF2_GetClientTeam(observer))
-				{
-					observer = 0;
-				}
-				else if(LookHud > 0)
-				{
-					float position[3], position2[3], distance;
-					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
-					GetEntPropVector(observer, Prop_Send, "m_vecOrigin", position2);
-					distance = GetVectorDistance(position, position2);
-					if(distance > LookHud)
+					observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
+					if(!IsValidClient(observer) || observer==client)
 						observer = 0;
 				}
-			}
-			else if(!IsPlayerAlive(client))
-			{
-				observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-				if(!IsValidClient(observer) || observer==client)
-					observer = 0;
-			}
 
-			if(observer && IsBoss(observer))
-			{
-				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+				if(observer && IsBoss(observer))
 				{
-					if((Healing[client]>0 && HealHud==1) || HealHud==2)
+					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 					{
-						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+						if((Healing[client]>0 && HealHud==1) || HealHud==2)
+						{
+							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
+							}
+							else
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+							}
+						}
+						else
+						{
+							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
+							}
+							else
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+							}
+						}
+					}
+					else
+					{
+						if((Healing[client]>0 && HealHud==1) || HealHud==2)
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
+						}
+					}
+				}
+				else if(observer)
+				{
+					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+					{
+						if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
+						{
+							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+							}
+							else
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+							}
+						}
+						else if(Healing[client]>0 && HealHud==1)
+						{
+							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
+							}
+							else
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+							}
+						}
+						else if(Healing[observer]>0 && HealHud==1)
+						{
+							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+							}
+							else
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+							}
+						}
+						else
+						{
+							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
+							}
+							else
+							{
+								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+							}
+						}
+					}
+					else
+					{
+						if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t %t | %t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						}
+						else if(Healing[client]>0 && HealHud==1)
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t %t | %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						}
+						else if(Healing[observer]>0 && HealHud==1)
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t | %t %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t | %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						}
+					}
+				}
+				else if(LookHud)
+				{
+					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+					{
+						if((Healing[client]>0 && HealHud==1) || HealHud==2)
 						{
 							FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 						else
 						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
-						}
-					}
-					else
-					{
-						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-						{
 							FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 						}
+					}
+					else
+					{
+						if((Healing[client]>0 && HealHud==1) || HealHud==2)
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+						}
 						else
 						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+							FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
 						}
 					}
 				}
-				else
+				else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 				{
 					if((Healing[client]>0 && HealHud==1) || HealHud==2)
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+						FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 					}
 					else
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
+						FF2_ShowSyncHudText(client, statHUD, "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 					}
 				}
-			}
-			else if(observer)
-			{
-				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+				else if((Healing[client]>0 && HealHud==1) || HealHud==2)
 				{
-					if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
-					{
-						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-					}
-					else if(Healing[client]>0 && HealHud==1)
-					{
-						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-					}
-					else if(Healing[observer]>0 && HealHud==1)
-					{
-						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-					}
-					else
-					{
-						if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-					}
+					FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
 				}
 				else
 				{
-					if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t %t | %t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-					}
-					else if(Healing[client]>0 && HealHud==1)
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t %t | %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer]);
-					}
-					else if(Healing[observer]>0 && HealHud==1)
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t | %t %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-					}
-					else
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t | %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer]);
-					}
+					FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
 				}
 			}
-			else if(LookHud)
-			{
-				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-				{
-					if((Healing[client]>0 && HealHud==1) || HealHud==2)
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-					}
-					else
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-					}
-				}
-				else
-				{
-					if((Healing[client]>0 && HealHud==1) || HealHud==2)
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
-					}
-					else
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
-					}
-				}
-			}
-			else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-			{
-				if((Healing[client]>0 && HealHud==1) || HealHud==2)
-				{
-					FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-				}
-				else
-				{
-					FF2_ShowSyncHudText(client, statHUD, "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-				}
-			}
-			else if((Healing[client]>0 && HealHud==1) || HealHud==2)
-			{
-				FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
-			}
-			else
-			{
-				FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
-			}
+
+			if(!IsPlayerAlive(client))
+				continue;
 
 			TFClassType class=TF2_GetPlayerClass(client);
 			int weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -9381,108 +9381,104 @@ public Action BossTimer(Handle timer)
 	for(int boss; boss<=MaxClients; boss++)
 	{
 		int client = Boss[boss];
-		if(!IsValidClient(client))
+		if(!IsValidClient(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
 			continue;
 
-		if(IsFakeClient(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
-			continue;
-
-		int observer;
-		aliveBoss = IsPlayerAlive(client);
-		if(aliveBoss && LookHud!=0)
+		if(!IsFakeClient(client))
 		{
-			observer = GetClientAimTarget(client, true);
-			if(!IsValidClient(observer) || observer==client)
+			int observer;
+			aliveBoss = IsPlayerAlive(client);
+			if(aliveBoss && LookHud!=0)
 			{
-				observer = 0;
+				observer = GetClientAimTarget(client, true);
+				if(!IsValidClient(observer) || observer==client)
+				{
+					observer = 0;
+				}
+				else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)!=TF2_GetClientTeam(observer))
+				{
+					observer = 0;
+				}
+				else if(LookHud > 0)
+				{
+					float position[3], position2[3], distance;
+					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
+					GetEntPropVector(observer, Prop_Send, "m_vecOrigin", position2);
+					distance = GetVectorDistance(position, position2);
+					if(distance > LookHud)
+						observer = 0;
+				}
 			}
-			else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)==TF2_GetClientTeam(observer))
+			else if(!aliveBoss)
 			{
-				observer = 0;
-			}
-			else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)==TF2_GetClientTeam(observer))
-			{
-				observer = 0;
-			}
-			else if(LookHud > 0)
-			{
-				float position[3], position2[3], distance;
-				GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
-				GetEntPropVector(observer, Prop_Send, "m_vecOrigin", position2);
-				distance = GetVectorDistance(position, position2);
-				if(distance > LookHud)
+				observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
+				if(!IsValidClient(observer) || observer==client)
 					observer = 0;
 			}
-		}
-		else if(!aliveBoss)
-		{
-			observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-			if(!IsValidClient(observer) || observer==client)
-				observer = 0;
-		}
 
-		if(observer && IsBoss(observer))
-		{
-			if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+			if(observer && IsBoss(observer))
 			{
-				if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 				{
-					BossShowSyncHudText(client, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
-				}
-				else
-				{
-					BossShowSyncHudText(client, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
-				}
-			}
-		}
-		else if(observer)
-		{
-			if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-			{
-				if((Healing[observer]>0 && HealHud==1) || HealHud==2)
-				{
-					if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 					{
-						BossShowSyncHudText(client, "%t%t %t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						BossShowSyncHudText(client, statHUD, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 					}
 					else
 					{
-						BossShowSyncHudText(client, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
 					}
 				}
-				else
+			}
+			else if(observer)
+			{
+				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 				{
-					if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
+					if((Healing[observer]>0 && HealHud==1) || HealHud==2)
 					{
-						BossShowSyncHudText(client, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+						{
+							BossShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						}
+						else
+						{
+							BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						}
 					}
 					else
 					{
-						BossShowSyncHudText(client, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+						{
+							BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						}
+						else
+						{
+							BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						}
 					}
-				}
-			}
-			else
-			{
-				if((Healing[observer]>0 && HealHud==1) || HealHud==2)
-				{
-					BossShowSyncHudText(client, "%t %t", "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
 				}
 				else
 				{
-					BossShowSyncHudText(client, "%t", "Spectator Damage Dealt", observer, Damage[observer]);
+					if((Healing[observer]>0 && HealHud==1) || HealHud==2)
+					{
+						BossShowSyncHudText(client, statHUD, "%t %t", "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					}
+					else
+					{
+						BossShowSyncHudText(client, statHUD, "%t", "Spectator Damage Dealt", observer, Damage[observer]);
+					}
 				}
 			}
-		}
-		else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-		{
-			if((LookHud && BlueAlivePlayers>1) || !aliveBoss)
+			else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 			{
-				BossShowSyncHudText(client, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
-			}
-			else
-			{
-				BossShowSyncHudText(client, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+				if((LookHud && BlueAlivePlayers>1) || !aliveBoss)
+				{
+					BossShowSyncHudText(client, statHUD, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+				}
+				else
+				{
+					BossShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+				}
 			}
 		}
 
@@ -9678,13 +9674,13 @@ public Action BossTimer(Handle timer)
 	return Plugin_Continue;
 }
 
-stock void BossShowSyncHudText(int client, const char[] buffer, any ...)
+stock void BossShowSyncHudText(int client, Handle sync, const char[] buffer, any ...)
 {
 	if(!(FF2_GetFF2flags(client) & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
 	{
 		char message[256];
-		SetGlobalTransTarget(client);
 		VFormat(message, sizeof(message), buffer, 4);
+		SetGlobalTransTarget(client);
 		if(IsPlayerAlive(client))
 		{
 			SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
@@ -9693,7 +9689,7 @@ stock void BossShowSyncHudText(int client, const char[] buffer, any ...)
 		{
 			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 		}
-		ShowSyncHudText(client, statHUD, message);
+		ShowSyncHudText(client, sync, message);
 	}
 }
 
