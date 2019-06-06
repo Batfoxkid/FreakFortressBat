@@ -10082,6 +10082,7 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	if(!args)
 		return Plugin_Continue;
 
+	char teamString[10];
 	if(Enabled3)
 	{
 		if(StrEqual(teamString, "spectate", false) && !IsBoss(client))
@@ -10091,7 +10092,6 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	}
 
 	int team=view_as<int>(TFTeam_Unassigned), oldTeam=GetClientTeam(client);
-	char teamString[10];
 	GetCmdArg(1, teamString, sizeof(teamString));
 
 	if(StrEqual(teamString, "red", false))
@@ -11487,6 +11487,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(TellName)
 						{
 							int boss2 = GetBossIndex(attacker);
+							char spcl[768];
 							KvRewind(BossKV[Special[boss2]]);
 							KvGetString(BossKV[Special[boss2]], "name", spcl, sizeof(spcl), "=Failed name=");
 							switch(Annotations)
@@ -13174,7 +13175,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 		}
 	}
 
-	int result = RoundFloat(GetArrayCell(sumArray, 0));
+	float result = GetArrayCell(sumArray, 0);
 	CloseHandle(sumArray);
 	CloseHandle(_operator);
 
@@ -13201,7 +13202,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 		if(Enabled3)
 			return RoundFloat(result/1.8);
 	}
-	return result;
+	return RoundFloat(result);
 }
 
 stock int GetAbilityArgument(int index, const char[] plugin_name, const char[] ability_name, int arg, int defvalue=0)
