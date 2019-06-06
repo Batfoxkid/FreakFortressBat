@@ -550,7 +550,7 @@
 	}
 	"Backstabbed Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"
+		"#format"	"{1:s}"
 		"en"		"{1} backstabbed you!"
 		"ru"		"{1} нанёс тебе удар в спину!"
 	}
@@ -650,7 +650,7 @@
 	}
 	"Goomba Stomp Boss Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"
+		"#format"	"{1:s}"
 		"en"		"You goomba stomped {1}!"
 		"ru"		"Ты раздавил игрока {1}!"
 	}
@@ -662,7 +662,7 @@
 	}
 	"Goomba Stomped Boss Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"
+		"#format"	"{1:s}"
 		"en"		"{1} goomba stomped you!"
 		"ru"		"{1} раздавил тебя!"
 	}
@@ -694,7 +694,7 @@
 	}
 	"Telefraged Player"	// Hint, Annotation
 	{
-		"#format"	"{1:N}"
+		"#format"	"{1:s}"
 		"en"		"TELEFRAG! {1} telefraged you!"
 		"ru"		"ТЕЛЕФРАГ! {1} ранил тебя!"
 	}
