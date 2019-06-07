@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."019"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -297,6 +297,7 @@ ConVar cvarStatPlayers;
 ConVar cvarStatWin2Lose;
 ConVar cvarHealthHud;
 ConVar cvarLookHud;
+ConVar cvarSkipBoss;
 ConVar cvarBossVsBoss;
 ConVar cvarTimesTen;
 
@@ -756,6 +757,8 @@ stock void FindVersionData(Handle panel, int versionIndex)
 			DrawPanelText(panel, "1) [Gameplay] Added the ability to look at teammates to see their stats (Marxvee)");
 			DrawPanelText(panel, "2) [Gameplay] Fixed healing done tracking more then max player's health (Marxvee)");
 			DrawPanelText(panel, "3) [Core] Support when cookie system is unavailable (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Added boss menu option to skip being a boss (JuegosPablo)");
+			DrawPanelText(panel, "5) [Core] Checks if players have access to their boss selection after access chnages (Batfoxkid)");
 		}
 		case 146:  //1.18.4
 		{
@@ -2042,6 +2045,7 @@ public void OnPluginStart()
 	cvarStatWin2Lose = CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
 	cvarHealthHud = CreateConVar("ff2_hud_health", "0", "0-Disable, 1-Show boss's lives left, 2-Show boss's total health", _, true, 0.0, true, 2.0);
 	cvarLookHud = CreateConVar("ff2_hud_aiming", "0.0", "-1-No Range Limit, 0-Disable, #-Show teammate's stats by looking at them within this range", _, true, -1.0);
+	cvarSkipBoss = CreateConVar("ff2_boss_skip", "0", "0-Disable, 1-Add menu option to skip being a boss", _, true, 0.0, true 1.0);
 	cvarBossVsBoss = CreateConVar("ff2_boss_vs_boss", "0", "[EXPERIMENTAL] 0-Always Boss vs Players, #-Chance of Boss vs Boss, 100-Always Boss vs Boss", _, true, 0.0, true, 100.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 
@@ -2104,6 +2108,7 @@ public void OnPluginStart()
 	HookConVarChange(cvarPointsDamage, CvarChange);
 	HookConVarChange(cvarPointsMin, CvarChange);
 	HookConVarChange(cvarPointsExtra, CvarChange);
+	HookConVarChange(cvarDuoMin, CvarChange);
 	HookConVarChange(cvarAnnotations, CvarChange);
 	HookConVarChange(cvarTellName, CvarChange);
 	HookConVarChange(cvarHealthHud, CvarChange);
@@ -3573,6 +3578,28 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	{
 		PointsExtra=StringToInt(newValue);
 	}
+	else if(convar==cvarDuoMin)
+	{
+		if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)
+		{
+			DuoMin = true;
+		}
+		else if(DuoMin)
+		{
+			DuoMin = false;
+			for(int client=1; client<=MaxClients; client++)
+			{
+				if(IsValidClient(client) && strlen(xIncoming[client]))
+				{
+					if(!CheckValidBoss(client, buffer, true))
+					{
+						FPrintToChat(client, "%t", "boss_selection_reset");
+						xIncoming[client][0] = '\0';
+					}
+				}
+			}
+		}
+	}
 	else if(convar==cvarAnnotations)
 	{
 		Annotations=StringToInt(newValue);
@@ -4320,9 +4347,20 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	{
 		DuoMin = true;
 	}
-	else if(playing<GetConVarInt(cvarDuoMin) && DuoMin)
+	else if(DuoMin)
 	{
 		DuoMin = false;
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client) && strlen(xIncoming[client]))
+			{
+				if(!CheckValidBoss(client, buffer, true))
+				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
+					xIncoming[client][0] = '\0';
+				}
+			}
+		}
 	}
 
 	if(!Enabled)
@@ -4794,8 +4832,7 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 	}
 }
 
-/*
-public Action SkipBossPanel(int client, int target)
+public Action SkipBossPanel(int client)
 {
 	if(!Enabled2)
 		return Plugin_Continue;
@@ -4803,10 +4840,8 @@ public Action SkipBossPanel(int client, int target)
 	Handle panel = CreatePanel();
 	char text[128];
 	SetGlobalTransTarget(client);
-	if(client == target)
-		Format(text, sizeof(text), "%t", "skip_boss");  //Do you really want to set your queue points to 0?
+	Format(text, sizeof(text), "%t", "to0_resetpts");
 
-	PrintToChat(client, text);
 	SetPanelTitle(panel, text);
 	Format(text, sizeof(text), "%t", "Yes");
 	DrawPanelItem(panel, text);
@@ -4818,19 +4853,18 @@ public Action SkipBossPanel(int client, int target)
 	return Plugin_Handled;
 }
 
-public SkipBossPanelH(Handle:menu, MenuAction:action, client, position)
+public SkipBossPanelH(Handle menu, MenuAction action, int client, int position)
 {
 	if(action==MenuAction_Select && position==1)
 	{
 		if(shortname[client] == client)
 		{
-			CPrintToChat(client,"{olive}[FF2]{default} %t", "skipped_boss");  //Your queue points have been reset to {olive}0{default}
+			FPrintToChat(client, "%t", "to0_resetpts");
 		}
-		QueuePoints[client] -= 10;
-		//SetClientQueuePoints(client, GetClientQueuePoints(client)-10);
+		if(QueuePoints[client] >= 10)
+			QueuePoints[client] -= 10;
 	}
 }
-*/
 
 public int SortQueueDesc(const x[], const y[], const array[][], Handle data)
 {
@@ -5681,12 +5715,12 @@ public Action Command_SetMyBoss(int client, int args)
 	if(!Enabled2 || Specials<1)
 	{
 		Format(boss, sizeof(boss), "%t", "to0_random");
-		AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
+		AddMenuItem(dMenu, "_random", boss, ITEMDRAW_DISABLED);
 	}
 	else
 	{
 		Format(boss, sizeof(boss), "%t", "to0_random");
-		AddMenuItem(dMenu, boss, boss);
+		AddMenuItem(dMenu, "_random", boss);
 	}
 
 	if(GetConVarBool(cvarToggleBoss))
@@ -5700,7 +5734,7 @@ public Action Command_SetMyBoss(int client, int args)
 			Format(boss, sizeof(boss), "%t", "to0_enablepts");
 		}
 
-		AddMenuItem(dMenu, boss, boss);
+		AddMenuItem(dMenu, "_bosstoggle", boss);
 	}
 	if(GetConVarBool(cvarDuoBoss))
 	{
@@ -5713,7 +5747,7 @@ public Action Command_SetMyBoss(int client, int args)
 			Format(boss, sizeof(boss), "%t", "to0_enableduo");
 		}
 
-		AddMenuItem(dMenu, boss, boss);
+		AddMenuItem(dMenu, "_duotoggle", boss);
 	}
 	#if defined _freak_fortress_2_kstreak_included
 	if(kmerge && CheckCommandAccess(client, "ff2_kstreak_a", 0, true))
@@ -5731,10 +5765,23 @@ public Action Command_SetMyBoss(int client, int args)
 			Format(boss, sizeof(boss), "%t", "to0_togglekstreak");
 		}
 
-		AddMenuItem(dMenu, boss, boss);
+		AddMenuItem(dMenu, "_kstreak", boss);
 	}
 	#endif
-	
+	if(GetConVarBool(cvarSkipBoss))
+	{
+		if(QueuePoints[client]<10 || !Enabled2)
+		{
+			Format(boss, sizeof(boss), "%t", "to0_resetpts");
+			AddMenuItem(dMenu, "_skipboss", boss, ITEMDRAW_DISABLED);
+		}
+		else
+		{
+			Format(boss, sizeof(boss), "%t", "to0_resetpts");
+			AddMenuItem(dMenu, "_skipboss", boss);
+		}
+	}
+
 	for(int config; config<Specials; config++)
 	{
 		char companionName[64];
@@ -5807,7 +5854,6 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 		{
 			CloseHandle(menu);
 		}
-
 		case MenuAction_Select:
 		{
 			switch(param2)
@@ -5820,126 +5866,48 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 					FReplyToCommand(param1, "%t", "to0_comfirmrandom");
 					return;
 				}
-				case 1:
+				case 1, 2, 3, 4:
 				{
-					if(GetConVarBool(cvarToggleBoss))
+					char menuItem[128];
+					GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+					if(StrEqual(menuItem, "_bosstoggle", false))
 					{
 						BossMenu(param1, 0);
+						return;
 					}
-					else if(GetConVarBool(cvarDuoBoss))
+					if(StrEqual(menuItem, "_duotoggle", false))
 					{
 						CompanionMenu(param1, 0);
+						return;
 					}
 					#if defined _freak_fortress_2_kstreak_included
-					else if(kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+					if(StrEqual(menuItem, "_kstreak", false))
 					{
 						FF2_KStreak_Menu(param1, 0);
+						return;
 					}
 					#endif
-					else
+					if(StrEqual(menuItem, "_skipboss", false))
 					{
-						if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
-						{
-							IsBossSelected[param1]=true;
-							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-							SaveKeepBossCookie(param1);
-							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
-						}
-						else
-						{
-							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
-							ConfirmBoss(param1);
-						}
-					}
-				}
-				case 2:
-				{
-					if(GetConVarBool(cvarDuoBoss) && GetConVarBool(cvarToggleBoss))
-					{
-						CompanionMenu(param1, 0);
-					}
-					#if defined _freak_fortress_2_kstreak_included
-					else if(GetConVarBool(cvarToggleBoss) && !GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
-					{
-						FF2_KStreak_Menu(param1, 0);
-					}
-					else if(!GetConVarBool(cvarToggleBoss) && GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
-					{
-						FF2_KStreak_Menu(param1, 0);
-					}
-					#endif
-					else
-					{
-						if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
-						{
-							IsBossSelected[param1]=true;
-							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-							SaveKeepBossCookie(param1);
-							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
-						}
-						else
-						{
-							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
-							ConfirmBoss(param1);
-						}
-					}
-				}
-				case 3:
-				{
-					#if defined _freak_fortress_2_kstreak_included
-					if(GetConVarBool(cvarToggleBoss) && GetConVarBool(cvarDuoBoss) && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
-					{
-						FF2_KStreak_Menu(param1, 0);
-					}
-					else
-					{
-						if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
-						{
-							IsBossSelected[param1]=true;
-							GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-							SaveKeepBossCookie(param1);
-							FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
-						}
-						else
-						{
-							GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
-							ConfirmBoss(param1);
-						}
-					}
-					#else
-					if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
-					{
-						IsBossSelected[param1]=true;
-						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						SaveKeepBossCookie(param1);
-						FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
-					}
-					else
-					{
-						GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
-						ConfirmBoss(param1);
-					}
-					#endif
-				}
-				default:
-				{
-					if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
-					{
-						IsBossSelected[param1]=true;
-						GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-						SaveKeepBossCookie(param1);
-						FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
-					}
-					else
-					{
-						GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
-						ConfirmBoss(param1);
+						SkipBossPanel(param1);
+						return;
 					}
 				}
 			}
+			if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
+			{
+				IsBossSelected[param1] = true;
+				GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
+				SaveKeepBossCookie(param1);
+				FReplyToCommand(param1, "%t", "to0_boss_selected", xIncoming[param1]);
+			}
+			else
+			{
+				GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+				ConfirmBoss(param1);
+			}
 		}
 	}
-	return;
 }
 
 public Action ConfirmBoss(int client)
@@ -6012,7 +5980,6 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 			}
 		}
 	}
-	return;
 }
 
 bool BossTheme(int config)
@@ -6115,9 +6082,44 @@ void SaveKeepBossCookie(int client)
 	SetClientCookie(client, SelectionCookie, xIncoming[client]);
 }
 
+bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false);
+{
+	char boss[64], companionName[64];
+	for(int config; config<Specials; config++)
+	{
+		KvRewind(BossKV[config]);
+		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		if(KvGetNum(BossKV[config], "blocked", 0))
+			continue;
+
+		if(StrEqual(boss, SpecialName, false))
+		{
+			if(strlen(companionName) && CompanionCheck)
+				return false;
+
+			if(client)
+			{
+				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+				   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
+					return false;
+
+				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
+					return false;
+			}
+
+			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+				return false;
+
+			return true;
+		}
+	}
+}
+
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
-	int client=GetClientOfUserId(FF2_GetBossUserId(boss));
+	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 	if(!boss && strlen(xIncoming[client]) && GetConVarBool(cvarSelectBoss))
 	{
 		if(preset)
@@ -8793,6 +8795,24 @@ stock void SetArenaCapEnableTime(float time)
 	}
 }
 
+public void OnRebuildAdminCache(AdminCachePart part)
+{
+	if(part == AdminCache_Overrides)
+	{
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client) && strlen(xIncoming[client]))
+			{
+				if(!CheckValidBoss(client, buffer, !DuoMin))
+				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
+					xIncoming[client][0] = '\0';
+				}
+			}
+		}
+	}
+}
+
 public void OnClientPostAdminCheck(int client)
 {
 	// TODO: Hook these inside of EnableFF2() or somewhere instead
@@ -8822,37 +8842,10 @@ public void OnClientPostAdminCheck(int client)
 		SetupClientStats(client);
 
 		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
-		if(buffer[0] && GetConVarBool(cvarSelectBoss))
+		if(buffer[0])
 		{
-			char boss[64], companionName[64];
-			for(int config; config<Specials; config++)
-			{
-				KvRewind(BossKV[config]);
-				KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-				KvGetString(BossKV[config], "name", boss, sizeof(boss));
-				if(KvGetNum(BossKV[config], "blocked", 0))
-					continue;
-
-				if(StrEqual(boss, buffer, false))
-				{
-					if(strlen(companionName))
-						break;
-
-					if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-					   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
-					   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
-						break;
-
-					if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
-						break;
-
-					if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
-						break;
-
-					strcopy(xIncoming[client], sizeof(xIncoming[]), buffer);
-					break;
-				}
-			}
+			if(CheckValidBoss(client, buffer, !DuoMin))
+				strcopy(xIncoming[client], sizeof(xIncoming[]), buffer);
 		}
 	}
 
@@ -8860,13 +8853,13 @@ public void OnClientPostAdminCheck(int client)
 	//If this is false that means music is disabled for all clients, so don't play it for new clients either.
 	if(playBGM[0])
 	{
-		playBGM[client]=true;
+		playBGM[client] = true;
 		if(Enabled)
 			CreateTimer(0.1, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 	else
 	{
-		playBGM[client]=false;
+		playBGM[client] = false;
 	}
 }
 
@@ -8904,9 +8897,20 @@ public void OnClientDisconnect(int client)
 	{
 		DuoMin = true;
 	}
-	else if(playing<GetConVarInt(cvarDuoMin) && DuoMin)
+	else if(DuoMin)
 	{
 		DuoMin = false;
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client) && strlen(xIncoming[client]))
+			{
+				if(!CheckValidBoss(client, xIncoming[client], true))
+				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
+					xIncoming[client][0] = '\0';
+				}
+			}
+		}
 	}
 
 	if(MusicTimer[client] != INVALID_HANDLE)
