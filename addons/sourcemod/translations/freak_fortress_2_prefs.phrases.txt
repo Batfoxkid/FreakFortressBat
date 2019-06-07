@@ -43,6 +43,10 @@
 		"en"		"An admin overrode your boss selection!"
 		"ru"		"Администратор переопределил твой выбор босса!"
 	}
+	"boss_selection_reset"
+	{
+		"en"		"Your boss selection has been reset!"
+	}
 	"to0_random"
 	{
 		"en"		"Random Boss"
