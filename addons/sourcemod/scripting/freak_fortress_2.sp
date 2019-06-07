@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."013"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4793,6 +4793,44 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 		CloseHandle(menu);
 	}
 }
+
+/*
+public Action SkipBossPanel(int client, int target)
+{
+	if(!Enabled2)
+		return Plugin_Continue;
+
+	Handle panel = CreatePanel();
+	char text[128];
+	SetGlobalTransTarget(client);
+	if(client == target)
+		Format(text, sizeof(text), "%t", "skip_boss");  //Do you really want to set your queue points to 0?
+
+	PrintToChat(client, text);
+	SetPanelTitle(panel, text);
+	Format(text, sizeof(text), "%t", "Yes");
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "No");
+	DrawPanelItem(panel, text);
+	shortname[client] = target;
+	SendPanelToClient(panel, client, SkipBossPanelH, MENU_TIME_FOREVER);
+	CloseHandle(panel);
+	return Plugin_Handled;
+}
+
+public SkipBossPanelH(Handle:menu, MenuAction:action, client, position)
+{
+	if(action==MenuAction_Select && position==1)
+	{
+		if(shortname[client] == client)
+		{
+			CPrintToChat(client,"{olive}[FF2]{default} %t", "skipped_boss");  //Your queue points have been reset to {olive}0{default}
+		}
+		QueuePoints[client] -= 10;
+		//SetClientQueuePoints(client, GetClientQueuePoints(client)-10);
+	}
+}
+*/
 
 public int SortQueueDesc(const x[], const y[], const array[][], Handle data)
 {
