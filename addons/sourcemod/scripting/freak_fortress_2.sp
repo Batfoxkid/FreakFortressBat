@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."026"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."028"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -288,6 +288,7 @@ ConVar cvarHealingHud;
 ConVar cvarSteamTools;
 ConVar cvarSappers;
 ConVar cvarSapperCooldown;
+ConVar cvarSapperStart;
 ConVar cvarTheme;
 ConVar cvarSelfHealing;
 ConVar cvarBotRage;
@@ -2036,6 +2037,7 @@ public void OnPluginStart()
 	cvarSteamTools = CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
 	cvarSappers = CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
 	cvarSapperCooldown = CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
+	cvarSapperStart = CreateConVar("ff2_sapper_starting", "0", "#-Damage needed for first usage (Not used if ff2_sapper or ff2_sapper_cooldown is 0)", _, true, 0.0);
 	cvarTheme = CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
 	cvarSelfHealing = CreateConVar("ff2_healing", "0", "0-Block Boss Healing, 1-Allow Self-Healing, 2-Allow Non-Self Healing, 3-Allow All Healing", _, true, 0.0, true, 3.0);
 	cvarBotRage = CreateConVar("ff2_bot_rage", "1", "0-Disable, 1-Bots can use rage when ready", _, true, 0.0, true, 1.0);
@@ -4482,7 +4484,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			AirstrikeDamage[client] = 0.0;
 			KillstreakDamage[client] = 0.0;
 			HazardDamage[client] = 0.0;
-			SapperCooldown[client] = 0.0;
+			SapperCooldown[client] = GetConVarFloat(cvarSapperStart);
 			SaveClientStats(client);
 		}
 
@@ -9007,6 +9009,21 @@ public Action ClientTimer(Handle timer)
 	int StatHud = GetConVarInt(cvarStatHud);
 	int HealHud = GetConVarInt(cvarHealingHud);
 	float LookHud = GetConVarFloat(cvarLookHud);
+	int SapperAmount;
+	bool SapperEnabled = SapperMinion;
+	if(!SapperEnabled)
+	{
+		for(int boss=1; boss<=MaxClients; boss++)
+		{
+			if(IsBoss(boss))
+			{
+				SapperEnabled = SapperBoss[boss];
+				if(SapperEnabled)
+					break;
+			}
+		}
+	}
+
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
@@ -9247,10 +9264,14 @@ public Action ClientTimer(Handle timer)
 					FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]/GetConVarFloat(cvarShieldHealth)*100.0));
 				}
 			}
-			else if(SapperCooldown[client]>0.0)
+			else if(SapperEnabled && SapperCooldown[client]>0.0)
 			{
+				SapperAmount = RoundToFloor((SapperCooldown[client]-GetConVarFloat(cvarSapperCooldown))*(Pow(GetConVarFloat(cvarSapperCooldown), -1.0)*-100.0));
+				if(SapperAmount < 0)
+					SapperAmount = 0;
+
 				SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
-				FF2_ShowHudText(client, -1, "%t", "Sapper Cooldown", RoundToFloor((SapperCooldown[client]-GetConVarFloat(cvarSapperCooldown))*(Pow(GetConVarFloat(cvarSapperCooldown), -1.0)*-100.0)));
+				FF2_ShowHudText(client, -1, "%t", "Sapper Cooldown", SapperAmount);
 			}
 			// Chdata's Deadringer Notifier
 			else if(GetConVarBool(cvarDeadRingerHud) && TF2_GetPlayerClass(client)==TFClass_Spy)
