@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."028"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."029"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -759,7 +759,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 			DrawPanelText(panel, "2) [Gameplay] Fixed healing done tracking more then max player's health (Marxvee)");
 			DrawPanelText(panel, "3) [Core] Support when cookie system is unavailable (Batfoxkid)");
 			DrawPanelText(panel, "4) [Gameplay] Added boss menu option to skip being a boss (JuegosPablo)");
-			DrawPanelText(panel, "5) [Core] Checks if players have access to their boss selection after access chnages (Batfoxkid)");
+			DrawPanelText(panel, "5) [Core] Checks if players have access to their boss selection after access changes (Batfoxkid)");
 		}
 		case 146:  //1.18.4
 		{
