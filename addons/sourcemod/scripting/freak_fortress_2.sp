@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."019"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."026"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -2045,7 +2045,7 @@ public void OnPluginStart()
 	cvarStatWin2Lose = CreateConVar("ff2_stats_chat", "-1", "-1-Disable, 0-Only by ff2_stats_bosses override, 1-Show only to client if changed, 2-Show to everybody if changed, 3-Show only to client, 4-Show to everybody", _, true, -1.0, true, 4.0);
 	cvarHealthHud = CreateConVar("ff2_hud_health", "0", "0-Disable, 1-Show boss's lives left, 2-Show boss's total health", _, true, 0.0, true, 2.0);
 	cvarLookHud = CreateConVar("ff2_hud_aiming", "0.0", "-1-No Range Limit, 0-Disable, #-Show teammate's stats by looking at them within this range", _, true, -1.0);
-	cvarSkipBoss = CreateConVar("ff2_boss_skip", "0", "0-Disable, 1-Add menu option to skip being a boss", _, true, 0.0, true 1.0);
+	cvarSkipBoss = CreateConVar("ff2_boss_skip", "0", "0-Disable, 1-Add menu option to skip being a boss", _, true, 0.0, true, 1.0);
 	cvarBossVsBoss = CreateConVar("ff2_boss_vs_boss", "0", "[EXPERIMENTAL] 0-Always Boss vs Players, #-Chance of Boss vs Boss, 100-Always Boss vs Boss", _, true, 0.0, true, 100.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 
@@ -3591,7 +3591,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 			{
 				if(IsValidClient(client) && strlen(xIncoming[client]))
 				{
-					if(!CheckValidBoss(client, buffer, true))
+					if(!CheckValidBoss(client, xIncoming[client], true))
 					{
 						FPrintToChat(client, "%t", "boss_selection_reset");
 						xIncoming[client][0] = '\0';
@@ -4354,7 +4354,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		{
 			if(IsValidClient(client) && strlen(xIncoming[client]))
 			{
-				if(!CheckValidBoss(client, buffer, true))
+				if(!CheckValidBoss(client, xIncoming[client], true))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
@@ -4847,13 +4847,12 @@ public Action SkipBossPanel(int client)
 	DrawPanelItem(panel, text);
 	Format(text, sizeof(text), "%t", "No");
 	DrawPanelItem(panel, text);
-	shortname[client] = target;
 	SendPanelToClient(panel, client, SkipBossPanelH, MENU_TIME_FOREVER);
 	CloseHandle(panel);
 	return Plugin_Handled;
 }
 
-public SkipBossPanelH(Handle menu, MenuAction action, int client, int position)
+public int SkipBossPanelH(Handle menu, MenuAction action, int client, int position)
 {
 	if(action==MenuAction_Select && position==1)
 	{
@@ -5725,7 +5724,7 @@ public Action Command_SetMyBoss(int client, int args)
 
 	if(GetConVarBool(cvarToggleBoss))
 	{
-		if(view_as<int>(ToggleBoss[client])<2)
+		if(view_as<int>(ToggleBoss[client]) < 2)
 		{
 			Format(boss, sizeof(boss), "%t", "to0_disablepts");
 		}
@@ -5738,7 +5737,7 @@ public Action Command_SetMyBoss(int client, int args)
 	}
 	if(GetConVarBool(cvarDuoBoss))
 	{
-		if(view_as<int>(ToggleDuo[client])<2)
+		if(view_as<int>(ToggleDuo[client]) < 2)
 		{
 			Format(boss, sizeof(boss), "%t", "to0_disableduo");
 		}
@@ -5752,11 +5751,11 @@ public Action Command_SetMyBoss(int client, int args)
 	#if defined _freak_fortress_2_kstreak_included
 	if(kmerge && CheckCommandAccess(client, "ff2_kstreak_a", 0, true))
 	{
-		if(FF2_KStreak_GetCookies(client, 0)==1)
+		if(FF2_KStreak_GetCookies(client, 0) == 1)
 		{
 			Format(boss, sizeof(boss), "%t", "to0_disablekstreak");
 		}
-		else if(FF2_KStreak_GetCookies(client, 0)<1)
+		else if(FF2_KStreak_GetCookies(client, 0) < 1)
 		{
 			Format(boss, sizeof(boss), "%t", "to0_enablekstreak");
 		}
@@ -5856,44 +5855,71 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 		}
 		case MenuAction_Select:
 		{
-			switch(param2)
+			if(!param2) 
 			{
-				case 0: 
+				IsBossSelected[param1]=true;
+				xIncoming[param1][0] = '\0';
+				SaveKeepBossCookie(param1);
+				FReplyToCommand(param1, "%t", "to0_comfirmrandom");
+				return;
+			}
+
+			int option1, option2, option4;
+			#if defined _freak_fortress_2_kstreak_included
+			int option3;
+			#endif
+			for(int choices=1; choices<5; choices++)
+			{
+				if(!option1 && GetConVarBool(cvarToggleBoss))
 				{
-					IsBossSelected[param1]=true;
-					xIncoming[param1][0] = '\0';
-					SaveKeepBossCookie(param1);
-					FReplyToCommand(param1, "%t", "to0_comfirmrandom");
-					return;
+					option1 = choices;
+					continue;
 				}
-				case 1, 2, 3, 4:
+				if(!option2 && GetConVarBool(cvarDuoBoss))
 				{
-					char menuItem[128];
-					GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]));
-					if(StrEqual(menuItem, "_bosstoggle", false))
-					{
-						BossMenu(param1, 0);
-						return;
-					}
-					if(StrEqual(menuItem, "_duotoggle", false))
-					{
-						CompanionMenu(param1, 0);
-						return;
-					}
-					#if defined _freak_fortress_2_kstreak_included
-					if(StrEqual(menuItem, "_kstreak", false))
-					{
-						FF2_KStreak_Menu(param1, 0);
-						return;
-					}
-					#endif
-					if(StrEqual(menuItem, "_skipboss", false))
-					{
-						SkipBossPanel(param1);
-						return;
-					}
+					option2 = choices;
+					continue;
+				}
+				#if defined _freak_fortress_2_kstreak_included
+				if(!option3 && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+				{
+					option3 = choices;
+					continue;
+				}
+				#endif
+				if(!option4 && GetConVarBool(cvarSkipBoss))
+				{
+					option4 = choices;
+					continue;
 				}
 			}
+
+			if(param2 == option1)
+			{
+				BossMenu(param1, 0);
+				return;
+			}
+
+			if(param2 == option2)
+			{
+				CompanionMenu(param1, 0);
+				return;
+			}
+
+			#if defined _freak_fortress_2_kstreak_included
+			if(param2 == option3)
+			{
+				FF2_KStreak_Menu(param1, 0);
+				return;
+			}
+			#endif
+
+			if(param2 == option4)
+			{
+				SkipBossPanel(param1);
+				return;
+			}
+
 			if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
 			{
 				IsBossSelected[param1] = true;
@@ -6082,7 +6108,7 @@ void SaveKeepBossCookie(int client)
 	SetClientCookie(client, SelectionCookie, xIncoming[client]);
 }
 
-bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false);
+bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 {
 	char boss[64], companionName[64];
 	for(int config; config<Specials; config++)
@@ -6115,6 +6141,7 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 			return true;
 		}
 	}
+	return false;
 }
 
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
@@ -8803,7 +8830,7 @@ public void OnRebuildAdminCache(AdminCachePart part)
 		{
 			if(IsValidClient(client) && strlen(xIncoming[client]))
 			{
-				if(!CheckValidBoss(client, buffer, !DuoMin))
+				if(!CheckValidBoss(client, xIncoming[client], !DuoMin))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
@@ -8900,14 +8927,14 @@ public void OnClientDisconnect(int client)
 	else if(DuoMin)
 	{
 		DuoMin = false;
-		for(int client=1; client<=MaxClients; client++)
+		for(int clients=1; clients<=MaxClients; clients++)
 		{
-			if(IsValidClient(client) && strlen(xIncoming[client]))
+			if(IsValidClient(clients) && strlen(xIncoming[clients]))
 			{
-				if(!CheckValidBoss(client, xIncoming[client], true))
+				if(!CheckValidBoss(clients, xIncoming[clients], true))
 				{
-					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
+					FPrintToChat(clients, "%t", "boss_selection_reset");
+					xIncoming[clients][0] = '\0';
 				}
 			}
 		}
@@ -9474,87 +9501,26 @@ public Action BossTimer(Handle timer)
 	bool validBoss, aliveBoss;
 	int StatHud = GetConVarInt(cvarStatHud);
 	int HealHud = GetConVarInt(cvarHealingHud);
-	float LookHud = GetConVarFloat(cvarLookHud);
 	for(int boss; boss<=MaxClients; boss++)
 	{
 		int client = Boss[boss];
 		if(!IsValidClient(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
 			continue;
 
-		if(!IsFakeClient(client))
+		aliveBoss = IsPlayerAlive(client);
+		if(!aliveBoss)
 		{
-			int observer;
-			aliveBoss = IsPlayerAlive(client);
-			if(aliveBoss && LookHud!=0)
-			{
-				observer = GetClientAimTarget(client, true);
-				if(!IsValidClient(observer) || observer==client)
-				{
-					observer = 0;
-				}
-				else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)!=TF2_GetClientTeam(observer))
-				{
-					observer = 0;
-				}
-				else if(LookHud > 0)
-				{
-					float position[3], position2[3], distance;
-					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
-					GetEntPropVector(observer, Prop_Send, "m_vecOrigin", position2);
-					distance = GetVectorDistance(position, position2);
-					if(distance > LookHud)
-						observer = 0;
-				}
-			}
-			else if(!aliveBoss)
-			{
-				observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-				if(!IsValidClient(observer) || observer==client)
-					observer = 0;
-			}
+			if(IsFakeClient(client))
+				continue;
 
-			if(observer && IsBoss(observer))
+			int observer;
+			observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
+			if(!IsValidClient(observer) || observer==client)
+				observer = 0;
+
+			if(StatHud<0 || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<1))
 			{
-				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-				{
-					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-					{
-						BossShowSyncHudText(client, statHUD, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
-					}
-					else
-					{
-						BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
-					}
-				}
-			}
-			else if(observer)
-			{
-				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-				{
-					if((Healing[observer]>0 && HealHud==1) || HealHud==2)
-					{
-						if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-						{
-							BossShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-						}
-						else
-						{
-							BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-					}
-					else
-					{
-						if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-						{
-							BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
-						}
-						else
-						{
-							BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-					}
-				}
-				else
+				if(observer && !IsBoss(observer))
 				{
 					if((Healing[observer]>0 && HealHud==1) || HealHud==2)
 					{
@@ -9565,22 +9531,57 @@ public Action BossTimer(Handle timer)
 						BossShowSyncHudText(client, statHUD, "%t", "Spectator Damage Dealt", observer, Damage[observer]);
 					}
 				}
+				continue;
 			}
-			else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+
+			if(observer && IsBoss(observer))
 			{
-				if((LookHud && BlueAlivePlayers>1) || !aliveBoss)
+				if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 				{
 					BossShowSyncHudText(client, statHUD, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 				}
 				else
 				{
-					BossShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+					BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
 				}
 			}
+			else if(observer)
+			{
+				if((Healing[observer]>0 && HealHud==1) || HealHud==2)
+				{
+					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+					{
+						BossShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					}
+					else
+					{
+						BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+					}
+				}
+				else
+				{
+					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+					{
+						BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
+					}
+					else
+					{
+						BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+					}
+				}
+			}
+			else
+			{
+				BossShowSyncHudText(client, statHUD, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+			}
+			continue;
 		}
 
-		if(!aliveBoss)
-			continue;
+		if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+		{
+			SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
+			FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+		}
 
 		validBoss = true;
 
@@ -9778,14 +9779,7 @@ stock void BossShowSyncHudText(int client, Handle sync, const char[] buffer, any
 		char message[256];
 		VFormat(message, sizeof(message), buffer, 4);
 		SetGlobalTransTarget(client);
-		if(IsPlayerAlive(client))
-		{
-			SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
-		}
-		else
-		{
-			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
-		}
+		SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 		ShowSyncHudText(client, sync, message);
 	}
 }
@@ -10540,22 +10534,23 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 				return Plugin_Continue;
 		}
 
-		for(int client=1; client<=MaxClients; client++)
+		if(RedAlivePlayers < playing)
 		{
-			if(IsClientInGame(client) && IsPlayerAlive(client))
+			for(int client=1; client<=MaxClients; client++)
 			{
-				if(RedAlivePlayers>1 && GetConVarInt(cvarGameText)>0)
+				if(IsClientInGame(client) && IsPlayerAlive(client))
 				{
-					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "point_enable", RedAlivePlayers);
-				}
-				else
-				{
-					PrintHintText(client, "%t", "point_enable", RedAlivePlayers);
+					if(GetConVarInt(cvarGameText)>0)
+					{
+						ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "point_enable", RedAlivePlayers);
+					}
+					else
+					{
+						PrintHintText(client, "%t", "point_enable", RedAlivePlayers);
+					}
 				}
 			}
-		}
-		if(RedAlivePlayers == AliveToEnable)
-		{
+
 			char sound[64];
 			if(GetRandomInt(0, 2))
 			{
