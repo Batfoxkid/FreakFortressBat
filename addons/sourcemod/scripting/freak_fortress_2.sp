@@ -80,9 +80,9 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "18"
 #define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "Build"
+//#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."030"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."031"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -599,7 +599,7 @@ static const char ff2versiontitles[][] =
 
 static const char ff2versiondates[][] =
 {
-	"April 6, 2012",			//1.0
+	"April 6, 2012",		//1.0
 	"April 14, 2012",		//1.01
 	"April 14, 2012",		//1.01
 	"April 17, 2012",		//1.02
@@ -608,21 +608,21 @@ static const char ff2versiondates[][] =
 	"April 29, 2012",		//1.05
 	"April 29, 2012",		//1.05
 	"May 1, 2012",			//1.06
-	"June 22, 2012",			//1.06c
+	"June 22, 2012",		//1.06c
 	"July 3, 2012",			//1.06d
-	"August 24, 2012",			//1.06e
-	"September 5, 2012",			//1.06f
-	"September 5, 2012",			//1.06g
-	"September 6, 2012",			//1.06h
-	"October 8, 2012",			//1.07 beta 1
-	"October 8, 2012",			//1.07 beta 1
-	"October 8, 2012",			//1.07 beta 1
-	"October 8, 2012",			//1.07 beta 1
-	"October 8, 2012",			//1.07 beta 1
-	"October 11, 2012",			//1.07 beta 4
-	"October 18, 2012",			//1.07 beta 5
-	"November 9, 2012",			//1.07 beta 6
-	"December 14, 2012",			//1.07
+	"August 24, 2012",		//1.06e
+	"September 5, 2012",		//1.06f
+	"September 5, 2012",		//1.06g
+	"September 6, 2012",		//1.06h
+	"October 8, 2012",		//1.07 beta 1
+	"October 8, 2012",		//1.07 beta 1
+	"October 8, 2012",		//1.07 beta 1
+	"October 8, 2012",		//1.07 beta 1
+	"October 8, 2012",		//1.07 beta 1
+	"October 11, 2012",		//1.07 beta 4
+	"October 18, 2012",		//1.07 beta 5
+	"November 9, 2012",		//1.07 beta 6
+	"December 14, 2012",		//1.07
 	"October 30, 2013",		//1.0.8
 	"October 30, 2013",		//1.0.8
 	"October 30, 2013",		//1.0.8
@@ -663,10 +663,10 @@ static const char ff2versiondates[][] =
 	"August 10, 2015",		//1.10.6
 	"August 10, 2015",		//1.10.6
 	"August 10, 2015",		//1.10.6
-	"November 19, 2015",	//1.10.7
-	"November 19, 2015",	//1.10.7
-	"November 19, 2015",	//1.10.7
-	"November 24, 2015",	//1.10.8
+	"November 19, 2015",		//1.10.7
+	"November 19, 2015",		//1.10.7
+	"November 19, 2015",		//1.10.7
+	"November 24, 2015",		//1.10.8
 	"May 7, 2016",			//1.10.9
 	"May 7, 2016",			//1.10.9
 	"May 7, 2016",			//1.10.9
@@ -675,7 +675,7 @@ static const char ff2versiondates[][] =
 	"August 1, 2016",		//1.10.10
 	"August 1, 2016",		//1.10.11
 	"August 4, 2016",		//1.10.12
-	"September 1, 2016",	//1.10.13
+	"September 1, 2016",		//1.10.13
 	"October 21, 2016",		//1.10.14
 	"October 3, 2018",		//1.11.3
 	"October 3, 2018",		//1.11.4
@@ -3276,7 +3276,7 @@ void DisableSubPlugins(bool force=false)
 
 public void LoadCharacter(const char[] character)
 {
-	char extensions[][]={".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd", ".phy"};
+	char extensions[][] = {".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd", ".phy"};
 	char config[PLATFORM_MAX_PATH];
 
 	//BuildPath(Path_SM, config, sizeof(config), "configs/freak_fortress_2/%s.cfg", character);
@@ -3286,13 +3286,48 @@ public void LoadCharacter(const char[] character)
 		LogToFile(eLog, "[Characters] Character %s does not exist!", character);
 		return;
 	}
-	BossKV[Specials]=CreateKeyValues("character");
+	BossKV[Specials] = CreateKeyValues("character");
 	FileToKeyValues(BossKV[Specials], config);
 
-	int version=KvGetNum(BossKV[Specials], "version", 1);
+	int version = KvGetNum(BossKV[Specials], "version", StringToInt(MAJOR_REVISION));
 	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
 		LogToFile(eLog, "[Boss] Character %s is only compatible with FF2 v%i!", character, version);
+		return;
+	}
+
+	version = KvGetNum(BossKV[Specials], "version_minor", StringToInt(MINOR_REVISION));
+	if(version > StringToInt(MINOR_REVISION))
+	{
+		LogError("[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%i.x)!", character, MAJOR_REVISION, version);
+		return;
+	}
+
+	version = KvGetNum(BossKV[Specials], "version_stable", StringToInt(STABLE_REVISION));
+	if(version > StringToInt(STABLE_REVISION))
+	{
+		LogError("[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%s.%i)!", character, MAJOR_REVISION, MINOR_REVISION, version);
+		return;
+	}
+
+	version = KvGetNum(BossKV[Specials], "fversion", StringToInt(FORK_MAJOR_REVISION));
+	if(version != StringToInt(FORK_MAJOR_REVISION))
+	{
+		LogToFile(eLog, "[Boss] Character %s is only compatible with %s FF2 v%i!", character, FORK_SUB_REVISION, version);
+		return;
+	}
+
+	version = KvGetNum(BossKV[Specials], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
+	if(version > StringToInt(FORK_MINOR_REVISION))
+	{
+		LogError("[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%i.x)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version);
+		return;
+	}
+
+	version = KvGetNum(BossKV[Specials], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
+	if(version > StringToInt(FORK_STABLE_REVISION))
+	{
+		LogError("[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%s.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, version);
 		return;
 	}
 
@@ -11126,13 +11161,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 	if(!Enabled || !IsValidEntity(attacker))
 		return Plugin_Continue;
 
-	static bool foundDmgCustom, dmgCustomInOTD;
-	if(!foundDmgCustom)
-	{
-		dmgCustomInOTD=(GetFeatureStatus(FeatureType_Capability, "SDKHook_DmgCustomInOTD")==FeatureStatus_Available);
-		foundDmgCustom=true;
-	}
-
 	if((attacker<=0 || client==attacker) && IsBoss(client) && damagetype & DMG_FALL)
 	{
 		return Plugin_Handled;
@@ -11268,16 +11296,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			if(attacker <= MaxClients)
 			{
 				bool bIsTelefrag, bIsBackstab;
-				if(dmgCustomInOTD)
+				if(damagecustom == TF_CUSTOM_BACKSTAB)
 				{
-					if(damagecustom == TF_CUSTOM_BACKSTAB)
-					{
-						bIsBackstab = true;
-					}
-					else if(damagecustom == TF_CUSTOM_TELEFRAG)
-					{
-						bIsTelefrag = true;
-					}
+					bIsBackstab = true;
+				}
+				else if(damagecustom == TF_CUSTOM_TELEFRAG)
+				{
+					bIsTelefrag = true;
 				}
 				else if(weapon!=4095 && IsValidEntity(weapon) && weapon==GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee) && damage>1000.0)
 				{
@@ -11620,16 +11645,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			if(attacker <= MaxClients)
 			{
 				bool bIsTelefrag, bIsBackstab;
-				if(dmgCustomInOTD)
+				if(damagecustom == TF_CUSTOM_BACKSTAB)
 				{
-					if(damagecustom == TF_CUSTOM_BACKSTAB)
-					{
-						bIsBackstab = true;
-					}
-					else if(damagecustom == TF_CUSTOM_TELEFRAG)
-					{
-						bIsTelefrag = true;
-					}
+					bIsBackstab = true;
+				}
+				else if(damagecustom == TF_CUSTOM_TELEFRAG)
+				{
+					bIsTelefrag = true;
 				}
 				else if(weapon!=4095 && IsValidEntity(weapon) && weapon==GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee) && damage>1000.0)
 				{
@@ -11878,8 +11900,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						SpawnSmallHealthPackAt(client, GetClientTeam(attacker), attacker);
 					}
-					case 327:  //Claidheamh Mòr
-					{
+					case 327:  //Claidheamh M򲍊					{
 						if(kvWeaponMods==null || GetConVarInt(cvarHardcodeWep)>0)
 						{
 							float charge=GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter");
@@ -12505,8 +12526,6 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	if(!Enabled || !IsValidClient(attacker) || !IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
 
-	int boss;
-	char spcl[64];
 	if(IsBoss(attacker))
 	{
 		if(shield[victim])
@@ -12521,6 +12540,23 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		damageMultiplier = 3.0;
 		damageBonus = 201.5;
 		JumpPower = 0.0;
+		return Plugin_Changed;
+	}
+	else if(IsBoss(victim))
+	{
+		damageMultiplier = GoombaDamage;
+		JumpPower = reboundPower;
+		return Plugin_Changed;
+	}
+	return Plugin_Continue;
+}
+
+public int OnStompPost(int attacker, int victim, float damageMultiplier, float damageBonus, float jumpPower)
+{
+	int boss;
+	char spcl[64];
+	if(IsBoss(attacker))
+	{
 		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
@@ -12596,12 +12632,9 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 				}
 			}
 		}
-		return Plugin_Changed;
 	}
-	else if(IsBoss(victim))
+	else if(IsBoss(attacker))
 	{
-		damageMultiplier = GoombaDamage;
-		JumpPower = reboundPower;
 		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
@@ -12679,15 +12712,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		}
 		HealthBarMode = true;
 		CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
-		return Plugin_Changed;
 	}
-	return Plugin_Continue;
-}
-
-public int OnStompPost(int attacker, int victim, float damageMultiplier, float damageBonus, float jumpPower)
-{
-	if(IsBoss(victim))
-		UpdateHealthBar();
 }
 
 public Action RTD_CanRollDice(int client)
