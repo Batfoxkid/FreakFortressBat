@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."033"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."034"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -358,7 +358,6 @@ Handle BossInfoTimer[MAXPLAYERS+1][2];
 Handle DrawGameTimer;
 Handle doorCheckTimer;
 
-int botqueuepoints;
 float HPTime;
 char currentmap[99];
 bool checkDoors = false;
@@ -4937,7 +4936,6 @@ public Action Timer_NineThousand(Handle timer)
 public Action Timer_CalcQueuePoints(Handle timer)
 {
 	int damage, damage2;
-	botqueuepoints+=5;
 	int[] add_points = new int[MaxClients+1];
 	int[] add_points2 = new int[MaxClients+1];
 	for(int client=1; client<=MaxClients; client++)
@@ -5033,7 +5031,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 				{
 					if(IsFakeClient(client))
 					{
-						QueuePoints[client] += RoundFloat(add_points2[client]*0.5);
+						QueuePoints[client] += RoundFloat(add_points[client]*0.5);
 					}
 
 					if(add_points[client]>0)
