@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."031"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."032"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -7054,7 +7054,7 @@ stock int GetRandBlockCellEx(ArrayList hArray, int iBlock=0, bool bAsChar=false,
 
 public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDefinitionIndex, Handle &item)
 {
-	if(!Enabled || TimesTen)
+	if(!Enabled)
 		return Plugin_Continue;
 
 	if(!ConfigWeapons)
@@ -7949,7 +7949,7 @@ public Action Timer_MakeNotBoss(Handle timer, any userid)
 
 public Action Timer_CheckItems(Handle timer, any userid)
 {
-	int client=GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!IsValidClient(client) || !IsPlayerAlive(client) || CheckRoundState()==2 || IsBoss(client) || (FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
 		return Plugin_Continue;
 
@@ -7958,8 +7958,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	shield[client] = 0;
 	int[] civilianCheck = new int[MaxClients+1];
 
-	int weapon=GetPlayerWeaponSlot(client, 4);
-	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60  && (kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0))  //Cloak and Dagger
+	int weapon = GetPlayerWeaponSlot(client, 4);
+	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60 && (!ConfigWeapons || kvWeaponMods==null))  //Cloak and Dagger
 	{
 		TF2_RemoveWeaponSlot(client, 4);
 		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 1.65 ; 728 ; 1 ; 729 ; 0.65");
@@ -7968,8 +7968,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	if(bMedieval)
 		return Plugin_Continue;
 
-	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
-	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && GetConVarInt(cvarHardcodeWep)>0)
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
+	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && (!ConfigWeapons || kvWeaponMods==null))
 	{
 		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
 		SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
@@ -7979,12 +7979,12 @@ public Action Timer_CheckItems(Handle timer, any userid)
 		civilianCheck[client]++;
 	}
 
-	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 	if(IsValidEntity(weapon))
 	{
-		if(TF2_GetPlayerClass(client)==TFClass_Medic)
+		if(TF2_GetPlayerClass(client) == TFClass_Medic)
 		{
-			if(GetIndexOfWeaponSlot(client, TFWeaponSlot_Melee)==142)  //Gunslinger (Randomizer, etc. compatability)
+			if(GetIndexOfWeaponSlot(client, TFWeaponSlot_Melee) == 142)  //Gunslinger (Randomizer, etc. compatability)
 			{
 				SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
 				SetEntityRenderColor(weapon, 255, 255, 255, 75);
@@ -7996,14 +7996,14 @@ public Action Timer_CheckItems(Handle timer, any userid)
 		civilianCheck[client]++;
 	}
 
-	int playerBack=FindPlayerBack(client, 57);  //Razorback
-	shield[client]=IsValidEntity(playerBack) ? playerBack : 0;
-	hadshield[client]=IsValidEntity(playerBack) ? true : false;
+	int playerBack = FindPlayerBack(client, 57);  //Razorback
+	shield[client] = IsValidEntity(playerBack) ? playerBack : 0;
+	hadshield[client] = IsValidEntity(playerBack) ? true : false;
 	if(IsValidEntity(FindPlayerBack(client, 642)))  //Cozy Camper
 		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 1.5 ; 15 ; 0.0 ; 1 ; 0.75");
 
 	#if defined _tf2attributes_included
-	if(tf2attributes && GetConVarInt(cvarHardcodeWep)>0)
+	if(tf2attributes && (!ConfigWeapons || kvWeaponMods==null))
 	{
 		if(IsValidEntity(FindPlayerBack(client, 444)))  //Mantreads
 		{
@@ -8016,13 +8016,13 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	}
 	#endif
 
-	int entity=-1;
-	while((entity=FindEntityByClassname2(entity, "tf_wearable_demoshield"))!=-1)  //Demoshields
+	int entity = -1;
+	while((entity=FindEntityByClassname2(entity, "tf_wearable_demoshield")) != -1)  //Demoshields
 	{
 		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 		{
-			shield[client]=entity;
-			hadshield[client]=true;
+			shield[client] = entity;
+			hadshield[client] = true;
 		}
 	}
 
@@ -8032,16 +8032,16 @@ public Action Timer_CheckItems(Handle timer, any userid)
 		shDmgReduction[client]=GetConVarFloat(cvarShieldResist);
 	}
 
-	weapon=GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
 	if(!IsValidEntity(weapon))
 		civilianCheck[client]++;
 
-	if(civilianCheck[client]==3)
+	if(civilianCheck[client] == 3)
 	{
-		civilianCheck[client]=0;
+		civilianCheck[client] = 0;
 		TF2_RespawnPlayer(client);
 	}
-	civilianCheck[client]=0;
+	civilianCheck[client] = 0;
 	return Plugin_Continue;
 }
 
