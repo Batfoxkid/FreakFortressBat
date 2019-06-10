@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."032"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."033"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -11321,7 +11321,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				if(bIsBackstab)
 				{
-					if(GetConVarBool(cvarLowStab))
+					if(TimesTen)
+					{
+						damage = BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
+					}
+					else if(GetConVarBool(cvarLowStab))
 					{
 						damage = (BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/5;
 					}
@@ -11489,7 +11493,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						damage = 1.0;
 						return Plugin_Changed;
 					}
-					damage = (BossHealth[boss]>9001 ? 9001.0 : float(GetEntProp(Boss[boss], Prop_Send, "m_iHealth"))+90.0);
+					damage = BossHealth[boss]*1.001;
 
 					for(int all; all<=MaxClients; all++)
 					{
@@ -11792,13 +11796,17 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(GetEntProp(weapon, Prop_Send, "m_iDetonated") == 0)	// If using ullapool caber, only trigger if bomb hasn't been detonated
                         			{
-							if(GetConVarBool(cvarLowStab))
+							if(TimesTen)
 							{
-								damage = (Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3));
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(GetConVarFloat(cvarTimesTen)*allowedDetonations*3)))*Companions;
+							}
+							else if(GetConVarBool(cvarLowStab))
+							{
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*Companions;
 							}
 							else
 							{
-								damage = (Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3));
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*Companions;
 							}
 							damagetype |= DMG_CRIT;
 
@@ -11975,13 +11983,17 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(RemoveCond(attacker, TFCond_BlastJumping))	// New way to check explosive jumping status
 						//if(FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING)
                         			{
-							if(GetConVarBool(cvarLowStab))
+							if(TimesTen)
 							{
-								damage = (Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(GetConVarFloat(cvarTimesTen)*3))*Companions;
+							}
+							else if(GetConVarBool(cvarLowStab))
+							{
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3);
 							}
 							else
 							{
-								damage = (Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*Companions;
 							}
 							damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 
@@ -12142,13 +12154,17 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				if(bIsBackstab)
 				{
-					if(GetConVarBool(cvarLowStab))
+					if(TimesTen)
 					{
-						damage=(BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/3;
+						damage = BossHealthMax[boss]*Companions*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
+					}
+					else if(GetConVarBool(cvarLowStab))
+					{
+						damage = (BossHealthMax[boss]*Companions*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/3;
 					}
 					else
 					{
-						damage=BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
+						damage = BossHealthMax[boss]*Companions*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 					}
 					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 					damagecustom = 0;
@@ -12298,7 +12314,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						damage=1.0;
 						return Plugin_Changed;
 					}
-					damage=(BossHealth[boss]>9001 ? 9001.0 : float(GetEntProp(Boss[boss], Prop_Send, "m_iHealth"))+90.0);
+					damage = (TimesTen ? 5000.0*GetConVarFloat(cvarTimesTen) : 9001.0);
 
 					for(int all; all<=MaxClients; all++)
 					{
@@ -12551,6 +12567,11 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	{
 		damageMultiplier = GoombaDamage;
 		JumpPower = reboundPower;
+		if(TimesTen)
+		{
+			damageMultiplier /= GetConVarFloat(cvarTimesTen);
+			JumpPower *= 2.0;
+		}
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
