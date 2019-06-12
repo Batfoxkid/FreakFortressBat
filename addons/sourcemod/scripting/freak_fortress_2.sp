@@ -82,7 +82,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."034"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."035"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10382,11 +10382,14 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 				KSpreeTimer[boss]=GetGameTime()+5.0;
 			}
 
-			if(IsValidClient(attacker) && (!IsFakeClient(client) || IsFakeClient(attacker)))
+			if(IsValidClient(attacker))
 			{
-				BossKillsF[attacker]++;
-				if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
-					AddClientStats(attacker, Cookie_BossKills, 1);
+				if(!IsFakeClient(client) || IsFakeClient(attacker))
+				{
+					BossKillsF[attacker]++;
+					if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+						AddClientStats(attacker, Cookie_BossKills, 1);
+				}
 			}
 		}
 	}
