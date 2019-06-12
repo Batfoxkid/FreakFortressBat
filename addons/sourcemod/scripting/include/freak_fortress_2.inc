@@ -310,6 +310,26 @@ native float FF2_GetAbilityArgumentFloat(int boss, const char[] plugin_name, con
 native void FF2_GetAbilityArgumentString(int boss, const char[] pluginName, const char[] abilityName, int argument, char[] buffer, int bufferLength);
 
 /**
+ * Plays a sound to everyone except players who disabled boss voices
+ *
+ * @param sample	Sound file name relative to the "sounds" folder.
+ * @param entity	Entity to emit from.
+ * @param channel	Channel to emit with.
+ * @param level		Sound level.
+ * @param flags		Sound flags.
+ * @param volume	Sound volume.
+ * @param pitch		Sound pitch.
+ * @param speakerentity	Unknown.
+ * @param origin	Sound origin.
+ * @param dir		Sound direction.
+ * @param updatePos	Unknown (updates positions?)
+ * @param soundtime	Alternate time to play sound for.
+ *
+ * @noreturn
+ */
+native void FF2_EmitVoiceToAll(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0);
+
+/**
  * Starts a random Boss sound from its config file
  *
  * @param keyvalue	Name of sound container
@@ -753,6 +773,7 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_GetAbilityArgumentFloat");
 	MarkNativeAsOptional("FF2_GetAbilityArgumentString");
 	MarkNativeAsOptional("FF2_RandomSound");
+	MarkNativeAsOptional("FF2_EmitVoiceToAll");
 	MarkNativeAsOptional("FF2_StartMusic");
 	MarkNativeAsOptional("FF2_StopMusic");
 	MarkNativeAsOptional("FF2_GetSpecialKV");
