@@ -19,6 +19,7 @@
 	"FF2 Disabled"	// Chat
 	{
 		"en"		"{olive}Freak Fortress 2{default} is currently disabled"
+		"ru"		"{olive}Freak Fortress 2{default} на данный момент отключен"
 	}
 	"wait_hp"	// Chat
 	{
