@@ -98,6 +98,20 @@ native int FF2_GetBossTeam();
 native bool FF2_GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int bossMeaning=0);
 
 /**
+ * Gets the character name of the Boss with language of client
+ *
+ * @param boss	 		Boss's index
+ * @param buffer		Buffer for boss' character name
+ * @param bufferLength		Length of buffer string
+ * @param bossMeaning			0 - "boss" parameter means index of current Boss
+ *					1 - "boss" parameter means number of Boss in characters.cfg
+ * @param client		Client to get language from (0 means server language)
+ *
+ * @return			True if boss exists, false if not
+ */
+native bool FF2_GetBossName(int boss=0, char[] buffer, int bufferLength, int bossMeaning=0, int client=0);
+
+/**
  * Gets the current health value of the Boss
  *
  * @param boss		Boss's index
