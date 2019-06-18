@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."017"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -15275,8 +15275,8 @@ stock void RemoveShield(int client, int attacker, float position[3])
 
 public Action Timer_RemoveStun(Handle timer, int client)
 {
-	if(RemoveCond(client, TFCond_Dazed))
-		return Plugin_Continue;
+	if(IsValidClient(client))
+		RemoveCond(client, TFCond_Dazed);
 
 	return Plugin_Continue;
 }
