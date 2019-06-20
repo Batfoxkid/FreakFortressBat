@@ -1,4 +1,4 @@
-﻿"Phrases"
+"Phrases"
 {
 	"Win To Lose"	// Chat
 	{
@@ -25,20 +25,20 @@
 	"Stats"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d}"
-		"en"		"Damage: {1} | Bosses Slain: {2} | MVPs: {3}"
-		"ru"		"Урон: {1} | Боссов убито: {2} | СЦИ: {3}"
+		"en"		"Damage: {1} | Bosses Slain: {2} | MVPs: {3}\n"
+		"ru"		"Урон: {1} | Боссов убито: {2} | СЦИ: {3}\n"
 	}
 	"Stats Healing"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
-		"en"		"Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}"
-		"ru"		"Урон: {1} | Лечение: {2} | Боссов убито: {3} | СЦИ: {4}"
+		"en"		"Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}\n"
+		"ru"		"Урон: {1} | Лечение: {2} | Боссов убито: {3} | СЦИ: {4}\n"
 	}
 	"Stats Boss"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
-		"en"		"Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}"
-		"ru"		"Побед: {1} | Поражений: {2} | Убийств: {3} | Смертей: {4}"
+		"en"		"Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}\n"
+		"ru"		"Побед: {1} | Поражений: {2} | Убийств: {3} | Смертей: {4}\n"
 	}
 	"Self Stats"	// HUD
 	{
