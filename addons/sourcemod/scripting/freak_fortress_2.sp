@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."027"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5577,35 +5577,44 @@ public Action Command_SetMyBoss(int client, int args)
 			return Plugin_Handled;
 		}
 
-		char name[64], boss[64], companionName[64];
+		char name[64], boss[64], bossName[64], fileName[64], companionName[64];
 		GetCmdArgString(name, sizeof(name));
 		
 		for(int config; config<Specials; config++)
 		{
 			KvRewind(BossKV[config]);
 			if(KvGetNum(BossKV[config], "blocked", 0))
-				continue;
-
-			GetBossSpecial(config, boss, sizeof(boss), client);
-			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-			if(!StrEqual(boss, name, false))
 			{
-				KvGetString(BossKV[config], "name", boss, sizeof(boss));
-				if(!StrEqual(boss, name, false))
+				if(config == Specials-1)
 				{
-					KvGetString(BossKV[config], "filename", boss, sizeof(boss));
-					if(!StrEqual(boss, name, false))
+					FReplyToCommand(client, "%t", "deny_unknown");
+					return Plugin_Handled;
+				}
+				continue;
+			}
+
+			GetBossSpecial(config, bossName, sizeof(bossName), client);
+			KvGetString(BossKV[config], "name", boss, sizeof(boss));
+			if(StrContains(bossName, name, false))
+			{
+				if(StrContains(boss, name, false))
+				{
+					KvGetString(BossKV[config], "filename", fileName, sizeof(fileName));
+					if(StrContains(fileName, name, false))
 					{
-						FReplyToCommand(client, "%t", "deny_unknown");
-						return Plugin_Handled;
+						if(config == Specials-1)
+						{
+							FReplyToCommand(client, "%t", "deny_unknown");
+							return Plugin_Handled;
+						}
+						continue;
 					}
 				}
-				GetBossSpecial(config, boss, sizeof(boss), client);
 			}
 
 			if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 			   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
-			   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
+			   (BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true)))
 			{
 				if(KvGetNum(BossKV[config], "hidden", 0))
 				{
@@ -5618,9 +5627,9 @@ public Action Command_SetMyBoss(int client, int args)
 					return Plugin_Handled;
 				}
 			}
-			else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
+			else if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 			{
-				if(KvGetNum(BossKV[config], "hidden", 0))
+				if(KvGetNum(BossKV[config], "hidden", 1))
 				{
 					FReplyToCommand(client, "%t", "deny_unknown");
 					return Plugin_Handled;
@@ -5647,6 +5656,7 @@ public Action Command_SetMyBoss(int client, int args)
 				return Plugin_Handled;
 			}
 
+			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 			if(strlen(companionName) && !DuoMin)
 			{
 				FReplyToCommand(client, "%t", "deny_duo_short");
@@ -5672,7 +5682,7 @@ public Action Command_SetMyBoss(int client, int args)
 			}
 			IsBossSelected[client] = true;
 			strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-			FReplyToCommand(client, "%t", "to0_boss_selected", boss);
+			FReplyToCommand(client, "%t", "to0_boss_selected", bossName);
 			return Plugin_Handled;
 		}
 	}
@@ -5680,7 +5690,9 @@ public Action Command_SetMyBoss(int client, int args)
 	char boss[64], bossName[64];
 	Handle dMenu = CreateMenu(Command_SetMyBossH);
 	SetGlobalTransTarget(client);
-	Format(bossName, sizeof(bossName), "%t", "to0_random");
+	if(ToggleBoss[client] == Setting_On)
+		Format(bossName, sizeof(bossName), "%t", "to0_random");
+
 	for(int config; config<Specials; config++)
 	{
 		KvRewind(BossKV[config]);
@@ -5764,9 +5776,9 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 	}
 
+	char companionName[64];
 	for(int config; config<Specials; config++)
 	{
-		char companionName[64];
 		KvRewind(BossKV[config]);
 		if(KvGetNum(BossKV[config], "blocked", 0))
 			continue;
@@ -5776,17 +5788,21 @@ public Action Command_SetMyBoss(int client, int args)
 		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 		   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
-		   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
+		   (BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true)))
 		{
 			if(!KvGetNum(BossKV[config], "hidden", 0))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
+		else if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 		{
-			if(!KvGetNum(BossKV[config], "hidden", 0))
+			if(!KvGetNum(BossKV[config], "hidden", 1))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "hidden", 0))
+		else if(KvGetNum(BossKV[config], "hidden", 0) &&
+		      !(KvGetNum(BossKV[config], "donator", 0) ||
+		        BossTheme(config) ||
+			KvGetNum(BossKV[config], "admin", 0) ||
+			KvGetNum(BossKV[config], "owner", 0)))
 		{
 			// Don't show
 		}
@@ -8261,7 +8277,7 @@ public Action Command_SetNextBoss(int client, int args)
 
 	for(int config; config<Specials; config++)
 	{
-		GetBossSpecial(Special[config], boss, sizeof(boss), client);
+		GetBossSpecial(config, boss, sizeof(boss), client);
 		if(StrContains(boss, name, false) != -1)
 		{
 			Incoming[0] = config;
@@ -9007,8 +9023,9 @@ public Action ClientTimer(Handle timer)
 	if(!Enabled || CheckRoundState()==2 || CheckRoundState()==-1)
 		return Plugin_Stop;
 
-	char classname[32];
+	char classname[32], top[64];
 	TFCond cond;
+	bool alive;
 	int StatHud = GetConVarInt(cvarStatHud);
 	int HealHud = GetConVarInt(cvarHealingHud);
 	float LookHud = GetConVarFloat(cvarLookHud);
@@ -9031,11 +9048,12 @@ public Action ClientTimer(Handle timer)
 	{
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
 		{
+			alive = IsPlayerAlive(client);
 			if(!IsFakeClient(client))
 			{
 				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 				int observer;
-				if(IsPlayerAlive(client) && LookHud!=0)
+				if(alive && LookHud!=0)
 				{
 					observer = GetClientAimTarget(client, true);
 					if(!IsValidClient(observer) || observer==client)
@@ -9056,168 +9074,104 @@ public Action ClientTimer(Handle timer)
 							observer = 0;
 					}
 				}
-				else if(!IsPlayerAlive(client))
+				else if(!alive)
 				{
 					observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 					if(!IsValidClient(observer) || observer==client)
 						observer = 0;
 				}
 
-				if(observer && IsBoss(observer))
+				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 				{
-					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+					if((CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>1) && (LookHud!=0 || !alive))
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud==2)
+						if((Healing[client]>0 && HealHud==1) || HealHud>1)
 						{
-							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
-							}
+							Format(top, sizeof(top), "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 						else
 						{
-							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
-							}
+							Format(top, sizeof(top), "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 					}
 					else
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud==2)
+						if((Healing[client]>0 && HealHud==1) || HealHud>1)
 						{
-							FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+							Format(top, sizeof(top), "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 						else
 						{
-							FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
+							Format(top, sizeof(top), "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 					}
-				}
-				else if(observer)
-				{
-					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-					{
-						if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
-						{
-							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
-						}
-						else if(Healing[client]>0 && HealHud==1)
-						{
-							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
-						}
-						else if(Healing[observer]>0 && HealHud==1)
-						{
-							if(IsFakeClient(observer) || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2))
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
-						}
-						else
-						{
-							if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Spectator Damage Dealt", observer, Damage[observer]);
-							}
-							else
-							{
-								FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-							}
-						}
-					}
-					else
-					{
-						if((Healing[observer]>0 && Healing[client]>0 && HealHud==1) || HealHud==2)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t %t | %t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-						}
-						else if(Healing[client]>0 && HealHud==1)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t %t | %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client], "Spectator Damage Dealt", observer, Damage[observer]);
-						}
-						else if(Healing[observer]>0 && HealHud==1)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t | %t %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t | %t", "Your Damage Dealt", Damage[client], "Spectator Damage Dealt", observer, Damage[observer]);
-						}
-					}
-				}
-				else if(LookHud)
-				{
-					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-					{
-						if((Healing[client]>0 && HealHud==1) || HealHud==2)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-						}
-					}
-					else
-					{
-						if((Healing[client]>0 && HealHud==1) || HealHud==2)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
-						}
-					}
-				}
-				else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
-				{
-					if((Healing[client]>0 && HealHud==1) || HealHud==2)
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-					}
-					else
-					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-					}
-				}
-				else if((Healing[client]>0 && HealHud==1) || HealHud==2)
-				{
-					FF2_ShowSyncHudText(client, statHUD, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, statHUD, "%t", "Your Damage Dealt", Damage[client]);
+					if(observer && !IsBoss(observer))
+					{
+						if((Healing[client]>0 && HealHud==1) || HealHud>1)
+						{
+							Format(top, sizeof(top), "%t %t | ", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+						}
+						else
+						{
+							Format(top, sizeof(top), "%t | ", "Your Damage Dealt", Damage[client]);
+						}
+					}
+					else
+					{
+						if((Healing[client]>0 && HealHud==1) || HealHud>1)
+						{
+							Format(top, sizeof(top), "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+						}
+						else
+						{
+							Format(top, sizeof(top), "%t", "Your Damage Dealt", Damage[client]);
+						}
+					}
+				}
+
+				if(observer)
+				{
+					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>1))
+					{
+						if(IsBoss(observer))
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+						}
+						else if((Healing[observer]>0 && HealHud==1) || HealHud>1)
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						}
+					}
+					else if(!IsBoss(observer))
+					{
+						if((Healing[observer]>0 && HealHud==1) || HealHud>1)
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						}
+						else
+						{
+							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer]);
+						}
+					}
+					else
+					{
+						FF2_ShowSyncHudText(client, statHUD, "%s", top);
+					}
+				}
+				else
+				{
+					FF2_ShowSyncHudText(client, statHUD, "%s", top);
 				}
 			}
 
-			if(!IsPlayerAlive(client))
+			if(!alive)
 				continue;
 
 			TFClassType class=TF2_GetPlayerClass(client);
@@ -9522,7 +9476,7 @@ public Action BossTimer(Handle timer)
 	if(!Enabled || CheckRoundState()==2)
 		return Plugin_Stop;
 
-	bool validBoss, aliveBoss;
+	bool validBoss;
 	int StatHud = GetConVarInt(cvarStatHud);
 	int HealHud = GetConVarInt(cvarHealingHud);
 	for(int boss; boss<=MaxClients; boss++)
@@ -9531,8 +9485,7 @@ public Action BossTimer(Handle timer)
 		if(!IsValidClient(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
 			continue;
 
-		aliveBoss = IsPlayerAlive(client);
-		if(!aliveBoss)
+		if(!IsPlayerAlive(client))
 		{
 			if(IsFakeClient(client))
 				continue;
@@ -9546,7 +9499,7 @@ public Action BossTimer(Handle timer)
 			{
 				if(observer && !IsBoss(observer))
 				{
-					if((Healing[observer]>0 && HealHud==1) || HealHud==2)
+					if((Healing[observer]>0 && HealHud==1) || HealHud>1)
 					{
 						BossShowSyncHudText(client, statHUD, "%t %t", "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
 					}
@@ -9555,14 +9508,12 @@ public Action BossTimer(Handle timer)
 						BossShowSyncHudText(client, statHUD, "%t", "Spectator Damage Dealt", observer, Damage[observer]);
 					}
 				}
-				continue;
 			}
-
-			if(observer && IsBoss(observer))
+			else if(observer && IsBoss(observer))
 			{
 				if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 				{
-					BossShowSyncHudText(client, statHUD, "%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+					BossShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 				}
 				else
 				{
@@ -9571,11 +9522,11 @@ public Action BossTimer(Handle timer)
 			}
 			else if(observer)
 			{
-				if((Healing[observer]>0 && HealHud==1) || HealHud==2)
+				if((Healing[observer]>0 && HealHud==1) || HealHud>1)
 				{
 					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 					{
-						BossShowSyncHudText(client, statHUD, "%t%t %t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						BossShowSyncHudText(client, statHUD, "%t%t %t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
 					}
 					else
 					{
@@ -9586,13 +9537,17 @@ public Action BossTimer(Handle timer)
 				{
 					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 					{
-						BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						BossShowSyncHudText(client, statHUD, "%t%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
 					}
 					else
 					{
 						BossShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
 					}
 				}
+			}
+			else if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
+			{
+				BossShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 			}
 			else
 			{
@@ -11044,15 +10999,9 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 	if(client == healer)
 		return Plugin_Continue;
 
-	int missinghealth = GetEntProp(client, Prop_Data, "m_iMaxHealth")-GetClientHealth(client);
-	if(heals > missinghealth)
-	{
-		heals = missinghealth;
-	}
 	if(heals > 0)
-	{
 		Healing[healer] += heals;
-	}
+
 	return Plugin_Continue;
 }
 
