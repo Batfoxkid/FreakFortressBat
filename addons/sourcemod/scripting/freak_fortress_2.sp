@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."027"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."030"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -753,6 +753,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		case 148:  //1.18.6
 		{
 			DrawPanelText(panel, "1) [Bosses] Allowed multi-lanuage boss names (Batfoxkid)");
+			DrawPanelText(panel, "2) [Core] Added support for tf_arena_preround_time changes (Batfoxkid)");
 		}
 		case 147:  //1.18.5
 		{
@@ -2058,7 +2059,8 @@ public void OnPluginStart()
 	CreateConVar("ff2_base_jumper_stun", "0", "Whether or not the Base Jumper should be disabled when a player gets stunned", _, true, 0.0, true, 1.0);
 	CreateConVar("ff2_solo_shame", "0", "Always insult the boss for solo raging", _, true, 0.0, true, 1.0);
 
-	HookEvent("teamplay_round_start", OnRoundStart);
+	HookEvent("teamplay_round_start", OnRoundSetup);
+	HookEvent("arena_round_start", OnRoundStart);
 	HookEvent("teamplay_round_win", OnRoundEnd);
 	HookEvent("teamplay_broadcast_audio", OnBroadcast, EventHookMode_Pre);
 	HookEvent("teamplay_point_startcapture", OnStartCapture);
@@ -3937,7 +3939,7 @@ void CheckToTeleportToSpawn()
 	delete fileh;
 }
 
-public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
+public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 {
 	teamplay_round_start_TeleportToMultiMapSpawn(); // Cache spawns
 	isCapping=false;
@@ -4058,9 +4060,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	{
 		Boss[client]=0;
 		if(IsValidClient(client) && IsPlayerAlive(client) && !(FF2flags[client] & FF2FLAG_HASONGIVED))
-		{
 			TF2_RespawnPlayer(client);
-		}
 	}
 
 	if(!Enabled3 && GetConVarInt(cvarBossVsBoss)>0 && DuoMin)	// I know this gets fired twice
@@ -4125,7 +4125,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 					CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 			}
 		}
-		return Plugin_Continue;  //NOTE: This is needed because OnRoundStart gets fired a second time once both teams have players
+		return Plugin_Continue;  //NOTE: This is needed because OnRoundSetup gets fired a second time once both teams have players
 	}
 
 	PickCharacter(0, 0);
@@ -4162,9 +4162,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	}
 
 	CreateTimer(0.4, StartIntroMusicTimer, _, TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(3.5, StartResponseTimer, _, TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(9.1, StartBossTimer, _, TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(9.6, MessageTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer((GetConVarFloat(FindConVar("tf_arena_preround_time"))/2.857), StartResponseTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 
 	for(int entity=MaxClients+1; entity<MAXENTITIES; entity++)
 	{
@@ -4249,6 +4247,66 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
+	healthcheckused = 0;
+	firstBlood = true;
+	CheatsUsed = false;
+	return Plugin_Continue;
+}
+
+public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
+{
+	CreateTimer(0.5, MessageTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.1, Timer_Move, _, TIMER_FLAG_NO_MAPCHANGE);
+	bool isBossAlive;
+	for(int boss; boss<=MaxClients; boss++)
+	{
+		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+		{
+			isBossAlive = true;
+			SetEntityMoveType(Boss[boss], MOVETYPE_NONE);
+		}
+	}
+
+	if(!isBossAlive)
+		return Plugin_Continue;
+
+	playing = 0;
+	playing2 = 0;
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client))
+		{
+			CreateTimer(2.0, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+			if(!IsBoss(client) && IsPlayerAlive(client))
+			{
+				playing++;
+				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
+				if(!IsFakeClient(client))
+					playing2++;
+			}
+		}
+	}
+
+	int players = playing+1;
+	for(int boss; boss<=MaxClients; boss++)
+	{
+		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+		{
+			BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
+			BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
+			BossHealthLast[boss] = BossHealth[boss];
+		}
+	}
+
+	CreateTimer(0.2, BossTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.2, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.2, Timer_StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.2, GlobalTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+
+	if(PointType == 0)
+		SetControlPoint(false);
+
 	if(GetConVarBool(cvarNameChange))
 	{
 		char newName[256], bossName[64];
@@ -4257,10 +4315,6 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		Format(newName, sizeof(newName), "%s | %s", oldName, bossName);
 		SetConVarString(hostName, newName);
 	}
-
-	healthcheckused = 0;
-	firstBlood = true;
-	CheatsUsed = false;
 	return Plugin_Continue;
 }
 
@@ -5058,65 +5112,6 @@ public Action StartIntroMusicTimer(Handle timer)
 	if(RandomSound("sound_intromusic", sound, sizeof(sound)))
 	{
 		EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-	}
-	return Plugin_Continue;
-}
-
-public Action StartBossTimer(Handle timer)
-{
-	CreateTimer(0.1, Timer_Move, _, TIMER_FLAG_NO_MAPCHANGE);
-	bool isBossAlive;
-	for(int boss; boss<=MaxClients; boss++)
-	{
-		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
-		{
-			isBossAlive=true;
-			SetEntityMoveType(Boss[boss], MOVETYPE_NONE);
-		}
-	}
-
-	if(!isBossAlive)
-	{
-		return Plugin_Continue;
-	}
-
-	playing=0;
-	playing2=0;
-	for(int client=1; client<=MaxClients; client++)
-	{
-		if(IsValidClient(client))
-		{
-			CreateTimer(2.0, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-			if(!IsBoss(client) && IsPlayerAlive(client))
-			{
-				playing++;
-				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
-				if(!IsFakeClient(client))
-					playing2++;
-			}
-		}
-	}
-
-	int players=playing+1;
-	for(int boss; boss<=MaxClients; boss++)
-	{
-		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
-		{
-			BossHealthMax[boss]=ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
-			BossHealth[boss]=BossHealthMax[boss]*BossLivesMax[boss];
-			BossHealthLast[boss]=BossHealth[boss];
-		}
-	}
-
-	CreateTimer(0.2, BossTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(0.2, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(0.2, Timer_StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(0.2, GlobalTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-
-	if(PointType==0)
-	{
-		SetControlPoint(false);
 	}
 	return Plugin_Continue;
 }
@@ -6251,24 +6246,17 @@ public Action Timer_NextBossPanel(Handle timer)
 
 public Action MessageTimer(Handle timer)
 {
-	if(CheckRoundState())
-	{
-		return Plugin_Continue;
-	}
-
 	if(checkDoors)
 	{
-		int entity=-1;
-		while((entity=FindEntityByClassname2(entity, "func_door"))!=-1)
+		int entity = -1;
+		while((entity=FindEntityByClassname2(entity, "func_door")) != -1)
 		{
 			AcceptEntityInput(entity, "Open");
 			AcceptEntityInput(entity, "Unlock");
 		}
 
-		if(doorCheckTimer==INVALID_HANDLE)
-		{
-			doorCheckTimer=CreateTimer(5.0, Timer_CheckDoors, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-		}
+		if(doorCheckTimer == INVALID_HANDLE)
+			doorCheckTimer = CreateTimer(5.0, Timer_CheckDoors, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
 
 	SetHudTextParams(-1.0, 0.2, 10.0, 255, 255, 255, 255);
