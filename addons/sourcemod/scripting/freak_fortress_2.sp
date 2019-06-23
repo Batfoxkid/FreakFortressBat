@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."030"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."032"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3766,10 +3766,10 @@ stock bool IsFF2Map()
 	}
 
 	int tries;
-	while(ReadFileLine(file, config, sizeof(config)) && tries<100)
+	while(ReadFileLine(file, config, sizeof(config)))
 	{
 		tries++;
-		if(tries == 100)
+		if(tries >= 100)
 		{
 			LogToFile(eLog, "[!!!] Breaking infinite loop when trying to check the map.");
 			return false;
@@ -10968,17 +10968,13 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 		{
 			health += heals;
 			if(health > totalhealth)
-			{
 				health = totalhealth;
-			}
 		}
 		else if(client!=healer && SelfHealing[client]>1)
 		{
 			health += heals;
 			if(health > totalhealth)
-			{
 				health = totalhealth;
-			}
 		}
 		BossHealth[boss] = health;
 		return Plugin_Continue;
@@ -10986,6 +10982,10 @@ public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast
 
 	if(client == healer)
 		return Plugin_Continue;
+
+	int extrahealth = GetClientHealth(client)-GetEntProp(client, Prop_Data, "m_iMaxHealth");
+	if(extrahealth > 0)
+		heals -= extrahealth;
 
 	if(heals > 0)
 		Healing[healer] += heals;
@@ -11013,7 +11013,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			{
 				if(IsValidClient(target) && IsPlayerAlive(target) && GetClientTeam(target)==BossTeam)
 				{
-					boss = FF2_GetBossIndex(target);
+					boss = GetBossIndex(target);
 					GetEntPropVector(target, Prop_Send, "m_vecOrigin", position2);
 					distance = GetVectorDistance(position, position2);
 					if(distance<120 && target!=client &&
@@ -11505,7 +11505,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged Player", spcl);
 
 								default:
-									PrintHintText(client, "%t", "Telefrged Player", spcl);
+									PrintHintText(client, "%t", "Telefraged Player", spcl);
 							}
 						}
 						else
@@ -12325,7 +12325,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Telefraged Player", spcl);
 
 								default:
-									PrintHintText(client, "%t", "Telefrged Player", spcl);
+									PrintHintText(client, "%t", "Telefraged Player", spcl);
 							}
 						}
 						else
