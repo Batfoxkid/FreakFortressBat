@@ -23,6 +23,9 @@ have. Please try to avoid spam and nonsense.
 SHADoW NiNE TR3S for FreakFortressBBG (and I use most of the code from)
 https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
 
+Marxvee for healing, look-based teammate stats HUD, and spies disguising as bosses
+https://steamcommunity.com/profiles/76561198299989625/
+
 MAGNAT2645 for Russian translations and pointing out errors
 https://github.com/MAGNAT2645
 

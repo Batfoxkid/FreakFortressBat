@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."032"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."037"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -410,14 +410,6 @@ static const char OTVoice[][] =
 	"vo/announcer_overtime2.mp3",
 	"vo/announcer_overtime3.mp3",
 	"vo/announcer_overtime4.mp3"
-};
-
-enum WorldModelType
-{
-	ModelType_Normal = 0,		// Normal Worldmodel
-	ModelType_PyroVision,		// Pyro-Vision Worldmodel
-	ModelType_HalloweenVision,	// Halloween Worldmodel
-	ModelType_RomeVision		// Rome Worldmodel
 };
 
 enum Operators
@@ -754,6 +746,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 		{
 			DrawPanelText(panel, "1) [Bosses] Allowed multi-lanuage boss names (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] Added support for tf_arena_preround_time changes (Batfoxkid)");
+			DrawPanelText(panel, "3) [Gameplay] Spy disguising as a boss will make him appear as the boss (Marxvee)");
 		}
 		case 147:  //1.18.5
 		{
@@ -6331,7 +6324,7 @@ public Action MakeModelTimer(Handle timer, any client)
 
 void EquipBoss(int boss)
 {
-	int client=Boss[boss];
+	int client = Boss[boss];
 	DoOverlay(client, "");
 	TF2_RemoveAllWeapons(client);
 	char key[10], classname[64], attributes[256];
@@ -6343,127 +6336,196 @@ void EquipBoss(int boss)
 		{
 			KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
 			KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
-			int strangerank=KvGetNum(BossKV[Special[boss]], "rank", 21);
-			int weaponlevel=KvGetNum(BossKV[Special[boss]], "level", -1);
-			int index=KvGetNum(BossKV[Special[boss]], "index");
-			bool overridewep=view_as<bool>(KvGetNum(BossKV[Special[boss]], "override", 0));
-			int strangekills=-1;
-			int strangewep=1;
+			int strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
+			int weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
+			int index = KvGetNum(BossKV[Special[boss]], "index");
+			bool overridewep = view_as<bool>(KvGetNum(BossKV[Special[boss]], "override", 0));
+			int strangekills = -1;
+			int strangewep = 1;
 			switch(strangerank)
 			{
 				case 0:
-					strangekills=GetRandomInt(0, 9);
+				{
+					strangekills = GetRandomInt(0, 9);
+				}
 				case 1:
-					strangekills=GetRandomInt(10, 24);
+				{
+					strangekills = GetRandomInt(10, 24);
+				}
 				case 2:
-					strangekills=GetRandomInt(25, 44);
+				{
+					strangekills = GetRandomInt(25, 44);
+				}
 				case 3:
-					strangekills=GetRandomInt(45, 69);
+				{
+					strangekills = GetRandomInt(45, 69);
+				}
 				case 4:
-					strangekills=GetRandomInt(70, 99);
+				{
+					strangekills = GetRandomInt(70, 99);
+				}
 				case 5:
-					strangekills=GetRandomInt(100, 134);
+				{
+					strangekills = GetRandomInt(100, 134);
+				}
 				case 6:
-					strangekills=GetRandomInt(135, 174);
+				{
+					strangekills = GetRandomInt(135, 174);
+				}
 				case 7:
-					strangekills=GetRandomInt(175, 224);
+				{
+					strangekills = GetRandomInt(175, 224);
+				}
 				case 8:
-					strangekills=GetRandomInt(225, 274);
+				{
+					strangekills = GetRandomInt(225, 274);
+				}
 				case 9:
-					strangekills=GetRandomInt(275, 349);
+				{
+					strangekills = GetRandomInt(275, 349);
+				}
 				case 10:
-					strangekills=GetRandomInt(350, 499);
+				{
+					strangekills = GetRandomInt(350, 499);
+				}
 				case 11:
 				{
-					if(index==656)	// Holiday Punch is different
-						strangekills=GetRandomInt(500, 748);
+					if(index == 656)	// Holiday Punch is different
+					{
+						strangekills = GetRandomInt(500, 748);
+					}
 					else
-						strangekills=GetRandomInt(500, 749);
+					{
+						strangekills = GetRandomInt(500, 749);
+					}
 				}
 				case 12:
 				{
-					if(index==656)
-						strangekills=749;
+					if(index == 656)
+					{
+						strangekills = 749;
+					}
 					else
-						strangekills=GetRandomInt(750, 998);
+					{
+						strangekills = GetRandomInt(750, 998);
+					}
 				}
 				case 13:
 				{
-					if(index==656)
-						strangekills=GetRandomInt(750, 999);
+					if(index == 656)
+					{
+						strangekills = GetRandomInt(750, 999);
+					}
 					else
-						strangekills=999;
+					{
+						strangekills = 999;
+					}
 				}
 				case 14:
-					strangekills=GetRandomInt(1000, 1499);
+				{
+					strangekills = GetRandomInt(1000, 1499);
+				}
 				case 15:
-					strangekills=GetRandomInt(1500, 2499);
+				{
+					strangekills = GetRandomInt(1500, 2499);
+				}
 				case 16:
-					strangekills=GetRandomInt(2500, 4999);
+				{
+					strangekills = GetRandomInt(2500, 4999);
+				}
 				case 17:
-					strangekills=GetRandomInt(5000, 7499);
+				{
+					strangekills = GetRandomInt(5000, 7499);
+				}
 				case 18:
 				{
-					if(index==656)
-						strangekills=GetRandomInt(7500, 7922);
+					if(index == 656)
+					{
+						strangekills = GetRandomInt(7500, 7922);
+					}
 					else
-						strangekills=GetRandomInt(7500, 7615);
+					{
+						strangekills = GetRandomInt(7500, 7615);
+					}
 				}
 				case 19:
 				{
-					if(index==656)
-						strangekills=GetRandomInt(7923, 8499);
+					if(index == 656)
+					{
+						strangekills = GetRandomInt(7923, 8499);
+					}
 					else
-						strangekills=GetRandomInt(7616, 8499);
+					{
+						strangekills = GetRandomInt(7616, 8499);
+					}
 				}
 				case 20:
-					strangekills=GetRandomInt(8500, 9999);
+				{
+					strangekills = GetRandomInt(8500, 9999);
+				}
 				default:
 				{
-					strangekills=GetRandomInt(0, 9999);
+					strangekills = GetRandomInt(0, 9999);
 					if(!GetConVarBool(cvarStrangeWep) || weaponlevel!=-1 || overridewep)
 						strangewep=0;
 				}
 			}
-			if(weaponlevel<0)
-				weaponlevel=101;
+
+			if(weaponlevel < 0)
+				weaponlevel = 101;
 
 			if(strangewep)
 			{
-				if(attributes[0]!='\0')
+				if(strlen(attributes))
 				{
 					if(overridewep)
+					{
 						Format(attributes, sizeof(attributes), "214 ; %d ; %s", strangekills, attributes);
+					}
 					else
+					{
 						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1 ; %s", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
+					}
 				}
 				else
 				{
 					if(overridewep)
+					{
 						Format(attributes, sizeof(attributes), "214 ; %d", strangekills);
+					}
 					else
+					{
 						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 214 ; %d ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
+					}
 				}
 			}
 			else
 			{
-				if(attributes[0]!='\0')
+				if(strlen(attributes))
 				{
 					if(overridewep)
+					{
 						Format(attributes, sizeof(attributes), "%s", attributes);
+					}
 					else
+					{
 						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 275 ; 1 ; %s", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
+					}
 				}
 				else
 				{
 					if(overridewep)
-						Format(attributes, sizeof(attributes), "28 ; 1");	// Does nothing
+					{
+						Format(attributes, sizeof(attributes), "");
+					}
 					else
+					{
 						Format(attributes, sizeof(attributes), "68 ; %i ; 2 ; 3.1 ; 275 ; 1", TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
+					}
 				}
 			}
 
-			int weapon=SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+			int weapon = SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 			FF2_SetAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", -1), KvGetNum(BossKV[Special[boss]], "clip", -1));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
@@ -6493,25 +6555,22 @@ void EquipBoss(int boss)
 			}
 			else
 			{
-				char wModel[4][PLATFORM_MAX_PATH];
-				KvGetString(BossKV[Special[boss]], "worldmodel", wModel[0], sizeof(wModel[]));
-				KvGetString(BossKV[Special[boss]], "pyrovision", wModel[1], sizeof(wModel[]));
-				KvGetString(BossKV[Special[boss]], "halloweenvision", wModel[2], sizeof(wModel[]));
-				KvGetString(BossKV[Special[boss]], "romevision", wModel[3], sizeof(wModel[]));
-				for(int type=0;type<=3;type++)
+				char wModel[PLATFORM_MAX_PATH];
+				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
+				if(strlen(wModel))
 				{
-					if(wModel[type][0])
+					for(int type=0; type<=3; type++)
 					{
-						ConfigureWorldModelOverride(weapon, index, wModel[type], view_as<WorldModelType>(type));
+						ConfigureWorldModelOverride(weapon, index, wModel, type);
 					}
 				}
 			}
 
 			int rgba[4];
-			rgba[0]=KvGetNum(BossKV[Special[boss]], "alpha", 255);
-			rgba[1]=KvGetNum(BossKV[Special[boss]], "red", 255);
-			rgba[2]=KvGetNum(BossKV[Special[boss]], "green", 255);
-			rgba[3]=KvGetNum(BossKV[Special[boss]], "blue", 255);
+			rgba[0] = KvGetNum(BossKV[Special[boss]], "alpha", 255);
+			rgba[1] = KvGetNum(BossKV[Special[boss]], "red", 255);
+			rgba[2] = KvGetNum(BossKV[Special[boss]], "green", 255);
+			rgba[3] = KvGetNum(BossKV[Special[boss]], "blue", 255);
 
 			SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
 			SetEntityRenderColor(weapon, rgba[1], rgba[2], rgba[3], rgba[0]);
@@ -6525,26 +6584,26 @@ void EquipBoss(int boss)
 	}
 
 	KvGoBack(BossKV[Special[boss]]);
-	TFClassType class=view_as<TFClassType>(KvGetNum(BossKV[Special[boss]], "class", 1));
-	if(TF2_GetPlayerClass(client)!=class)
+	TFClassType class = view_as<TFClassType>(KvGetNum(BossKV[Special[boss]], "class", 1));
+	if(TF2_GetPlayerClass(client) != class)
 	{
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 	}
 }
 
-stock bool ConfigureWorldModelOverride(int entity, int index, const char[] model, WorldModelType type, bool wearable=false)
+stock bool ConfigureWorldModelOverride(int entity, int index, const char[] model, int type, bool wearable=false)
 {
 	if(!FileExists(model, true))
 		return false;
         
-	int modelIndex=PrecacheModel(model);
+	int modelIndex = PrecacheModel(model);
 	if(!type)
 	{
 		SetEntProp(entity, Prop_Send, "m_nModelIndex", modelIndex);
 	}
 	else
 	{
-		SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, view_as<int>(type));
+		SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, type);
 		SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", (!wearable ? GetEntProp(entity, Prop_Send, "m_iWorldModelIndex") : GetEntProp(entity, Prop_Send, "m_nModelIndex")), _, 0);    
 	}
 	return true;
@@ -9008,7 +9067,34 @@ public Action Timer_RegenPlayer(Handle timer, any userid)
 
 public Action ClientTimer(Handle timer)
 {
-	if(!Enabled || CheckRoundState()==2 || CheckRoundState()==-1)
+	if(!Enabled)
+		return Plugin_Stop;
+
+	#if defined _tf2attributes_included
+	if(tf2attributes)
+	{
+		for(int client=1; client<=MaxClients; client++)
+		{
+			//custom model disguise code sorta taken from stop that tank, let's see how well this goes! this will actually let spies disguise as the boss, and bosses should have the same disguise model as the players they potentially disguise as if they have a custom model (tf2attributes required)
+			if(IsValidClient(client))
+			{
+				int iDisguisedClass = GetEntProp(client, Prop_Send, "m_nDisguiseClass");
+				VisionFlags_Update(client);
+
+				if(TF2_IsPlayerInCondition(client, TFCond_Disguised))
+				{
+					ModelOverrides_Think(client, iDisguisedClass);
+				}
+				else
+				{
+					ModelOverrides_Clear(client);
+				}
+			}
+		}
+	}
+	#endif
+
+	if(CheckRoundState()==2 || CheckRoundState()==-1)
 		return Plugin_Stop;
 
 	char classname[32], top[64];
@@ -9447,6 +9533,55 @@ public Action ClientTimer(Handle timer)
 	}
 	return Plugin_Continue;
 }
+
+#if defined _tf2attributes_included
+int g_teamOverrides[4] = {0, 0, 3, 0}; // This is the m_nModelIndexOverrides index for each team.
+
+void ModelOverrides_Clear(int client)
+{
+	for(int i=0; i<4; i++)
+	{
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, i);
+	}
+}
+
+void VisionFlags_Update(int client)
+{
+	if(tf2attributes)
+		return;
+
+	// RED will see index 4 (rome vision)
+	// BLU will see index 0 (normal, everyone sees this, but RED won't see their index unless index 0 is non-zero)
+	TF2Attrib_RemoveByDefIndex(client, 406);
+
+	if(TF2_GetClientTeam(client) == TFTeam_Red)
+		TF2Attrib_SetByDefIndex(client, 406, 4.0);
+}
+
+void ModelOverrides_Think(int client, int iDisguisedClass)
+{
+	int iTeam = GetClientTeam(client);
+	int iEnemyTeam = (iTeam == 2) ? 3 : 2;
+
+	int iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
+	char strPlayerModel[128];
+	GetEntPropString(client, Prop_Data, "m_ModelName", strPlayerModel, sizeof(strPlayerModel));
+	char strEnemyModel[128];
+	GetEntPropString(iDisguisedTarget, Prop_Data, "m_ModelName", strEnemyModel, sizeof(strEnemyModel));
+
+	int iPlayerModel = PrecacheModel(strPlayerModel, true);
+	int iEnemyModel = PrecacheModel(strEnemyModel, true);
+
+	// Make the spy look normal to their team
+	SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", iPlayerModel, _, g_teamOverrides[iTeam]);
+
+	if(TF2_GetPlayerClass(iDisguisedTarget) == view_as<TFClassType>(iDisguisedClass))
+	{
+		// Make the spy look different to the other team, should the disguise class be matching the disguise target's class
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", iEnemyModel, _, g_teamOverrides[iEnemyTeam]);
+	}
+}
+#endif
 
 stock int FindSentry(int client)
 {
@@ -14839,6 +14974,35 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 {
 	if(!Enabled || !IsValidClient(client) || channel<1)
 		return Plugin_Continue;
+
+	if(TF2_IsPlayerInCondition(client, TFCond_Disguised))
+	{
+		int iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
+		int iDisguisedClass = GetEntProp(client, Prop_Send, "m_nDisguiseClass");
+		int disguiseboss = GetBossIndex(iDisguisedTarget);
+
+		if(disguiseboss==-1 || TF2_GetPlayerClass(iDisguisedTarget)!=view_as<TFClassType>(iDisguisedClass))
+			return Plugin_Continue;
+
+		if(channel==SNDCHAN_VOICE && !(FF2flags[Boss[disguiseboss]] & FF2FLAG_TALKING))
+		{
+			char newSound[PLATFORM_MAX_PATH];
+			if(RandomSoundVo("catch_replace", newSound, PLATFORM_MAX_PATH, disguiseboss, sound))
+			{
+				strcopy(sound, PLATFORM_MAX_PATH, newSound);
+				return Plugin_Changed;
+			}
+
+			if(RandomSound("catch_phrase", newSound, PLATFORM_MAX_PATH, disguiseboss))
+			{
+				strcopy(sound, PLATFORM_MAX_PATH, newSound);
+				return Plugin_Changed;
+			}
+
+			if(bBlockVoice[Special[disguiseboss]])
+				return Plugin_Stop;
+		}
+	}
 
 	int boss = GetBossIndex(client);
 	if(boss == -1)

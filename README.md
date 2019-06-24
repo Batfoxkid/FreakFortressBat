@@ -17,6 +17,9 @@ Visit the [Issues tab](https://github.com/Batfoxkid/FreakFortressBat/issues "Iss
 SHADoW NiNE TR3S for FreakFortressBBG (and I use most of the code from)                                                
 [GitHub Profile](https://github.com/shadow93 "shadow93 (Koishi)") | [GitHub Repository](https://github.com/shadow93/FreakFortressBBG "shadow93/FreakFortressBBG: Fork formally used by Big Bang Gamers prior to its closing in November 2016.")
 
+Marxvee for healing, look-based teammate stats HUD, and spies disguising as bosses
+[Steam Profile](https://steamcommunity.com/profiles/76561198299989625/ "Steam Community :: marxvee❤")
+
 MAGNAT2645 for Russian translations and pointing out errors                                                    
 [GitHub Profile](https://github.com/MAGNAT2645 "MAGNAT2645 (MAGNAT2645)")
 
