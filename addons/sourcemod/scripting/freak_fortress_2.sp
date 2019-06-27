@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."038"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."041"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -735,7 +735,7 @@ static const char ff2versiondates[][] =
 	"June 1, 2019",			//1.18.3
 	"June 2, 2019",			//1.18.4
 	"June 12, 2019",		//1.18.5
-	"Development"			//1.18.6
+	"June 29, 2019"			//1.18.6
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
@@ -747,6 +747,7 @@ stock void FindVersionData(Handle panel, int versionIndex)
 			DrawPanelText(panel, "1) [Bosses] Allowed multi-lanuage boss names (Batfoxkid)");
 			DrawPanelText(panel, "2) [Core] Added support for tf_arena_preround_time changes (Batfoxkid)");
 			DrawPanelText(panel, "3) [Gameplay] Spy disguising as a boss will make him appear as the boss (Marxvee)");
+			DrawPanelText(panel, "4) [Gameplay] Medics automatically set at 40%% Ubercharge on round start (Batfoxkid)");
 		}
 		case 147:  //1.18.5
 		{
@@ -4248,6 +4249,9 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 
 public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
+	if(!Enabled)
+		return Plugin_Continue;
+
 	CreateTimer(0.5, MessageTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.1, Timer_Move, _, TIMER_FLAG_NO_MAPCHANGE);
 	bool isBossAlive;
@@ -4265,6 +4269,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 
 	playing = 0;
 	playing2 = 0;
+	int medigun;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
@@ -4276,6 +4281,13 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
 				if(!IsFakeClient(client))
 					playing2++;
+
+				if(TF2_GetPlayerClass(client) == TFClass_Medic)
+				{
+					medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+					if(IsValidEntity(medigun))
+						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", 0.4);
+				}
 			}
 		}
 	}
@@ -9494,7 +9506,7 @@ public Action ClientTimer(Handle timer)
 						}
 						else if(TF2_IsPlayerInCondition(client, TFCond_Disguised) && index==460)
 						{
-							TF2_AddCondition(client, TFCond_Kritzkrieged, 0.3);
+							TF2_AddCondition(client, TFCond_CritOnDamage, 0.3);
 						}
 					}
 				}
@@ -9506,18 +9518,10 @@ public Action ClientTimer(Handle timer)
 						if(IsValidEntity(sentry) && IsBoss(GetEntPropEnt(sentry, Prop_Send, "m_hEnemy")))
 						{
 							SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
-							TF2_AddCondition(client, TFCond_Kritzkrieged, 0.3);
 						}
-						else
+						else if(GetEntProp(client, Prop_Send, "m_iRevengeCrits"))
 						{
-							if(GetEntProp(client, Prop_Send, "m_iRevengeCrits"))
-							{
-								SetEntProp(client, Prop_Send, "m_iRevengeCrits", 0);
-							}
-							else if(TF2_IsPlayerInCondition(client, TFCond_Kritzkrieged) && !TF2_IsPlayerInCondition(client, TFCond_Healing))
-							{
-								TF2_RemoveCondition(client, TFCond_Kritzkrieged);
-							}
+							SetEntProp(client, Prop_Send, "m_iRevengeCrits", 0);
 						}
 					}
 				}
@@ -9526,7 +9530,7 @@ public Action ClientTimer(Handle timer)
 			if(addthecrit)
 			{
 				TF2_AddCondition(client, cond, 0.3);
-				if(healer!=-1 && cond!=TFCond_Buffed)
+				if(healer!=-1 && cond!=TFCond_Buffed && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 					TF2_AddCondition(client, TFCond_Buffed, 0.3);
 			}
 		}
@@ -9679,9 +9683,9 @@ public Action BossTimer(Handle timer)
 			continue;
 		}
 
+		SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 		if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 		{
-			SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 			FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 		}
 
