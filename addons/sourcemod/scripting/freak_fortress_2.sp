@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."044"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."045"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -15353,21 +15353,11 @@ stock void RemoveShield(int client, int attacker, float position[3])
 		EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 		EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 	}
-	TF2_AddCondition(client, TFCond_Bonked, 0.1); // Shows "MISS!" upon breaking shield
 	if(GetConVarInt(cvarShieldType)==3)
 		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 1.0);
 
 	shieldHP[client]=0.0;
 	shield[client]=0;
-	CreateTimer(1.0, Timer_RemoveStun, client, TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action Timer_RemoveStun(Handle timer, int client)
-{
-	if(IsValidClient(client))
-		RemoveCond(client, TFCond_Dazed);
-
-	return Plugin_Continue;
 }
 
 public int Native_IsEnabled(Handle plugin, int numParams)
