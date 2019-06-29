@@ -46,6 +46,7 @@
 	"boss_selection_reset"
 	{
 		"en"		"Your boss selection has been reset!"
+		"ru"		"Ваш выбор босса был сброшен!"
 	}
 	"to0_random"
 	{
