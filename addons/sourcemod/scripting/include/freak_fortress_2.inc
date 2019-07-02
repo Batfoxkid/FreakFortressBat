@@ -262,7 +262,7 @@ native float FF2_GetRageDist(int boss=0, const char[] pluginName="", const char[
  *
  * @return		True if the boss has this ability, false if it doesn't
  */
-native int FF2_HasAbility(int boss, const char[] pluginName, const char[] abilityName);
+native bool FF2_HasAbility(int boss, const char[] pluginName, const char[] abilityName);
 
 /**
  * Determines how the Boss should use a certain ability
