@@ -74,11 +74,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "18"
-#define FORK_STABLE_REVISION "6"
+#define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Build"
+#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."047"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -91,8 +91,9 @@ last time or to encourage others to do the same.
     for subplugins or plugins that uses the FF2_GetFF2Version native.
 */
 #define MAJOR_REVISION "1"
-#define MINOR_REVISION "10"
-#define STABLE_REVISION "15"
+#define MINOR_REVISION "11"
+#define STABLE_REVISION "0"
+#define DEV_REVISION "Beta"
 
 #define MAXENTITIES 2048	// Probably shouldn't touch this
 #define MAXSPECIALS 144		// Maximum bosses in a pack
@@ -396,7 +397,7 @@ Handle kvWeaponMods = INVALID_HANDLE;
 bool IsBossSelected[MAXPLAYERS+1];
 bool dmgTriple[MAXPLAYERS+1];
 bool randomCrits[MAXPLAYERS+1];
-bool SelfKnockback[MAXPLAYERS+1];
+int SelfKnockback[MAXPLAYERS+1];
 bool SapperBoss[MAXPLAYERS+1];
 bool SapperMinion;
 char BossIcon[64];
@@ -582,7 +583,8 @@ static const char ff2versiontitles[][] =
 	"1.18.3",
 	"1.18.4",
 	"1.18.5",
-	"1.18.6"
+	"1.18.6",
+	"1.18.7"
 };
 
 static const char ff2versiondates[][] =
@@ -735,13 +737,18 @@ static const char ff2versiondates[][] =
 	"June 1, 2019",			//1.18.3
 	"June 2, 2019",			//1.18.4
 	"June 12, 2019",		//1.18.5
-	"June 29, 2019"			//1.18.6
+	"June 29, 2019",		//1.18.6
+	"Development"			//1.18.7
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 149:  //1.18.7
+		{
+			DrawPanelText(panel, "1) [Bosses] Allowed to be able to self damage via 'selfknockback' setting (Batfoxkid)");
+		}
 		case 148:  //1.18.6
 		{
 			DrawPanelText(panel, "1) [Bosses] Allowed multi-lanuage boss names (Batfoxkid)");
@@ -2001,7 +2008,7 @@ public void OnPluginStart()
 	cvarQualityWep = CreateConVar("ff2_qualitywep", "5", "Default Boss Weapon Quality", _, true, 0.0, true, 15.0);
 	cvarTripleWep = CreateConVar("ff2_triplewep", "1", "0-Disable Boss Extra Triple Damage, 1-Enable Boss Extra Triple Damage", _, true, 0.0, true, 1.0);
 	cvarHardcodeWep = CreateConVar("ff2_hardcodewep", "1", "0-Only Use Config, 1-Use Alongside Hardcoded, 2-Only Use Hardcoded", _, true, 0.0, true, 2.0);
-	cvarSelfKnockback = CreateConVar("ff2_selfknockback", "0", "Can the boss rocket jump but take fall damage too? 0 to disallow boss, 1 to allow boss", _, true, 0.0, true, 1.0);
+	cvarSelfKnockback = CreateConVar("ff2_selfknockback", "0", "0-Disallow boss self knockback, 1-Allow boss self knockback, 2-Allow boss taking self damage too", _, true, 0.0, true, 2.0);
 	cvarFF2TogglePrefDelay = CreateConVar("ff2_boss_toggle_delay", "45.0", "Delay between joining the server and asking the player for their preference, if it is not set.");
 	cvarNameChange = CreateConVar("ff2_name_change", "0", "0-Disable, 1-Add the current boss to the server name", _, true, 0.0, true, 1.0);
 	cvarKeepBoss = CreateConVar("ff2_boss_keep", "1", "-1-Players can't choose the same boss twice, 0-Nothing, 1-Players keep their current boss selection", _, true, -1.0, true, 1.0);
@@ -3288,14 +3295,14 @@ public void LoadCharacter(const char[] character)
 	version = KvGetNum(BossKV[Specials], "version_minor", StringToInt(MINOR_REVISION));
 	if(version > StringToInt(MINOR_REVISION))
 	{
-		LogError("[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%i.x)!", character, MAJOR_REVISION, version);
+		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%i.x)!", character, MAJOR_REVISION, version);
 		return;
 	}
 
 	version = KvGetNum(BossKV[Specials], "version_stable", StringToInt(STABLE_REVISION));
 	if(version > StringToInt(STABLE_REVISION))
 	{
-		LogError("[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%s.%i)!", character, MAJOR_REVISION, MINOR_REVISION, version);
+		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%s.%i)!", character, MAJOR_REVISION, MINOR_REVISION, version);
 		return;
 	}
 
@@ -3309,14 +3316,14 @@ public void LoadCharacter(const char[] character)
 	version = KvGetNum(BossKV[Specials], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
 	if(version > StringToInt(FORK_MINOR_REVISION))
 	{
-		LogError("[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%i.x)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version);
+		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%i.x)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version);
 		return;
 	}
 
 	version = KvGetNum(BossKV[Specials], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
 	if(version > StringToInt(FORK_STABLE_REVISION))
 	{
-		LogError("[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%s.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, version);
+		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%s.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, version);
 		return;
 	}
 
@@ -3657,13 +3664,13 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 #if defined _smac_included
 public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionType type, Handle info)
 {
-	Debug("SMAC: Cheat detected!");
+	FF2Dbg("SMAC: Cheat detected!");
 	if(type==Detection_CvarViolation)
 	{
-		Debug("SMAC: Cheat was a cvar violation!");
+		FF2Dbg("SMAC: Cheat was a cvar violation!");
 		if((FF2flags[Boss[client]] & FF2FLAG_CHANGECVAR))
 		{
-			Debug("SMAC: Ignoring violation");
+			FF2Dbg("SMAC: Ignoring violation");
 			return Plugin_Stop;
 		}
 	}
@@ -3804,7 +3811,7 @@ stock bool MapHasMusic(bool forceRecalc=false)  //SAAAAAARGE
 			GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
 			if(!strcmp(name, "hale_no_music", false))
 			{
-				Debug("Detected Map Music");
+				FF2Dbg("Detected Map Music");
 				hasMusic=true;
 			}
 		}
@@ -5183,7 +5190,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			KvRewind(BossKV[Special[0]]);
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
-			Debug("{red}MALFUNCTION! NEED INPUT!");
+			FF2Dbg("{red}MALFUNCTION! NEED INPUT!");
 			if(MusicTimer[client]!=INVALID_HANDLE)
 			{
 				KillTimer(MusicTimer[client]);
@@ -5208,14 +5215,14 @@ void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="
 	{
 		case Plugin_Stop, Plugin_Handled:
 		{
-			Debug("NEED INPUT!");
+			FF2Dbg("NEED INPUT!");
 			return;
 		}
 		case Plugin_Changed:
 		{
 			strcopy(music, PLATFORM_MAX_PATH, temp[0]);
 			time=time2;
-			Debug("OOO... INPUT! %s | %f", music, time);
+			FF2Dbg("OOO... INPUT! %s | %f", music, time);
 		}
 	}
 
@@ -5300,13 +5307,13 @@ void StopMusic(int client=0, bool permanent=false)
 			{
 				if(!currentBGM[client])
 				{
-					Debug("{green}MALFUNCTION! NEED INPUT!");
+					FF2Dbg("{green}MALFUNCTION! NEED INPUT!");
 				}
 				StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 
 				if(MusicTimer[client]!=INVALID_HANDLE)
 				{
-					Debug("TERMINATING INPUT!");
+					FF2Dbg("TERMINATING INPUT!");
 					KillTimer(MusicTimer[client]);
 					MusicTimer[client]=INVALID_HANDLE;
 				}
@@ -5323,14 +5330,14 @@ void StopMusic(int client=0, bool permanent=false)
 	{
 		if(!currentBGM[client])
 		{
-			Debug("{green}MALFUNCTION! NEED INPUT!");
+			FF2Dbg("{green}MALFUNCTION! NEED INPUT!");
 		}
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 
 		if(MusicTimer[client]!=INVALID_HANDLE)
 		{
-			Debug("END INPUT FOR %N!", client);
+			FF2Dbg("END INPUT FOR %N!", client);
 			KillTimer(MusicTimer[client]);
 			MusicTimer[client]=INVALID_HANDLE;
 		}
@@ -6652,19 +6659,10 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 			AssignTeam(client, BossTeam);
 	}
 
-	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900) == 1)	// If 1, toggle infinite rage
-	{
-		InfiniteRageActive[client] = true;
-		CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-		BossRageDamage[boss] = 1;
-	}
-	else if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900) == -1)	// If -1, never rage
+	BossRageDamage[boss] = ParseFormula(boss, "ragedamage", "1900", 1900);
+	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900) < 0)	// -1 or below, disable RAGE
 	{
 		BossRageDamage[boss] = 99999;
-	}
-	else	// Use formula or straight value
-	{
-		BossRageDamage[boss] = ParseFormula(boss, "ragedamage", "1900", 1900);
 	}
 
 	BossLivesMax[boss] = KvGetNum(BossKV[Special[boss]], "lives", 1);
@@ -6691,15 +6689,15 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 
 	if(KvGetNum(BossKV[Special[boss]], "knockback", -1)>=0)
 	{
-		SelfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "knockback", -1));
+		SelfKnockback[client]=KvGetNum(BossKV[Special[boss]], "knockback", -1);
 	}
 	else if(KvGetNum(BossKV[Special[boss]], "rocketjump", -1)>=0)
 	{
-		SelfKnockback[client]=view_as<bool>(KvGetNum(BossKV[Special[boss]], "rocketjump", -1));
+		SelfKnockback[client]=KvGetNum(BossKV[Special[boss]], "rocketjump", -1);
 	}
 	else
 	{
-		SelfKnockback[client]=GetConVarBool(cvarSelfKnockback);
+		SelfKnockback[client]=GetConVarInt(cvarSelfKnockback);
 	}
 
 	if(KvGetNum(BossKV[Special[boss]], "crits", -1) >= 0)
@@ -9707,7 +9705,16 @@ public Action BossTimer(Handle timer)
 			FF2_ShowSyncHudText(client, livesHUD, "%t", "Boss Lives Left", BossLives[boss], BossLivesMax[boss]);
 		}
 
-		if((RoundFloat(BossCharge[boss][0])>=rageMin[client] && BossRageDamage[0]>1 && BossRageDamage[0]<99999) || BossRageDamage[0]==1)	// ragedamage above 1 and below 99999 and full rage, or ragedamage is 1
+		if(BossRageDamage[boss] < 2)	// When RAGE is infinite
+		{
+			BossCharge[boss][0] = 100.0;
+		}
+
+		if(BossRageDamage[boss] > 99998)	// When RAGE is disabled
+		{
+			BossCharge[boss][0] = 0.0;	// We don't want things like Sydney Sleeper acting up
+		}
+		else if(RoundFloat(BossCharge[boss][0])==100.0)
 		{
 			if(IsFakeClient(client) && !(FF2flags[client] & FF2FLAG_BOTRAGE) && GetConVarBool(cvarBotRage))
 			{
@@ -9741,7 +9748,7 @@ public Action BossTimer(Handle timer)
 				}
 			}
 		}
-		else if(BossRageDamage[0] < 99999)	// ragedamage below 999999
+		else	// RAGE is not infinite, disabled, full
 		{
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255);
 			FF2_ShowSyncHudText(client, rageHUD, "%t", "rage_meter", RoundFloat(BossCharge[boss][0]));
@@ -10077,10 +10084,8 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 		return Plugin_Continue;
 
 	int boss = GetBossIndex(client);
-	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || BossRageDamage[0]>=99999 || rageMode[client]==2)
-	{
+	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || BossRageDamage[0]>99998 || rageMode[client]==2)
 		return Plugin_Continue;
-	}
 
 	char arg1[4], arg2[4];
 	GetCmdArg(1, arg1, sizeof(arg1));
@@ -10134,9 +10139,8 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 
 		char sound[PLATFORM_MAX_PATH];
 		if(RandomSound("sound_ability_serverwide", sound, sizeof(sound), boss))
-		{
 			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-		}
+
 		if(RandomSoundAbility("sound_ability", sound, sizeof(sound), boss))
 		{
 			FF2flags[Boss[boss]]|=FF2FLAG_TALKING;
@@ -10623,7 +10627,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	{
 		if(AliveToEnable < 1)
 		{
-			Debug("%f | %i", float(RedAlivePlayers)/playing, float(RedAlivePlayers)/playing);
+			FF2Dbg("%f | %i", float(RedAlivePlayers)/playing, float(RedAlivePlayers)/playing);
 			if(float(RedAlivePlayers)/playing > AliveToEnable)
 				return Plugin_Continue;
 		}
@@ -10864,7 +10868,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	int boss = GetBossIndex(client);
-	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || client==attacker)
+	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || (client==attacker && SelfKnockback[client]<2))
 		return Plugin_Continue;
 
 	int damage = GetEventInt(event, "damageamount");
@@ -11023,7 +11027,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(IsValidClient(attacker) && IsValidClient(client) && client!=attacker && damage>0 && GetClientTeam(attacker)==OtherTeam)
+	if(IsValidClient(attacker) && IsValidClient(client) && client!=attacker && damage>0 && !IsBoss(attacker))
 	{
 		int i;
 		if(GetConVarFloat(cvarAirStrike) > 0)  //Air Strike-moved from OTD
@@ -11032,7 +11036,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 			if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==1104)
 			{
 				AirstrikeDamage[attacker] += damage;
-				while(AirstrikeDamage[attacker] >= GetConVarFloat(cvarAirStrike) && i<5)
+				while(AirstrikeDamage[attacker]>=GetConVarFloat(cvarAirStrike) && i<5)
 				{
 					i++;
 					SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
@@ -11044,7 +11048,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 		if(GetConVarFloat(cvarDmg2KStreak) > 0)
 		{
 			KillstreakDamage[attacker] += damage;
-			while(KillstreakDamage[attacker] >= GetConVarFloat(cvarDmg2KStreak) && i<21)
+			while(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && i<21)
 			{
 				i++;
 				SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
@@ -12922,14 +12926,14 @@ stock void AssignTeam(int client, int team)
 {
 	if(!GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass"))  //Living spectator check: 0 means that no class is selected
 	{
-		Debug("%N does not have a desired class", client);
+		FF2Dbg("%N does not have a desired class", client);
 		if(IsBoss(client))
 		{
 			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", KvGetNum(BossKV[Special[Boss[client]]], "class", 1));  //So we assign one to prevent living spectators
 		}
 		else
 		{
-			Debug("%N was not a boss and did not have a desired class", client);
+			FF2Dbg("%N was not a boss and did not have a desired class", client);
 		}
 	}
 
@@ -12939,14 +12943,14 @@ stock void AssignTeam(int client, int team)
 
 	if(GetEntProp(client, Prop_Send, "m_iObserverMode") && IsPlayerAlive(client))  //Welp
 	{
-		Debug("%N is a living spectator", client);
+		FF2Dbg("%N is a living spectator", client);
 		if(IsBoss(client))
 		{
 			TF2_SetPlayerClass(client, view_as<TFClassType>(KvGetNum(BossKV[Special[Boss[client]]], "class", 1)));
 		}
 		else
 		{
-			Debug("Additional information: %N was not a boss", client);
+			FF2Dbg("Additional information: %N was not a boss", client);
 			TF2_SetPlayerClass(client, TFClass_Heavy);
 		}
 		TF2_RespawnPlayer(client);
@@ -15164,8 +15168,8 @@ stock int FindEntityByClassname2(int startEnt, const char[] classname)
 
 bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, int slot, int buttonMode=0)
 {
-	int client=Boss[boss];
-	bool enabled=true;
+	int client = Boss[boss];
+	bool enabled = true;
 	Call_StartForward(PreAbility);
 	Call_PushCell(boss);
 	Call_PushString(plugin_name);
@@ -15177,28 +15181,32 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 	if(!enabled)
 		return false;
 
-	Action action=Plugin_Continue;
+	Action action = Plugin_Continue;
 	Call_StartForward(OnAbility);
 	Call_PushCell(boss);
 	Call_PushString(plugin_name);
 	Call_PushString(ability_name);
-	if(slot==-1)
+	if(slot == -1)
 	{
-		Call_PushCell(3);  //Status - we're assuming here a life-loss ability will always be in use if it gets called
+		Call_PushCell(3);  // Status - we're assuming here a life-loss ability will always be in use if it gets called
 		Call_Finish(action);
 	}
 	else if(!slot)
 	{
 		FF2flags[Boss[boss]]&=~FF2FLAG_BOTRAGE;
-		Call_PushCell(3);  //Status - we're assuming here a rage ability will always be in use if it gets called
+		Call_PushCell(3);  // Status - we're assuming here a rage ability will always be in use if it gets called
 		Call_Finish(action);
-		if(rageMode[client]==1)
+
+		if(BossRageDamage[boss] > 1)
 		{
-			BossCharge[boss][slot]-=rageMin[client];
-		}
-		else if(rageMode[client]==0)
-		{
-			BossCharge[boss][slot]=0.0;
+			if(rageMode[client] == 1)
+			{
+				BossCharge[boss][slot] -= rageMin[client];
+			}
+			else if(rageMode[client] == 0)
+			{
+				BossCharge[boss][slot] = 0.0;
+			}
 		}
 	}
 	else
@@ -15209,22 +15217,22 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 		{
 			case 1:
 			{
-				button=IN_DUCK|IN_ATTACK2;
-				bossHasRightMouseAbility[boss]=true;
+				button = IN_DUCK|IN_ATTACK2;
+				bossHasRightMouseAbility[boss] = true;
 			}
 			case 2:
 			{
-				button=IN_RELOAD;
-				bossHasReloadAbility[boss]=true;
+				button = IN_RELOAD;
+				bossHasReloadAbility[boss] = true;
 			}
 			case 3:
 			{
-				button=IN_ATTACK3;
+				button = IN_ATTACK3;
 			}
 			default:
 			{	// I really don't want players relying on ducking
-				button=IN_ATTACK2;
-				bossHasRightMouseAbility[boss]=true;
+				button = IN_ATTACK2;
+				bossHasRightMouseAbility[boss] = true;
 			}
 		}
 
@@ -15239,32 +15247,32 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 				}
 			}
 
-			if(BossCharge[boss][slot]>=0.0)
+			if(BossCharge[boss][slot] >= 0.0)
 			{
 				Call_PushCell(2);  //Status
 				Call_Finish(action);
-				float charge=100.0*0.2/GetAbilityArgumentFloat(boss, plugin_name, ability_name, 1, 1.5);
-				if(BossCharge[boss][slot]+charge<100.0)
+				float charge = 100.0*0.2/GetAbilityArgumentFloat(boss, plugin_name, ability_name, 1, 1.5);
+				if(BossCharge[boss][slot]+charge < 100.0)
 				{
-					BossCharge[boss][slot]+=charge;
+					BossCharge[boss][slot] += charge;
 				}
 				else
 				{
-					BossCharge[boss][slot]=100.0;
+					BossCharge[boss][slot] = 100.0;
 				}
 			}
 			else
 			{
 				Call_PushCell(1);  //Status
 				Call_Finish(action);
-				BossCharge[boss][slot]+=0.2;
+				BossCharge[boss][slot] += 0.2;
 			}
 		}
-		else if(BossCharge[boss][slot]>0.3)
+		else if(BossCharge[boss][slot] > 0.3)
 		{
 			float angles[3];
 			GetClientEyeAngles(Boss[boss], angles);
-			if(angles[0]<-45.0)
+			if(angles[0] < -45.0)
 			{
 				Call_PushCell(3);
 				Call_Finish(action);
@@ -15279,14 +15287,14 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 			{
 				Call_PushCell(0);  //Status
 				Call_Finish(action);
-				BossCharge[boss][slot]=0.0;
+				BossCharge[boss][slot] = 0.0;
 			}
 		}
-		else if(BossCharge[boss][slot]<0.0)
+		else if(BossCharge[boss][slot] < 0.0)
 		{
 			Call_PushCell(1);  //Status
 			Call_Finish(action);
-			BossCharge[boss][slot]+=0.2;
+			BossCharge[boss][slot] += 0.2;
 		}
 		else
 		{
@@ -15299,8 +15307,8 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 
 stock void SwitchEntityTeams(char[] entityname, int bossteam, int otherteam)
 {
-	int ent=-1;
-	while((ent=FindEntityByClassname2(ent, entityname))!=-1)
+	int ent = -1;
+	while((ent=FindEntityByClassname2(ent, entityname)) != -1)
 	{
 		SetEntityTeamNum(ent, view_as<int>(GetEntityTeamNum(ent))==otherteam ? bossteam : otherteam);
 	}

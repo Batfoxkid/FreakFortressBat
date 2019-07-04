@@ -39,16 +39,17 @@ native bool FF2_IsFF2Enabled();
  *
  * @return		True if the server is running a dev version of FF2, false otherwise
  */
-native bool FF2_GetFF2Version(version[]=0);
+native bool FF2_GetFF2Version(int[] version=0);
 
 /**
  * Gets the version of the FF2 fork running on the server
  *
  * @param version	An array of size 3 that will contain the major, minor, and stable version numbers respectively
+ * 			(Official FF2 versions always return 0 for version numbers)
  *
  * @return		True if the server has a sub name defined, false otherwise
  */
-native bool FF2_GetForkVersion(fversion[]=0);
+native bool FF2_GetForkVersion(int[] fversion=0);
 
 /**
  * Gets current round state
@@ -262,7 +263,7 @@ native float FF2_GetRageDist(int boss=0, const char[] pluginName="", const char[
  *
  * @return		True if the boss has this ability, false if it doesn't
  */
-native int FF2_HasAbility(int boss, const char[] pluginName, const char[] abilityName);
+native bool FF2_HasAbility(int boss, const char[] pluginName, const char[] abilityName);
 
 /**
  * Determines how the Boss should use a certain ability
@@ -675,8 +676,30 @@ stock void FF2_ShowHudText(int client, int channel, const char[] buffer, any ...
  * @param any:...	Formatting rules
  *
  * @noreturn
+ *
+ *	Note: Don't use, due to possible name conflicts
  */
+#pragma deprecated Use FF2Dbg instead
 stock void Debug(char[] buffer, any ...)
+{
+	if(FF2_Debug())
+	{
+		char message[192];
+		VFormat(message, sizeof(message), buffer, 2);
+		CPrintToChatAll("{olive}[FF2 {darkorange}DEBUG{olive}]{default} %s", message);
+		PrintToServer("[FF2 DEBUG] %s", message);
+	}
+}
+
+/**
+ * Used to consolidate debug messages
+ *
+ * @param buffer	Debug string to display
+ * @param any:...	Formatting rules
+ *
+ * @noreturn
+ */
+stock void FF2Dbg(char[] buffer, any ...)
 {
 	if(FF2_Debug())
 	{
