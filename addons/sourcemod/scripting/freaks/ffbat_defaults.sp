@@ -39,7 +39,7 @@
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"4"
-#define STABLE_REVISION	"0"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -466,9 +466,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	if(!client || !attacker || !IsClientInGame(client) || !IsClientInGame(attacker))
-	{
 		return;
-	}
 
 	int boss = FF2_GetBossIndex(attacker);
 	if(boss >= 0)
@@ -592,7 +590,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(CloneOwnerIndex[client]!=-1 && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))  //Switch clones back to the other team after they die
+	if(IsClientInGame(CloneOwnerIndex[client]) && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))  //Switch clones back to the other team after they die
 	{
 		FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_CLASSTIMERDISABLED);
 		ChangeClientTeam(client, (TF2_GetClientTeam(CloneOwnerIndex[client])==TFTeam_Blue) ? (view_as<int>(TFTeam_Red)) : (view_as<int>(TFTeam_Blue)));
@@ -903,24 +901,27 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 	if(solorage)
 	{
 		char bossName[64];
-		for(int target; target<=MaxClients; target++)
+		for(int target=1; target<=MaxClients; target++)
 		{
-			FF2_GetBossName(boss, bossName, sizeof(bossName), _, target);
-			FPrintToChat(target, "%t", "Solo Rage", bossName);
+			if(IsClientInGame(target))
+			{
+				FF2_GetBossName(boss, bossName, sizeof(bossName), _, target);
+				FPrintToChat(target, "%t", "Solo Rage", bossName);
+			}
 		}
 		CreateTimer(duration, Timer_SoloRageResult, victim[victims]);
 	}
 
 	while(victims > 0)
 	{
+		victims--;
+
 		if(removeBaseJumperOnStun)
 			TF2_RemoveCondition(victim[victims], TFCond_Parachute);
 
 		TF2_StunPlayer(victim[victims], duration, slowdown, flagOverride, sounds ? client : 0);
 		if(strlen(particleEffect))
 			CreateTimer(duration, Timer_RemoveEntity, EntIndexToEntRef(AttachParticle(victim[victims], particleEffect, 75.0)), TIMER_FLAG_NO_MAPCHANGE);
-
-		victims--;
 	}
 	return Plugin_Continue;
 }
