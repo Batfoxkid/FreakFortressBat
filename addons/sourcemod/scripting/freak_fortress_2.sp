@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -9085,15 +9085,17 @@ public Action ClientTimer(Handle timer)
 	{
 		for(int client=1; client<=MaxClients; client++)
 		{
-			//custom model disguise code sorta taken from stop that tank, let's see how well this goes! this will actually let spies disguise as the boss, and bosses should have the same disguise model as the players they potentially disguise as if they have a custom model (tf2attributes required)
+			//custom model disguise code sorta taken from stop that tank, let's see how well this goes!
+			//this will actually let spies disguise as the boss, and bosses should have the same disguise
+			//model as the players they potentially disguise as if they have a custom model (tf2attributes required)
 			if(IsValidClient(client))
 			{
-				int iDisguisedClass = GetEntProp(client, Prop_Send, "m_nDisguiseClass");
+				int iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
 				VisionFlags_Update(client);
 
-				if(TF2_IsPlayerInCondition(client, TFCond_Disguised))
+				if(TF2_IsPlayerInCondition(client, TFCond_Disguised) && TF2_GetPlayerClass(iDisguisedTarget)==view_as<TFClassType>(GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
 				{
-					ModelOverrides_Think(client, iDisguisedClass);
+					ModelOverrides_Think(client, iDisguisedTarget);
 				}
 				else
 				{
@@ -9560,12 +9562,11 @@ void VisionFlags_Update(int client)
 		TF2Attrib_SetByDefIndex(client, 406, 4.0);
 }
 
-void ModelOverrides_Think(int client, int iDisguisedClass)
+void ModelOverrides_Think(int client, int iDisguisedTarget)
 {
 	int iTeam = GetClientTeam(client);
 	int iEnemyTeam = (iTeam == 2) ? 3 : 2;
 
-	int iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
 	char strPlayerModel[128];
 	GetEntPropString(client, Prop_Data, "m_ModelName", strPlayerModel, sizeof(strPlayerModel));
 	char strEnemyModel[128];
@@ -9577,11 +9578,8 @@ void ModelOverrides_Think(int client, int iDisguisedClass)
 	// Make the spy look normal to their team
 	SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", iPlayerModel, _, g_teamOverrides[iTeam]);
 
-	if(TF2_GetPlayerClass(iDisguisedTarget) == view_as<TFClassType>(iDisguisedClass))
-	{
-		// Make the spy look different to the other team, should the disguise class be matching the disguise target's class
-		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", iEnemyModel, _, g_teamOverrides[iEnemyTeam]);
-	}
+	// Make the spy look different to the other team, should the disguise class be matching the disguise target's class
+	SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", iEnemyModel, _, g_teamOverrides[iEnemyTeam]);
 }
 #endif
 
@@ -15785,13 +15783,13 @@ public int Native_RandomSound(Handle plugin, int numParams)
 	GetNativeString(1, keyvalue, kvLength);
 
 	bool soundExists;
-	if(!strcmp(keyvalue, "sound_ability"))
+	if(!StrContains(keyvalue, "sound_ability", false))
 	{
-		soundExists=RandomSoundAbility(keyvalue, sound, length, boss, slot);
+		soundExists = RandomSoundAbility(keyvalue, sound, length, boss, slot);
 	}
 	else
 	{
-		soundExists=RandomSound(keyvalue, sound, length, boss);
+		soundExists = RandomSound(keyvalue, sound, length, boss);
 	}
 	SetNativeString(2, sound, length);
 	return soundExists;
