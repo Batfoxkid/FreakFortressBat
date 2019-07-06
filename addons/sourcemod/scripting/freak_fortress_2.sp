@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -9093,7 +9093,7 @@ public Action ClientTimer(Handle timer)
 				int iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
 				VisionFlags_Update(client);
 
-				if(TF2_IsPlayerInCondition(client, TFCond_Disguised) && TF2_GetPlayerClass(iDisguisedTarget)==view_as<TFClassType>(GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
+				if(TF2_IsPlayerInCondition(client, TFCond_Disguised) && TF2_GetPlayerClass(iDisguisedTarget)==view_as<TFClassType>(GetEntProp(client, Prop_Send, "m_nDisguiseClass")))
 				{
 					ModelOverrides_Think(client, iDisguisedTarget);
 				}
