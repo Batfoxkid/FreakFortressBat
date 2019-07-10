@@ -39,7 +39,7 @@
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"4"
-#define STABLE_REVISION	"1"
+#define STABLE_REVISION	"3"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -132,13 +132,21 @@ public void OnPluginStart2()
 	if(version[0]!=1 || (version[1]<10 || (version[1]==10 && version[2]<3)))
 		SetFailState("This subplugin depends on at least FF2 v1.10.3");
 
-	int fversion[3];
-	FF2_GetForkVersion(fversion);
-	if(fversion[0]!=1 || fversion[1]<18)
+	if(version[0]!=1 || version[1]<11)
 	{
 		PrintToServer("[FF2] Warning: This subplugin depends on at least Unofficial FF2 v1.18.0");
 		PrintToServer("[FF2] Warning: \"rage_stun\" args 10 and up are disabled");
 		Outdated = true;
+	}
+	else
+	{
+		FF2_GetForkVersion(version);
+		if(version[0]!=1 || version[1]<18)
+		{
+			PrintToServer("[FF2] Warning: This subplugin depends on at least Unofficial FF2 v1.18.0");
+			PrintToServer("[FF2] Warning: \"rage_stun\" args 10 and up are disabled");
+			Outdated = true;
+		}
 	}
 
 	HookEvent("object_deflected", OnDeflect, EventHookMode_Pre);
@@ -590,7 +598,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(IsClientInGame(CloneOwnerIndex[client]) && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))  //Switch clones back to the other team after they die
+	if(CloneOwnerIndex[client]>0 && CloneOwnerIndex[client]<=MaxClients && IsClientInGame(CloneOwnerIndex[client]) && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))  //Switch clones back to the other team after they die
 	{
 		FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_CLASSTIMERDISABLED);
 		ChangeClientTeam(client, (TF2_GetClientTeam(CloneOwnerIndex[client])==TFTeam_Blue) ? (view_as<int>(TFTeam_Red)) : (view_as<int>(TFTeam_Blue)));
@@ -909,7 +917,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 				FPrintToChat(target, "%t", "Solo Rage", bossName);
 			}
 		}
-		CreateTimer(duration, Timer_SoloRageResult, victim[victims]);
+		CreateTimer(duration, Timer_SoloRageResult, victim[victims-1]);
 	}
 
 	while(victims > 0)
