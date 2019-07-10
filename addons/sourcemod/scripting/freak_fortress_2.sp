@@ -73,12 +73,12 @@ last time or to encourage others to do the same.
     as opposed to the public FF2 versioning system
 */
 #define FORK_MAJOR_REVISION "1"
-#define FORK_MINOR_REVISION "18"
-#define FORK_STABLE_REVISION "7"
+#define FORK_MINOR_REVISION "19"
+#define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."023"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
