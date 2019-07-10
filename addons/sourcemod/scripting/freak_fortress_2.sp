@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -586,7 +586,7 @@ static const char ff2versiontitles[][] =
 	"1.18.4",
 	"1.18.5",
 	"1.18.6",
-	"1.18.7"
+	"1.19.0"
 };
 
 static const char ff2versiondates[][] =
@@ -740,16 +740,17 @@ static const char ff2versiondates[][] =
 	"June 2, 2019",			//1.18.4
 	"June 12, 2019",		//1.18.5
 	"June 29, 2019",		//1.18.6
-	"Development"			//1.18.7
+	"Development"			//1.19.0
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 149:  //1.18.7
+		case 149:  //1.19.0
 		{
-			DrawPanelText(panel, "1) [Bosses] Allowed to be able to self damage via 'selfknockback' setting (Batfoxkid)");
+			DrawPanelText(panel, "1) [Gameplay] Added boss vs boss alterative gamemode (Batfoxkid)");
+			DrawPanelText(panel, "2) [Bosses] Allowed to be able to self damage via 'selfknockback' setting (Batfoxkid)");
 		}
 		case 148:  //1.18.6
 		{
@@ -4357,14 +4358,49 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	int players = playing+1;
-	for(int boss; boss<=MaxClients; boss++)
+	int players;
+	if(Enabled3 && playing>2)
 	{
-		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+		players = RedAlivePlayers+1;
+		for(int boss; boss<MAXBOSSES; boss++)
 		{
-			BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
-			BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
-			BossHealthLast[boss] = BossHealth[boss];
+			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+			{
+				BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
+				BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
+				BossHealthLast[boss] = BossHealth[boss];
+			}
+		}
+		players = BlueAlivePlayers+1;
+		for(int boss=MAXBOSSES; boss<=MaxClients; boss++)
+		{
+			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+			{
+				BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
+				BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
+				BossHealthLast[boss] = BossHealth[boss];
+			}
+		}
+	}
+	else
+	{
+		if(Enabled3)
+		{
+			players = 6;	// Ultimate 1v1, for fun :3
+		}
+		else
+		{
+			players = playing+1;
+		}
+
+		for(int boss; boss<=MaxClients; boss++)
+		{
+			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+			{
+				BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
+				BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
+				BossHealthLast[boss] = BossHealth[boss];
+			}
 		}
 	}
 
@@ -13344,7 +13380,27 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
-	int players = playing+1;
+	int players=1;
+	if(Enabled3)
+	{
+		if(playing < 3)
+		{
+			players = 6;	// Ultimate 1v1, for fun :3
+		}
+		else if(boss >= MAXBOSSES)
+		{
+			players += BlueAlivePlayers;
+		}
+		else
+		{
+			players += RedAlivePlayers;
+		}
+	}
+	else
+	{
+		players += playing;
+	}
+
 	int size = 1;
 	int matchingBrackets;
 	for(int i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
