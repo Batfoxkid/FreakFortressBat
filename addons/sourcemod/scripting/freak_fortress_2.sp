@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."022"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."025"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3052,7 +3052,7 @@ public void EnableFF2()
 
 	changeGamemode=0;
 	
-	for(int client; client<=MaxClients; client++)
+	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
 			OnClientPostAdminCheck(client);
@@ -4125,7 +4125,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 		CreateTimer(71.0, Timer_EnableCap, _, TIMER_FLAG_NO_MAPCHANGE);
 		bool toRed;
 		TFTeam team;
-		for(int client; client<=MaxClients; client++)
+		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsValidClient(client) && (team=view_as<TFTeam>(GetClientTeam(client)))>TFTeam_Spectator)
 			{
@@ -4579,7 +4579,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing2)
+	if(GetConVarInt(cvarBossLog)>0 && GetConVarInt(cvarBossLog)<=playing2 && !CheatsUsed)
 	{
 		// Variables
 		char bossName[64], FormatedTime[64], MapName[64], Result[64], PlayerName[64], Authid[64];
@@ -4589,7 +4589,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		FormatTime(FormatedTime, 100, "%X", CurrentTime);
 		GetCurrentMap(MapName, sizeof(MapName));
 		Format(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
-		for(int client; client<=MaxClients; client++)
+		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsBoss(client))
 			{
@@ -4621,31 +4621,97 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	executed = false;
 	executed2 = false;
 	int bossWin = 0;
+	float bonusRoundTime = GetConVarFloat(FindConVar("mp_bonusroundtime"))-0.5;
 	char sound[PLATFORM_MAX_PATH];
-	if((GetEventInt(event, "team") == BossTeam))
+	if(GetEventInt(event, "team") == BossTeam)
 	{
 		bossWin = 1;
 		if(RandomSound("sound_win", sound, sizeof(sound)))
-			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(sound);
 
 		if(RandomSound("sound_outtromusic_win", sound, sizeof(sound)))
 		{
-			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitMusicToAllExcept(sound);
 		}
 		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
 		{
-			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitMusicToAllExcept(sound);
+		}
+
+		if(Enabled3)
+		{
+			int target;
+			char text[MAXPLAYERS+1][128], bossName[64], lives[8];
+			for(int boss; boss<=MaxClients; boss++)
+			{
+				target = Boss[boss];
+				if(IsValidClient(target) && !BossSwitched[boss])
+				{
+					strcopy(bossName, sizeof(bossName), "=Failed name=");
+					BossLives[boss]>1 ? Format(lives, sizeof(lives), "x%i", BossLives[boss]) : strcopy(lives, 2, "");
+					for(int client=1; client<=MaxClients; client++)
+					{
+						if(IsValidClient(client))
+						{
+							GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
+							Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+							FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						}
+					}
+				}
+			}
+
+			SetHudTextParams(-1.0, 0.2, bonusRoundTime, 150, 150, 255, 255);
+			for(int client=1; client<=MaxClients; client++)
+			{
+				if(IsValidClient(client))
+					FF2_ShowHudText(client, -1, "%s", text[client]);
+			}
 		}
 	}
-	else if((GetEventInt(event, "team")==OtherTeam))
+	else if(GetEventInt(event, "team") == OtherTeam)
 	{
 		if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
 		{
-			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitMusicToAllExcept(sound);
 		}
 		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
 		{
-			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitMusicToAllExcept(sound);
+		}
+
+		if(Enabled3)
+		{
+			if(RandomSound("sound_win", sound, sizeof(sound), MAXBOSSES))
+				EmitSoundToAllExcept(sound);
+
+			int target;
+			char text[MAXPLAYERS+1][128], bossName[64], lives[8];
+			for(int boss; boss<=MaxClients; boss++)
+			{
+				target = Boss[boss];
+				if(IsValidClient(target) && BossSwitched[boss])
+				{
+					strcopy(bossName, sizeof(bossName), "=Failed name=");
+					BossLives[boss]>1 ? Format(lives, sizeof(lives), "x%i", BossLives[boss]) : strcopy(lives, 2, "");
+					for(int client=1; client<=MaxClients; client++)
+					{
+						if(IsValidClient(client))
+						{
+							GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
+							Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+							FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						}
+					}
+				}
+			}
+
+			SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 150, 150, 255);
+			for(int client=1; client<=MaxClients; client++)
+			{
+				if(IsValidClient(client))
+					FF2_ShowHudText(client, -1, "%s", text[client]);
+			}
 		}
 	}
 	else
@@ -4653,15 +4719,15 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		bossWin = -1;
 		if(RandomSound("sound_outtromusic_stalemate", sound, sizeof(sound)))
 		{
-			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitMusicToAllExcept(sound);
 		}
 		else if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
 		{
-			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitMusicToAllExcept(sound);
 		}
 		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
 		{
-			EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitMusicToAllExcept(sound);
 		}
 	}
 
@@ -4744,7 +4810,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	int StatWin2Lose = GetConVarInt(cvarStatWin2Lose);
 	if(StatWin2Lose==2 || StatWin2Lose>3)
 	{
-		for(int boss; boss<=MaxClients; boss++)
+		for(int boss=1; boss<=MaxClients; boss++)
 		{
 			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
@@ -4756,7 +4822,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				}
 				else
 				{
-					for(int client; client<=MaxClients; client++)
+					for(int client=1; client<=MaxClients; client++)
 					{
 						if(IsValidClient(client) && CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
 							FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
@@ -4767,7 +4833,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	}
 	else if(StatWin2Lose > -1)
 	{
-		for(int boss; boss<=MaxClients; boss++)
+		for(int boss=1; boss<=MaxClients; boss++)
 		{
 			if(IsBoss(boss) && !IsFakeClient(boss))
 			{
@@ -4775,7 +4841,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				{
 					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
 				}
-				for(int client; client<=MaxClients; client++)
+				for(int client=1; client<=MaxClients; client++)
 				{
 					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && IsValidClient(client) && (client!=boss || !(StatWin2Lose>0 && (gainedPoint[boss] || StatWin2Lose>3))))
 						FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
@@ -4784,20 +4850,18 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	float bonusRoundTime = GetConVarFloat(FindConVar("mp_bonusroundtime"))-0.3;
-
-	int boss;
-	if(isBossAlive)
+	if(!Enabled3 && isBossAlive)
 	{
+		int target;
 		char text[MAXPLAYERS+1][128], bossName[64], lives[8];
-		for(int target; target<=MaxClients; target++)
+		for(int boss; boss<=MaxClients; boss++)
 		{
-			if(IsBoss(target))
+			target = Boss[boss];
+			if(IsValidClient(target))
 			{
-				boss = Boss[target];
 				strcopy(bossName, sizeof(bossName), "=Failed name=");
 				BossLives[boss]>1 ? Format(lives, sizeof(lives), "x%i", BossLives[boss]) : strcopy(lives, 2, "");
-				for(int client; client<=MaxClients; client++)
+				for(int client=1; client<=MaxClients; client++)
 				{
 					if(IsValidClient(client))
 					{
@@ -4810,18 +4874,14 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 
 		SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 255, 255, 255);
-		for(int client; client<=MaxClients; client++)
+		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsValidClient(client))
-			{
 				FF2_ShowHudText(client, -1, "%s", text[client]);
-			}
 		}
 
-		if(!bossWin && RandomSound("sound_fail", sound, sizeof(sound), boss))
-		{
-			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-		}
+		if(!bossWin && RandomSound("sound_fail", sound, sizeof(sound)))
+			EmitSoundToAllExcept(sound);
 	}
 
 	int top[3];
@@ -4887,14 +4947,18 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	PrintCenterTextAll("");
 
 	char text[128];
-	for(int client; client<=MaxClients; client++)
+	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
 		{
 			//TODO:  Clear HUD text here
-			if(IsBoss(client))
+			if(IsBoss(client) && BossSwitched[GetBossIndex(client)])
 			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin ? "boss_win" : "boss_lose"));
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin!=1 ? "boss_lose" : "boss_win"));
+			}
+			else if(IsBoss(client))
+			{
+				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], (bossWin==1 ? "boss_win" : "boss_lose"));
 			}
 			else
 			{
@@ -5269,10 +5333,31 @@ public Action Timer_CalcQueuePoints(Handle timer)
 public Action StartResponseTimer(Handle timer)
 {
 	char sound[PLATFORM_MAX_PATH];
-	if(RandomSound("sound_begin", sound, sizeof(sound)))
+	if(Enabled3)
 	{
-		EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+		char sound2[PLATFORM_MAX_PATH];
+		bool isIntro = RandomSound("sound_begin", sound, sizeof(sound));
+		bool isIntro2 = RandomSound("sound_begin", sound2, sizeof(sound2), MAXBOSSES);
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client) && ToggleVoice[client])
+			{
+				if(GetClientTeam(client)==BossTeam && isIntro2)
+				{
+					EmitSoundToClient(client, sound2);
+				}
+				else if(isIntro)
+				{
+					EmitSoundToClient(client, sound);
+				}
+			}
+		}
+		return Plugin_Continue;
 	}
+
+	if(RandomSound("sound_begin", sound, sizeof(sound)))
+		EmitSoundToAllExcept(sound);
+
 	return Plugin_Continue;
 }
 
@@ -5281,7 +5366,7 @@ public Action StartIntroMusicTimer(Handle timer)
 	char sound[PLATFORM_MAX_PATH];
 	if(RandomSound("sound_intromusic", sound, sizeof(sound)))
 	{
-		EmitMusicToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+		EmitMusicToAllExcept(sound);
 	}
 	return Plugin_Continue;
 }
@@ -5508,7 +5593,7 @@ void StopMusic(int client=0, bool permanent=false)
 	}
 }
 
-stock void EmitSoundToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
+stock void EmitSoundToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
 {
 	int[] clients = new int[MaxClients];
 	int total;
@@ -5528,7 +5613,7 @@ stock void EmitSoundToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYE
 	EmitSound(clients, total, sample, entity, channel, level, flags, volume, pitch, speakerentity, origin, dir, updatePos, soundtime);
 }
 
-stock void EmitMusicToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
+stock void EmitMusicToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
 {
 	int[] clients = new int[MaxClients];
 	int total;
@@ -8334,10 +8419,8 @@ public Action OnObjectDestroyed(Handle event, const char[] name, bool dontBroadc
 		if(!GetRandomInt(0, 2) && IsBoss(attacker))
 		{
 			char sound[PLATFORM_MAX_PATH];
-			if(RandomSound("sound_kill_buildable", sound, sizeof(sound)))
-			{
-				EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-			}
+			if(RandomSound("sound_kill_buildable", sound, sizeof(sound), GetBossIndex(attacker)))
+				EmitSoundToAllExcept(sound);
 		}
 	}
 	return Plugin_Continue;
@@ -9926,7 +10009,7 @@ public Action BossTimer(Handle timer)
 		{
 			BossCharge[boss][0] = 0.0;	// We don't want things like Sydney Sleeper acting up
 		}
-		else if(RoundFloat(BossCharge[boss][0])==100.0)
+		else if(RoundFloat(BossCharge[boss][0]) == 100.0)
 		{
 			if(IsFakeClient(client) && !(FF2flags[client] & FF2FLAG_BOTRAGE) && GetConVarBool(cvarBotRage))
 			{
@@ -9945,8 +10028,7 @@ public Action BossTimer(Handle timer)
 					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 					FF2flags[client]|=FF2FLAG_TALKING;
-					EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-					EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(sound);
 
 					for(int target=1; target<=MaxClients; target++)
 					{
@@ -10080,7 +10162,7 @@ public Action BossTimer(Handle timer)
 
 		if(BossCharge[boss][0] < rageMax[client])
 		{
-			BossCharge[boss][0] += OnlyScoutsLeft()*0.2;
+			BossCharge[boss][0] += OnlyScoutsLeft(GetClientTeam(client))*0.2;
 			if(BossCharge[boss][0] > rageMax[client])
 				BossCharge[boss][0] = rageMax[client];
 		}
@@ -10397,14 +10479,14 @@ public Action Timer_BotRage(Handle timer, any bot)
 		FakeClientCommandEx(Boss[bot], "voicemenu 0 0");
 }
 
-stock int OnlyScoutsLeft()
+stock int OnlyScoutsLeft(int team)
 {
 	int scouts;
-	for(int client; client<=MaxClients; client++)
+	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && IsPlayerAlive(client) && GetClientTeam(client)!=BossTeam)
+		if(IsValidClient(client) && IsPlayerAlive(client) && GetClientTeam(client)!=team)
 		{
-			if(TF2_GetPlayerClass(client)!=TFClass_Scout)
+			if(TF2_GetPlayerClass(client) != TFClass_Scout)
 			{
 				return 0;
 			}
@@ -10522,12 +10604,12 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 
 		char sound[PLATFORM_MAX_PATH];
 		if(RandomSound("sound_ability_serverwide", sound, sizeof(sound), boss))
-			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(sound);
 
 		if(RandomSoundAbility("sound_ability", sound, sizeof(sound), boss))
 		{
 			FF2flags[Boss[boss]]|=FF2FLAG_TALKING;
-			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+			EmitSoundToAllExcept(sound);
 
 			for(int target=1; target<=MaxClients; target++)
 			{
@@ -10760,7 +10842,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 			{
 				if(RandomSound("sound_first_blood", sound, sizeof(sound), boss))
 				{
-					EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(sound);
 					firstBloodSound=false;
 				}
 				firstBlood=false;
@@ -10775,11 +10857,11 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 				Format(class, sizeof(class), "sound_kill_%s", classnames[TF2_GetPlayerClass(client)]);
 				if(RandomSound(class, sound, sizeof(sound), boss) && ClassKill)
 				{
-					EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(sound);
 				}
 				else if(RandomSound("sound_hit", sound, sizeof(sound), boss))
 				{
-					EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(sound);
 				}
 			}
 
@@ -10795,9 +10877,8 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 			if(aliveTeammates>2 && KSpreeCount[boss]==3)
 			{
 				if(RandomSound("sound_kspree", sound, sizeof(sound), boss))
-				{
-					EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-				}
+					EmitSoundToAllExcept(sound);
+
 				KSpreeCount[boss] = 0;
 			}
 			else
@@ -10816,16 +10897,14 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 			}
 		}
 	}
-	else if(client)
+	else if(client && attacker)
 	{
 		int boss = GetBossIndex(client);
 		if(boss==-1 || (GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
 			return Plugin_Continue;
 
 		if(RandomSound("sound_death", sound, sizeof(sound), boss))
-		{
-			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-		}
+			EmitSoundToAllExcept(sound);
 
 		if(!IsFakeClient(client) || IsFakeClient(attacker))
 			AddClientStats(attacker, Cookie_PlayerKills, 1);
@@ -10970,9 +11049,8 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	{
 		char sound[PLATFORM_MAX_PATH];
 		if(RandomSound("sound_lastman", sound, sizeof(sound)))
-		{
-			EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-		}
+			EmitSoundToAllExcept(sound);
+
 		LastMan=false;
 	}
 
@@ -11102,7 +11180,7 @@ public Action Timer_DrawGame(Handle timer)
 	char message[MAXPLAYERS+1][512], name[64];
 	if(!Companions && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
 	{
-		for(int client; client<=MaxClients; client++)
+		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsBoss(client))
 			{
@@ -11129,7 +11207,7 @@ public Action Timer_DrawGame(Handle timer)
 			}
 		}
 	}
-	for(int client; client<=MaxClients; client++)
+	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
 		{
@@ -11749,15 +11827,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			{
 				if(TimesTen)
 				{
-					damage = BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
+					damage = BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
 				}
 				else if(GetConVarBool(cvarLowStab))
 				{
-					damage = (BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/5;
+					damage = (BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/5;
 				}
 				else
 				{
-					damage = BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
+					damage = BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
 				}
 				damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 				damagecustom = 0;
@@ -11921,7 +11999,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				}
 				damage = BossHealth[boss]*1.001;
 
-				for(int all; all<=MaxClients; all++)
+				for(int all=1; all<=MaxClients; all++)
 				{
 					if(IsValidClient(all) && IsPlayerAlive(all))
 					{
@@ -12034,7 +12112,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				char sound[PLATFORM_MAX_PATH];
 				if(RandomSound("sound_telefraged", sound, sizeof(sound)))
-					EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+					EmitSoundToAllExcept(sound);
 
 				HealthBarMode = true;
 				CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
@@ -12145,16 +12223,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							{
 								damage *= SniperMiniDamage;
 							}
+							else if(index!=230 || BossCharge[boss][0]>90.0)  //Sydney Sleeper
+							{
+								damage *= SniperDamage;
+							}
 							else
 							{
-								if(index!=230 || BossCharge[boss][0]>90.0)  //Sydney Sleeper
-								{
-									damage *= SniperDamage;
-								}
-								else
-								{
-									damage *= (SniperDamage*0.8);
-								}
+								damage *= (SniperDamage*0.8);
 							}
 							return Plugin_Changed;
 						}
@@ -12209,9 +12284,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							int health = GetClientHealth(attacker);
 							int newhealth = health+25;
 							if(newhealth <= GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
-							{
 								SetEntityHealth(attacker, newhealth);
-							}
 						}
 					}
 					case 307:  //Ullapool Caber
@@ -12309,7 +12382,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								{
 									char sound[PLATFORM_MAX_PATH];
 									if(RandomSound("sound_cabered", sound, sizeof(sound)))
-										EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
+										EmitSoundToAllExcept(sound);
 								}
 
 								HealthBarMode = true;
@@ -12325,9 +12398,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							int health = GetClientHealth(attacker);
 							int newhealth = health+50;
 							if(newhealth <= GetEntProp(attacker, Prop_Data, "m_iMaxHealth"))  //No overheal allowed
-							{
 								SetEntityHealth(attacker, newhealth);
-							}
 						}
 					}
 					case 317:  //Candycane
@@ -12377,15 +12448,14 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							if(health < max2)
 							{
 								if(newhealth > max2)
-								{
 									newhealth = max2;
-								}
+
 								SetEntityHealth(attacker, newhealth);
 							}
 						}
 						else	// Most effective on first hit
 						{
-							newhealth = health+RoundToFloor(max/2.0);
+							newhealth = health + RoundToFloor(max/2.0);
 							if(health < max2)
 							{
 								if(newhealth > max2)
@@ -12397,7 +12467,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								TF2_RemoveCondition(attacker, TFCond_OnFire);
 						}
 						SetEntProp(weapon, Prop_Send, "m_bIsBloody", 1);
-						if(GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy")<1)
+						if(GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy") < 1)
 							SetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy", 1);
 					}
 					case 416:  //Market Gardener (courtesy of Chdata)
@@ -12497,9 +12567,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							{
 								char sound[PLATFORM_MAX_PATH];
 								if(RandomSound("sound_marketed", sound, sizeof(sound)))
-								{
-									EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-								}
+									EmitSoundToAllExcept(sound);
 							}
 
 							HealthBarMode = true;
@@ -12513,7 +12581,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							if(GetEntProp(attacker, Prop_Send, "m_iRevengeCrits"))  //If a revenge crit was used, give a damage bonus
 							{
-								damage=85.0;  //255 final damage
+								damage = 85.0;  //255 final damage
 								return Plugin_Changed;
 							}
 						}
@@ -12691,9 +12759,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							char sound[PLATFORM_MAX_PATH];
 							if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
-							{
-								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
-							}
+								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss]);
 						}
 
 						HealthBarMode = true;
@@ -12853,9 +12919,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 					char sound[PLATFORM_MAX_PATH];
 					if(RandomSound("sound_telefraged", sound, sizeof(sound)))
-					{
-						EmitSoundToAllExcept(sound, _, _, _, _, _, _, _, _, _, false);
-					}
+						EmitSoundToAllExcept(sound);
 
 					HealthBarMode = true;
 					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
@@ -13488,6 +13552,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 				winner=client;
 		}
 	}
+
 	if(!winner)	// Ignore the boss toggle pref if we can't find available clients
 	{
 		if(!ignorePrefs)
@@ -13510,7 +13575,7 @@ stock int GetRandomValidClient(bool[] omit)
 	int companion;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
+		if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, RoundToCeil(MaxClients/5.0))==0)))
 		{
 			if(GetConVarBool(cvarDuoBoss) && view_as<int>(ToggleDuo[client])>1)	// Skip clients who have disabled being able to be selected as a companion
 				continue;
@@ -13527,7 +13592,7 @@ stock int GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
+			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, RoundToCeil(MaxClients/5.0))==0)))
 			{
 				if(GetConVarBool(cvarToggleBoss) && view_as<int>(ToggleBoss[client])>1) // Skip clients who have disabled being able to be a boss
 					continue;
@@ -13542,7 +13607,7 @@ stock int GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, 2)==2)))
+			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (GetConVarBool(cvarDuoRandom) && GetRandomInt(0, RoundToCeil(MaxClients/5.0))==0)))
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					companion=client;
