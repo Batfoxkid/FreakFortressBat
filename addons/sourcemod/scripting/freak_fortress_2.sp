@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."015"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -151,6 +151,8 @@ int OtherTeam = 2;
 int BossTeam = 3;
 int playing;
 int playing2;
+int playingmerc;
+int playingboss;
 int healthcheckused;
 int RedAlivePlayers;
 int BlueAlivePlayers;
@@ -312,6 +314,7 @@ Handle abilitiesHUD;
 Handle infoHUD;
 Handle statHUD;
 Handle healthHUD;
+Handle rivalHUD;
 
 bool Enabled = true;
 bool Enabled2 = true;
@@ -2245,6 +2248,7 @@ public void OnPluginStart()
 	infoHUD = CreateHudSynchronizer();
 	statHUD = CreateHudSynchronizer();
 	healthHUD = CreateHudSynchronizer();
+	rivalHUD = CreateHudSynchronizer();
 
 	char oldVersion[64];
 	cvarVersion.GetString(oldVersion, 64);
@@ -4075,6 +4079,8 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 
 	playing=0;
 	playing2=0;
+	playingboss=0;
+	playingmerc=0;
 	for(int client; client<=MaxClients; client++)
 	{
 		Damage[client] = 0;
@@ -4088,6 +4094,15 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 			playing++;
 			if(!IsFakeClient(client))
 				playing2++;
+
+			if(GetClientTeam(client)==BossTeam)
+			{
+				playingboss++;
+			}
+			else
+			{
+				playingmerc++;
+			}
 		}
 	}
 
@@ -4335,6 +4350,8 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 
 	playing = 0;
 	playing2 = 0;
+	playingboss = 0;
+	playingmerc = 0;
 	int medigun;
 	for(int client=1; client<=MaxClients; client++)
 	{
@@ -4354,45 +4371,48 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 					if(IsValidEntity(medigun))
 						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", 0.4);
 				}
+
+				if(GetClientTeam(client) == BossTeam)
+				{
+					playingboss++;
+				}
+				else
+				{
+					playingmerc++;
+				}
 			}
 		}
 	}
 
-	int players;
-	if(Enabled3 && playing>2)
+	int players = 1;
+	if(Enabled3)
 	{
-		players = RedAlivePlayers+1;
-		for(int boss; boss<MAXBOSSES; boss++)
+		players += playingmerc - RoundToFloor(playingboss*0.35);
+		int players2 = playingboss + 1 - RoundToFloor(playingmerc*0.35);
+		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 			{
-				BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
+				if(BossSwitched[boss])
+				{
+					BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players2))*(float(players2)-1.0), 1.0341)+2046.0));
+				}
+				else
+				{
+					BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
+				}
+				if(BossHealthMax[boss] < 300)
+					BossHealthMax[boss] = 300;
+
 				BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
 				BossHealthLast[boss] = BossHealth[boss];
 			}
 		}
-		players = BlueAlivePlayers+1;
-		for(int boss=MAXBOSSES; boss<=MaxClients; boss++)
-		{
-			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
-			{
-				BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(players))*(float(players)-1.0), 1.0341)+2046.0));
-				BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
-				BossHealthLast[boss] = BossHealth[boss];
-			}
-		}
+		CheatsUsed = true;
 	}
 	else
 	{
-		if(Enabled3)
-		{
-			players = 6;	// Ultimate 1v1, for fun :3
-		}
-		else
-		{
-			players = playing+1;
-		}
-
+		players += playing;
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
@@ -4762,6 +4782,8 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
+	float bonusRoundTime = GetConVarFloat(FindConVar("mp_bonusroundtime"))-0.3;
+
 	int boss;
 	if(isBossAlive)
 	{
@@ -4785,7 +4807,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			}
 		}
 
-		SetHudTextParams(-1.0, 0.2, 10.0, 255, 255, 255, 255);
+		SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 255, 255, 255);
 		for(int client; client<=MaxClients; client++)
 		{
 			if(IsValidClient(client))
@@ -4858,8 +4880,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			top[i] = 0;
 		}
 	}
-
-	float bonusRoundTime = GetConVarFloat(FindConVar("mp_bonusroundtime"))-0.3;
 
 	SetHudTextParams(-1.0, 0.3, bonusRoundTime, 255, 255, 255, 255);
 	PrintCenterTextAll("");
@@ -10028,74 +10048,243 @@ public Action GlobalTimer(Handle timer)
 	if(CheckRoundState()==0)
 		return Plugin_Continue;
 
-	for(int client=1; client<=MaxClients; client++)
-	{
-		if(IsValidClient(client))
+	char healthString[64];
+	int current, bosses, lives, boss;
+	if(Enabled3)
+	{	
+		if(HealthHud > 1)
 		{
-			int current, max, bosses, lives, boss;
-			if(!IsClientObserver(client))
+			for(int clients=1; clients<=MaxClients; clients++)
 			{
-				if(HealthBarMode)
+				if(IsBoss(clients))
 				{
-					SetHudTextParams(-1.0, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					boss = GetBossIndex(clients);
+					if(BossSwitched[boss])
+						continue;
+
+					current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+					lives += BossLives[boss];
+					bosses++;
 				}
-				else
-				{
-					SetHudTextParams(-1.0, 0.12, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
-				}
+			}
+
+			if(lives > bosses)
+			{
+				Format(healthString, sizeof(healthString), "%ix%i", current, lives);
 			}
 			else
 			{
-				if(HealthBarMode)
+				Format(healthString, sizeof(healthString), "%i", current);
+			}
+		}
+		else
+		{
+			for(int clients=1; clients<=MaxClients; clients++)
+			{
+				if(IsBoss(clients))
 				{
-					SetHudTextParams(-1.0, 0.22, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
-				}
-				else
-				{
-					SetHudTextParams(-1.0, 0.22, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+					boss = GetBossIndex(clients);
+					if(BossSwitched[boss])
+						continue;
+
+					current += BossLives[boss];
+					bosses++;
 				}
 			}
 
-			if(HealthHud > 1)
+			if(current > bosses)
 			{
-				for(int clients=1; clients<=MaxClients; clients++)
-				{
-					if(IsBoss(clients))
-					{
-						boss = GetBossIndex(clients);
-						current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
-						max += BossHealthMax[boss];
-						lives += BossLives[boss];
-						bosses++;
-					}
-				}
+				Format(healthString, sizeof(healthString), "x%i", current);
+			}
+		}
 
-				if(lives > bosses)
+		current = 0;
+		bosses = 0;
+		lives = 0;
+		char healthString2[64];
+		if(HealthHud > 1)
+		{
+			for(int clients=1; clients<=MaxClients; clients++)
+			{
+				if(IsBoss(clients))
 				{
-					FF2_ShowSyncHudText(client, healthHUD, "%i / %ix%i", current, max, lives);
+					boss = GetBossIndex(clients);
+					if(!BossSwitched[boss])
+						continue;
+
+					current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+					lives += BossLives[boss];
+					bosses++;
 				}
-				else
-				{
-					FF2_ShowSyncHudText(client, healthHUD, "%i / %i", current, max);
-				}
+			}
+
+			if(lives > bosses)
+			{
+				Format(healthString2, sizeof(healthString2), "%ix%i", current, lives);
 			}
 			else
 			{
-				for(int clients=1; clients<=MaxClients; clients++)
+				Format(healthString2, sizeof(healthString2), "%i", current);
+			}
+		}
+		else
+		{
+			for(int clients=1; clients<=MaxClients; clients++)
+			{
+				if(IsBoss(clients))
 				{
-					if(IsBoss(clients))
+					boss = GetBossIndex(clients);
+					if(!BossSwitched[boss])
+						continue;
+
+					current += BossLives[boss];
+					bosses++;
+				}
+			}
+
+			if(current > bosses)
+			{
+				Format(healthString2, sizeof(healthString2), "x%i", current);
+			}
+		}
+
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client))
+			{
+				if(GetClientButtons(client) & IN_SCORE)
+					continue;
+
+				if(!IsClientObserver(client))
+				{
+					if(HealthBarMode)
 					{
-						boss = GetBossIndex(clients);
-						current += BossLives[boss];
-						max += BossLivesMax[boss];
-						bosses++;
+						SetHudTextParams(0.53, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(0.53, 0.12, 0.35, 100, 100, 255, 255, 0, 0.35, 0.0, 0.1);
+					}
+				}
+				else
+				{
+					if(HealthBarMode)
+					{
+						SetHudTextParams(0.53, 0.22, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(0.53, 0.22, 0.35, 100, 100, 255, 255, 0, 0.35, 0.0, 0.1);
 					}
 				}
 
-				if(current > bosses)
+				SetGlobalTransTarget(client);
+				ShowSyncHudText(client, healthHUD, healthString);
+
+				if(!IsClientObserver(client))
 				{
-					FF2_ShowSyncHudText(client, healthHUD, "%t", "Boss Lives Left", current, max);
+					if(HealthBarMode)
+					{
+						SetHudTextParams(0.43, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(0.43, 0.12, 0.35, 255, 100, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
 				}
+				else
+				{
+					if(HealthBarMode)
+					{
+						SetHudTextParams(0.43, 0.22, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(0.43, 0.22, 0.35, 255, 100, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+				}
+
+				ShowSyncHudText(client, rivalHUD, healthString2);
+			}
+		}
+	}
+	else
+	{
+		int max;
+		if(HealthHud > 1)
+		{
+			for(int clients=1; clients<=MaxClients; clients++)
+			{
+				if(IsBoss(clients))
+				{
+					boss = GetBossIndex(clients);
+					current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+					max += BossHealthMax[boss];
+					lives += BossLives[boss];
+					bosses++;
+				}
+			}
+
+			if(lives > bosses)
+			{
+				Format(healthString, sizeof(healthString), "%i / %ix%i", current, max, lives);
+			}
+			else
+			{
+				Format(healthString, sizeof(healthString), "%i / %i", current, max);
+			}
+		}
+		else
+		{
+			for(int clients=1; clients<=MaxClients; clients++)
+			{
+				if(IsBoss(clients))
+				{
+					boss = GetBossIndex(clients);
+					current += BossLives[boss];
+					max += BossLivesMax[boss];
+					bosses++;
+				}
+			}
+
+			if(current > bosses)
+			{
+				Format(healthString, sizeof(healthString), "%t", "Boss Lives Left", current, max);
+			}
+		}
+
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client))
+			{
+				if(GetClientButtons(client) & IN_SCORE)
+					continue;
+
+				if(!IsClientObserver(client))
+				{
+					if(HealthBarMode)
+					{
+						SetHudTextParams(-1.0, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(-1.0, 0.12, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+					}
+				}
+				else
+				{
+					if(HealthBarMode)
+					{
+						SetHudTextParams(-1.0, 0.22, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(-1.0, 0.22, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+					}
+				}
+
+				SetGlobalTransTarget(client);
+				ShowSyncHudText(client, healthHUD, healthString);
 			}
 		}
 	}
@@ -10346,17 +10535,16 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	if(!args)
 		return Plugin_Continue;
 
+	int team=view_as<int>(TFTeam_Unassigned), oldTeam=GetClientTeam(client);
 	char teamString[10];
+	GetCmdArg(1, teamString, sizeof(teamString));
 	if(Enabled3)
 	{
-		if(StrEqual(teamString, "spectate", false) && !IsBoss(client))
+		if((GetClientTeam(client)<=view_as<int>(TFTeam_Spectator) || StrEqual(teamString, "spectate", false)) && !IsBoss(client))
 			return Plugin_Continue;
 
 		return Plugin_Handled;
 	}
-
-	int team=view_as<int>(TFTeam_Unassigned), oldTeam=GetClientTeam(client);
-	GetCmdArg(1, teamString, sizeof(teamString));
 
 	if(StrEqual(teamString, "red", false))
 	{
@@ -13380,20 +13568,16 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
-	int players=1;
+	int players = 1;
 	if(Enabled3)
 	{
-		if(playing < 3)
+		if(BossSwitched[boss])
 		{
-			players = 6;	// Ultimate 1v1, for fun :3
-		}
-		else if(boss >= MAXBOSSES)
-		{
-			players += BlueAlivePlayers;
+			players += playingboss - RoundToFloor(playingmerc*0.35);
 		}
 		else
 		{
-			players += RedAlivePlayers;
+			players += playingmerc - RoundToFloor(playingboss*0.35);
 		}
 	}
 	else
@@ -13527,11 +13711,11 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	
 	if(StrContains(key, "ragedamage", false))
 	{
+		if(playing<1 && Enabled3)
+			return RoundFloat(result*3.6);	// For fun 1v1 boss fights
+
 		if(bMedieval)
 			return RoundFloat(result/3.6);  //TODO: Make this configurable
-
-		if(Enabled3)
-			return RoundFloat(result/1.8);
 	}
 	return RoundFloat(result);
 }
@@ -16300,42 +16484,69 @@ public void HealthbarEnableChanged(Handle convar, const char[] oldValue, const c
 
 void UpdateHealthBar()
 {
-	if(!Enabled || GetConVarInt(cvarHealthBar)<1 || IsValidEntity(g_Monoculus) || !IsValidEntity(healthBar) || CheckRoundState()==-1)
+	if(!Enabled || GetConVarInt(cvarHealthBar)<1 || IsValidEntity(g_Monoculus) || !IsValidEntity(healthBar) || CheckRoundState()!=1)
 		return;
 
-	int healthAmount, maxHealthAmount, bosses, healthPercent;
+	int healthAmount, maxHealthAmount, healthPercent;
 	int healing = HealthBarMode ? 1 : 0;
 	for(int boss; boss<=MaxClients; boss++)
 	{
 		if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 		{
-			bosses++;
-			if(GetConVarInt(cvarHealthBar)>1)
+			if(Enabled3)
 			{
-				healthAmount+=BossHealth[boss];
-				maxHealthAmount+=BossHealthMax[boss]*BossLivesMax[boss];
+				if(BossSwitched[boss])
+				{
+					healthAmount += BossHealth[boss];
+				}
+				else
+				{
+					maxHealthAmount += BossHealth[boss];
+				}
 			}
 			else
 			{
-				healthAmount+=BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
-				maxHealthAmount+=BossHealthMax[boss];
+				if(GetConVarInt(cvarHealthBar) > 1)
+				{
+					healthAmount += BossHealth[boss];
+					maxHealthAmount += BossHealthMax[boss]*BossLivesMax[boss];
+				}
+				else
+				{
+					healthAmount += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+					maxHealthAmount += BossHealthMax[boss];
+				}
 			}
-			if(HealthBarModeC[boss] && healing!=1)
+			if(HealthBarModeC[boss])
 				healing = 1;
-				
 		}
 	}
 
-	if(bosses)
+	if(maxHealthAmount)
 	{
-		healthPercent=RoundToCeil(float(healthAmount)/float(maxHealthAmount)*float(HEALTHBAR_MAX));
-		if(healthPercent>HEALTHBAR_MAX)
+		if(Enabled3)
 		{
-			healthPercent=HEALTHBAR_MAX;
+			if(maxHealthAmount > healthAmount)
+			{
+				healthPercent = RoundToCeil(float(healthAmount)/float(maxHealthAmount)*float(HEALTHBAR_MAX)*0.5);
+			}
+			else
+			{
+				healthPercent = RoundToCeil((1.0-(float(maxHealthAmount)/float(healthAmount)*0.5))*float(HEALTHBAR_MAX));
+			}
 		}
-		else if(healthPercent<=0)
+		else
 		{
-			healthPercent=1;
+			healthPercent = RoundToCeil(float(healthAmount)/float(maxHealthAmount)*float(HEALTHBAR_MAX));
+		}
+
+		if(healthPercent > HEALTHBAR_MAX)
+		{
+			healthPercent = HEALTHBAR_MAX;
+		}
+		else if(healthPercent <= 0)
+		{
+			healthPercent = 1;
 		}
 	}
 	SetEntProp(healthBar, Prop_Send, HEALTHBAR_COLOR, healing);
