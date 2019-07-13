@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."036"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."038"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1918,6 +1918,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 char xIncoming[MAXPLAYERS+1][700];
 char cIncoming[MAXPLAYERS+1][700];
 int CanBossVs[MAXPLAYERS+1];
+int CanBossTeam[MAXPLAYERS+1];
 
 // Boss Toggle
 enum SettingPrefs
@@ -3781,6 +3782,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 						FPrintToChat(client, "%t", "boss_selection_reset");
 						xIncoming[client][0] = '\0';
 						CanBossVs[client] = 0;
+						CanBossTeam[client] = 0;
 					}
 				}
 			}
@@ -4236,11 +4238,11 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 	StopMusic();
 
 	bool[] omit = new bool[MaxClients+1];
-	Boss[0] = GetClientWithMostQueuePoints(omit);
+	Boss[0] = GetClientWithMostQueuePoints(omit, OtherTeam);
 	omit[Boss[0]] = true;
 	if(Enabled3)
 	{
-		Boss[MAXBOSSES] = GetClientWithoutBlacklist(omit);
+		Boss[MAXBOSSES] = GetClientWithoutBlacklist(omit, BossTeam);
 		omit[Boss[MAXBOSSES]] = true;
 		BossSwitched[MAXBOSSES] = true;
 
@@ -4250,9 +4252,9 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 			while(bossCount < (GetConVarInt(cvarBvBChaos)-1))
 			{
 				bossCount++;
-				Boss[bossCount] = GetClientWithMostQueuePoints(omit);
+				Boss[bossCount] = GetClientWithMostQueuePoints(omit, OtherTeam);
 				omit[Boss[bossCount]] = true;
-				Boss[MAXBOSSES+bossCount] = GetClientWithoutBlacklist(omit);
+				Boss[MAXBOSSES+bossCount] = GetClientWithoutBlacklist(omit, BossTeam);
 				omit[Boss[MAXBOSSES+bossCount]] = true;
 				BossSwitched[MAXBOSSES+bossCount] = true;
 			}
@@ -4693,6 +4695,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
 				}
 			}
 		}
@@ -6044,6 +6047,7 @@ public Action Command_SetMyBoss(int client, int args)
 			IsBossSelected[client] = true;
 			strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
 			CanBossVs[client] = KvGetNum(BossKV[config], "noversus", 0);
+			CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam", 0);
 			SaveKeepBossCookie(client);
 			FReplyToCommand(client, "%t", "to0_boss_selected", bossName);
 			return Plugin_Handled;
@@ -6213,6 +6217,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				IsBossSelected[param1]=true;
 				xIncoming[param1][0] = '\0';
 				CanBossVs[param1] = 0;
+				CanBossTeam[param1] = 0;
 				SaveKeepBossCookie(param1);
 				FReplyToCommand(param1, "%t", "to0_comfirmrandom");
 				return;
@@ -6501,7 +6506,10 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 				return false;
 
 			if(client)
+			{
 				CanBossVs[client] = KvGetNum(BossKV[config], "noversus", 0);
+				CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam", 0);
+			}
 
 			return true;
 		}
@@ -6518,13 +6526,14 @@ public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialNam
 		{
 			FPrintToChat(client, "%t", "boss_selection_overridden");
 		}
-		else if(CanBossVs[client]<2 || !Enabled3)
+		else
 		{
 			strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
 			if(GetConVarInt(cvarKeepBoss)<1 || !GetConVarBool(cvarSelectBoss) || IsFakeClient(client))
 			{
 				xIncoming[client][0] = '\0';
 				CanBossVs[client] = 0;
+				CanBossTeam[client] = 0;
 			}
 			return Plugin_Changed;
 		}
@@ -9321,6 +9330,7 @@ public void OnRebuildAdminCache(AdminCachePart part)
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
 				}
 			}
 		}
@@ -9338,6 +9348,7 @@ public void OnClientPostAdminCheck(int client)
 	uberTarget[client] = -1;
 	xIncoming[client][0] = '\0';
 	CanBossVs[client] = 0;
+	CanBossTeam[client] = 0;
 
 	if(AreClientCookiesCached(client))
 	{
@@ -9385,8 +9396,10 @@ public void OnClientDisconnect(int client)
 		int boss = GetBossIndex(client);
 		bool[] omit = new bool[MaxClients+1];
 		omit[client] = true;
-		Boss[boss] = GetClientWithMostQueuePoints(omit);
-		BossSwitched[Boss[boss]] = BossSwitched[boss];
+		Boss[boss] = GetClientWithoutBlacklist(omit, BossSwitched[boss] ? BossTeam : OtherTeam);
+		PickCharacter(boss, boss);
+		if((Special[boss]<0) || !BossKV[Special[boss]])
+			LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", boss);
 
 		if(Boss[boss])
 		{
@@ -9426,6 +9439,7 @@ public void OnClientDisconnect(int client)
 					FPrintToChat(clients, "%t", "boss_selection_reset");
 					xIncoming[clients][0] = '\0';
 					CanBossVs[clients] = 0;
+					CanBossTeam[client] = 0;
 				}
 			}
 		}
@@ -13711,12 +13725,12 @@ public void Timer_NoAttacking(any ref)
 	SetNextAttack(weapon, SniperClimbDelay);
 }
 
-stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
+stock int GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignorePrefs=true)
 {
 	int winner;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && (!Enabled3 || CanBossVs[client]<2 || !ignorePrefs) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
+		if(IsValidClient(client) && (!Enabled3 || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam) || !ignorePrefs) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
 		{
 			if(GetConVarBool(cvarToggleBoss) && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
 				continue;
@@ -13733,7 +13747,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && (!Enabled3 || CanBossVs[client]<2) && !omit[client])
+			if(IsValidClient(client) && (!Enabled3 || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam)) && !omit[client])
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					winner=client;
@@ -13755,6 +13769,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
 					winner = client;
 				}
 			}
@@ -13772,6 +13787,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
 					winner = client;
 				}
 			}
@@ -13780,12 +13796,12 @@ stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 	return winner;
 }
 
-stock int GetClientWithoutBlacklist(bool[] omit)
+stock int GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 {
 	int winner;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && (!Enabled3 || !CanBossVs[client]) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
+		if(IsValidClient(client) && (!Enabled3 || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
 		{
 			if(GetConVarBool(cvarToggleBoss) && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
 				continue;
@@ -13799,7 +13815,7 @@ stock int GetClientWithoutBlacklist(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && (!Enabled3 || !CanBossVs[client]) && !omit[client])
+			if(IsValidClient(client) && (!Enabled3 || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && !omit[client])
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					winner=client;
@@ -13821,6 +13837,7 @@ stock int GetClientWithoutBlacklist(bool[] omit)
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
 					winner = client;
 				}
 			}
@@ -13838,6 +13855,7 @@ stock int GetClientWithoutBlacklist(bool[] omit)
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
 					winner = client;
 				}
 			}
@@ -14733,7 +14751,7 @@ public Action QueuePanelCmd(int client, int args)
 	DrawPanelText(panel, "---");
 	do
 	{
-		int target = GetClientWithMostQueuePoints(added, false);  //Get whoever has the highest queue points out of those who haven't been listed yet
+		int target = GetClientWithMostQueuePoints(added, _, false);  //Get whoever has the highest queue points out of those who haven't been listed yet
 		if(!IsValidClient(target))  //When there's no players left, fill up the rest of the list with blank lines
 		{
 			DrawPanelItem(panel, "");
