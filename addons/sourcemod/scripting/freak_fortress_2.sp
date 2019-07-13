@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."033"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."036"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3091,9 +3091,7 @@ public void EnableFF2()
 
 	float time = Announce;
 	if(time > 1.0)
-	{
 		CreateTimer(time, Timer_Announce, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	}
 
 	CacheWeapons();
 	CheckToChangeMapDoors();
@@ -3453,14 +3451,14 @@ public void LoadCharacter(const char[] character)
 	version = KvGetNum(BossKV[Specials], "version_minor", StringToInt(MINOR_REVISION));
 	if(version > StringToInt(MINOR_REVISION))
 	{
-		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%i.x)!", character, MAJOR_REVISION, version);
+		LogToFile(eLog, "[Boss] Character %s requires newer version of FF2 (at least %s.%i.x)!", character, MAJOR_REVISION, version);
 		return;
 	}
 
 	version = KvGetNum(BossKV[Specials], "version_stable", StringToInt(STABLE_REVISION));
 	if(version > StringToInt(STABLE_REVISION))
 	{
-		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of FF2 (at least %s.%s.%i)!", character, MAJOR_REVISION, MINOR_REVISION, version);
+		LogToFile(eLog, "[Boss] Character %s requires newer version of FF2 (at least %s.%s.%i)!", character, MAJOR_REVISION, MINOR_REVISION, version);
 		return;
 	}
 
@@ -3474,14 +3472,14 @@ public void LoadCharacter(const char[] character)
 	version = KvGetNum(BossKV[Specials], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
 	if(version > StringToInt(FORK_MINOR_REVISION))
 	{
-		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%i.x)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version);
+		LogToFile(eLog, "[Boss] Character %s requires newer version of %s FF2 (at least %s.%i.x)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version);
 		return;
 	}
 
 	version = KvGetNum(BossKV[Specials], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
 	if(version > StringToInt(FORK_STABLE_REVISION))
 	{
-		LogToFile(eLog, "[FF2 Bosses] Character %s requires newer version of %s FF2 (at least %s.%s.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, version);
+		LogToFile(eLog, "[Boss] Character %s requires newer version of %s FF2 (at least %s.%s.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, version);
 		return;
 	}
 
@@ -3555,12 +3553,9 @@ public void LoadCharacter(const char[] character)
 					{
 						AddFileToDownloadsTable(key);
 					}
-					else
+					else if(StrContains(key, ".phy") == -1)
 					{
-						if(StrContains(key, ".phy")==-1)
-						{
-							LogToFile(eLog, "[Boss] Character %s is missing file '%s'!", character, key);
-						}
+						LogToFile(eLog, "[Boss] Character %s is missing file '%s'!", character, key);
 					}
 				}
 			}
@@ -4561,7 +4556,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, GlobalTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
-	if(PointType == 0)
+	if(!PointType)
 		SetControlPoint(false);
 
 	if(GetConVarBool(cvarNameChange))
@@ -6281,22 +6276,19 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 
 			if(!GetConVarBool(cvarBossDesc) || !ToggleInfo[param1])
 			{
-				char bossName[64];
-				IsBossSelected[param1] = true;
-				GetMenuItem(menu, param2, xIncoming[param1], sizeof(xIncoming[]), _, bossName, sizeof(bossName));
-				char name[64];
-				for(int config; config<Specials; config++)
+				char name[64], bossName[64];
+				GetMenuItem(menu, param2, name, sizeof(name), _, bossName, sizeof(bossName));
+				if(CheckValidBoss(param1, name))
 				{
-					KvRewind(BossKV[config]);
-					KvGetString(BossKV[config], "name", name, sizeof(name));
-					if(StrContains(xIncoming[param1], name, false))
-					{
-						CanBossVs[param1] = KvGetNum(BossKV[config], "noversus", 0);
-						break;
-					}
+					IsBossSelected[param1] = true;
+					strcopy(xIncoming[param1], sizeof(xIncoming[]), name);
+					SaveKeepBossCookie(param1);
+					FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
 				}
-				SaveKeepBossCookie(param1);
-				FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
+				else
+				{
+					Command_SetMyBoss(param1, 0);
+				}
 			}
 			else
 			{
@@ -6361,32 +6353,18 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 		}
 		case MenuAction_Select:
 		{
-			switch(param2)
+			if(!param2 && CheckValidBoss(param1, cIncoming[param1]))
 			{
-				case 0: 
-				{
-					char bossName[64];
-					IsBossSelected[param1] = true;
-					GetMenuItem(menu, param2, bossName, sizeof(bossName));
-					strcopy(xIncoming[param1], sizeof(xIncoming[]), cIncoming[param1]);
-					char name[64];
-					for(int config; config<Specials; config++)
-					{
-						KvRewind(BossKV[config]);
-						KvGetString(BossKV[config], "name", name, sizeof(name));
-						if(StrContains(xIncoming[param1], name, false))
-						{
-							CanBossVs[param1] = KvGetNum(BossKV[config], "noversus", 0);
-							break;
-						}
-					}
-					SaveKeepBossCookie(param1);
-					FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
-				}
-				default:
-				{
-					Command_SetMyBoss(param1, 0);
-				}
+				char bossName[64];
+				GetMenuItem(menu, param2, bossName, sizeof(bossName));
+				IsBossSelected[param1] = true;
+				strcopy(xIncoming[param1], sizeof(xIncoming[]), cIncoming[param1]);
+				SaveKeepBossCookie(param1);
+				FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
+			}
+			else
+			{
+				Command_SetMyBoss(param1, 0);
 			}
 		}
 	}
@@ -13340,6 +13318,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 		}
 		HealthBarMode = true;
 		CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
+		UpdateHealthBar();
 	}
 	else if(IsBoss(attacker))
 	{
@@ -13773,6 +13752,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
 					winner = client;
@@ -13789,6 +13769,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, bool ignorePrefs=true)
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
 					winner = client;
@@ -13837,6 +13818,7 @@ stock int GetClientWithoutBlacklist(bool[] omit)
 
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
 					winner = client;
@@ -13853,6 +13835,7 @@ stock int GetClientWithoutBlacklist(bool[] omit)
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
 					winner = client;
@@ -14512,9 +14495,12 @@ public bool PickCharacter(int boss, int companion)
 			   KvGetNum(BossKV[Special[boss]], "admin") ||
 			   KvGetNum(BossKV[Special[boss]], "owner") ||
 			   KvGetNum(BossKV[Special[boss]], "theme") ||
-			  (KvGetNum(BossKV[Special[boss]], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1))) ||
+			  (KvGetNum(BossKV[Special[boss]], "nofirst") && RoundCount<=arenaRounds) ||
 			  (strlen(companionName) && !DuoMin) ||
-			(((KvGetNum(BossKV[Special[boss]], "bossteam")==BossTeam && boss>=MAXBOSSES) || (KvGetNum(BossKV[Special[boss]], "bossteam")==OtherTeam && boss<MAXBOSSES)) && Enabled3))
+			  (Enabled3 && (KvGetNum(BossKV[Special[boss]], "noversus")==2 ||
+			  (KvGetNum(BossKV[Special[boss]], "noversus")==1 && BossSwitched[boss]) ||
+			  (KvGetNum(BossKV[Special[boss]], "bossteam")==BossTeam && BossSwitched[boss]) ||
+			  (KvGetNum(BossKV[Special[boss]], "bossteam")==OtherTeam && !BossSwitched[boss]))))
 			{
 				Special[boss]=-1;
 				continue;
