@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."038"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."039"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -156,6 +156,8 @@ int playingboss;
 int healthcheckused;
 int RedAlivePlayers;
 int BlueAlivePlayers;
+int RedAliveBosses;
+int BlueAliveBosses;
 int RoundCount;
 int Companions = 0;
 bool LastMan = true;
@@ -304,6 +306,7 @@ ConVar cvarSkipBoss;
 ConVar cvarBossVsBoss;
 ConVar cvarBvBLose;
 ConVar cvarBvBChaos;
+ConVar cvarBvBMerc;
 ConVar cvarTimesTen;
 
 Handle FF2Cookies;
@@ -746,7 +749,7 @@ static const char ff2versiondates[][] =
 	"June 2, 2019",			//1.18.4
 	"June 12, 2019",		//1.18.5
 	"June 29, 2019",		//1.18.6
-	"Development"			//1.19.0
+	"August 23, 2019"		//1.19.0
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
@@ -2066,6 +2069,7 @@ public void OnPluginStart()
 	cvarBossVsBoss = CreateConVar("ff2_boss_vs_boss", "0", "0-Always Boss vs Players, #-Chance of Boss vs Boss, 100-Always Boss vs Boss", _, true, 0.0, true, 100.0);
 	cvarBvBLose = CreateConVar("ff2_boss_vs_boss_lose", "0", "0-Lose when all of a team die, 1-Lose when all of a team's bosses die, 2-Lose when all the team's mercs die", _, true, 0.0, true, 2.0);
 	cvarBvBChaos = CreateConVar("ff2_boss_vs_boss_count", "1", "How many bosses per a team are assigned?", _, true, 1.0, true, 34.0);
+	cvarBvBMerc = CreateConVar("ff2_boss_vs_boss_damage", "1.0", "How much to multiply non-boss damage against non-boss while each team as a boss alive", _, true, 0.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 
 	//The following are used in various subplugins
@@ -11146,8 +11150,8 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 
 	RedAlivePlayers = 0;
 	BlueAlivePlayers = 0;
-	int RedAliveBosses = 0;
-	int BlueAliveBosses = 0;
+	RedAliveBosses = 0;
+	BlueAliveBosses = 0;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsClientInGame(client) && IsPlayerAlive(client))
@@ -11867,6 +11871,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 		return Plugin_Continue;
+
+	if(Enabled3 && GetConVarFloat(cvarBvBMerc)!=1 && RedAliveBosses && BlueAliveBosses)
+	{
+		if(IsValidClient(client) && IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client) && (!IsBoss(client) || !IsBoss(attacker)))
+			damage *= GetConVarFloat(cvarBvBMerc);
+	}
 
 	float position[3];
 	GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
