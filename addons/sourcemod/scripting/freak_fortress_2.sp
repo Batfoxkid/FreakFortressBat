@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."039"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."040"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -307,6 +307,7 @@ ConVar cvarBossVsBoss;
 ConVar cvarBvBLose;
 ConVar cvarBvBChaos;
 ConVar cvarBvBMerc;
+ConVar cvarBvBStat;
 ConVar cvarTimesTen;
 
 Handle FF2Cookies;
@@ -2070,6 +2071,7 @@ public void OnPluginStart()
 	cvarBvBLose = CreateConVar("ff2_boss_vs_boss_lose", "0", "0-Lose when all of a team die, 1-Lose when all of a team's bosses die, 2-Lose when all the team's mercs die", _, true, 0.0, true, 2.0);
 	cvarBvBChaos = CreateConVar("ff2_boss_vs_boss_count", "1", "How many bosses per a team are assigned?", _, true, 1.0, true, 34.0);
 	cvarBvBMerc = CreateConVar("ff2_boss_vs_boss_damage", "1.0", "How much to multiply non-boss damage against non-boss while each team as a boss alive", _, true, 0.0);
+	cvarBvBStat = CreateConVar("ff2_boss_vs_boss_stats", "0", "Should Boss vs Boss mode count towards StatTrak?", _, true, 0.0, true, 1.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 
 	//The following are used in various subplugins
@@ -2320,7 +2322,7 @@ public Action Command_SetRage(int client, int args)
 			
 			char ragePCT[80];
 			GetCmdArg(1, ragePCT, sizeof(ragePCT));
-			float rageMeter=StringToFloat(ragePCT);
+			float rageMeter = StringToFloat(ragePCT);
 			
 			BossCharge[Boss[client]][0]=rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
@@ -2334,7 +2336,7 @@ public Action Command_SetRage(int client, int args)
 	char targetName[PLATFORM_MAX_PATH];
 	GetCmdArg(1, targetName, sizeof(targetName));
 	GetCmdArg(2, ragePCT, sizeof(ragePCT));
-	float rageMeter=StringToFloat(ragePCT);
+	float rageMeter = StringToFloat(ragePCT);
 
 	char target_name[MAX_TARGET_LENGTH];
 	int target_list[MAXPLAYERS], target_count;
@@ -2391,7 +2393,7 @@ public Action Command_AddRage(int client, int args)
 			
 			char ragePCT[80];
 			GetCmdArg(1, ragePCT, sizeof(ragePCT));
-			float rageMeter=StringToFloat(ragePCT);
+			float rageMeter = StringToFloat(ragePCT);
 			
 			BossCharge[Boss[client]][0]+=rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
@@ -2405,7 +2407,7 @@ public Action Command_AddRage(int client, int args)
 	char targetName[PLATFORM_MAX_PATH];
 	GetCmdArg(1, targetName, sizeof(targetName));
 	GetCmdArg(2, ragePCT, sizeof(ragePCT));
-	float rageMeter=StringToFloat(ragePCT);
+	float rageMeter = StringToFloat(ragePCT);
 
 	char target_name[MAX_TARGET_LENGTH];
 	int target_list[MAXPLAYERS], target_count;
@@ -2565,8 +2567,8 @@ public Action Command_AddCharge(int client, int args)
 			char ragePCT[80], slotCharge[10];
 			GetCmdArg(1, slotCharge, sizeof(slotCharge));
 			GetCmdArg(2, ragePCT, sizeof(ragePCT));
-			float rageMeter=StringToFloat(ragePCT);
-			int abilitySlot=StringToInt(slotCharge);
+			float rageMeter = StringToFloat(ragePCT);
+			int abilitySlot = StringToInt(slotCharge);
 
 			if(!abilitySlot || abilitySlot<=7)
 			{
@@ -2588,8 +2590,8 @@ public Action Command_AddCharge(int client, int args)
 	GetCmdArg(1, targetName, sizeof(targetName));
 	GetCmdArg(2, slotCharge, sizeof(slotCharge));
 	GetCmdArg(3, ragePCT, sizeof(ragePCT));
-	float rageMeter=StringToFloat(ragePCT);
-	int abilitySlot=StringToInt(slotCharge);
+	float rageMeter = StringToFloat(ragePCT);
+	int abilitySlot = StringToInt(slotCharge);
 
 	char target_name[MAX_TARGET_LENGTH];
 	int target_list[MAXPLAYERS], target_count;
@@ -2654,8 +2656,8 @@ public Action Command_SetCharge(int client, int args)
 			char ragePCT[80], slotCharge[10];
 			GetCmdArg(1, slotCharge, sizeof(slotCharge));
 			GetCmdArg(2, ragePCT, sizeof(ragePCT));
-			float rageMeter=StringToFloat(ragePCT);
-			int abilitySlot=StringToInt(slotCharge);
+			float rageMeter = StringToFloat(ragePCT);
+			int abilitySlot = StringToInt(slotCharge);
 
 			if(!abilitySlot || abilitySlot<=7)
 			{
@@ -2677,8 +2679,8 @@ public Action Command_SetCharge(int client, int args)
 	GetCmdArg(1, targetName, sizeof(targetName));
 	GetCmdArg(2, slotCharge, sizeof(slotCharge));
 	GetCmdArg(3, ragePCT, sizeof(ragePCT));
-	float rageMeter=StringToFloat(ragePCT);
-	int abilitySlot=StringToInt(slotCharge);
+	float rageMeter = StringToFloat(ragePCT);
+	int abilitySlot = StringToInt(slotCharge);
 
 	char target_name[MAX_TARGET_LENGTH];
 	int target_list[MAXPLAYERS], target_count;
@@ -3335,8 +3337,8 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 			amount=0;
 		}
 
-		chances[0]=StringToInt(stringChances[0]);
-		chances[1]=StringToInt(stringChances[1]);
+		chances[0] = StringToInt(stringChances[0]);
+		chances[1] = StringToInt(stringChances[1]);
 		for(chancesIndex=2; chancesIndex<amount; chancesIndex++)
 		{
 			if(chancesIndex % 2)
@@ -3347,11 +3349,11 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 					strcopy(ChancesString, sizeof(ChancesString), "");
 					break;
 				}
-				chances[chancesIndex]=StringToInt(stringChances[chancesIndex])+chances[chancesIndex-2];
+				chances[chancesIndex] = StringToInt(stringChances[chancesIndex])+chances[chancesIndex-2];
 			}
 			else
 			{
-				chances[chancesIndex]=StringToInt(stringChances[chancesIndex]);
+				chances[chancesIndex] = StringToInt(stringChances[chancesIndex]);
 			}
 		}
 	}
@@ -3671,104 +3673,104 @@ public void PrecacheCharacter(int characterIndex)
 
 public void CvarChange(Handle convar, const char[] oldValue, const char[] newValue)
 {
-	if(convar==cvarAnnounce)
+	if(convar == cvarAnnounce)
 	{
-		Announce=StringToFloat(newValue);
+		Announce = StringToFloat(newValue);
 	}
-	else if(convar==cvarArenaRounds)
+	else if(convar == cvarArenaRounds)
 	{
-		arenaRounds=StringToInt(newValue);
+		arenaRounds = StringToInt(newValue);
 	}
-	else if(convar==cvarCircuitStun)
+	else if(convar == cvarCircuitStun)
 	{
-		circuitStun=StringToFloat(newValue);
+		circuitStun = StringToFloat(newValue);
 	}
 	else if(convar==cvarHealthBar || convar==cvarHealthHud)
 	{
 		UpdateHealthBar();
 	}
-	else if(convar==cvarLastPlayerGlow)
+	else if(convar == cvarLastPlayerGlow)
 	{
-		lastPlayerGlow=StringToFloat(newValue);
+		lastPlayerGlow = StringToFloat(newValue);
 	}
-	else if(convar==cvarSpecForceBoss)
+	else if(convar == cvarSpecForceBoss)
 	{
-		SpecForceBoss=view_as<bool>(StringToInt(newValue));
+		SpecForceBoss = view_as<bool>(StringToInt(newValue));
 	}
-	else if(convar==cvarBossTeleporter)
+	else if(convar == cvarBossTeleporter)
 	{
-		bossTeleportation=view_as<bool>(StringToInt(newValue));
+		bossTeleportation = view_as<bool>(StringToInt(newValue));
 	}
-	else if(convar==cvarShieldCrits)
+	else if(convar == cvarShieldCrits)
 	{
-		shieldCrits=StringToInt(newValue);
+		shieldCrits = StringToInt(newValue);
 	}
-	else if(convar==cvarCaberDetonations)
+	else if(convar == cvarCaberDetonations)
 	{
-		allowedDetonations=StringToInt(newValue);
+		allowedDetonations = StringToInt(newValue);
 	}
-	else if(convar==cvarGoombaDamage)
+	else if(convar == cvarGoombaDamage)
 	{
-		GoombaDamage=StringToFloat(newValue);
+		GoombaDamage = StringToFloat(newValue);
 	}
-	else if(convar==cvarGoombaRebound)
+	else if(convar == cvarGoombaRebound)
 	{
-		reboundPower=StringToFloat(newValue);
+		reboundPower = StringToFloat(newValue);
 	}
-	else if(convar==cvarSniperDamage)
+	else if(convar == cvarSniperDamage)
 	{
-		SniperDamage=StringToFloat(newValue);
+		SniperDamage = StringToFloat(newValue);
 	}
-	else if(convar==cvarSniperMiniDamage)
+	else if(convar == cvarSniperMiniDamage)
 	{
-		SniperMiniDamage=StringToFloat(newValue);
+		SniperMiniDamage = StringToFloat(newValue);
 	}
-	else if(convar==cvarBowDamage)
+	else if(convar == cvarBowDamage)
 	{
-		BowDamage=StringToFloat(newValue);
+		BowDamage = StringToFloat(newValue);
 	}
-	else if(convar==cvarBowDamageNon)
+	else if(convar == cvarBowDamageNon)
 	{
-		BowDamageNon=StringToFloat(newValue);
+		BowDamageNon = StringToFloat(newValue);
 	}
-	else if(convar==cvarBowDamageMini)
+	else if(convar == cvarBowDamageMini)
 	{
-		BowDamageMini=StringToFloat(newValue);
+		BowDamageMini = StringToFloat(newValue);
 	}
-	else if(convar==cvarSniperClimbDamage)
+	else if(convar == cvarSniperClimbDamage)
 	{
-		SniperClimbDamage=StringToFloat(newValue);
+		SniperClimbDamage = StringToFloat(newValue);
 	}
-	else if(convar==cvarSniperClimbDelay)
+	else if(convar == cvarSniperClimbDelay)
 	{
-		SniperClimbDelay=StringToFloat(newValue);
+		SniperClimbDelay = StringToFloat(newValue);
 	}
-	else if(convar==cvarQualityWep)
+	else if(convar == cvarQualityWep)
 	{
-		QualityWep=StringToInt(newValue);
+		QualityWep = StringToInt(newValue);
 	}
-	else if(convar==cvarBossRTD)
+	else if(convar == cvarBossRTD)
 	{
-		canBossRTD=view_as<bool>(StringToInt(newValue));
+		canBossRTD = view_as<bool>(StringToInt(newValue));
 	}
-	else if(convar==cvarPointsInterval)
+	else if(convar == cvarPointsInterval)
 	{
-		PointsInterval=StringToInt(newValue);
-		PointsInterval2=StringToFloat(newValue);
+		PointsInterval = StringToInt(newValue);
+		PointsInterval2 = StringToFloat(newValue);
 	}
-	else if(convar==cvarPointsDamage)
+	else if(convar == cvarPointsDamage)
 	{
-		PointsDamage=StringToInt(newValue);
+		PointsDamage = StringToInt(newValue);
 	}
-	else if(convar==cvarPointsMin)
+	else if(convar == cvarPointsMin)
 	{
-		PointsMin=StringToInt(newValue);
+		PointsMin = StringToInt(newValue);
 	}
-	else if(convar==cvarPointsExtra)
+	else if(convar == cvarPointsExtra)
 	{
-		PointsExtra=StringToInt(newValue);
+		PointsExtra = StringToInt(newValue);
 	}
-	else if(convar==cvarDuoMin)
+	else if(convar == cvarDuoMin)
 	{
 		if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)
 		{
@@ -3792,15 +3794,15 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 			}
 		}
 	}
-	else if(convar==cvarAnnotations)
+	else if(convar == cvarAnnotations)
 	{
-		Annotations=StringToInt(newValue);
+		Annotations = StringToInt(newValue);
 	}
-	else if(convar==cvarTellName)
+	else if(convar == cvarTellName)
 	{
 		TellName=view_as<bool>(StringToInt(newValue));
 	}
-	else if(convar==cvarEnabled)
+	else if(convar == cvarEnabled)
 	{
 		switch(StringToInt(newValue))
 		{
@@ -3825,7 +3827,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionType type, Handle info)
 {
 	FF2Dbg("SMAC: Cheat detected!");
-	if(type==Detection_CvarViolation)
+	if(type == Detection_CvarViolation)
 	{
 		FF2Dbg("SMAC: Cheat was a cvar violation!");
 		if((FF2flags[Boss[client]] & FF2FLAG_CHANGECVAR))
@@ -4540,7 +4542,6 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 				BossHealthLast[boss] = BossHealth[boss];
 			}
 		}
-		CheatsUsed = true;
 	}
 	else
 	{
@@ -5840,7 +5841,7 @@ void SetupClientStats(int client)
 
 void SaveClientStats(int client)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client) || GetConVarInt(cvarStatPlayers)<1)
+	if(!IsValidClient(client) || IsFakeClient(client) || !AreClientCookiesCached(client) || GetConVarInt(cvarStatPlayers)<1 || (!GetConVarBool(cvarBvBStat) && Enabled3))
 		return;
 
 	if(GetConVarInt(cvarStatWin2Lose)>2)
@@ -5888,7 +5889,7 @@ void SaveClientStats(int client)
 
 void AddClientStats(int client, CookieStats cookie, int num)
 {
-	if(!IsValidClient(client) || CheatsUsed || GetConVarInt(cvarStatPlayers)>playing2 || GetConVarInt(cvarStatPlayers)<1)
+	if(!IsValidClient(client) || CheatsUsed || GetConVarInt(cvarStatPlayers)>playing2 || GetConVarInt(cvarStatPlayers)<1 || (!GetConVarBool(cvarBvBStat) && Enabled3))
 		return;
 
 	switch(cookie)
@@ -8353,7 +8354,7 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 		int i2;
 		for(int i; i<attribCount && i2<16; i+=2)
 		{
-			int attrib=StringToInt(weaponAttribsArray[i]);
+			int attrib = StringToInt(weaponAttribsArray[i]);
 			if(!attrib)
 			{
 				LogToFile(eLog, "[Weapons] Bad weapon attribute passed: %s ; %s", weaponAttribsArray[i], weaponAttribsArray[i+1]);
@@ -8827,7 +8828,7 @@ public Action Command_Points(int client, int args)
 	char stringPoints[8], pattern[PLATFORM_MAX_PATH];
 	GetCmdArg(1, pattern, sizeof(pattern));
 	GetCmdArg(2, stringPoints, sizeof(stringPoints));
-	int points=StringToInt(stringPoints);
+	int points = StringToInt(stringPoints);
 
 	char targetName[MAX_TARGET_LENGTH];
 	int targets[MAXPLAYERS], matches;
@@ -14699,7 +14700,7 @@ stock int SpawnWeapon(int client, char[] name, int index, int level, int qual, c
 		int i2;
 		for(int i; i<count; i+=2)
 		{
-			int attrib=StringToInt(atts[i]);
+			int attrib = StringToInt(atts[i]);
 			if(!attrib)
 			{
 				LogToFile(eLog, "[Boss] Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
@@ -15620,11 +15621,11 @@ stock float GetSongLength(char[] trackIdx)
 			for(int i = 0; i < count; i+=3)
 			{
 				char newTime[64];
-				int mins=StringToInt(time2[i])*60;
-				int secs=StringToInt(time2[i+1]);
-				int milsecs=StringToInt(time2[i+2]);
+				int mins = StringToInt(time2[i])*60;
+				int secs = StringToInt(time2[i+1]);
+				int milsecs = StringToInt(time2[i+2]);
 				Format(newTime, sizeof(newTime), "%i.%i", mins+secs, milsecs);
-				duration=StringToFloat(newTime);				   
+				duration = StringToFloat(newTime);				   
 			}
 		}
 	}
@@ -16196,9 +16197,9 @@ public int Native_IsEnabled(Handle plugin, int numParams)
 public int Native_FF2Version(Handle plugin, int numParams)
 {
 	int version[3];  //Blame the compiler for this mess -.-
-	version[0]=StringToInt(MAJOR_REVISION);
-	version[1]=StringToInt(MINOR_REVISION);
-	version[2]=StringToInt(STABLE_REVISION);
+	version[0] = StringToInt(MAJOR_REVISION);
+	version[1] = StringToInt(MINOR_REVISION);
+	version[2] = StringToInt(STABLE_REVISION);
 	SetNativeArray(1, version, sizeof(version));
 	#if defined DEV_REVISION
 	return true;
@@ -16210,9 +16211,9 @@ public int Native_FF2Version(Handle plugin, int numParams)
 public int Native_ForkVersion(Handle plugin, int numParams)
 {
 	int fversion[3];
-	fversion[0]=StringToInt(FORK_MAJOR_REVISION);
-	fversion[1]=StringToInt(FORK_MINOR_REVISION);
-	fversion[2]=StringToInt(FORK_STABLE_REVISION);
+	fversion[0] = StringToInt(FORK_MAJOR_REVISION);
+	fversion[1] = StringToInt(FORK_MINOR_REVISION);
+	fversion[2] = StringToInt(FORK_STABLE_REVISION);
 	SetNativeArray(1, fversion, sizeof(fversion));
 	#if defined FORK_DEV_REVISION
 	return true;
