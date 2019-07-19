@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."040"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."045"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1847,6 +1847,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 	CreateNative("FF2_IsFF2Enabled", Native_IsEnabled);
 	CreateNative("FF2_GetFF2Version", Native_FF2Version);
+	CreateNative("FF2_IsBossVsBoss", Native_IsVersus);
 	CreateNative("FF2_GetForkVersion", Native_ForkVersion);
 	CreateNative("FF2_GetBossUserId", Native_GetBoss);
 	CreateNative("FF2_GetBossIndex", Native_GetIndex);
@@ -5094,7 +5095,14 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 	if(GetConVarInt(cvarBossVsBoss) > 0)
 	{
-		Enabled3 = GetRandomInt(0, 99) < GetConVarInt(cvarBossVsBoss);
+		if(GetRandomInt(0, 99) < GetConVarInt(cvarBossVsBoss))
+		{
+			CreateTimer(bonusRoundTime-0.5, Timer_SetEnabled3, true, TIMER_FLAG_NO_MAPCHANGE);
+		}
+		else
+		{
+			CreateTimer(bonusRoundTime-0.5, Timer_SetEnabled3, false, TIMER_FLAG_NO_MAPCHANGE);
+		}
 	}
 	else
 	{
@@ -5131,6 +5139,12 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
+	return Plugin_Continue;
+}
+
+public Action Timer_SetEnabled3(Handle timer, bool toggle)
+{
+	Enabled3 = toggle;
 	return Plugin_Continue;
 }
 
@@ -10130,8 +10144,8 @@ public Action BossTimer(Handle timer)
 		}
 		// Below 0, TF2's default speeds and whatever attributes or conditions
 
-		//if(BossHealth[boss] <= 0 && IsPlayerAlive(client))  //Wat.  TODO:  Investigate
-			//BossHealth[boss] = 1;
+		if(BossHealth[boss] <= 0 && IsPlayerAlive(client))  // In case the boss hits a hazard and goes into neagtive numbers
+			BossHealth[boss] = 1;
 
 		if(BossLivesMax[boss] > 1)
 		{
@@ -11624,7 +11638,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 					if(!Companions && GetConVarInt(cvarGameText)>0)
 					{
 						GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
-						ShowGameText(target, "ico_notify_flag_moving_alt", _, "%t", ability, bossName, BossLives[boss]);
+						ShowGameText(target, "ico_notify_flag_moving_alt", Enabled3 ? GetClientTeam(client) : 0, "%t", ability, bossName, BossLives[boss]);
 					}
 					else
 					{
@@ -11907,7 +11921,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		else
 		{
 			RemoveShield(client, attacker, position);
-			return Plugin_Stop;					
+			return Plugin_Handled;				
 		}
 	}
 	else if(IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client) && shield[client] && damage>0 && GetConVarInt(cvarShieldType)==4)
@@ -11964,7 +11978,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 	if(IsBoss(attacker) && IsValidClient(client))
 	{
 		int boss = GetBossIndex(client);
-		if(boss<0 && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
+		if(boss==-1 && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
 		{
 			if(TF2_IsPlayerInCondition(client, TFCond_DefenseBuffed))
 			{
@@ -11998,7 +12012,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				return Plugin_Changed;
 			}
 		}
-		else if(boss >= 0)
+		else if(boss != -1)
 		{
 			bool bIsTelefrag, bIsBackstab;
 			if(damagecustom == TF_CUSTOM_BACKSTAB)
@@ -12186,7 +12200,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				return Plugin_Changed;
 			}
-			else if(bIsTelefrag)
+
+			if(bIsTelefrag)
 			{
 				damagecustom = 0;
 				if(!IsPlayerAlive(attacker))
@@ -12316,15 +12331,19 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				return Plugin_Changed;
 			}
 
+			bool changed;
 			if(damage<=160.0 && dmgTriple[attacker])
+			{
 				damage *= 3;
+				changed = true;
+			}
 
 			if(damagetype & DMG_CRIT)
 			{
 				if(damage > 333)
 				{
 					damage = 333.0;
-					return Plugin_Changed;
+					changed = true;
 				}
 			}
 			else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed) || TF2_IsPlayerInCondition(attacker, TFCond_NoHealingDamageBuff))
@@ -12332,14 +12351,17 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				if(damage > 740)
 				{
 					damage = 740.0;
-					return Plugin_Changed;
+					changed = true;
 				}
 			}
 			else if(damage > 999)
 			{
 				damage = 999.0;
-				return Plugin_Changed;
+				changed = true;
 			}
+
+			if(changed)
+				return Plugin_Changed;
 		}
 	}
 	else
@@ -12991,7 +13013,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 					return Plugin_Changed;
 				}
-				else if(bIsTelefrag)
+
+				if(bIsTelefrag)
 				{
 					damagecustom=0;
 					if(!IsPlayerAlive(attacker))
@@ -13121,6 +13144,16 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					HealthBarMode = true;
 					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					return Plugin_Changed;
+				}
+
+				if((damagetype & DMG_CLUB) && TF2_GetPlayerClass(client)!=TFClass_Spy)
+				{
+					int melee = GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Melee);
+					if(melee!=416 && melee!=44)
+					{
+						damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
+						return Plugin_Changed;
+					}
 				}
 			}
 			else
@@ -16206,6 +16239,11 @@ public int Native_FF2Version(Handle plugin, int numParams)
 	#else
 	return false;
 	#endif
+}
+
+public int Native_IsVersus(Handle plugin, int numParams)
+{
+	return Enabled3;
 }
 
 public int Native_ForkVersion(Handle plugin, int numParams)
