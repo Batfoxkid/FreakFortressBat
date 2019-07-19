@@ -42,6 +42,15 @@ native bool FF2_IsFF2Enabled();
 native bool FF2_GetFF2Version(int[] version=0);
 
 /**
+ * Is Boss vs Boss mode enabled?
+ * Note this is set on round end before the next round
+ *
+ * @return		False if Boss vs Boss is disabled
+ *			True if Boss vs Boss is enabled
+ */
+native bool FF2_IsBossVsBoss();
+
+/**
  * Gets the version of the FF2 fork running on the server
  *
  * @param version	An array of size 3 that will contain the major, minor, and stable version numbers respectively
