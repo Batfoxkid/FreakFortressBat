@@ -1764,7 +1764,7 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 	count++;
 	if(count<=ExpCount[client] && IsPlayerAlive(client))
 	{
-		SetEntityMoveType(boss, MOVETYPE_NONE);
+		SetEntityMoveType(client, MOVETYPE_NONE);
 		float bossPosition[3], explosionPosition[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", bossPosition);
 		explosionPosition[2]=bossPosition[2];

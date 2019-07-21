@@ -76,9 +76,9 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "Build"
+//#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."045"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."047"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6697,14 +6697,14 @@ public Action MessageTimer(Handle timer)
 			}
 		}
 
-		SetHudTextParams(0.6, 0.3, 10.0, 100, 100, 255, 255);
+		SetHudTextParams(0.25, 0.3, 10.0, 100, 100, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsValidClient(client))
 				FF2_ShowSyncHudText(client, infoHUD, text[client]);
 		}
 
-		SetHudTextParams(0.25, 0.3, 10.0, 255, 100, 100, 255);
+		SetHudTextParams(0.6, 0.3, 10.0, 255, 100, 100, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsValidClient(client))
@@ -10458,37 +10458,11 @@ public Action GlobalTimer(Handle timer)
 				{
 					if(HealthBarMode)
 					{
-						SetHudTextParams(0.53, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
-					}
-					else
-					{
-						SetHudTextParams(0.53, 0.12, 0.35, 100, 100, 255, 255, 0, 0.35, 0.0, 0.1);
-					}
-				}
-				else
-				{
-					if(HealthBarMode)
-					{
-						SetHudTextParams(0.53, 0.22, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
-					}
-					else
-					{
-						SetHudTextParams(0.53, 0.22, 0.35, 100, 100, 255, 255, 0, 0.35, 0.0, 0.1);
-					}
-				}
-
-				SetGlobalTransTarget(client);
-				ShowSyncHudText(client, healthHUD, healthString);
-
-				if(!IsClientObserver(client))
-				{
-					if(HealthBarMode)
-					{
 						SetHudTextParams(0.43, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
 					}
 					else
 					{
-						SetHudTextParams(0.43, 0.12, 0.35, 255, 100, 100, 255, 0, 0.35, 0.0, 0.1);
+						SetHudTextParams(0.43, 0.12, 0.35, 100, 100, 255, 255, 0, 0.35, 0.0, 0.1);
 					}
 				}
 				else
@@ -10499,7 +10473,33 @@ public Action GlobalTimer(Handle timer)
 					}
 					else
 					{
-						SetHudTextParams(0.43, 0.22, 0.35, 255, 100, 100, 255, 0, 0.35, 0.0, 0.1);
+						SetHudTextParams(0.43, 0.22, 0.35, 100, 100, 255, 255, 0, 0.35, 0.0, 0.1);
+					}
+				}
+
+				SetGlobalTransTarget(client);
+				ShowSyncHudText(client, healthHUD, healthString);
+
+				if(!IsClientObserver(client))
+				{
+					if(HealthBarMode)
+					{
+						SetHudTextParams(0.53, 0.12, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(0.53, 0.12, 0.35, 255, 100, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+				}
+				else
+				{
+					if(HealthBarMode)
+					{
+						SetHudTextParams(0.53, 0.22, 0.35, 100, 255, 100, 255, 0, 0.35, 0.0, 0.1);
+					}
+					else
+					{
+						SetHudTextParams(0.53, 0.22, 0.35, 255, 100, 100, 255, 0, 0.35, 0.0, 0.1);
 					}
 				}
 
@@ -11950,7 +11950,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 		int health = GetClientHealth(client);
 		if(shieldHP[client]<=0.0 || health<=damage)
+		{
 			RemoveShield(client, attacker, position);
+			return Plugin_Handled;
+		}
 
 		char ric[PLATFORM_MAX_PATH];
 		Format(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
@@ -11972,7 +11975,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 		int health=GetClientHealth(client);
 		if(health <= damage)
+		{
 			RemoveShield(client, attacker, position);
+			return Plugin_Handled;
+		}
 	}
 
 	if(IsBoss(attacker) && IsValidClient(client))
@@ -17018,7 +17024,7 @@ void UpdateHealthBar()
 		{
 			if(Enabled3)
 			{
-				if(TF2_GetClientTeam(Boss[boss]) == TFTeam_Red)
+				if(TF2_GetClientTeam(Boss[boss]) == TFTeam_Blue)
 				{
 					healthAmount += BossHealth[boss];
 				}
