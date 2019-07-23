@@ -39,16 +39,26 @@ native bool FF2_IsFF2Enabled();
  *
  * @return		True if the server is running a dev version of FF2, false otherwise
  */
-native bool FF2_GetFF2Version(version[]=0);
+native bool FF2_GetFF2Version(int[] version=0);
+
+/**
+ * Is Boss vs Boss mode enabled?
+ * Note this is set on round end before the next round
+ *
+ * @return		False if Boss vs Boss is disabled
+ *			True if Boss vs Boss is enabled
+ */
+native bool FF2_IsBossVsBoss();
 
 /**
  * Gets the version of the FF2 fork running on the server
  *
  * @param version	An array of size 3 that will contain the major, minor, and stable version numbers respectively
+ * 			(Official FF2 versions always return 0 for version numbers)
  *
  * @return		True if the server has a sub name defined, false otherwise
  */
-native bool FF2_GetForkVersion(fversion[]=0);
+native bool FF2_GetForkVersion(int[] fversion=0);
 
 /**
  * Gets current round state
@@ -262,7 +272,7 @@ native float FF2_GetRageDist(int boss=0, const char[] pluginName="", const char[
  *
  * @return		True if the boss has this ability, false if it doesn't
  */
-native int FF2_HasAbility(int boss, const char[] pluginName, const char[] abilityName);
+native bool FF2_HasAbility(int boss, const char[] pluginName, const char[] abilityName);
 
 /**
  * Determines how the Boss should use a certain ability
@@ -341,7 +351,7 @@ native void FF2_GetAbilityArgumentString(int boss, const char[] pluginName, cons
  *
  * @noreturn
  */
-native void FF2_EmitVoiceToAll(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0);
+native void FF2_EmitVoiceToAll(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0);
 
 /**
  * Starts a random Boss sound from its config file
@@ -675,8 +685,30 @@ stock void FF2_ShowHudText(int client, int channel, const char[] buffer, any ...
  * @param any:...	Formatting rules
  *
  * @noreturn
+ *
+ *	Note: Don't use, due to possible name conflicts
  */
+#pragma deprecated Use FF2Dbg instead
 stock void Debug(char[] buffer, any ...)
+{
+	if(FF2_Debug())
+	{
+		char message[192];
+		VFormat(message, sizeof(message), buffer, 2);
+		CPrintToChatAll("{olive}[FF2 {darkorange}DEBUG{olive}]{default} %s", message);
+		PrintToServer("[FF2 DEBUG] %s", message);
+	}
+}
+
+/**
+ * Used to consolidate debug messages
+ *
+ * @param buffer	Debug string to display
+ * @param any:...	Formatting rules
+ *
+ * @noreturn
+ */
+stock void FF2Dbg(char[] buffer, any ...)
 {
 	if(FF2_Debug())
 	{
