@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."050"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."051"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -13423,7 +13423,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped Player", spcl);
+						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped Player", spcl);
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped Player", spcl);
@@ -13437,7 +13437,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				switch(Annotations)
 				{
 					case 1:
-						CreateAttachedAnnotation(victim, attacker, true, 5.0, "%t", "Goomba Stomped");
+						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped");
 
 					case 2:
 						ShowGameText(victim, "ico_notify_flag_moving_alt", _, "%t", "Goomba Stomped");
