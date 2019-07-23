@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."048"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."049"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -13143,7 +13143,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				if((damagetype & DMG_CLUB) && TF2_GetPlayerClass(client)!=TFClass_Spy)
 				{
 					int melee = GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Melee);
-					if(melee!=416 && melee!=44)
+					if(melee!=416 && melee!=307 && melee!=44)
 					{
 						damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 						return Plugin_Changed;
