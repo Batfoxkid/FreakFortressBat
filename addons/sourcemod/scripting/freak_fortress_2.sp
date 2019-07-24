@@ -74,11 +74,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "0"
+#define FORK_STABLE_REVISION "1"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Build"
+#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."051"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5382,7 +5382,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 
 			if(IsBoss(client))
 			{
-				if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
+				if(((GetBossIndex(client)==0 && GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 				{
 					add_points[client]=-QueuePoints[client];
 					add_points2[client]=add_points[client];
@@ -11263,7 +11263,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	}
 
 	float alivePlayers = Enabled3 ? float(RedAlivePlayers + BlueAlivePlayers - 2) : float(RedAlivePlayers);
-	if(countdownPlayers>0 && BossHealth[0]>countdownHealth && countdownTime>1 && !executed2)
+	if(countdownPlayers>0 && BossHealth[0]>=countdownHealth && (BossHealth[MAXBOSSES]>=countdownHealth || !Enabled3) && countdownTime>1 && !executed2)
 	{
 		if(countdownPlayers < 1)
 		{
@@ -11341,7 +11341,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 
 public Action Timer_DrawGame(Handle timer)
 {
-	if(BossHealth[0]<countdownHealth || CheckRoundState()!=1)
+	if((BossHealth[0]<countdownHealth && (BossHealth[MAXBOSSES]<countdownHealth || !Enabled3)) || CheckRoundState()!=1)
 	{
 		executed2 = false;
 		return Plugin_Stop;
@@ -11965,12 +11965,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 	if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 		return Plugin_Continue;
-
-	if(Enabled3 && GetConVarFloat(cvarBvBMerc)!=1 && RedAliveBosses && BlueAliveBosses)
-	{
-		if(IsValidClient(client) && IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client) && (!IsBoss(client) || !IsBoss(attacker)))
-			damage *= GetConVarFloat(cvarBvBMerc);
-	}
 
 	float position[3];
 	GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
@@ -13230,6 +13224,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						damage/=10.0;
 						return Plugin_Changed;
 					}
+				}
+			}
+
+			if(Enabled3 && GetConVarFloat(cvarBvBMerc)!=1 && RedAliveBosses && BlueAliveBosses)
+			{
+				if(IsValidClient(client) && IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client))
+				{
+					damage *= GetConVarFloat(cvarBvBMerc);
+					return Plugin_Changed;
 				}
 			}
 		}
