@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -153,13 +153,13 @@ int playing;
 int playing2;
 int playingmerc;
 int playingboss;
+int bosses;
 int healthcheckused;
 int RedAlivePlayers;
 int BlueAlivePlayers;
 int RedAliveBosses;
 int BlueAliveBosses;
 int RoundCount;
-int Companions = 0;
 bool LastMan = true;
 bool CheatsUsed;
 float rageMax[MAXPLAYERS+1];
@@ -4155,21 +4155,22 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 	{
 		SetTeamScore(view_as<int>(TFTeam_Red), GetTeamScore(OtherTeam));
 		SetTeamScore(view_as<int>(TFTeam_Blue), GetTeamScore(BossTeam));
-		OtherTeam=view_as<int>(TFTeam_Red);
-		BossTeam=view_as<int>(TFTeam_Blue);
+		OtherTeam = view_as<int>(TFTeam_Red);
+		BossTeam = view_as<int>(TFTeam_Blue);
 	}
 	else
 	{
 		SetTeamScore(view_as<int>(TFTeam_Red), GetTeamScore(BossTeam));
 		SetTeamScore(view_as<int>(TFTeam_Blue), GetTeamScore(OtherTeam));
-		OtherTeam=view_as<int>(TFTeam_Blue);
-		BossTeam=view_as<int>(TFTeam_Red);
+		OtherTeam = view_as<int>(TFTeam_Blue);
+		BossTeam = view_as<int>(TFTeam_Red);
 	}
 
-	playing=0;
-	playing2=0;
-	playingboss=0;
-	playingmerc=0;
+	playing = 0;
+	playing2 = 0;
+	playingboss = 0;
+	playingmerc = 0;
+	bosses = 0;
 	for(int client; client<=MaxClients; client++)
 	{
 		Damage[client] = 0;
@@ -4182,6 +4183,9 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 		{
 			playing++;
 			if(!IsFakeClient(client))
+				playing2++;
+
+			if(IsBoss(client))
 				playing2++;
 
 			if(GetClientTeam(client)==BossTeam)
@@ -4325,7 +4329,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 		if(GetConVarInt(cvarBvBChaos) > 1)
 		{
 			int bossCount = 0;
-			while(bossCount < (GetConVarInt(cvarBvBChaos)-1))
+			while(bossCount<(GetConVarInt(cvarBvBChaos)-1) && bossCount<(playing-1))
 			{
 				bossCount++;
 				PickCharacter(bossCount, bossCount);
@@ -4345,7 +4349,6 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	Companions = 0;
 	FindCompanion(0, playing, omit);  //Find companions for the boss!
 	if(Enabled3)
 	{
@@ -4353,7 +4356,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 		if(GetConVarInt(cvarBvBChaos) > 1)
 		{
 			int bossCount = 0;
-			while(bossCount < (GetConVarInt(cvarBvBChaos)-1))
+			while(bossCount<(GetConVarInt(cvarBvBChaos)-1) && bossCount<(playing-1))
 			{
 				bossCount++;
 				FindCompanion(bossCount, playing, omit);
@@ -4490,6 +4493,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	playing2 = 0;
 	playingboss = 0;
 	playingmerc = 0;
+	bosses = 0;
 	int medigun;
 	for(int client=1; client<=MaxClients; client++)
 	{
@@ -4519,14 +4523,18 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 					playingmerc++;
 				}
 			}
+			else if(IsBoss(client))
+			{
+				bosses++;
+			}
 		}
 	}
 
 	float players = 1.0;
 	if(Enabled3)
 	{
-		players += playingmerc + 1 - playingboss*0.35;
-		float players2 = playingboss + 2 - playingmerc*0.35;
+		players += playingmerc + bosses - playingboss*0.45;
+		float players2 = playingboss + 1 + bosses - playingmerc*0.45;
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
@@ -4682,7 +4690,6 @@ public void CheckArena()
 public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 {
 	RoundCount++;
-	Companions = 0;
 	SapperMinion = false;
 	LastMan = true;
 	if(HasSwitched)
@@ -6750,7 +6757,7 @@ public Action MessageTimer(Handle timer)
 	{
 		if(IsValidClient(client))
 		{
-			if(!Companions && GetConVarInt(cvarGameText)>1)
+			if(bosses<2 && GetConVarInt(cvarGameText)>1)
 			{
 				if(strlen(BossIcon))
 				{
@@ -8701,7 +8708,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 		{
 			if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 			{
-				if(!Companions && GetConVarInt(cvarGameText)>0)
+				if(bosses<2 && GetConVarInt(cvarGameText)>0)
 				{
 					if(strlen(BossIcon))
 					{
@@ -10264,7 +10271,7 @@ public Action BossTimer(Handle timer)
 			}
 		}
 
-		if(aliveTeammates<2 && GetConVarInt(cvarHealthHud)<2 && (Companions || Enabled3 || !GetConVarInt(cvarGameText) || !executed2))
+		if(aliveTeammates<2 && GetConVarInt(cvarHealthHud)<2 && (bosses>1 || Enabled3 || !GetConVarInt(cvarGameText) || !executed2))
 		{
 			char message[MAXPLAYERS+1][512], name[64];
 			for(int target; target<=MaxClients; target++)
@@ -10297,7 +10304,7 @@ public Action BossTimer(Handle timer)
 			{
 				if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
-					if(!Companions && GetConVarInt(cvarGameText)>0)
+					if(bosses<2 && GetConVarInt(cvarGameText)>0)
 					{
 						if(strlen(BossIcon))
 						{
@@ -10351,7 +10358,7 @@ public Action GlobalTimer(Handle timer)
 		return Plugin_Continue;
 
 	char healthString[64];
-	int current, bosses, lives, boss;
+	int current, lives, boss;
 	if(Enabled3)
 	{
 		if(HealthHud > 1)
@@ -10366,7 +10373,6 @@ public Action GlobalTimer(Handle timer)
 					boss = GetBossIndex(clients);
 					current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 					lives += BossLives[boss];
-					bosses++;
 				}
 			}
 
@@ -10390,7 +10396,6 @@ public Action GlobalTimer(Handle timer)
 
 					boss = GetBossIndex(clients);
 					current += BossLives[boss];
-					bosses++;
 				}
 			}
 
@@ -10401,7 +10406,6 @@ public Action GlobalTimer(Handle timer)
 		}
 
 		current = 0;
-		bosses = 0;
 		lives = 0;
 		char healthString2[64];
 		if(HealthHud > 1)
@@ -10416,7 +10420,6 @@ public Action GlobalTimer(Handle timer)
 					boss = GetBossIndex(clients);
 					current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 					lives += BossLives[boss];
-					bosses++;
 				}
 			}
 
@@ -10440,7 +10443,6 @@ public Action GlobalTimer(Handle timer)
 
 					boss = GetBossIndex(clients);
 					current += BossLives[boss];
-					bosses++;
 				}
 			}
 
@@ -10523,7 +10525,6 @@ public Action GlobalTimer(Handle timer)
 					current += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 					max += BossHealthMax[boss];
 					lives += BossLives[boss];
-					bosses++;
 				}
 			}
 
@@ -10545,7 +10546,6 @@ public Action GlobalTimer(Handle timer)
 					boss = GetBossIndex(clients);
 					current += BossLives[boss];
 					max += BossLivesMax[boss];
-					bosses++;
 				}
 			}
 
@@ -11386,7 +11386,7 @@ public Action Timer_DrawGame(Handle timer)
 	SetHudTextParams(-1.0, 0.17, 1.1, 255, 255, 255, 255);
 
 	char message[MAXPLAYERS+1][512], name[64];
-	if(!Companions && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
+	if(bosses<2 && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
 	{
 		for(int client=1; client<=MaxClients; client++)
 		{
@@ -11419,7 +11419,7 @@ public Action Timer_DrawGame(Handle timer)
 	{
 		if(IsValidClient(client))
 		{
-			if(!Companions && !Enabled3 && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
+			if(bosses<2 && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -11446,7 +11446,7 @@ public Action Timer_DrawGame(Handle timer)
 					ShowGameText(client, "leaderboard_streak", _, "%s | %s", message[client], timeDisplay);
 				}
 			}
-			else if(!Companions && !Enabled3 && GetConVarInt(cvarGameText)>1)
+			else if(bosses<2 && GetConVarInt(cvarGameText)>1)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -11714,7 +11714,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 			{
 				if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
-					if(!Companions && GetConVarInt(cvarGameText)>0)
+					if(GetConVarInt(cvarGameText) > 0)
 					{
 						GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
 						ShowGameText(target, "ico_notify_flag_moving_alt", Enabled3 ? GetClientTeam(client) : 0, "%t", ability, bossName, BossLives[boss]);
@@ -12026,15 +12026,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			{
 				if(TimesTen)
 				{
-					damage = BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
+					damage = BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
 				}
 				else if(GetConVarBool(cvarLowStab))
 				{
-					damage = (BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/5;
+					damage = (BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(750/float(playing)))/5;
 				}
 				else
 				{
-					damage = BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
+					damage = BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
 				}
 				damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 				damagecustom = 0;
@@ -12500,15 +12500,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
                         			{
 							if(TimesTen)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(GetConVarFloat(cvarTimesTen)*allowedDetonations*3)))*(Companions+1);
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(GetConVarFloat(cvarTimesTen)*allowedDetonations*3)))*bosses;
 							}
 							else if(GetConVarBool(cvarLowStab))
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*(Companions+1);
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*bosses;
 							}
 							else
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*(Companions+1);
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*bosses;
 							}
 							damagetype |= DMG_CRIT;
 
@@ -12684,15 +12684,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
                         			{
 							if(TimesTen)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(GetConVarFloat(cvarTimesTen)*3))*(Companions+1);
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(GetConVarFloat(cvarTimesTen)*3))*bosses;
 							}
 							else if(GetConVarBool(cvarLowStab))
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*(Companions+1);
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses;
 							}
 							else
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*(Companions+1);
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses;
 							}
 							damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 
@@ -12853,15 +12853,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				{
 					if(TimesTen)
 					{
-						damage = BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
+						damage = BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
 					}
 					else if(GetConVarBool(cvarLowStab))
 					{
-						damage = (BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/3;
+						damage = (BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/3;
 					}
 					else
 					{
-						damage = BossHealthMax[boss]*(Companions+1)*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
+						damage = BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 					}
 					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 					damagecustom = 0;
@@ -14030,21 +14030,21 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
-	float players = 2.0;
+	float players = 1.0;
 	if(Enabled3)
 	{
 		if(BossSwitched[boss])
 		{
-			players += playingboss - playingmerc*0.35;
+			players += bosses + playingboss - playingmerc*0.45;
 		}
 		else
 		{
-			players += playingmerc - playingboss*0.35;
+			players += bosses + playingmerc - playingboss*0.45;
 		}
 	}
 	else
 	{
-		players += playing - 1;
+		players += playing;
 	}
 
 	int size = 1;
@@ -14678,7 +14678,6 @@ void FindCompanion(int boss, int players, bool[] omit)
 		BossSwitched[companion]=BossSwitched[boss];
 		omit[companion]=true;
 		int client=Boss[boss];
-		Companions=1;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
 			if(BossRageDamage[companion]==1)	// If 1, toggle infinite rage
