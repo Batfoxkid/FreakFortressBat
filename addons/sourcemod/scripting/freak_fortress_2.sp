@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4000,25 +4000,14 @@ stock bool CheckToChangeMapDoors()
 	{
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, DoorCFG);
 		if(FileExists(config))
-		{
 			LogToFile(eLog, "[Doors] Please move '%s' from '%s' to '%s'!", DoorCFG, ConfigPath, DataPath);
-		}
-		if(!strncmp(currentmap, "vsh_lolcano_pb1", 15, false))
-		{
-			checkDoors=true;
-		}
+
 		return;
 	}
 
 	Handle file=OpenFile(config, "r");
 	if(file==INVALID_HANDLE)
-	{
-		if(!strncmp(currentmap, "vsh_lolcano_pb1", 15, false))
-		{
-			checkDoors=true;
-		}
 		return;
-	}
 
 	while(!IsEndOfFile(file) && ReadFileLine(file, config, sizeof(config)))
 	{
@@ -4028,7 +4017,7 @@ stock bool CheckToChangeMapDoors()
 			continue;
 		}
 
-		if(StrContains(currentmap, config, false)!=0 || !StrContains(config, "all", false))
+		if(StrContains(currentmap, config, false)!=-1 || !StrContains(config, "all", false))
 		{
 			delete file;
 			checkDoors=true;
@@ -4186,7 +4175,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 				playing2++;
 
 			if(IsBoss(client))
-				playing2++;
+				bosses++;
 
 			if(GetClientTeam(client)==BossTeam)
 			{
