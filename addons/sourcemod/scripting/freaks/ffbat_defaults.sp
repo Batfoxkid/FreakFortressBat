@@ -39,7 +39,7 @@
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"4"
-#define STABLE_REVISION	"3"
+#define STABLE_REVISION	"4"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -906,7 +906,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 		}
 	}
 
-	if(solorage)
+	if(solorage && !FF2_GetAbilityArgument(boss, this_plugin_name, "rage_stun", 5))
 	{
 		char bossName[64];
 		for(int target=1; target<=MaxClients; target++)
