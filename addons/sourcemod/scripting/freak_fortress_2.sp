@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -596,7 +596,8 @@ static const char ff2versiontitles[][] =
 	"1.18.4",
 	"1.18.5",
 	"1.18.6",
-	"1.19.0"
+	"1.19.0",
+	"1.19.1"
 };
 
 static const char ff2versiondates[][] =
@@ -750,20 +751,29 @@ static const char ff2versiondates[][] =
 	"June 2, 2019",			//1.18.4
 	"June 12, 2019",		//1.18.5
 	"June 29, 2019",		//1.18.6
-	"August 23, 2019"		//1.19.0
+	"July 23, 2019",		//1.19.0
+	"August 10, 2019"		//1.19.1
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 150:  //1.19.1
+		{
+			DrawPanelText(panel, "1) [Gameplay] Fixed ancient door bug of always opening doors (Batfoxkid)");
+			DrawPanelText(panel, "2) [Gameplay] Improved multiple bosses support (Batfoxkid)");
+			DrawPanelText(panel, "3) [Gameplay] Adjusted Boss vs Boss health formula (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Companion queue points restore no longer apply to rival bosses (Batfoxkid)");
+			DrawPanelText(panel, "5) [Gameplay] Fixed merc vs merc damage changes (Batfoxkid)");
+		}
 		case 149:  //1.19.0
 		{
-			DrawPanelText(panel, "1) [Gameplay] Added boss vs boss alterative gamemode (Batfoxkid)");
+			DrawPanelText(panel, "1) [Gameplay] Added Boss vs Boss alterative gamemode (Batfoxkid)");
 			DrawPanelText(panel, "2) [Bosses] Allowed to be able to self damage via 'selfknockback' setting (Batfoxkid)");
-			DrawPanelText(panel, "3) [Gameplay] Razorback and Demoman shields are more accurate towards damage changes (Marxvee)");
-			DrawPanelText(panel, "4) [Gameplay] Made the shields damage reduction based on the shield's health (Batfoxkid)");
-			DrawPanelText(panel, "5) [Gameplay] Fixed the Razorback animation for Spies upon backstabbing the boss (Marxvee)");
+			DrawPanelText(panel, "3) [Gameplay] Shields are more accurate towards damage changes (Marxvee)");
+			DrawPanelText(panel, "4) [Gameplay] Shield damage reduction based on the shield's health (Batfoxkid)");
+			DrawPanelText(panel, "5) [Gameplay] Fixed the animation for Spies upon backstabbing the boss (Marxvee)");
 		}
 		case 148:  //1.18.6
 		{
@@ -10365,7 +10375,7 @@ public Action GlobalTimer(Handle timer)
 				}
 			}
 
-			if(lives > bosses)
+			if(lives > bosses-1)
 			{
 				Format(healthString, sizeof(healthString), "%ix%i", current, lives);
 			}
@@ -10388,7 +10398,7 @@ public Action GlobalTimer(Handle timer)
 				}
 			}
 
-			if(current > bosses)
+			if(current > bosses-1)
 			{
 				Format(healthString, sizeof(healthString), "x%i", current);
 			}
@@ -10412,7 +10422,7 @@ public Action GlobalTimer(Handle timer)
 				}
 			}
 
-			if(lives > bosses)
+			if(lives > bosses-1)
 			{
 				Format(healthString2, sizeof(healthString2), "%ix%i", current, lives);
 			}
@@ -10435,7 +10445,7 @@ public Action GlobalTimer(Handle timer)
 				}
 			}
 
-			if(current > bosses)
+			if(current > bosses-1)
 			{
 				Format(healthString2, sizeof(healthString2), "x%i", current);
 			}
@@ -12015,15 +12025,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			{
 				if(TimesTen)
 				{
-					damage = BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
+					damage = BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(GetConVarFloat(cvarTimesTen)*3);
 				}
 				else if(GetConVarBool(cvarLowStab))
 				{
-					damage = (BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(750/float(playing)))/5;
+					damage = (BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(750/float(playing)))/5;
 				}
 				else
 				{
-					damage = BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
+					damage = BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
 				}
 				damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 				damagecustom = 0;
