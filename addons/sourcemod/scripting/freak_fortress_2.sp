@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."010"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10270,7 +10270,7 @@ public Action BossTimer(Handle timer)
 			}
 		}
 
-		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
+		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-2 : MercAlivePlayers;
 
 		if(lastPlayerGlow > 0)
 		{
@@ -10306,8 +10306,8 @@ public Action BossTimer(Handle timer)
 					{
 						if(IsValidClient(clients))
 						{
-							GetBossSpecial(Special[boss2], name, sizeof(name), client);
-							Format(message[clients], sizeof(message[]), "%s\n%t", message[client], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+							GetBossSpecial(Special[boss2], name, sizeof(name), clients);
+							Format(message[clients], sizeof(message[]), "%s\n%t", message[clients], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 						}
 					}
 				}
@@ -16143,27 +16143,46 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	}
 	while(KvGotoNextKey(Kv));
 
-	if(shuffle)
+	if(shuffle && charsets>1)
 	{
-		int tries, choosen, current;
-		do
+		KvRewind(Kv);
+
+		int choosen, current;
+		for(int tries; tries<99; tries++)
 		{
-			tries++;
-			current = validCharsets[GetRandomInt(1, charsets)]-1;	// Pick a random boss pack
-			if(current < 0)			// If it's valid (because of exclusion)
+			if(tries > 97)
+			{
+				FF2Dbg("Last try %i", tries);
+			}
+
+			if(shuffle <= choosen)
+			{
+				FF2Dbg("Ended %i of %i filled", choosen, shuffle);
+				break;
+			}
+
+			if(!KvGotoNextKey(Kv))	// Move next pack
+			{
+				current = 0;
+				KvRewind(Kv);
+			}
+
+			if(KvGetNum(Kv, "hidden", 0))
 				continue;
 
-			if(!KvJumpToKeySymbol(Kv, current))	// Move handle to the pack
+			current++;
+			if(validCharsets[current]<0 || GetRandomInt(0, charsets)>(charsets-1))	// If it's valid (because of exclusion) and randomly choosen
 				continue;
 
 			choosen++;
-			validCharsets[current] = -1;	// Exclude from being picked twice
+			FF2Dbg("Pack %i [%i] (%i of %i) chosen on try %i", current, validCharsets[current], choosen, shuffle, tries);
 
 			KvGetSectionName(Kv, charset, sizeof(charset));
-			IntToString(current, index, sizeof(index));
+			IntToString(validCharsets[current], index, sizeof(index));
 			AddMenuItem(menu, index, charset);
+
+			validCharsets[current] = -1;	// Exclude from being picked twice
 		}
-		while(tries<99 && shuffle<choosen);	// If occured too many times or have the set amount of packs
 	}
 	CloseHandle(Kv);
 
