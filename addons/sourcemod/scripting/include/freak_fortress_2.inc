@@ -24,6 +24,11 @@
 #endif
 #define _FF2_included
 
+#if defined _FFBAT_included
+ #endinput
+#endif
+#define _FFBAT_included
+
 /**
  * Is Freak Fortress enabled?
  *
