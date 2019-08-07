@@ -608,7 +608,7 @@ forward Action FF2_OnLoseLife(int boss, int &lives, int maxLives);
  *
  * @noreturn
  */
-forward Action FF2_OnAlivePlayersChanged(int players, int bosses);
+forward void FF2_OnAlivePlayersChanged(int players, int bosses);
 
 /**
  * Gives ammo to a weapon
