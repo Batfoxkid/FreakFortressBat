@@ -74,11 +74,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "1"
+#define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Build"
+#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1832,6 +1832,7 @@ Handle BossKV[MAXSPECIALS];
 Handle PreAbility;
 Handle OnAbility;
 Handle OnMusic;
+Handle OnMusic2;
 Handle OnTriggerHurt;
 Handle OnSpecialSelected;
 Handle OnAddQueuePoints;
@@ -1918,6 +1919,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	PreAbility = CreateGlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
 	OnAbility = CreateGlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
 	OnMusic = CreateGlobalForward("FF2_OnMusic", ET_Hook, Param_String, Param_FloatByRef);
+	OnMusic2 = CreateGlobalForward("FF2_OnMusic2", ET_Hook, Param_String, Param_FloatByRef, Param_String, Param_String);
 	OnTriggerHurt = CreateGlobalForward("FF2_OnTriggerHurt", ET_Hook, Param_Cell, Param_Cell, Param_FloatByRef);
 	OnSpecialSelected = CreateGlobalForward("FF2_OnSpecialSelected", ET_Hook, Param_Cell, Param_CellByRef, Param_String, Param_Cell);  //Boss, character index, character name, preset
 	OnAddQueuePoints = CreateGlobalForward("FF2_OnAddQueuePoints", ET_Hook, Param_Array);
@@ -5577,7 +5579,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		Format(temp, sizeof(temp), "sound/%s", music);
 		if(FileExists(temp, true))
 		{
-			PlayBGM(client, music, time, _, id3[2], id3[3]);
+			PlayBGM(client, music, time, id3[2], id3[3]);
 		}
 		else
 		{
@@ -5594,30 +5596,60 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 	}
 }
 
-void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="", char[] artist="")
+void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist="")
 {
 	Action action;
-	Call_StartForward(OnMusic);
+	Call_StartForward(OnMusic2);
 	char temp[3][PLATFORM_MAX_PATH];
-	float time2=time;
+	float time2 = time;
 	strcopy(temp[0], sizeof(temp[]), music);
 	strcopy(temp[1], sizeof(temp[]), name);
 	strcopy(temp[2], sizeof(temp[]), artist);
 	Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushFloatRef(time2);
+	Call_PushStringEx(temp[1], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushStringEx(temp[2], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_Finish(action);
 	switch(action)
 	{
 		case Plugin_Stop, Plugin_Handled:
 		{
-			FF2Dbg("NEED INPUT!");
+			FF2Dbg("NEED BIGGER INPUT!");
 			return;
 		}
 		case Plugin_Changed:
 		{
 			strcopy(music, PLATFORM_MAX_PATH, temp[0]);
+			strcopy(name, PLATFORM_MAX_PATH, temp[1]);
+			strcopy(artist, PLATFORM_MAX_PATH, temp[2]);
 			time=time2;
-			FF2Dbg("OOO... INPUT! %s | %f", music, time);
+			FF2Dbg("OOO... BIGGER INPUT! %s | %f | %s | %s", music, time, name, artist);
+		}
+		default:
+		{
+			Action action2;
+			Call_StartForward(OnMusic);
+			time2 = time;
+			strcopy(temp[0], sizeof(temp[]), music);
+			strcopy(temp[1], sizeof(temp[]), name);
+			strcopy(temp[2], sizeof(temp[]), artist);
+			Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushFloatRef(time2);
+			Call_Finish(action2);
+			switch(action2)
+			{
+				case Plugin_Stop, Plugin_Handled:
+				{
+					FF2Dbg("NEED INPUT!");
+					return;
+				}
+				case Plugin_Changed:
+				{
+					strcopy(music, PLATFORM_MAX_PATH, temp[0]);
+					time=time2;
+					FF2Dbg("OOO... INPUT! %s | %f", music, time);
+				}
+			}
 		}
 	}
 
@@ -5636,9 +5668,9 @@ void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="
 			// # before filepath effects music slider but can't stop correctly most of the time
 
 			ClientCommand(client, "playgamesound \"%s\"", music);
-			if(time>1)
+			if(time > 1)
 			{
-				MusicTimer[client]=CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+				MusicTimer[client] = CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 			}
 		}
 		if(!name[0])
@@ -5651,7 +5683,7 @@ void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="
 			Format(artist[0], 256, "%T", "unknown_artist", client);
 			unknown2 = false;
 		}
-		if(GetConVarInt(cvarSongInfo)==1 || (unknown1 && unknown2 && loop && GetConVarInt(cvarSongInfo)==0))
+		if(GetConVarInt(cvarSongInfo)==1 || ((unknown1 || unknown2) && GetConVarInt(cvarSongInfo)==0))
 		{
 			FPrintToChat(client, "%t", "track_info", artist, name);
 		}
@@ -5661,7 +5693,7 @@ void PlayBGM(int client, char[] music, float time, bool loop=true, char[] name="
 		char bossName[64];
 		KvRewind(BossKV[Special[0]]);
 		KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-		PrintToServer("[FF2 Bosses] Character %s is missing BGM file '%s'!", bossName, music);
+		LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, music);
 	}
 }
 
@@ -11977,7 +12009,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	int index = -1;
 	int entity = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	if(IsValidEntity(entity) && IsValidEdict(entity) && GetClientTeam(client)==OtherTeam && SapperCooldown[client]<=0)
+	if(IsValidEntity(entity) && IsValidEdict(entity) && (GetClientTeam(client)==OtherTeam || Enabled3) && SapperCooldown[client]<=0)
 	{
 		index=GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
 
@@ -11988,7 +12020,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(IsValidClient(target) && IsPlayerAlive(target) && GetClientTeam(target)==BossTeam)
+				if(IsValidClient(target) && IsPlayerAlive(target) && (GetClientTeam(target)==BossTeam || Enabled3))
 				{
 					boss = GetBossIndex(target);
 					GetEntPropVector(target, Prop_Send, "m_vecOrigin", position2);
@@ -15702,7 +15734,7 @@ public Action Command_SkipSong(int client, int args)
 		Format(temp, sizeof(temp), "sound/%s", music);
 		if(FileExists(temp, true))
 		{
-			PlayBGM(client, music, time, _, id3[2], id3[3]);
+			PlayBGM(client, music, time, id3[2], id3[3]);
 		}
 		else
 		{
@@ -15930,7 +15962,7 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 							return;
 						}
 					}
-					PlayBGM(param1, music, time, _, id3[2], id3[3]);
+					PlayBGM(param1, music, time, id3[2], id3[3]);
 				}
 				else
 				{

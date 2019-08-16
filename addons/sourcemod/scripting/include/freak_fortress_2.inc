@@ -110,6 +110,7 @@ native int FF2_GetBossTeam();
  *
  * @return			True if boss exists, false if not
  */
+#pragma deprecated Use FF2_GetBossName instead for Unofficial
 native bool FF2_GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int bossMeaning=0);
 
 /**
@@ -538,7 +539,7 @@ native bool FF2_GetCheats();
  *
  * @return		Plugin_Stop can not prevent the ability. Use FF2_PreAbility with enabled=false
  */
-forward int FF2_PreAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, bool &enabled);
+forward void FF2_PreAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, bool &enabled);
 forward Action FF2_OnAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, int status);
 
 /**
@@ -560,8 +561,20 @@ forward Action FF2_OnTriggerHurt(int boss, int triggerHurt, float &damage);
  *
  * @return		Plugin_Stop will prevent music, Plugin_Changed will change it.
  */
+#pragma deprecated Use FF2_OnMusic2 instead for Unofficial
 forward Action FF2_OnMusic(char[] path, float &time);
 
+/**
+ * Called when a Boss's music begins with name and artist
+ *
+ * @param path 		Path to music sound file
+ * @param time		Length of music
+ * @param name 		The music name
+ * @param artist 	The music artist
+ *
+ * @return		Plugin_Stop will prevent music, Plugin_Changed will change it.
+ */
+forward Action FF2_OnMusic2(char[] path, float &time, char[] name="", char[] artist="");
 
 /**
  * Called when FF2 picks a character for a Boss
