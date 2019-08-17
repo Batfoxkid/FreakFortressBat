@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -166,7 +166,7 @@ bool CheatsUsed;
 float rageMax[MAXTF2PLAYERS];
 float rageMin[MAXTF2PLAYERS];
 int rageMode[MAXTF2PLAYERS];
-int Special[MAXTF2PLAYERS];
+int Special[MAXPLAYERS+1];
 int Incoming[MAXTF2PLAYERS];
 
 int Damage[MAXTF2PLAYERS];
@@ -9883,6 +9883,8 @@ public Action ClientTimer(Handle timer)
 			{
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
 			}
+
+			SetClientGlow(client, -0.2);
 
 			if(Enabled3 || bMedieval)
 				continue;
