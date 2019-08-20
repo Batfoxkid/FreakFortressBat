@@ -574,7 +574,7 @@ forward Action FF2_OnMusic(char[] path, float &time);
  *
  * @return		Plugin_Stop will prevent music, Plugin_Changed will change it.
  */
-forward Action FF2_OnMusic2(char[] path, float &time, char[] name="", char[] artist="");
+forward Action FF2_OnMusic2(char[] path, float &time, char[] name, char[] artist);
 
 /**
  * Called when FF2 picks a character for a Boss
@@ -643,22 +643,11 @@ stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
 	if(IsValidEntity(weapon))
 	{
 		if(clip > -1)
-		{
 			SetEntProp(weapon, Prop_Data, "m_iClip1", clip);
-		}
 
 		int ammoType = (ammo>-1 ? GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType") : -1);
 		if(ammoType != -1)
-		{
 			SetEntProp(client, Prop_Data, "m_iAmmo", ammo, _, ammoType);
-		}
-		else if(ammo > -1)  //Only complain if we're trying to set ammo
-		{
-			char classname[64], bossName[32];
-			GetEdictClassname(weapon, classname, sizeof(classname));
-			FF2_GetBossSpecial(FF2_GetBossIndex(client), bossName, sizeof(bossName));
-			LogError("[FF2] Cannot give ammo to weapon %s (boss %s)-check your config!", classname, bossName);
-		}
 	}
 }
 
