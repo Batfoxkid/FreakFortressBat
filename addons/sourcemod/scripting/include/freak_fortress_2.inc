@@ -1,6 +1,7 @@
 //Freak Fortress 2 include file.
 #include <morecolors>
 #include <sdktools>
+#tryinclude <tf2items>
 
 #define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
 #define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
@@ -338,6 +339,60 @@ native float FF2_GetAbilityArgumentFloat(int boss, const char[] plugin_name, con
  * @noreturn
  */
 native void FF2_GetAbilityArgumentString(int boss, const char[] pluginName, const char[] abilityName, int argument, char[] buffer, int bufferLength);
+
+
+/**
+ * Gets the integer value of a named ability argument
+ *
+ * @param boss			Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ * @param argument 		Argument name
+ * @param defValue 		Returns if argument is not defined
+ * @return				Value of argument
+ */
+native int FF2_GetArgNamedI(int boss, const char[] pluginName, const char[] abilityName, const char[] argument, int defValue=0);
+
+/**
+ * Gets the float value of a named ability argument
+ *
+ * @param boss			Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ * @param argument 		Argument name
+ * @param defValue 		Returns if argument is not defined
+ * @return				Value of argument
+ */
+native float FF2_GetArgNamedF(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, float defValue=0.0);
+
+/**
+ * Gets the string value of a named ability argument
+ *
+ * @param boss			Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ * @param argument 		Argument name
+ * @param buffer 		Buffer for value of argument
+ * @param bufferLength	Length of buffer string
+ * @noreturn
+ */
+native void FF2_GetArgNamedS(int boss, const char[] pluginName, const char[] abilityName, const char[] argument, char[] buffer, int bufferLength);
+
+/**
+ * Named arguments are used for this ability in the boss config?
+ *
+ * @param boss			Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ * @return              True if named arguments are used. False if indexed arguments are used.
+ */
+stock bool FF2_NamedArgumentsUsed(int boss, const char[] pluginName, const char[] abilityName)
+{
+	if(GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedI") != FeatureStatus_Available)
+		return false;
+
+	return (FF2_GetArgNamedI(boss, pluginName, abilityName, "slot", -2)!=-2) ? true : false;
+}
 
 /**
  * Plays a sound to everyone except players who disabled boss voices
@@ -785,6 +840,73 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 	}
 }
 
+/**
+ * Used to spawn a weapon
+ *
+ * @param client	Client index
+ * @param name	    Classname of the weapon
+ * @param index	    Definition index of the weapon
+ * @param level	    Level of the weapon
+ * @param qual	    Quality of the weapon
+ * @param qual	   	String, containing the attributes in the following format: attr ; val ; attr ; val ; ...
+ * @param visible	Weapon will be visible?
+ *
+ * @return          Entity index of the weapon
+ */
+stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qual, char[] att, bool visible=true)
+{
+	#if defined _tf2items_included
+	Handle hWeapon=TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
+	if(hWeapon==INVALID_HANDLE)
+	{
+		return -1;
+	}
+
+	TF2Items_SetClassname(hWeapon, name);
+	TF2Items_SetItemIndex(hWeapon, index);
+	TF2Items_SetLevel(hWeapon, level);
+	TF2Items_SetQuality(hWeapon, qual);
+	char atts[32][32];
+	int count=ExplodeString(att, ";", atts, 32, 32);
+
+	if(count % 2)
+	{
+		--count;
+	}
+
+	if(count>0)
+	{
+		TF2Items_SetNumAttributes(hWeapon, count/2);
+		int i2;
+		for(int i; i<count; i+=2)
+		{
+			int attrib=StringToInt(atts[i]);
+			if(!attrib)
+			{
+				LogError("Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
+				CloseHandle(hWeapon);
+				return -1;
+			}
+
+			TF2Items_SetAttribute(hWeapon, i2, attrib, StringToFloat(atts[i+1]));
+			i2++;
+		}
+	}
+	else
+	{
+		TF2Items_SetNumAttributes(hWeapon, 0);
+	}
+
+	int entity=TF2Items_GiveNamedItem(client, hWeapon);
+	CloseHandle(hWeapon);
+	EquipPlayerWeapon(client, entity);
+	SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", visible);
+	return entity;
+	#else
+	return -1;
+	#endif
+}
+
 public SharedPlugin __pl_FF2 =
 {
 	name = "freak_fortress_2",
@@ -838,6 +960,9 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_GetClientGlow");
 	MarkNativeAsOptional("FF2_SetClientGlow");
 	MarkNativeAsOptional("FF2_Debug");
+	MarkNativeAsOptional("FF2_GetArgNamedI");
+	MarkNativeAsOptional("FF2_GetArgNamedF");
+	MarkNativeAsOptional("FF2_GetArgNamedS");
 }
 #endif
 

@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1900,6 +1900,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_GetAbilityArgument", Native_GetAbilityArgument);
 	CreateNative("FF2_GetAbilityArgumentFloat", Native_GetAbilityArgumentFloat);
 	CreateNative("FF2_GetAbilityArgumentString", Native_GetAbilityArgumentString);
+	CreateNative("FF2_GetArgNamedI", Native_GetArgNamedI);
+	CreateNative("FF2_GetArgNamedF", Native_GetArgNamedF);
+	CreateNative("FF2_GetArgNamedS", Native_GetArgNamedS);
 	CreateNative("FF2_RandomSound", Native_RandomSound);
 	CreateNative("FF2_EmitVoiceToAll", Native_EmitVoiceToAll);
 	CreateNative("FF2_GetFF2flags", Native_GetFF2flags);
@@ -4813,7 +4816,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	else
 	{
 		bossWin = -1;
-		if(RandomSound("sound_stalemate", sound, sizeof(sound), MAXBOSSES))
+		if(RandomSound("sound_stalemate", sound, sizeof(sound)))
 			EmitSoundToAllExcept(sound);
 
 		if(RandomSound("sound_outtromusic_stalemate", sound, sizeof(sound)))
@@ -5631,8 +5634,6 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 			Call_StartForward(OnMusic);
 			time2 = time;
 			strcopy(temp[0], sizeof(temp[]), music);
-			strcopy(temp[1], sizeof(temp[]), name);
-			strcopy(temp[2], sizeof(temp[]), artist);
 			Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 			Call_PushFloatRef(time2);
 			Call_Finish(action2);
@@ -7048,7 +7049,7 @@ void EquipBoss(int boss)
 				}
 			}
 
-			int weapon = SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+			int weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 			FF2_SetAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", -1), KvGetNum(BossKV[Special[boss]], "clip", -1));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
@@ -7078,6 +7079,8 @@ void EquipBoss(int boss)
 			}
 			else
 			{
+				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
+
 				char wModel[PLATFORM_MAX_PATH];
 				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
 				if(strlen(wModel))
@@ -7686,17 +7689,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 43:  //Killing Gloves of Boxing
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.2 ; 77 ; 0 ; 109 ; 0.5 ; 177 ; 2 ; 205 ; 0.7 ; 206 ; 0.7 ; 239 ; 0.6 ; 442 ; 1.35 ; 443 ; 1.1 ; 800 ; 0");
-				// 16: +50 HP on hit
-				// 69: -80% health from healers
-				// 77: -100% max primary ammo
-				// 109: -50% health from packs
-				// 177: -100% weapon switch speed
-				// 205: -30% damage from ranged while active
-				// 206: -30% damage from melee while active
-				// 239: -40% uber for healer
-				// 442: +35% speed
-				// 443: +10% jump
-				// 800: -100% max overheal
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7824,7 +7816,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 224:  //L'etranger
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
-					//166: +5% cloak on hit
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7861,11 +7852,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 239, 1084, 1100:  //GRU, Festive GRU, Bread Bite
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.5 ; 107 ; 1.5 ; 128 ; 1 ; 191 ; -7 ; 772 ; 1.5", true);
-					//1: -50% damage
-					//107: +50% move speed
-					//128: Only when weapon is active
-					//191: -7 health/second
-					//772: Holsters 50% slower
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7884,7 +7870,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 305, 1079:  //Crusader's Crossbow, Festive Crusader's Crossbow
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.2");
-					//17: +20% uber on hit
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7939,9 +7924,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 331:  //Fists of Steel
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "205 ; 0.65 ; 206 ; 0.65 ; 772 ; 2.0 ; 800 ; 0.6 ; 854 ; 0.6", true);
-					//205: -35% damage from ranged while active
-					//206: -35% damage from melee while active
-					//772: Holsters 100% slower
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7951,17 +7933,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 348:  //Sharpened Volcano Fragment
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 30 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.67 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
-				// 16: +30 HP on hit
-				// 69: -66% health from healers
-				// 77: -100% max primary ammo
-				// 109: -50% health from packs
-				// 773: -50% deploy speed
-				// 205: -20% damage from ranged while active
-				// 206: -40% damage from melee while active
-				// 239: -33% uber for healer
-				// 442: +15% speed
-				// 443: +15% jump
-				// 800: -66% max overheal
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -7980,10 +7951,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 351:  //Detonator
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "25 ; 0.5 ; 58 ; 3.2 ; 79 ; 0.75 ; 144 ; 1.0 ; 207 ; 1.33", true);
-					//25: -50% ammo
-					//58: 220% self damage force
-					//144: NOPE
-					//207: +33% damage to self
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -8038,11 +8005,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 415:  //Reserve Shooter
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "2 ; 1.1 ; 3 ; 0.5 ; 114 ; 1 ; 179 ; 1 ; 547 ; 0.6", true);
-					//2: +10% damage bonus
-					//3: -50% clip size
-					//114: Mini-crits targets launched airborne by explosions, grapple hooks or enemy attacks
-					//179: Minicrits become crits
-					//547: Deploys 40% faster
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -8161,7 +8123,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 656:  //Holiday Punch
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "178 ; 0.001", true);
-					//178: Switch 99.9% faster
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -8189,7 +8150,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 772:  //Baby Face's Blaster
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "532 ; 1.2");
-					//532: Hype decays
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -8282,7 +8242,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 		if(TF2_GetPlayerClass(client)==TFClass_Medic && !StrContains(classname, "tf_weapon_syringegun_medic"))  //Syringe guns
 		{
 			Handle itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.05");
-				//17: 5% uber on hit
 			if(itemOverride != INVALID_HANDLE)
 			{
 				item=itemOverride;
@@ -8296,41 +8255,15 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			{
 				case 35:
 					itemOverride=PrepareItemHandle(item, _, _, "10 ; 2.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 314 ; 3 ; 547 ; 0.75");
-					//10: +125% faster charge rate
-					//11: +50% overheal bonus
-					//18: Kritzkrieg uber
-					//199: Deploys 25% faster
-					//547: Holsters 25% faster
 
 				case 411:  //Quick-Fix
 					itemOverride=PrepareItemHandle(item, _, _, "8 ; 1.0 ; 10 ; 2 ; 105 ; 1 ; 144 ; 2 ; 199 ; 0.75 ; 231 ; 2 ; 493 ; 2 ; 547 ; 0.75");
-					//8: +0% heal rate
-					//10: +100% faster charge rate
-					//105: Default Medi-Gun overheal
-					//144: Quick-fix speed/jump effects
-					//199: Deploys 25% faster
-					//231: Quick-fix no-knockback uber
-					//493: Healing mastery level 2
-					//547: Holsters 25% faster
 
 				case 998:  //Vaccinator
 					itemOverride = PrepareItemHandle(item, _, _, "10 ; 2.5 ; 11 ; 1.5 ; 199 ; 0.75 ; 314 ; -3 ; 479 ; 0.34 ; 499 ; 1 ; 547 ; 0.75 ; 739 ; 0.34", true);
-					//10: +150% faster charge rate
-					//11: +50% overheal bonus
-					//199: Deploys 25% faster
-					//314: -3 sec uber duration
-					//479: -66% overheal build rate
-					//499: Projectile sheild level 1
-					//547: Holsters 25% faster
-					//739: -66% uber rate when overhealing
 
 				default:
 					itemOverride = PrepareItemHandle(item, _, _, "10 ; 1.75 ; 11 ; 1.5 ; 144 ; 2.0 ; 199 ; 0.75 ; 547 ; 0.75");
-					//10: +75% faster charge rate
-					//11: +50% overheal bonus
-					//144: Quick-fix speed/jump effects
-					//199: Deploys 25% faster
-					//547: Holsters 25% faster
 			}
 
 			if(itemOverride != INVALID_HANDLE)
@@ -8476,7 +8409,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60 && (kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0))  //Cloak and Dagger
 	{
 		TF2_RemoveWeaponSlot(client, 4);
-		SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 1.65 ; 728 ; 1 ; 729 ; 0.65");
+		FF2_SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 1.65 ; 728 ; 1 ; 729 ; 0.65");
 	}
 
 	if(bMedieval)
@@ -8486,7 +8419,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && (kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0))
 	{
 		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
-		SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
+		FF2_SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
 	}
 	else
 	{
@@ -8514,7 +8447,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	shield[client] = IsValidEntity(playerBack) ? playerBack : 0;
 	hadshield[client] = IsValidEntity(playerBack) ? true : false;
 	if(IsValidEntity(FindPlayerBack(client, 642)))  //Cozy Camper
-		SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 1.5 ; 15 ; 0.0 ; 1 ; 0.75");
+		FF2_SpawnWeapon(client, "tf_weapon_smg", 16, 1, 6, "149 ; 1.5 ; 15 ; 0.0 ; 1 ; 0.75");
 
 	#if defined _tf2attributes_included
 	if(tf2attributes && (kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0))
@@ -8627,7 +8560,7 @@ public Action OnObjectDestroyed(Handle event, const char[] name, bool dontBroadc
 public Action OnUberDeployed(Handle event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(Enabled && IsValidClient(client) && IsPlayerAlive(client))
+	if(Enabled && IsValidClient(client) && IsPlayerAlive(client) && (Enabled3 || GetClientTeam(client)!=BossTeam))
 	{
 		int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 		if(IsValidEntity(medigun))
@@ -10258,50 +10191,9 @@ public Action BossTimer(Handle timer)
 
 		SetClientGlow(client, -0.2);
 
-		char lives[MAXRANDOMS][3];
-		for(int i=1; ; i++)
+		for(int i=1; i<4; i++)
 		{
-			char ability[10];
-			Format(ability, sizeof(ability), "ability%i", i);
-			KvRewind(BossKV[Special[boss]]);
-			if(KvJumpToKey(BossKV[Special[boss]], ability))
-			{
-				char plugin_name[64];
-				KvGetString(BossKV[Special[boss]], "plugin_name", plugin_name, sizeof(plugin_name));
-				int slot = KvGetNum(BossKV[Special[boss]], "arg0", 0);
-				int buttonmode = KvGetNum(BossKV[Special[boss]], "buttonmode", 0);
-				if(slot < 1)
-					continue;
-
-				if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
-					continue;
-
-				KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability), "");
-				if(!ability[0])
-				{
-					char ability_name[64];
-					KvGetString(BossKV[Special[boss]], "name", ability_name, sizeof(ability_name));
-					UseAbility(ability_name, plugin_name, boss, slot, buttonmode);
-				}
-				else
-				{
-					int count = ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
-					for(int n; n<count; n++)
-					{
-						if(StringToInt(lives[n]) == BossLives[boss])
-						{
-							char ability_name[64];
-							KvGetString(BossKV[Special[boss]], "name", ability_name, sizeof(ability_name));
-							UseAbility(ability_name, plugin_name, boss, slot, buttonmode);
-							break;
-						}
-					}
-				}
-			}
-			else
-			{
-				break;
-			}
+			ActivateAbilitySlot(boss, i, true);
 		}
 
 		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-3 : MercAlivePlayers;
@@ -10763,47 +10655,7 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 
 	if(RoundFloat(BossCharge[boss][0])>=rageMin[client])
 	{
-		char ability[10], lives[MAXRANDOMS][3];
-		for(int i=1; i<MAXRANDOMS; i++)
-		{
-			Format(ability, sizeof(ability), "ability%i", i);
-			KvRewind(BossKV[Special[boss]]);
-			if(KvJumpToKey(BossKV[Special[boss]], ability))
-			{
-				if(KvGetNum(BossKV[Special[boss]], "arg0", 0))
-					continue;
-
-				if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
-					continue;
-
-				KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
-				if(!ability[0])
-				{
-					char abilityName[64], pluginName[64];
-					KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-					KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-					if(!UseAbility(abilityName, pluginName, boss, 0))
-						return Plugin_Continue;
-				}
-				else
-				{
-					int count=ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
-					for(int j; j<count; j++)
-					{
-						if(StringToInt(lives[j])==BossLives[boss])
-						{
-							char abilityName[64], pluginName[64];
-							KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-							KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-							if(!UseAbility(abilityName, pluginName, boss, 0))
-								return Plugin_Continue;
-
-							break;
-						}
-					}
-				}
-			}
-		}
+		ActivateAbilitySlot(boss, 0);
 
 		float position[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
@@ -10831,6 +10683,64 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
+}
+
+void ActivateAbilitySlot(int boss, int slot, bool buttonmodeactive=false)
+{
+	char ability[12], lives[MAXRANDOMS][3];
+	for(int i=1; i<=MAXRANDOMS; i++)
+	{
+		Format(ability, sizeof(ability), "ability%i", i);
+		KvRewind(BossKV[Special[boss]]);
+		if(KvJumpToKey(BossKV[Special[boss]], ability))
+		{
+			if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
+				continue;
+
+			int ability_slot = KvGetNum(BossKV[Special[boss]], "slot", -2);
+			if(ability_slot == -2)
+			{
+				ability_slot = KvGetNum(BossKV[Special[boss]], "arg0", -2);
+				if(ability_slot == -2)
+					ability_slot = 0;
+			}
+
+			if(ability_slot != slot)
+				continue;
+	
+			int buttonmode=(buttonmodeactive) ? (KvGetNum(BossKV[Special[boss]], "buttonmode", 0)) : 0;
+
+			KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
+			if(!ability[0])
+			{
+				char abilityName[64], pluginName[64];
+				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
+				KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
+				if(!UseAbility(abilityName, pluginName, boss, slot, buttonmode))
+				{
+					return;
+				}
+			}
+			else
+			{
+				int count=ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
+				for(int j; j<count; j++)
+				{
+					if(StringToInt(lives[j])==BossLives[boss])
+					{
+						char abilityName[64], pluginName[64];
+						KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
+						KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
+						if(!UseAbility(abilityName, pluginName, boss, slot, buttonmode))
+						{
+							return;
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
 public Action OnSuicide(int client, const char[] command, int args)
@@ -11108,44 +11018,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 					AddClientStats(attacker, Cookie_BossKills, 1);
 			}
 
-			char ability[10], lives[MAXRANDOMS][3];
-			for(int i=1; i<MAXRANDOMS; i++)
-			{
-				Format(ability, sizeof(ability), "ability%i", i);
-				KvRewind(BossKV[Special[boss]]);
-				if(KvJumpToKey(BossKV[Special[boss]], ability))
-				{
-					if(KvGetNum(BossKV[Special[boss]], "arg0", 0) != 4)
-						continue;
-
-					if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
-						continue;
-
-					KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
-					if(!ability[0])
-					{
-						char abilityName[64], pluginName[64];
-						KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-						KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-						UseAbility(abilityName, pluginName, boss, 4);
-					}
-					else
-					{
-						int count=ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
-						for(int j; j<count; j++)
-						{
-							if(StringToInt(lives[j]) == BossLives[boss])
-							{
-								char abilityName[64], pluginName[64];
-								KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-								KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-								UseAbility(abilityName, pluginName, boss, 4);
-								break;
-							}
-						}
-					}
-				}
-			}
+			ActivateAbilitySlot(boss, 4);
 		}
 	}
 	else if(client && attacker)
@@ -11163,50 +11036,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		if(IsFakeClient(client) || !IsFakeClient(attacker))
 			AddClientStats(client, Cookie_BossDeaths, 1);
 
-		for(int aliveBosses; aliveBosses<=MaxClients; aliveBosses++)
-		{
-			if(IsValidClient(Boss[aliveBosses]) && IsPlayerAlive(Boss[aliveBosses]))
-			{
-				char ability[10], lives[MAXRANDOMS][3];
-				for(int i=1; i<MAXRANDOMS; i++)
-				{
-					Format(ability, sizeof(ability), "ability%i", i);
-					KvRewind(BossKV[Special[aliveBosses]]);
-					if(KvJumpToKey(BossKV[Special[aliveBosses]], ability))
-					{
-						if(KvGetNum(BossKV[Special[aliveBosses]], "arg0", 0) != 5)
-							continue;
-
-						if(KvGetNum(BossKV[Special[aliveBosses]], "noversus", 0) && Enabled3)
-							continue;
-
-						KvGetString(BossKV[Special[aliveBosses]], "life", ability, sizeof(ability));
-						if(!ability[0])
-						{
-							char abilityName[64], pluginName[64];
-							KvGetString(BossKV[Special[aliveBosses]], "plugin_name", pluginName, sizeof(pluginName));
-							KvGetString(BossKV[Special[aliveBosses]], "name", abilityName, sizeof(abilityName));
-							UseAbility(abilityName, pluginName, aliveBosses, 5);
-						}
-						else
-						{
-							int count=ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
-							for(int j; j<count; j++)
-							{
-								if(StringToInt(lives[j]) == BossLives[aliveBosses])
-								{
-									char abilityName[64], pluginName[64];
-									KvGetString(BossKV[Special[aliveBosses]], "plugin_name", pluginName, sizeof(pluginName));
-									KvGetString(BossKV[Special[aliveBosses]], "name", abilityName, sizeof(abilityName));
-									UseAbility(abilityName, pluginName, aliveBosses, 5);
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		ActivateAbilitySlot(boss, 5);
 
 		BossHealth[boss] = 0;
 		UpdateHealthBar();
@@ -11795,60 +11625,14 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 				BossLives[boss] = bossLives;
 			}
 
-			char ability[PLATFORM_MAX_PATH];
-			for(int n=1; n<MAXRANDOMS; n++)
-			{
-				Format(ability, 10, "ability%i", n);
-				KvRewind(BossKV[Special[boss]]);
-				if(KvJumpToKey(BossKV[Special[boss]], ability))
-				{
-					if(KvGetNum(BossKV[Special[boss]], "arg0", 0) != -1)
-						continue;
+			ActivateAbilitySlot(boss, -1);
 
-					if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
-						continue;
-
-					KvGetString(BossKV[Special[boss]], "life", ability, 10);
-					if(!ability[0])
-					{
-						char abilityName[64], pluginName[64];
-						KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-						KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-						UseAbility(abilityName, pluginName, boss, -1);
-					}
-					else
-					{
-						char stringLives[MAXRANDOMS][3];
-						int count=ExplodeString(ability, " ", stringLives, MAXRANDOMS, 3);
-						for(int j; j<count; j++)
-						{
-							if(StringToInt(stringLives[j]) == BossLives[boss])
-							{
-								char abilityName[64], pluginName[64];
-								KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-								KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-								UseAbility(abilityName, pluginName, boss, -1);
-								break;
-							}
-						}
-					}
-				}
-
-				Format(ability, 10, "sound_bgm");
-				KvRewind(BossKV[Special[boss]]);
-				if(KvJumpToKey(BossKV[Special[boss]], ability))
-				{
-					Format(ability, 10, "life%i", n);
-					KvGetString(BossKV[Special[boss]], ability, ability, 10);
-					if(ability[0])
-						StartMusic(client);
-				}
-			}
 			BossLives[boss] = lives;
 
 			char bossName[64];
 			strcopy(bossName, sizeof(bossName), "=Failed name=");
 
+			char ability[PLATFORM_MAX_PATH];
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(int target=1; target<=MaxClients; target++)
 			{
@@ -12323,47 +12107,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 				}
 
+				ActivateAbilitySlot(boss, 6);
+
 				if(Stabbed[boss] < 3)
 					Stabbed[boss]++;
 
-				char ability[10], lives[MAXRANDOMS][3];
-				for(int i=1; i<MAXRANDOMS; i++)
-				{
-					Format(ability, sizeof(ability), "ability%i", i);
-					KvRewind(BossKV[Special[boss]]);
-					if(KvJumpToKey(BossKV[Special[boss]], ability))
-					{
-						if(KvGetNum(BossKV[Special[boss]], "arg0", 0) != 6)
-							continue;
-
-						if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
-							continue;
-
-						KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
-						if(!ability[0])
-						{
-							char abilityName[64], pluginName[64];
-							KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-							KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-							UseAbility(abilityName, pluginName, boss, 6);
-						}
-						else
-						{
-							int count=ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
-							for(int j; j<count; j++)
-							{
-								if(StringToInt(lives[j]) == BossLives[boss])
-								{
-									char abilityName[64], pluginName[64];
-									KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-									KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-									UseAbility(abilityName, pluginName, boss, 6);
-									break;
-								}
-							}
-						}
-					}
-				}
 				return Plugin_Changed;
 			}
 
@@ -12955,6 +12703,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									EmitSoundToAllExcept(sound);
 							}
 
+							ActivateAbilitySlot(boss, 7);
 							HealthBarMode = true;
 							CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 							return Plugin_Changed;
@@ -13189,47 +12938,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Primary)==525)  //Diamondback
 						SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+3);
 
+					ActivateAbilitySlot(boss, 6);
+
 					if(Stabbed[boss] < 3)
 						Stabbed[boss]++;
 
-					char ability[10], lives[MAXRANDOMS][3];
-					for(int i=1; i<MAXRANDOMS; i++)
-					{
-						Format(ability, sizeof(ability), "ability%i", i);
-						KvRewind(BossKV[Special[boss]]);
-						if(KvJumpToKey(BossKV[Special[boss]], ability))
-						{
-							if(KvGetNum(BossKV[Special[boss]], "arg0", 0) != 6)
-								continue;
-
-							if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
-								continue;
-
-							KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
-							if(!ability[0])
-							{
-								char abilityName[64], pluginName[64];
-								KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-								KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-								UseAbility(abilityName, pluginName, boss, 6);
-							}
-							else
-							{
-								int count=ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
-								for(int j; j<count; j++)
-								{
-									if(StringToInt(lives[j]) == BossLives[boss])
-									{
-										char abilityName[64], pluginName[64];
-										KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-										KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
-										UseAbility(abilityName, pluginName, boss, 6);
-										break;
-									}
-								}
-							}
-						}
-					}
 					return Plugin_Changed;
 				}
 
@@ -14412,101 +14125,124 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 
 stock int GetAbilityArgument(int index, const char[] plugin_name, const char[] ability_name, int arg, int defvalue=0)
 {
+	char str[10];
+	Format(str, sizeof(str), "arg%i", arg);
+	return GetArgumentI(index, plugin_name, ability_name, str, defvalue);
+}
+
+stock float GetAbilityArgumentFloat(int index, const char[] plugin_name, const char[] ability_name, int arg, float defvalue=0.0)
+{
+	char str[10];
+	Format(str, sizeof(str), "arg%i", arg);
+	return GetArgumentF(index, plugin_name, ability_name, str, defvalue);
+}
+
+stock void GetAbilityArgumentString(int index, const char[] plugin_name, const char[] ability_name, int arg, char[] buffer, int buflen, const char[] defvalue="")
+{
+	char str[10];
+	Format(str, sizeof(str), "arg%i", arg);
+	GetArgumentS(index, plugin_name, ability_name, str, buffer, buflen, defvalue);
+}
+
+stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, int defvalue=0)
+{
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0;
 
 	KvRewind(BossKV[Special[index]]);
 	char s[10];
-	for(int i=1; i<MAXRANDOMS; i++)
+	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s, 10, "ability%i", i);
+		Format(s, sizeof(s), "ability%i", i);
 		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
 			if(strcmp(ability_name, ability_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
+
 			char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, 64);
+			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
 			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
-			Format(s, 10, "arg%i", arg);
-			return KvGetNum(BossKV[Special[index]], s, defvalue);
+			return KvGetNum(BossKV[Special[index]], arg, defvalue);
 		}
 	}
 	return 0;
 }
 
-stock float GetAbilityArgumentFloat(int index, const char[] plugin_name, const char[] ability_name, int arg, float defvalue=0.0)
+stock float GetArgumentF(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, float defvalue=0.0)
 {
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0.0;
 
 	KvRewind(BossKV[Special[index]]);
 	char s[10];
-	for(int i=1; i<MAXRANDOMS; i++)
+	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s, 10, "ability%i", i);
-		if(KvJumpToKey(BossKV[Special[index]],s))
+		Format(s, sizeof(s), "ability%i", i);
+		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
 			if(strcmp(ability_name, ability_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
+
 			char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, 64);
+			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
 			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
-			Format(s, 10, "arg%i", arg);
-			float see = KvGetFloat(BossKV[Special[index]], s, defvalue);
+
+			float see = KvGetFloat(BossKV[Special[index]], arg, defvalue);
 			return see;
 		}
 	}
 	return 0.0;
 }
 
-stock int GetAbilityArgumentString(int index, const char[] plugin_name, const char[] ability_name, int arg, char[] buffer, int buflen, const char[] defvalue="")
+stock void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen, const char[] defvalue="")
 {
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 	{
 		strcopy(buffer, buflen, "");
 		return;
 	}
+
 	KvRewind(BossKV[Special[index]]);
 	char s[10];
-	for(int i=1; i<MAXRANDOMS; i++)
+	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s, 10, "ability%i", i);
-		if(KvJumpToKey(BossKV[Special[index]],s))
+		Format(s, sizeof(s), "ability%i", i);
+		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
 			if(strcmp(ability_name, ability_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
+
 			char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, 64);
+			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
 			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
-			Format(s, 10, "arg%i", arg);
-			KvGetString(BossKV[Special[index]], s, buffer, buflen, defvalue);
+			KvGetString(BossKV[Special[index]], arg, buffer, buflen, defvalue);
 		}
 	}
 }
@@ -14936,51 +14672,6 @@ void FindCompanion(int boss, int players, bool[] omit)
 		}
 	}
 	playersNeeded=2;  //Reset the amount of players needed back after we're done
-}
-
-stock int SpawnWeapon(int client, char[] name, int index, int level, int qual, char[] att)
-{
-	Handle hWeapon=TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
-	if(hWeapon==INVALID_HANDLE)
-		return -1;
-
-	TF2Items_SetClassname(hWeapon, name);
-	TF2Items_SetItemIndex(hWeapon, index);
-	TF2Items_SetLevel(hWeapon, level);
-	TF2Items_SetQuality(hWeapon, qual);
-	char atts[32][32];
-	int count=ExplodeString(att, ";", atts, 32, 32);
-
-	if(count % 2)
-		--count;
-
-	if(count>0)
-	{
-		TF2Items_SetNumAttributes(hWeapon, count/2);
-		int i2;
-		for(int i; i<count; i+=2)
-		{
-			int attrib = StringToInt(atts[i]);
-			if(!attrib)
-			{
-				LogToFile(eLog, "[Boss] Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
-				CloseHandle(hWeapon);
-				return -1;
-			}
-
-			TF2Items_SetAttribute(hWeapon, i2, attrib, StringToFloat(atts[i+1]));
-			i2++;
-		}
-	}
-	else
-	{
-		TF2Items_SetNumAttributes(hWeapon, 0);
-	}
-
-	int entity=TF2Items_GiveNamedItem(client, hWeapon);
-	CloseHandle(hWeapon);
-	EquipPlayerWeapon(client, entity);
-	return entity;
 }
 
 public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
@@ -16057,8 +15748,11 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 		if(disguiseboss==-1 || TF2_GetPlayerClass(iDisguisedTarget)!=view_as<TFClassType>(iDisguisedClass))
 			return Plugin_Continue;
 
-		if(channel==SNDCHAN_VOICE && !(FF2flags[Boss[disguiseboss]] & FF2FLAG_TALKING))
+		if(channel==SNDCHAN_VOICE || (channel==SNDCHAN_STATIC && !StrContains(sound, "vo")))
 		{
+			if(FF2flags[Boss[disguiseboss]] & FF2FLAG_TALKING)
+				return Plugin_Continue;
+	
 			char newSound[PLATFORM_MAX_PATH];
 			if(RandomSoundVo("catch_replace", newSound, PLATFORM_MAX_PATH, disguiseboss, sound))
 			{
@@ -16081,8 +15775,11 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 	if(boss == -1)
 		return Plugin_Continue;
 
-	if(channel==SNDCHAN_VOICE && !(FF2flags[Boss[boss]] & FF2FLAG_TALKING))
+	if(channel==SNDCHAN_VOICE || (channel==SNDCHAN_STATIC && !StrContains(sound, "vo")))
 	{
+		if(FF2flags[Boss[boss]] & FF2FLAG_TALKING)
+			return Plugin_Continue;
+
 		char newSound[PLATFORM_MAX_PATH];
 		if(RandomSoundVo("catch_replace", newSound, PLATFORM_MAX_PATH, boss, sound))
 		{
@@ -16722,7 +16419,7 @@ public int Native_SetBossRageDamage(Handle plugin, int numParams)
 
 public int Native_GetRoundState(Handle plugin, int numParams)
 {
-	if(CheckRoundState()<=0)
+	if(CheckRoundState() <= 0)
 		return 0;
 
 	return CheckRoundState();
@@ -16730,7 +16427,7 @@ public int Native_GetRoundState(Handle plugin, int numParams)
 
 public int Native_GetRageDist(Handle plugin, int numParams)
 {
-	int index=GetNativeCell(1);
+	int index = GetNativeCell(1);
 	char plugin_name[64];
 	GetNativeString(2,plugin_name,64);
 	char ability_name[64];
@@ -16745,22 +16442,23 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 		return view_as<int>(KvGetFloat(BossKV[Special[index]],"ragedist",400.0));
 
 	char s[10];
-	for(int i=1; i<MAXRANDOMS; i++)
+	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s,10,"ability%i",i);
-		if(KvJumpToKey(BossKV[Special[index]],s))
+		Format(s, 10, "ability%i", i);
+		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name",ability_name2,64);
-			if(strcmp(ability_name,ability_name2))
+			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			if(strcmp(ability_name, ability_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
-			if((see=KvGetFloat(BossKV[Special[index]],"dist",-1.0))<0)
+	
+			if((see=KvGetFloat(BossKV[Special[index]], "dist", -1.0)) < 0)
 			{
 				KvRewind(BossKV[Special[index]]);
-				see=KvGetFloat(BossKV[Special[index]],"ragedist",400.0);
+				see = KvGetFloat(BossKV[Special[index]] ,"ragedist", 400.0);
 			}
 			return view_as<int>(see);
 		}
@@ -16786,7 +16484,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 	}
 
 	char ability[12];
-	for(int i=1; i<MAXRANDOMS; i++)
+	for(int i=1; i<=MAXRANDOMS; i++)
 	{
 		Format(ability, sizeof(ability), "ability%i", i);
 		if(KvJumpToKey(BossKV[Special[boss]], ability))  //Does this ability number exist?
@@ -16810,8 +16508,8 @@ public int Native_DoAbility(Handle plugin, int numParams)
 {
 	char plugin_name[64];
 	char ability_name[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
 	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
@@ -16819,8 +16517,8 @@ public int Native_GetAbilityArgument(Handle plugin, int numParams)
 {
 	char plugin_name[64];
 	char ability_name[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
 	return GetAbilityArgument(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
@@ -16828,20 +16526,56 @@ public int Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 {
 	char plugin_name[64];
 	char ability_name[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
 	return view_as<int>(GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5)));
 }
 
 public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
 {
 	char plugin_name[64];
-	GetNativeString(2, plugin_name, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	char ability_name[64];
-	GetNativeString(3, ability_name, 64);
+	GetNativeString(3, ability_name, sizeof(ability_name));
 	int dstrlen = GetNativeCell(6);
 	char[] s = new char[dstrlen+1];
 	GetAbilityArgumentString(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), s, dstrlen);
+	SetNativeString(5, s, dstrlen);
+}
+
+public int Native_GetArgNamedI(Handle plugin, int numParams)
+{
+	char plugin_name[64];
+	char ability_name[64];
+	char argument[64];
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
+	GetNativeString(4, argument, sizeof(argument));
+	return GetArgumentI(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
+}
+
+public int Native_GetArgNamedF(Handle plugin, int numParams)
+{
+	char plugin_name[64];
+	char ability_name[64];
+	char argument[64];
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
+	GetNativeString(4, argument, sizeof(argument));
+	return view_as<int>(GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5)));
+}
+
+public int Native_GetArgNamedS(Handle plugin, int numParams)
+{
+	char plugin_name[64];
+	char ability_name[64];
+	char argument[64];
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
+	GetNativeString(4, argument, sizeof(argument));
+	int dstrlen = GetNativeCell(6);
+	char[] s = new char[dstrlen+1];
+	GetArgumentS(GetNativeCell(1), plugin_name, ability_name, argument, s, dstrlen);
 	SetNativeString(5, s, dstrlen);
 }
 
