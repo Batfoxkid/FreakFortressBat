@@ -450,6 +450,7 @@ enum CookieStats
 	Cookie_PlayerMvps	// Player MVPs
 };
 
+#define HUDTYPES 5
 static const char HudTypes[][] =	// Names used in translation files
 {
 	"Hud Damage",
@@ -2006,7 +2007,7 @@ int PlayerKills[MAXTF2PLAYERS];
 int PlayerMVPs[MAXTF2PLAYERS];
 
 // HUD Toggle
-bool HudSettings[MAXTF2PLAYERS][5];
+bool HudSettings[MAXTF2PLAYERS][HUDTYPES];
 
 public void OnPluginStart()
 {
@@ -5355,7 +5356,7 @@ public Action Command_HudMenu(int client, int args)
 	SetMenuTitle(menu, "%t", "FF2 Hud Menu Title");
 
 	char menuOption[64];
-	for(int i; i<sizeof(HudTypes[]); i++)
+	for(int i; i<HUDTYPES; i++)
 	{
 		if(HudSettings[client][i])
 		{
@@ -5384,7 +5385,7 @@ public int Command_HudMenuH(Handle menu, MenuAction action, int param1, int para
 		}
 		case MenuAction_Select:
 		{
-			HudSettings[client][param2] = !HudSettings[client][param2];
+			HudSettings[param1][param2] = !HudSettings[client][param2];
 			Command_HudMenu(param1, 0);
 		}
 	}
@@ -5919,7 +5920,7 @@ void SetupClientCookies(int client)
 		PlayerKills[client] = 0;
 		PlayerMVPs[client] =  0;
 
-		for(i=0; i<sizeof(HudTypes[]); i++)
+		for(int i=0; i<HUDTYPES; i++)
 		{
 			HudSettings[client][i] = 1;
 		}
@@ -5943,7 +5944,7 @@ void SetupClientCookies(int client)
 		PlayerKills[client] = 0;
 		PlayerMVPs[client] =  0;
 
-		for(i=0; i<sizeof(HudTypes[]); i++)
+		for(i=0; i<HUDTYPES; i++)
 		{
 			HudSettings[client][i] = 0;
 		}
@@ -5981,7 +5982,7 @@ void SetupClientCookies(int client)
 
 	GetClientCookie(client, HudCookies, cookies, sizeof(cookies));
 	ExplodeString(cookies, " ", cookieValues, 8, 6);
-	for(int i=0; i<sizeof(HudTypes[]); i++)
+	for(int i=0; i<HUDTYPES; i++)
 	{
 		HudSettings[client][i] = view_as<bool>(StringToInt(cookieValues[i]));
 	}
@@ -6003,7 +6004,7 @@ void SaveClientPreferences(int client)
 	Format(cookies, sizeof(cookies), "%i", HudSettings[client][0] ? 1 : 0);
 	for(int i=1; i<5; i++)
 	{
-		Format(cookies, sizeof(cookies), "%s %i", cookies, i>=sizeof(HudTypes[]) ? 0 : HudSettings[client][i] ? 1 : 0);
+		Format(cookies, sizeof(cookies), "%s %i", cookies, i>=HUDTYPES ? 0 : HudSettings[client][i] ? 1 : 0);
 	}
 	SetClientCookie(client, HudCookies, cookies);
 }
