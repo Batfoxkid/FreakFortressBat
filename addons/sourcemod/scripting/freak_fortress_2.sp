@@ -311,7 +311,6 @@ ConVar cvarBvBMerc;
 ConVar cvarBvBStat;
 ConVar cvarTimesTen;
 //ConVar cvarShuffleCharset;
-ConVar cvarHudToggle;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -365,7 +364,6 @@ int PointsExtra = 10;
 bool DuoMin = false;
 bool TellName = false;
 int Annotations = 0;
-bool HudToggle;
 
 Handle MusicTimer[MAXTF2PLAYERS];
 Handle BossInfoTimer[MAXTF2PLAYERS][2];
@@ -2120,7 +2118,6 @@ public void OnPluginStart()
 	cvarBvBStat = CreateConVar("ff2_boss_vs_boss_stats", "0", "Should Boss vs Boss mode count towards StatTrak?", _, true, 0.0, true, 1.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 	//cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
-	cvarHudToggle = CreateConVar("ff2_hud_toggle", "0", "0-Disable, 1-Players can toggle their HUD settings", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2186,7 +2183,6 @@ public void OnPluginStart()
 	HookConVarChange(cvarAnnotations, CvarChange);
 	HookConVarChange(cvarTellName, CvarChange);
 	HookConVarChange(cvarHealthHud, CvarChange);
-	HookConVarChange(cvarHudToggle, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -3136,7 +3132,6 @@ public void EnableFF2()
 	allowedDetonations = GetConVarInt(cvarCaberDetonations);
 	Annotations = GetConVarInt(cvarAnnotations);
 	TellName = GetConVarBool(cvarTellName);
-	HudToggle = GetConVarBool(cvarHudToggle);
 
 	//Set some Valve cvars to what we want them to be
 	SetConVarInt(FindConVar("tf_arena_use_queue"), 0);
@@ -3856,10 +3851,6 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	else if(convar == cvarTellName)
 	{
 		TellName = view_as<bool>(StringToInt(newValue));
-	}
-	else if(convar == cvarHudToggle)
-	{
-		HudToggle = view_as<bool>(StringToInt(newValue));
 	}
 	else if(convar == cvarEnabled)
 	{
@@ -5348,9 +5339,6 @@ public Action Command_HudMenu(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!GetConVarBool(cvarHudToggle))
-		return Plugin_Handled;
-
 	Handle menu = CreateMenu(Command_HudMenuH);
 	SetGlobalTransTarget(client);
 	SetMenuTitle(menu, "%t", "FF2 Hud Menu Title");
@@ -5922,7 +5910,7 @@ void SetupClientCookies(int client)
 
 		for(int i=0; i<HUDTYPES; i++)
 		{
-			HudSettings[client][i] = 1;
+			HudSettings[client][i] = true;
 		}
 		return;
 	}
@@ -5946,7 +5934,7 @@ void SetupClientCookies(int client)
 
 		for(int i=0; i<HUDTYPES; i++)
 		{
-			HudSettings[client][i] = 0;
+			HudSettings[client][i] = false;
 		}
 		return;
 	}
@@ -13388,7 +13376,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 		}
 
-		if(!HudSettings[vicim][2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+		if(!HudSettings[victim][2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
 			{
