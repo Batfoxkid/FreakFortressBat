@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -98,7 +98,7 @@ last time or to encourage others to do the same.
 #define MAXENTITIES 2048			// Probably shouldn't touch this
 #define MAXSPECIALS 144				// Maximum bosses in a pack
 #define MAXRANDOMS 64				// Maximum abilites in a boss
-#define MAXTF2PLAYERS	36			// Maximum TF2 players + bots
+#define MAXTF2PLAYERS 36			// Maximum TF2 players + bots
 #define MAXBOSSES RoundToFloor(MaxClients/2.0)	// Maximum number of bosses per a team
 
 #define HEALTHBAR_CLASS "monster_resource"
@@ -166,7 +166,7 @@ bool CheatsUsed;
 float rageMax[MAXTF2PLAYERS];
 float rageMin[MAXTF2PLAYERS];
 int rageMode[MAXTF2PLAYERS];
-int Special[MAXPLAYERS+1];
+int Special[MAXTF2PLAYERS];
 int Incoming[MAXTF2PLAYERS];
 
 int Damage[MAXTF2PLAYERS];
@@ -311,9 +311,11 @@ ConVar cvarBvBMerc;
 ConVar cvarBvBStat;
 ConVar cvarTimesTen;
 //ConVar cvarShuffleCharset;
+ConVar cvarHudToggle;
 
 Handle FF2Cookies;
 Handle StatCookies;
+Handle HudCookies;
 
 Handle jumpHUD;
 Handle rageHUD;
@@ -363,6 +365,7 @@ int PointsExtra = 10;
 bool DuoMin = false;
 bool TellName = false;
 int Annotations = 0;
+bool HudToggle;
 
 Handle MusicTimer[MAXTF2PLAYERS];
 Handle BossInfoTimer[MAXTF2PLAYERS][2];
@@ -446,6 +449,15 @@ enum CookieStats
 	Cookie_PlayerKills,	// Player Boss Kills
 	Cookie_PlayerMvps	// Player MVPs
 };
+
+static const char HudTypes[][] =	// Names used in translation files
+{
+	"Hud Damage",
+	"Hud Extra",
+	"Hud Message",
+	"Hud Countdown",
+	"Hud BossHealth"
+}
 
 static const char ff2versiontitles[][] =
 {
@@ -600,7 +612,7 @@ static const char ff2versiontitles[][] =
 	"1.18.6",
 	"1.19.0",
 	"1.19.1",
-	"1.19.1"
+	"1.19.2"
 };
 
 static const char ff2versiondates[][] =
@@ -756,25 +768,27 @@ static const char ff2versiondates[][] =
 	"June 29, 2019",		//1.18.6
 	"July 23, 2019",		//1.19.0
 	"August 10, 2019",		//1.19.1
-	"August 10, 2019"		//1.19.1
+	"August 31, 2019"		//1.19.2
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
-		case 151:  //1.19.1
+		case 151:  //1.19.2
+		{
+			DrawPanelText(panel, "1) [Core] Synced with Offical Beta 1.11 (Naydef)");
+			DrawPanelText(panel, "2) [Core] Added FF2_OnMusic2 native for name and artist (Batfoxkid)");
+			DrawPanelText(panel, "3) [Gameplay] Fixed non-boss glow timers (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Added HUD toggling command (Batfoxkid)");
+		}
+		case 150:  //1.19.1
 		{
 			DrawPanelText(panel, "1) [Gameplay] Fixed ancient door bug of always opening doors (Batfoxkid)");
 			DrawPanelText(panel, "2) [Gameplay] Fixed multiple issues with Boss vs Boss mode (Batfoxkid)");
 			DrawPanelText(panel, "3) [Gameplay] Adjusted Boss vs Boss health formula (Batfoxkid)");
 			DrawPanelText(panel, "4) [Gameplay] Companion queue points restore no longer apply to rival bosses (Batfoxkid)");
 			DrawPanelText(panel, "5) [Gameplay] Bots always gain StatTrak points (Batfoxkid)");
-		}
-		case 150:  //1.19.1
-		{
-			DrawPanelText(panel, "6) [Bosses] Added new ability slots and Boss vs Boss exclusion option (Batfoxkid)");
-			DrawPanelText(panel, "7) [Core] Added the option to shuffle boss pack votes and limit the amount (Batfoxkid)");
 		}
 		case 149:  //1.19.0
 		{
@@ -1991,6 +2005,9 @@ int BossDeaths[MAXTF2PLAYERS];
 int PlayerKills[MAXTF2PLAYERS];
 int PlayerMVPs[MAXTF2PLAYERS];
 
+// HUD Toggle
+bool HudSettings[MAXTF2PLAYERS][sizeof(HudTypes[])]
+
 public void OnPluginStart()
 {
 	LogMessage("===Freak Fortress 2 Initializing-%s===", BUILD_NUMBER);
@@ -2102,6 +2119,7 @@ public void OnPluginStart()
 	cvarBvBStat = CreateConVar("ff2_boss_vs_boss_stats", "0", "Should Boss vs Boss mode count towards StatTrak?", _, true, 0.0, true, 1.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 	//cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
+	cvarHudToggle = CreateConVar("ff2_hud_toggle", "0", "0-Disable, 1-Players can toggle their HUD settings", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2167,6 +2185,7 @@ public void OnPluginStart()
 	HookConVarChange(cvarAnnotations, CvarChange);
 	HookConVarChange(cvarTellName, CvarChange);
 	HookConVarChange(cvarHealthHud, CvarChange);
+	HookConVarChange(cvarHudToggle, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -2197,6 +2216,8 @@ public void OnPluginStart()
 	RegConsoleCmd("ff2shufflesong", Command_ShuffleSong, "Play a random song");
 	RegConsoleCmd("ff2_tracklist", Command_Tracklist, "View list of songs");
 	RegConsoleCmd("ff2tracklist", Command_Tracklist, "View list of songs");
+	RegConsoleCmd("ff2_hud", Command_HudMenu, "Toggle specific HUD settings");
+	RegConsoleCmd("ff2hud", Command_HudMenu, "Toggle specific HUD settings");
 
 	RegConsoleCmd("hale", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("hale_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -2227,6 +2248,8 @@ public void OnPluginStart()
 	RegConsoleCmd("haleshufflesong", Command_ShuffleSong, "Play a random song");
 	RegConsoleCmd("hale_tracklist", Command_Tracklist, "View list of songs");
 	RegConsoleCmd("haletracklist", Command_Tracklist, "View list of songs");
+	RegConsoleCmd("hale_hud", Command_HudMenu, "Toggle specific HUD settings");
+	RegConsoleCmd("halehud", Command_HudMenu, "Toggle specific HUD settings");
 
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
@@ -2279,6 +2302,7 @@ public void OnPluginStart()
 
 	FF2Cookies = RegClientCookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
 	StatCookies = RegClientCookie("ff2_cookies_stats", "Player's Statistics", CookieAccess_Protected);
+	HudCookies = RegClientCookie("ff2_cookies_huds", "Player's HUD Settings", CookieAccess_Protected);
 	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
 	SelectionCookie = RegClientCookie("ff2_boss_selection", "Player's Boss Selection", CookieAccess_Protected);
 
@@ -3111,6 +3135,7 @@ public void EnableFF2()
 	allowedDetonations = GetConVarInt(cvarCaberDetonations);
 	Annotations = GetConVarInt(cvarAnnotations);
 	TellName = GetConVarBool(cvarTellName);
+	HudToggle = GetConVarBool(cvarHudToggle);
 
 	//Set some Valve cvars to what we want them to be
 	SetConVarInt(FindConVar("tf_arena_use_queue"), 0);
@@ -3829,7 +3854,11 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	}
 	else if(convar == cvarTellName)
 	{
-		TellName=view_as<bool>(StringToInt(newValue));
+		TellName = view_as<bool>(StringToInt(newValue));
+	}
+	else if(convar == cvarHudToggle)
+	{
+		HudToggle = view_as<bool>(StringToInt(newValue));
 	}
 	else if(convar == cvarEnabled)
 	{
@@ -4634,7 +4663,7 @@ public Action BossInfoTimer_Begin(Handle timer, any boss)
 
 public Action BossInfoTimer_ShowInfo(Handle timer, any boss)
 {
-	if(!IsValidClient(Boss[boss]))
+	if(!IsValidClient(Boss[boss]) && !HudSettings[client][2])
 	{
 		BossInfoTimer[boss][1]=INVALID_HANDLE;
 		return Plugin_Stop;
@@ -4870,7 +4899,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client))
+			if(IsValidClient(client) && !HudSettings[client][2])
 				FF2_ShowHudText(client, -1, "%s", text[client]);
 		}
 	}
@@ -5020,7 +5049,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 255, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client))
+			if(IsValidClient(client) && !HudSettings[client][2])
 				FF2_ShowHudText(client, -1, "%s", text[client]);
 		}
 
@@ -5307,6 +5336,75 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 	else if(action == MenuAction_End)
 	{
 		CloseHandle(menu);
+	}
+}
+
+public Action Command_HudMenu(int client, int args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(!GetConVarBool(cvarHudToggle))
+		return Plugin_Handled;
+
+	Handle menu = CreateMenu(Command_HudMenuH);
+	SetGlobalTransTarget(client);
+	SetMenuTitle(menu, "%t", "FF2 Hud Menu Title");
+
+	char menuOption[64], num[3];
+	for(int i; i<sizeof(HudTypes[]); i++)
+	{
+		switch(i)
+		{
+			case 3:
+			{
+				if(!GetConVarInt(cvarCountdownPlayers))
+					continue;
+			}
+			case 4:
+			{
+				if(!GetConVarBool(cvarHealthHud))
+					continue;
+			}
+		}
+
+		if(HudSetting[client][i])
+		{
+			Format(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], "Off");
+		}
+		else
+		{
+			Format(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], "On");
+		}
+
+		IntToString(i, num, sizeof(num));
+		AddMenuItem(menu, num, menuOption);
+	}
+
+	SetMenuExitButton(menu, true);
+	DisplayMenu(menu, client, 20);
+	return Plugin_Handled;
+}
+
+public int Command_HudMenuH(Handle menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			char num[3];
+			GetMenuItem(menu, param2, num, sizeof(num));
+			int number = StringToInt(num);
+			HudSetting[client][number] = !HudSetting[client][number];
+			Command_HudMenu(param1, 0);
+		}
 	}
 }
 
@@ -5817,7 +5915,7 @@ stock void EmitMusicToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYE
 	EmitSound(clients, total, sample, entity, channel, level, flags, volume, pitch, speakerentity, origin, dir, updatePos, soundtime);
 }
 
-void SetupClientPreferences(int client)
+void SetupClientCookies(int client)
 {
 	if(!IsValidClient(client))
 		return;
@@ -5830,6 +5928,20 @@ void SetupClientPreferences(int client)
 		ToggleInfo[client] = false;
 		ToggleDuo[client] = Setting_On;
 		ToggleBoss[client] = Setting_On;
+
+		BossWins[client] = 0;
+		BossLosses[client] = 0;
+		BossKills[client] = 0;
+		BossKillsF[client] = 0;
+		BossDeaths[client] = 0;
+		PlayerKills[client] = 0;
+		PlayerMVPs[client] =  0;
+
+		for(i=0; i<sizeof(HudTypes[]); i++)
+		{
+			HudSetting[client][i] = 1;
+		}
+		return;
 	}
 
 	if(!AreClientCookiesCached(client))
@@ -5840,12 +5952,26 @@ void SetupClientPreferences(int client)
 		ToggleInfo[client] = true;
 		ToggleDuo[client] = Setting_Undef;
 		ToggleBoss[client] = Setting_Undef;
+
+		BossWins[client] = 0;
+		BossLosses[client] = 0;
+		BossKills[client] = 0;
+		BossKillsF[client] = 0;
+		BossDeaths[client] = 0;
+		PlayerKills[client] = 0;
+		PlayerMVPs[client] =  0;
+
+		for(i=0; i<sizeof(HudTypes[]); i++)
+		{
+			HudSetting[client][i] = 0;
+		}
+		return;
 	}
 
-	char cookies[24];
-	char cookieValues[8][5];
+	char cookies[48];
+	char cookieValues[8][6];
 	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
-	ExplodeString(cookies, " ", cookieValues, 8, 5);
+	ExplodeString(cookies, " ", cookieValues, 8, 6);
 
 	QueuePoints[client] = StringToInt(cookieValues[0][0]);
 	ToggleMusic[client] = view_as<bool>(StringToInt(cookieValues[1][0]));
@@ -5859,6 +5985,24 @@ void SetupClientPreferences(int client)
 
 	if(ToggleBoss[client] == Setting_Temp)
 		ToggleBoss[client] = Setting_On;
+
+	GetClientCookie(client, StatCookies, cookies, sizeof(cookies));
+	ExplodeString(cookies, " ", cookieValues, 8, 6);
+
+	BossWins[client] = StringToInt(cookieValues[0][0]);
+	BossLosses[client] = StringToInt(cookieValues[1][0]);
+	BossKills[client] = StringToInt(cookieValues[2][0]);
+	BossKillsF[client] = StringToInt(cookieValues[2][0]);
+	BossDeaths[client] = StringToInt(cookieValues[3][0]);
+	PlayerKills[client] = StringToInt(cookieValues[4][0]);
+	PlayerMVPs[client] =  StringToInt(cookieValues[5][0]);
+
+	GetClientCookie(client, HudCookies, cookies, sizeof(cookies));
+	ExplodeString(cookies, " ", cookieValues, 8, 6);
+	for(int i=0; i<sizeof(HudTypes[]); i++)
+	{
+		HudSettings[client][i] = view_as<bool>(StringToInt(cookieValues[i]));
+	}
 }
 
 void SaveClientPreferences(int client)
@@ -5873,37 +6017,13 @@ void SaveClientPreferences(int client)
 
 	Format(cookies, sizeof(cookies), "%i %i %i %i %i %i %s %s", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(ToggleBoss[client]), cookieValues[6], cookieValues[7]);
 	SetClientCookie(client, FF2Cookies, cookies);
-}
 
-void SetupClientStats(int client)
-{
-	if(!IsValidClient(client))
-		return;
-
-	if(IsFakeClient(client) || !AreClientCookiesCached(client))
+	Format(cookies, sizeof(cookies), "%i", HudSettings[client][0] ? 1 : 0);
+	for(int i=1; i<5; i++)
 	{
-		BossWins[client] = 0;
-		BossLosses[client] = 0;
-		BossKills[client] = 0;
-		BossKillsF[client] = 0;
-		BossDeaths[client] = 0;
-		PlayerKills[client] = 0;
-		PlayerMVPs[client] =  0;
-		return;
+		Format(cookies, sizeof(cookies), "%s %i", cookies, i>=sizeof(HudTypes[]) ? 0 : HudSettings[client][i] ? 1 : 0);
 	}
-
-	char cookies[48];
-	char cookieValues[8][6];
-	GetClientCookie(client, StatCookies, cookies, sizeof(cookies));
-	ExplodeString(cookies, " ", cookieValues, 8, 6);
-
-	BossWins[client] = StringToInt(cookieValues[0][0]);
-	BossLosses[client] = StringToInt(cookieValues[1][0]);
-	BossKills[client] = StringToInt(cookieValues[2][0]);
-	BossKillsF[client] = StringToInt(cookieValues[2][0]);
-	BossDeaths[client] = StringToInt(cookieValues[3][0]);
-	PlayerKills[client] = StringToInt(cookieValues[4][0]);
-	PlayerMVPs[client] =  StringToInt(cookieValues[5][0]);
+	SetClientCookie(client, HudCookies, cookies);
 }
 
 void SaveClientStats(int client)
@@ -6756,14 +6876,14 @@ public Action MessageTimer(Handle timer)
 		SetHudTextParams(0.25, 0.3, 10.0, 100, 100, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client))
+			if(IsValidClient(client) && !HudSettings[client][2])
 				FF2_ShowSyncHudText(client, infoHUD, text[client]);
 		}
 
 		SetHudTextParams(0.6, 0.3, 10.0, 255, 100, 100, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client))
+			if(IsValidClient(client) && !HudSettings[client][2])
 				FF2_ShowSyncHudText(client, abilitiesHUD, text2[client]);
 		}
 		CreateTimer(10.0, Timer_ShowHealthText, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -6801,7 +6921,7 @@ public Action MessageTimer(Handle timer)
 	SetHudTextParams(-1.0, 0.2, 10.0, 255, 255, 255, 255);
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client))
+		if(IsValidClient(client) && !HudSettings[client][2])
 		{
 			if(bosses<2 && GetConVarInt(cvarGameText)>1)
 			{
@@ -8682,7 +8802,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 
 		for(int target; target<=MaxClients; target++)
 		{
-			if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+			if(IsValidClient(target) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 			{
 				if(bosses<2 && GetConVarInt(cvarGameText)>0)
 				{
@@ -9363,14 +9483,17 @@ public void OnClientPostAdminCheck(int client)
 			SetClientCookie(client, FF2Cookies, "0 1 1 1 0 0 3");
 			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | UNUSED
 
-		SetupClientPreferences(client);
-
 		GetClientCookie(client, StatCookies, buffer, sizeof(buffer));
 		if(!buffer[0])
 			SetClientCookie(client, StatCookies, "0 0 0 0 0 0 0");
 			//Boss wins | boss losses | boss kills | boss deaths | player kills | player MVPs | UNUSED
 
-		SetupClientStats(client);
+		GetClientCookie(client, HudCookies, buffer, sizeof(buffer));
+		if(!buffer[0])
+			SetClientCookie(client, HudCookies, "0 0 0 0 0 0 0");
+			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED
+
+		SetupClientCookies(client);
 
 		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
 		if(buffer[0])
@@ -9567,7 +9690,7 @@ public Action ClientTimer(Handle timer)
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
 		{
 			alive = IsPlayerAlive(client);
-			if(!IsFakeClient(client))
+			if(!HudSettings[client][0])
 			{
 				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 				int observer;
@@ -9711,8 +9834,11 @@ public Action ClientTimer(Handle timer)
 					{
 						if(GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
-							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-							FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
+							if(!HudSettings[client][1])
+							{
+								SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
+								FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
+							}
 
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 							{
@@ -9731,7 +9857,7 @@ public Action ClientTimer(Handle timer)
 					}
 				}
 			}
-			else if((TF2_GetPlayerClass(client)==TFClass_Sniper || TF2_GetPlayerClass(client)==TFClass_DemoMan) && (GetConVarInt(cvarShieldType)==3 || GetConVarInt(cvarShieldType)==4))
+			else if(!HudSettings[client][1] && (TF2_GetPlayerClass(client)==TFClass_Sniper || TF2_GetPlayerClass(client)==TFClass_DemoMan) && (GetConVarInt(cvarShieldType)==3 || GetConVarInt(cvarShieldType)==4))
 			{
 				if(shield[client] && shieldHP[client]>0.0 && GetConVarInt(cvarShieldType)>2)
 				{
@@ -9739,7 +9865,7 @@ public Action ClientTimer(Handle timer)
 					FF2_ShowHudText(client, -1, "%t", "Shield HP", RoundToFloor(shieldHP[client]/GetConVarFloat(cvarShieldHealth)*100.0));
 				}
 			}
-			else if(SapperEnabled && SapperCooldown[client]>0.0 && TF2_GetPlayerClass(client)==TFClass_Spy)
+			else if(!HudSettings[client][1] && SapperEnabled && SapperCooldown[client]>0.0 && TF2_GetPlayerClass(client)==TFClass_Spy)
 			{
 				SapperAmount = RoundToFloor((SapperCooldown[client]-GetConVarFloat(cvarSapperCooldown))*(Pow(GetConVarFloat(cvarSapperCooldown), -1.0)*-100.0));
 				if(SapperAmount < 0)
@@ -9749,7 +9875,7 @@ public Action ClientTimer(Handle timer)
 				FF2_ShowHudText(client, -1, "%t", "Sapper Cooldown", SapperAmount);
 			}
 			// Chdata's Deadringer Notifier
-			else if(GetConVarBool(cvarDeadRingerHud) && TF2_GetPlayerClass(client)==TFClass_Spy)
+			else if(!HudSettings[client][1] && GetConVarBool(cvarDeadRingerHud) && TF2_GetPlayerClass(client)==TFClass_Spy)
 			{
 				if(GetClientCloakIndex(client)==59)
 				{
@@ -9905,8 +10031,11 @@ public Action ClientTimer(Handle timer)
 						{
 							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 							{
-								SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-								FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
+								if(!HudSettings[client][1])
+								{
+									SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
+									FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
+								}
 
 								if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 								{
@@ -10048,7 +10177,7 @@ public Action BossTimer(Handle timer)
 
 		if(!IsPlayerAlive(client))
 		{
-			if(IsFakeClient(client))
+			if(HudSettings[client][0])
 				continue;
 
 			int observer;
@@ -10114,7 +10243,7 @@ public Action BossTimer(Handle timer)
 			continue;
 		}
 
-		if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+		if(!HudSettings[client][0] && StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 		{
 			SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255);
 			FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
@@ -10241,7 +10370,7 @@ public Action BossTimer(Handle timer)
 
 			for(int target; target<=MaxClients; target++)
 			{
-				if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+				if(IsValidClient(target) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
 					if(bosses<2 && GetConVarInt(cvarGameText)>0)
 					{
@@ -10395,7 +10524,7 @@ public Action GlobalTimer(Handle timer)
 		{
 			if(IsValidClient(client))
 			{
-				if(GetClientButtons(client) & IN_SCORE)
+				if(HudSettings[client][4] || (GetClientButtons(client) & IN_SCORE))
 					continue;
 
 				if(!IsClientObserver(client))
@@ -10498,7 +10627,7 @@ public Action GlobalTimer(Handle timer)
 		{
 			if(IsValidClient(client))
 			{
-				if(GetClientButtons(client) & IN_SCORE)
+				if(HudSettings[client][4] || (GetClientButtons(client) & IN_SCORE))
 					continue;
 
 				if(!IsClientObserver(client))
@@ -11386,7 +11515,7 @@ public Action Timer_DrawGame(Handle timer)
 	{
 		if(IsValidClient(client))
 		{
-			if(bosses<2 && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
+			if(!HudSettings[client][3] && !HudSettings[client][4] && bosses<2 && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -11413,7 +11542,7 @@ public Action Timer_DrawGame(Handle timer)
 					ShowGameText(client, "leaderboard_streak", _, "%s | %s", message[client], timeDisplay);
 				}
 			}
-			else if(bosses<2 && GetConVarInt(cvarGameText)>1)
+			else if(!HudSettings[client][3] && bosses<2 && GetConVarInt(cvarGameText)>1)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -11440,11 +11569,11 @@ public Action Timer_DrawGame(Handle timer)
 					ShowGameText(client, "leaderboard_streak", _, timeDisplay);
 				}
 			}
-			else if(isCapping && timeleft<=0)
+			else if(!HudSettings[client][3] && isCapping && timeleft<=0)
 			{
 				FF2_ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
 			}
-			else
+			else if(!HudSettings[client][3])
 			{
 				FF2_ShowSyncHudText(client, timeleftHUD, timeDisplay);
 			}
@@ -11636,7 +11765,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(IsValidClient(target) && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+				if(IsValidClient(target) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
 					if(GetConVarInt(cvarGameText) > 0)
 					{
@@ -11985,7 +12114,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
 				}
 
-				if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+				if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 				{
 					if(TellName)
 					{
@@ -12056,7 +12185,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 					EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 
-					if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+					if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 					{
 						if(TellName)
 						{
@@ -12129,7 +12258,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				{
 					if(IsValidClient(all) && IsPlayerAlive(all))
 					{
-						if(!(FF2flags[all] & FF2FLAG_HUDDISABLED))
+						if(!HudSettings[all][2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
 						{
 							switch(Annotations)
 							{
@@ -12152,7 +12281,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(GetClientTeam(teleowner) == GetClientTeam(attacker))
 						Damage[teleowner] += BossHealth[boss]*3/5;
 
-					if(!(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
+					if(!HudSettings[teleowner][2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 					{
 						switch(Annotations)
 						{
@@ -12168,7 +12297,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 				}
 
-				if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+				if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 				{
 					if(TellName)
 					{
@@ -12202,7 +12331,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 				}
 
-				if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+				if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 				{
 					if(TellName)
 					{
@@ -12443,7 +12572,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 							if(allowedDetonations < 3)
 							{
-								if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+								if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 								{
 									if(TellName)
 									{
@@ -12476,7 +12605,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 										}
 									}
 								}
-								if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+								if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 								{
 									if(TellName)
 									{
@@ -12830,7 +12959,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
 					}
 
-					if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 					{
 						if(TellName)
 						{
@@ -12869,7 +12998,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 
-						if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+						if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 						{
 							if(TellName)
 							{
@@ -12960,7 +13089,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(IsValidClient(all) && IsPlayerAlive(all))
 						{
-							if(!(FF2flags[all] & FF2FLAG_HUDDISABLED))
+							if(!HudSettings[all][2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
 							{
 								switch(Annotations)
 								{
@@ -12984,7 +13113,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							Damage[teleowner] += (TimesTen ? 3000.0*GetConVarFloat(cvarTimesTen) : 5401.0);
 
-							if(!(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
+							if(!HudSettings[teleowner][2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 							{
 								switch(Annotations)
 								{
@@ -13001,7 +13130,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 					}
 
-					if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 					{
 						if(TellName)
 						{
@@ -13035,7 +13164,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 					}
 
-					if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+					if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 					{
 						if(TellName)
 						{
@@ -13242,7 +13371,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 	char spcl[64];
 	if(IsBoss(victim))
 	{
-		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
 			{
@@ -13275,7 +13404,8 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				}
 			}
 		}
-		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+
+		if(!HudSettings[vicim][2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
 			{
@@ -13321,7 +13451,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 	}
 	else if(IsBoss(attacker))
 	{
-		if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
 			{
@@ -13361,7 +13491,8 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				}
 			}
 		}
-		if(!(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+
+		if(!HudSettings[victim][2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
 			if(TellName)
 			{
