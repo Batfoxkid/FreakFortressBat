@@ -2006,7 +2006,7 @@ int PlayerKills[MAXTF2PLAYERS];
 int PlayerMVPs[MAXTF2PLAYERS];
 
 // HUD Toggle
-bool HudSettings[MAXTF2PLAYERS][sizeof(HudTypes[])];
+bool HudSettings[MAXTF2PLAYERS][5];
 
 public void OnPluginStart()
 {
