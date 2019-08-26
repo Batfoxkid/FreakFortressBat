@@ -5385,7 +5385,7 @@ public int Command_HudMenuH(Handle menu, MenuAction action, int param1, int para
 		}
 		case MenuAction_Select:
 		{
-			HudSettings[param1][param2] = !HudSettings[client][param2];
+			HudSettings[param1][param2] = !HudSettings[param1][param2];
 			Command_HudMenu(param1, 0);
 		}
 	}
@@ -5944,7 +5944,7 @@ void SetupClientCookies(int client)
 		PlayerKills[client] = 0;
 		PlayerMVPs[client] =  0;
 
-		for(i=0; i<HUDTYPES; i++)
+		for(int i=0; i<HUDTYPES; i++)
 		{
 			HudSettings[client][i] = 0;
 		}
