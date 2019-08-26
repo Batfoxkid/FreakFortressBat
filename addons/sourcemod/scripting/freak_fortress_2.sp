@@ -456,8 +456,8 @@ static const char HudTypes[][] =	// Names used in translation files
 	"Hud Extra",
 	"Hud Message",
 	"Hud Countdown",
-	"Hud BossHealth"
-}
+	"Hud Health"
+};
 
 static const char ff2versiontitles[][] =
 {
@@ -2006,7 +2006,7 @@ int PlayerKills[MAXTF2PLAYERS];
 int PlayerMVPs[MAXTF2PLAYERS];
 
 // HUD Toggle
-bool HudSettings[MAXTF2PLAYERS][sizeof(HudTypes[])]
+bool HudSettings[MAXTF2PLAYERS][sizeof(HudTypes[])];
 
 public void OnPluginStart()
 {
@@ -4663,7 +4663,7 @@ public Action BossInfoTimer_Begin(Handle timer, any boss)
 
 public Action BossInfoTimer_ShowInfo(Handle timer, any boss)
 {
-	if(!IsValidClient(Boss[boss]) && !HudSettings[client][2])
+	if(!IsValidClient(Boss[boss]) && !HudSettings[Boss[boss]][2])
 	{
 		BossInfoTimer[boss][1]=INVALID_HANDLE;
 		return Plugin_Stop;
@@ -5354,24 +5354,10 @@ public Action Command_HudMenu(int client, int args)
 	SetGlobalTransTarget(client);
 	SetMenuTitle(menu, "%t", "FF2 Hud Menu Title");
 
-	char menuOption[64], num[3];
+	char menuOption[64];
 	for(int i; i<sizeof(HudTypes[]); i++)
 	{
-		switch(i)
-		{
-			case 3:
-			{
-				if(!GetConVarInt(cvarCountdownPlayers))
-					continue;
-			}
-			case 4:
-			{
-				if(!GetConVarBool(cvarHealthHud))
-					continue;
-			}
-		}
-
-		if(HudSetting[client][i])
+		if(HudSettings[client][i])
 		{
 			Format(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], "Off");
 		}
@@ -5380,8 +5366,7 @@ public Action Command_HudMenu(int client, int args)
 			Format(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], "On");
 		}
 
-		IntToString(i, num, sizeof(num));
-		AddMenuItem(menu, num, menuOption);
+		AddMenuItem(menu, menuOption, menuOption);
 	}
 
 	SetMenuExitButton(menu, true);
@@ -5399,10 +5384,7 @@ public int Command_HudMenuH(Handle menu, MenuAction action, int param1, int para
 		}
 		case MenuAction_Select:
 		{
-			char num[3];
-			GetMenuItem(menu, param2, num, sizeof(num));
-			int number = StringToInt(num);
-			HudSetting[client][number] = !HudSetting[client][number];
+			HudSettings[client][param2] = !HudSettings[client][param2];
 			Command_HudMenu(param1, 0);
 		}
 	}
@@ -5939,7 +5921,7 @@ void SetupClientCookies(int client)
 
 		for(i=0; i<sizeof(HudTypes[]); i++)
 		{
-			HudSetting[client][i] = 1;
+			HudSettings[client][i] = 1;
 		}
 		return;
 	}
@@ -5963,7 +5945,7 @@ void SetupClientCookies(int client)
 
 		for(i=0; i<sizeof(HudTypes[]); i++)
 		{
-			HudSetting[client][i] = 0;
+			HudSettings[client][i] = 0;
 		}
 		return;
 	}
@@ -8802,7 +8784,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 
 		for(int target; target<=MaxClients; target++)
 		{
-			if(IsValidClient(target) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+			if(IsValidClient(target) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 			{
 				if(bosses<2 && GetConVarInt(cvarGameText)>0)
 				{
@@ -10370,7 +10352,7 @@ public Action BossTimer(Handle timer)
 
 			for(int target; target<=MaxClients; target++)
 			{
-				if(IsValidClient(target) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+				if(IsValidClient(target) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
 					if(bosses<2 && GetConVarInt(cvarGameText)>0)
 					{
@@ -15032,16 +15014,16 @@ public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
 				QueuePanelCmd(client, 0);
 
 			case 6:
-				MusicTogglePanelCmd(client, 0);
+				Command_HudMenu(client, 0);
 
 			case 7:
-				VoiceTogglePanelCmd(client, 0);
+				MusicTogglePanelCmd(client, 0);
 
 			case 8:
-				HelpPanel3Cmd(client, 0);
+				VoiceTogglePanelCmd(client, 0);
 
-			default:
-				return;
+			case 9:
+				HelpPanel3Cmd(client, 0);
 		}
 	}
 }
@@ -15068,6 +15050,8 @@ public Action FF2Panel(int client, int args)  //._.
 	Format(text, sizeof(text), "%t", "menu_4");  //What's new? (/ff2new).
 	DrawPanelItem(panel, text);
 	Format(text, sizeof(text), "%t", "menu_5");  //Queue points
+	DrawPanelItem(panel, text);
+	Format(text, sizeof(text), "%t", "menu_0");  //Toggle HUDs (/ff2hud)
 	DrawPanelItem(panel, text);
 	Format(text, sizeof(text), "%t", "menu_8");  //Toggle music (/ff2music)
 	DrawPanelItem(panel, text);
