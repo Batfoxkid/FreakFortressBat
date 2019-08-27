@@ -38,8 +38,8 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"0"
-#define MINOR_REVISION	"4"
-#define STABLE_REVISION	"5"
+#define MINOR_REVISION	"5"
+#define STABLE_REVISION	"0"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -126,8 +126,8 @@ public void OnPluginStart2()
 {
 	int version[3];
 	FF2_GetForkVersion(version);
-	if(version[0]!=1 || version[1]<19)
-		SetFailState("This subplugin depends on at least Unofficial FF2 v1.18.0");
+	if(version[0]!=1 || version[1]<19 || (version[1]==19 && version[2]<2))
+		SetFailState("This subplugin depends on at least Unofficial FF2 v1.19.2");
 
 	HookEvent("object_deflected", OnDeflect, EventHookMode_Pre);
 	HookEvent("teamplay_round_start", OnRoundStart);
@@ -227,7 +227,16 @@ bool IsSlowMoActive()
 public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ability_name, int status)
 {
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
-	int slot = FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 0);
+	int slot;
+	if(FF2_NamedArgumentsUsed(boss, this_plugin_name, ability_name))
+	{
+		slot = FF2_GetArgNamedI(boss, this_plugin_name, ability_name, "slot");
+	}
+	elseE
+	{
+		slot = FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 0);
+	}
+
 	if(!slot)  //Rage
 	{
 		if(!boss)
@@ -261,13 +270,43 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 	}
 	else if(!strcmp(ability_name, "rage_uber"))
 	{
-		TF2_AddCondition(client, TFCond_Ubercharged, FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 1, 5.0));
+		float duration;
+		if(FF2_NamedArgumentsUsed(boss, this_plugin_name, ability_name))
+		{
+			duration = FF2_GetArgNamedF(boss, this_plugin_name, ability_name, "duration", 5.0);
+		}
+		else
+		{
+			duration = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 1, 5.0);
+		}
+
+		if(duration <= 0)
+			return Plugin_Continue;
+
+		TF2_AddCondition(client, TFCond_Ubercharged, duration);
 		SetEntProp(client, Prop_Data, "m_takedamage", 0);
-		CreateTimer(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 1, 5.0), Timer_StopUber, boss, TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(duration, Timer_StopUber, boss, TIMER_FLAG_NO_MAPCHANGE);
 	}
 	else if(!strcmp(ability_name, "rage_stun"))
 	{
-		CreateTimer(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 10, 0.0), Timer_Rage_Stun, boss);
+		float delay;
+		if(FF2_NamedArgumentsUsed(boss, this_plugin_name, ability_name))
+		{
+			delay = FF2_GetArgNamedF(boss, this_plugin_name, ability_name, "delay", 0.0);
+		}
+		else
+		{
+			delay = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 10, 0.0);
+		}
+
+		if(!delay)
+		{
+			Timer_Rage_Stun(INVALID_HANDLE, boss);
+		}
+		else if(delay > 0)
+		{
+			CreateTimer(delay, Timer_Rage_Stun, boss);
+		}
 	}
 	else if(!strcmp(ability_name, "rage_stunsg"))
 	{
@@ -276,24 +315,31 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 	else if(!strcmp(ability_name, "rage_instant_teleport"))
 	{
 		float position[3];
-		bool otherTeamIsAlive;
-	// Stun Duration
-		Tstun=FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 1, 2.0);
-	// Friendly Teleport
-		//bool friendly=view_as<bool>(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 2, 1));
-	// Stun Flags
-		char flagOverrideStr[12];
-		FF2_GetAbilityArgumentString(boss, this_plugin_name, ability_name, 3, flagOverrideStr, sizeof(flagOverrideStr));
+		bool otherTeamIsAlive, /*friendly,*/ sounds;
+		char flagOverrideStr[12], particleEffect[48];
+
+		if(FF2_NamedArgumentsUsed(boss, this_plugin_name, ability_name))
+		{
+			Tstun = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, "stun", 2.0);
+			//friendly = view_as<bool>(FF2_GetArgNamedI(boss, this_plugin_name, ability_name, "friendly", 1));
+			FF2_GetArgNamedS(boss, this_plugin_name, ability_name, "flags", flagOverrideStr, sizeof(flagOverrideStr));
+			Tslowdown = FF2_GetArgNamedF(boss, this_plugin_name, ability_name, "slowdown", 0.0);
+			sounds = view_as<bool>(FF2_GetArgNamedI(boss, this_plugin_name, ability_name, "sound", 1));
+			FF2_GetArgNamedS(boss, this_plugin_name, ability_name, "particle", particleEffect, sizeof(particleEffect));
+		}
+		else
+		{
+			Tstun = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 1, 2.0);
+			//friendly = view_as<bool>(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 2, 1));
+			FF2_GetAbilityArgumentString(boss, this_plugin_name, ability_name, 3, flagOverrideStr, sizeof(flagOverrideStr));
+			Tslowdown = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 4, 0.0);
+			sounds = view_as<bool>(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 5, 1));
+			FF2_GetAbilityArgumentString(boss, this_plugin_name, ability_name, 6, particleEffect, sizeof(particleEffect));
+		}
+
 		TflagOverride = ReadHexOrDecInt(flagOverrideStr);
 		if(TflagOverride == 0)
-			TflagOverride=TF_STUNFLAGS_GHOSTSCARE|TF_STUNFLAG_NOSOUNDOREFFECT;
-	// Slowdown
-		Tslowdown = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 4, 0.0);
-	// Sound To Client
-		bool sounds = view_as<bool>(FF2_GetAbilityArgument(boss, this_plugin_name, ability_name, 5, 1));
-	// Particle Effect
-		char particleEffect[48];
-		FF2_GetAbilityArgumentString(boss, this_plugin_name, ability_name, 6, particleEffect, sizeof(particleEffect));
+			TflagOverride = TF_STUNFLAGS_GHOSTSCARE|TF_STUNFLAG_NOSOUNDOREFFECT;
 
 		for(int target=1; target<=MaxClients; target++)
 		{
@@ -380,8 +426,27 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
     */
 	else if(!strcmp(ability_name, "special_democharge"))
 	{
-		if(status>0 && !Charged[client])
-			CreateTimer(FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 3, 0.0), Timer_DemoCharge, boss);
+		if(status<1 || Charged[client])
+			return Plugin_Continue;
+
+		float delay;
+		if(FF2_NamedArgumentsUsed(boss, this_plugin_name, ability_name))
+		{
+			delay = FF2_GetArgNamedF(boss, this_plugin_name, ability_name, "delay", 0.0);
+		}
+		else
+		{
+			delay = FF2_GetAbilityArgumentFloat(boss, this_plugin_name, ability_name, 3, 0.0);
+		}
+
+		if(!delay)
+		{
+			Timer_DemoCharge(INVALID_HANDLE, boss);
+		}
+		else if(delay > 0)
+		{
+			CreateTimer(delay, Timer_DemoCharge, boss);
+		}
 	}
 	return Plugin_Continue;
 }
