@@ -366,7 +366,6 @@ bool TellName = false;
 int Annotations = 0;
 
 Handle MusicTimer[MAXTF2PLAYERS];
-Handle BossInfoTimer[MAXTF2PLAYERS][2];
 Handle DrawGameTimer;
 Handle doorCheckTimer;
 
@@ -3222,14 +3221,7 @@ public void DisableFF2()
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
-		{
-			if(BossInfoTimer[client][1] != INVALID_HANDLE)
-			{
-				KillTimer(BossInfoTimer[client][1]);
-				BossInfoTimer[client][1] = INVALID_HANDLE;
-			}
 			SaveClientPreferences(client);
-		}
 
 		if(MusicTimer[client] != INVALID_HANDLE)
 		{
@@ -4402,13 +4394,8 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 
 	for(int boss; boss<=MaxClients; boss++)
 	{
-		BossInfoTimer[boss][0] = INVALID_HANDLE;
-		BossInfoTimer[boss][1] = INVALID_HANDLE;
 		if(Boss[boss])
-		{
 			CreateTimer(0.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
-			BossInfoTimer[boss][0] = CreateTimer(30.2, BossInfoTimer_Begin, boss, TIMER_FLAG_NO_MAPCHANGE);
-		}
 	}
 
 	CreateTimer(0.4, StartIntroMusicTimer, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -4644,46 +4631,6 @@ public Action Timer_EnableCap(Handle timer)
 			}
 		}
 	}
-}
-
-public Action BossInfoTimer_Begin(Handle timer, any boss)
-{
-	BossInfoTimer[boss][0]=INVALID_HANDLE;
-	BossInfoTimer[boss][1]=CreateTimer(0.2, BossInfoTimer_ShowInfo, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	return Plugin_Continue;
-}
-
-public Action BossInfoTimer_ShowInfo(Handle timer, any boss)
-{
-	if(!IsValidClient(Boss[boss]) && !HudSettings[Boss[boss]][2])
-	{
-		BossInfoTimer[boss][1]=INVALID_HANDLE;
-		return Plugin_Stop;
-	}
-
-	if(bossHasReloadAbility[boss])
-	{
-		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
-		if(bossHasRightMouseAbility[boss])
-		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t\n%t", "ff2_buttons_reload", "ff2_buttons_rmb");
-		}
-		else
-		{
-			FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_reload");
-		}
-	}
-	else if(bossHasRightMouseAbility[boss])
-	{
-		SetHudTextParams(0.75, 0.7, 0.15, 255, 255, 255, 255);
-		FF2_ShowSyncHudText(Boss[boss], abilitiesHUD, "%t", "ff2_buttons_rmb");
-	}
-	else
-	{
-		BossInfoTimer[boss][1]=INVALID_HANDLE;
-		return Plugin_Stop;
-	}
-	return Plugin_Continue;
 }
 
 public Action Timer_CheckDoors(Handle timer)
@@ -4928,15 +4875,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			HazardDamage[client] = 0.0;
 			SapperCooldown[client] = GetConVarFloat(cvarSapperStart);
 			SaveClientStats(client);
-		}
-
-		for(int timer; timer<=1; timer++)
-		{
-			if(BossInfoTimer[client][timer]!=INVALID_HANDLE)
-			{
-				KillTimer(BossInfoTimer[client][timer]);
-				BossInfoTimer[client][timer]=INVALID_HANDLE;
-			}
 		}
 	}
 
@@ -8773,7 +8711,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 
 		for(int target; target<=MaxClients; target++)
 		{
-			if(IsValidClient(target) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+			if(IsValidClient(target) && (IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 			{
 				if(bosses<2 && GetConVarInt(cvarGameText)>0)
 				{
@@ -9661,7 +9599,7 @@ public Action ClientTimer(Handle timer)
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
 		{
 			alive = IsPlayerAlive(client);
-			if(!HudSettings[client][0])
+			if((alive || IsClientObserver(client)) && !HudSettings[client][0])
 			{
 				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 				int observer;
@@ -10148,7 +10086,7 @@ public Action BossTimer(Handle timer)
 
 		if(!IsPlayerAlive(client))
 		{
-			if(HudSettings[client][0])
+			if(!IsClientObserver(client) || HudSettings[client][0])
 				continue;
 
 			int observer;
@@ -10341,7 +10279,7 @@ public Action BossTimer(Handle timer)
 
 			for(int target; target<=MaxClients; target++)
 			{
-				if(IsValidClient(target) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+				if(IsValidClient(target) && (IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
 					if(bosses<2 && GetConVarInt(cvarGameText)>0)
 					{
@@ -10495,7 +10433,7 @@ public Action GlobalTimer(Handle timer)
 		{
 			if(IsValidClient(client))
 			{
-				if(HudSettings[client][4] || (GetClientButtons(client) & IN_SCORE))
+				if((!IsPlayerAlive(client) && !IsClientObserver(client)) || HudSettings[client][4] || (GetClientButtons(client) & IN_SCORE))
 					continue;
 
 				if(!IsClientObserver(client))
@@ -10598,7 +10536,7 @@ public Action GlobalTimer(Handle timer)
 		{
 			if(IsValidClient(client))
 			{
-				if(HudSettings[client][4] || (GetClientButtons(client) & IN_SCORE))
+				if((!IsPlayerAlive(client) && !IsClientObserver(client)) || HudSettings[client][4] || (GetClientButtons(client) & IN_SCORE))
 					continue;
 
 				if(!IsClientObserver(client))
@@ -11484,7 +11422,7 @@ public Action Timer_DrawGame(Handle timer)
 	}
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client))
+		if(IsValidClient(client) && (IsPlayerAlive(client) || IsClientObserver(client)))
 		{
 			if(!HudSettings[client][3] && !HudSettings[client][4] && bosses<2 && GetConVarInt(cvarGameText)>0 && alivePlayers==1 && GetConVarInt(cvarHealthHud)<2)
 			{
@@ -11513,7 +11451,10 @@ public Action Timer_DrawGame(Handle timer)
 					ShowGameText(client, "leaderboard_streak", _, "%s | %s", message[client], timeDisplay);
 				}
 			}
-			else if(!HudSettings[client][3] && bosses<2 && GetConVarInt(cvarGameText)>1)
+			else if(HudSettings[client][3])
+			{
+			}
+			else if(bosses<2 && GetConVarInt(cvarGameText)>1)
 			{
 				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 				{
@@ -11540,11 +11481,11 @@ public Action Timer_DrawGame(Handle timer)
 					ShowGameText(client, "leaderboard_streak", _, timeDisplay);
 				}
 			}
-			else if(!HudSettings[client][3] && isCapping && timeleft<=0)
+			else if(isCapping && timeleft<=0)
 			{
 				FF2_ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
 			}
-			else if(!HudSettings[client][3])
+			else
 			{
 				FF2_ShowSyncHudText(client, timeleftHUD, timeDisplay);
 			}
@@ -11736,7 +11677,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(IsValidClient(target) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+				if(IsValidClient(target) && (IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
 					if(GetConVarInt(cvarGameText) > 0)
 					{
@@ -16173,15 +16114,6 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 
 		if(GetClientButtons(Boss[boss]) & button)
 		{
-			for(int timer; timer<=1; timer++)
-			{
-				if(BossInfoTimer[boss][timer]!=INVALID_HANDLE)
-				{
-					KillTimer(BossInfoTimer[boss][timer]);
-					BossInfoTimer[boss][timer]=INVALID_HANDLE;
-				}
-			}
-
 			if(BossCharge[boss][slot] >= 0.0)
 			{
 				Call_PushCell(2);  //Status
