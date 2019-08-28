@@ -449,4 +449,28 @@
 		"en"		"Boss could not be found!"
 		"ru"		"Босс не найден!"
 	}
+	"FF2 Hud Menu Title"
+	{
+		"en"		"Configure HUD preferences"
+	}
+	"Hud Damage"
+	{
+		"en"		"Damage Dealt"
+	}
+	"Hud Extra"
+	{
+		"en"		"Item Status"
+	}
+	"Hud Message"
+	{
+		"en"		"Messages"
+	}
+	"Hud Countdown"
+	{
+		"en"		"Countdown Timer"
+	}
+	"Hud Health"
+	{
+		"en"		"Boss Health"
+	}
 }
