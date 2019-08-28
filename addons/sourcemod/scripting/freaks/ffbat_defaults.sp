@@ -818,7 +818,8 @@ int Rage_New_Weapon(int boss, const char[] ability_name)
 
 	TF2_RemoveWeaponSlot(client, GetArgInt(boss, this_plugin_name, ability_name, "weapon_slot", 4));
 
-	int weapon = FF2_SpawnWeapon(client, classname, GetArgInt(boss, this_plugin_name, ability_name, "index", 2), GetArgInt(boss, this_plugin_name, ability_name, "level", 8), GetArgInt(boss, this_plugin_name, ability_name, "quality", 9), attributes);
+	int index = GetArgInt(boss, this_plugin_name, ability_name, "index", 2);
+	int weapon = FF2_SpawnWeapon(client, classname, index, GetArgInt(boss, this_plugin_name, ability_name, "level", 8), GetArgInt(boss, this_plugin_name, ability_name, "quality", 9), attributes);
 	if(StrEqual(classname, "tf_weapon_builder") && index!=735)  //PDA, normal sapper
 	{
 		SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -1251,7 +1252,7 @@ void Rage_Clone(const char[] ability_name, int boss)
 	int ammo = GetArgInt(boss, this_plugin_name, ability_name, "ammo", 9, -1);
 	int clip = GetArgInt(boss, this_plugin_name, ability_name, "clip", 10, -1);
 	char healthformula[768];
-	FF2_GetAbilityArgumentString(boss, this_plugin_name, ability_name, "health", 11, healthformula, sizeof(healthformula));
+	GetArgString(boss, this_plugin_name, ability_name, "health", 11, healthformula, sizeof(healthformula));
 
 	float position[3], velocity[3];
 	GetEntPropVector(GetClientOfUserId(FF2_GetBossUserId(boss)), Prop_Data, "m_vecOrigin", position);
@@ -1437,7 +1438,7 @@ public Action Timer_Enable_Damage(Handle timer, any userid)
 // TODO: Fix this
 public Action SaveMinion(int client, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
-	if(attacker>MaxClients)
+	if(attacker > MaxClients)
 	{
 		char edict[64];
 		if(GetEntityClassname(attacker, edict, sizeof(edict)) && !strcmp(edict, "trigger_hurt", false))
@@ -1745,7 +1746,7 @@ public Action Timer_Prepare_Explosion_Rage(Handle timer, Handle data)
 	ReadPackString(data, ability_name, sizeof(ability_name));
 
 	ExpCount[client] = GetArgInt(boss, this_plugin_name, ability_name, "count", 3, 35);
-	ExpDamage[client] = GetArgInt(boss, this_plugin_name, ability_name, "damage", 4, 180.0);
+	ExpDamage[client] = GetArgFloat(boss, this_plugin_name, ability_name, "damage", 4, 180.0);
 	ExpRange[client] = GetArgInt(boss, this_plugin_name, ability_name, "distance", 4, 350);
 
 	if(GetArgInt(boss, this_plugin_name, ability_name, "taunt", 5, 1))
@@ -1899,8 +1900,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float veloc
 
 public Action Timer_Rage_SlowMo_Attack(Handle timer, Handle data)
 {
-	int client=GetClientOfUserId(ReadPackCell(data));
-	int target=GetClientOfUserId(ReadPackCell(data));
+	int client = GetClientOfUserId(ReadPackCell(data));
+	int target = GetClientOfUserId(ReadPackCell(data));
 	if(client && target && IsClientInGame(client) && IsClientInGame(target))
 	{
 		float clientPosition[3], targetPosition[3];
@@ -1910,9 +1911,9 @@ public Action Timer_Rage_SlowMo_Attack(Handle timer, Handle data)
 		{
 			SetEntProp(client, Prop_Send, "m_bDucked", 1);
 			SetEntityFlags(client, GetEntityFlags(client)|FL_DUCKING);
-			SDKHooks_TakeDamage(target, client, client, 900.0);
+			SDKHooks_TakeDamage(target, client, client, 850.0);
 			TeleportEntity(client, targetPosition, NULL_VECTOR, NULL_VECTOR);
-			oldTarget=target;
+			oldTarget = target;
 		}
 	}
 }
@@ -1922,8 +1923,8 @@ public bool TraceRayDontHitSelf(int entity, int mask)
 	if(!entity || entity>MaxClients)
 		return true;
 
-	if(FF2_GetBossIndex(entity)==-1)
-		return true;
+	//if(FF2_GetBossIndex(entity)==-1)
+		//return true;
 
 	return false;
 }
@@ -1982,21 +1983,21 @@ stock int AttachParticle(int entity, char[] particleType, float offset=0.0, bool
 	return particle;
 }
 
-stock int GetArgInt(int boss, const char[] plugin_name, const char[] ability_name, int index, const char[] argument, int defValue=0)
+stock int GetArgInt(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, int defValue=0)
 {
 	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
 	       FF2_GetArgNamedI(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgument(boss, plugin_name, ability_name, index, defValue)) :
 	       FF2_GetAbilityArgument(boss, plugin_name, ability_name, index, defValue);
 }
 
-stock float GetArgFloat(int boss, const char[] plugin_name, const char[] ability_name, int index, const char[] argument, float defValue=0.0)
+stock float GetArgFloat(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, float defValue=0.0)
 {
 	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
 	       FF2_GetArgNamedF(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgumentFloat(boss, plugin_name, ability_name, index, defValue)) :
 	       FF2_GetAbilityArgumentFloat(boss, plugin_name, ability_name, index, defValue);
 }
 
-stock int GetArgString(int boss, const char[] plugin_name, const char[] ability_name, int index, const char[] argument, char[] buffer, int bufferLength);
+stock int GetArgString(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, char[] buffer, int bufferLength)
 {
 	if(FF2_NamedArgumentsUsed(boss, plugin_name, ability_name))
 	{
