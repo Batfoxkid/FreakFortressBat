@@ -255,6 +255,7 @@
 	"menu_0"	// Menu
 	{
 		"en"		"Configure what your HUD looks like (/ff2hud)"
+		"ru"		"Настройте, как будет выглядеть ваш HUD (/ff2hud)"
 	}
 	"damage_fx"	// HUD
 	{
