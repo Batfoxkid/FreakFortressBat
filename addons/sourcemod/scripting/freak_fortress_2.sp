@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5284,15 +5284,7 @@ public Action Command_HudMenu(int client, int args)
 	char menuOption[64];
 	for(int i; i<HUDTYPES; i++)
 	{
-		if(HudSettings[client][i])
-		{
-			Format(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], "Off");
-		}
-		else
-		{
-			Format(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], "On");
-		}
-
+		FormatEx(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], HudSettings[client][i] ? "Off" : "On");
 		AddMenuItem(menu, menuOption, menuOption);
 	}
 
