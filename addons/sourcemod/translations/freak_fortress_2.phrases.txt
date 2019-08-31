@@ -252,6 +252,11 @@
 		"en"		"Changes to my class in FF2 (/ff2classinfo)"
 		"ru"		"Изменения текущего класса в FF2 (/ff2classinfo)"
 	}
+	"menu_0"	// Menu
+	{
+		"en"		"Configure what your HUD looks like (/ff2hud)"
+		"ru"		"Настройте, как будет выглядеть ваш HUD (/ff2hud)"
+	}
 	"damage_fx"	// HUD
 	{
 		"#format"	"{1:i}"
@@ -490,12 +495,12 @@
 		"en"		"The character set for {1} will be {2}."
 		"ru"		"На карте {1} будет набор персонажей {2}."
 	}
-	"ff2_buttons_reload"	// HUD
+	"ff2_buttons_reload"	// Deprecated
 	{
 		"en"		"Press RELOAD button to use an ability!"
 		"ru"		"Нажми ПЕРЕЗАРЯДКУ для исп-ния способности!"
 	}
-	"ff2_buttons_rmb"	// HUD
+	"ff2_buttons_rmb"	// Deprecated
 	{
 		"en"		"Press ALT-FIRE button to use an ability!"
 		"ru"		"Нажми ПКМ для исп-ния способности!"

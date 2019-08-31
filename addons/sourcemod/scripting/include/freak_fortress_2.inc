@@ -1,6 +1,7 @@
 //Freak Fortress 2 include file.
 #include <morecolors>
 #include <sdktools>
+#tryinclude <tf2items>
 
 #define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
 #define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
@@ -110,6 +111,7 @@ native int FF2_GetBossTeam();
  *
  * @return			True if boss exists, false if not
  */
+#pragma deprecated Use FF2_GetBossName instead for Unofficial
 native bool FF2_GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int bossMeaning=0);
 
 /**
@@ -338,6 +340,69 @@ native float FF2_GetAbilityArgumentFloat(int boss, const char[] plugin_name, con
  */
 native void FF2_GetAbilityArgumentString(int boss, const char[] pluginName, const char[] abilityName, int argument, char[] buffer, int bufferLength);
 
+
+/**
+ * Gets the integer value of a named ability argument
+ *
+ * @param boss		Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ * @param argument 	Argument name
+ * @param defValue 	Returns if argument is not defined
+ *
+ * @return		Value of argument
+ */
+native int FF2_GetArgNamedI(int boss, const char[] pluginName, const char[] abilityName, const char[] argument, int defValue=0);
+
+/**
+ * Gets the float value of a named ability argument
+ *
+ * @param boss		Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ * @param argument 	Argument name
+ * @param defValue 	Returns if argument is not defined
+ *
+ * @return		Value of argument
+ */
+native float FF2_GetArgNamedF(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, float defValue=0.0);
+
+/**
+ * Gets the string value of a named ability argument
+ *
+ * @param boss		Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ * @param argument 	Argument name
+ * @param buffer 	Buffer for value of argument
+ * @param bufferLength	Length of buffer string
+ *
+ * @noreturn
+ */
+native void FF2_GetArgNamedS(int boss, const char[] pluginName, const char[] abilityName, const char[] argument, char[] buffer, int bufferLength);
+
+/**
+ * Are named arguments used for this ability in the boss config?
+ * Note: When compability with FF2 version older than 1.11.0 is wanted,
+ * add this code in AskPluginLoad2 in your subplugin:
+ * MarkNativeAsOptional("FF2_GetArgNamedI");
+ * MarkNativeAsOptional("FF2_GetArgNamedF");
+ * MarkNativeAsOptional("FF2_GetArgNamedS");
+ *
+ * @param boss		Boss's index
+ * @param pluginName	Name of plugin with this ability
+ * @param abilityName 	Name of ability
+ *
+ * @return              True if named arguments are used. False if indexed arguments are used.
+ */
+stock bool FF2_NamedArgumentsUsed(int boss, const char[] pluginName, const char[] abilityName)
+{
+	if(GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedI") != FeatureStatus_Available)
+		return false;
+
+	return (FF2_GetArgNamedI(boss, pluginName, abilityName, "slot", -2)!=-2) ? true : false;
+}
+
 /**
  * Plays a sound to everyone except players who disabled boss voices
  *
@@ -538,7 +603,7 @@ native bool FF2_GetCheats();
  *
  * @return		Plugin_Stop can not prevent the ability. Use FF2_PreAbility with enabled=false
  */
-forward int FF2_PreAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, bool &enabled);
+forward void FF2_PreAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, bool &enabled);
 forward Action FF2_OnAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, int status);
 
 /**
@@ -560,8 +625,20 @@ forward Action FF2_OnTriggerHurt(int boss, int triggerHurt, float &damage);
  *
  * @return		Plugin_Stop will prevent music, Plugin_Changed will change it.
  */
+#pragma deprecated Use FF2_OnMusic2 instead for Unofficial
 forward Action FF2_OnMusic(char[] path, float &time);
 
+/**
+ * Called when a Boss's music begins with name and artist
+ *
+ * @param path 		Path to music sound file
+ * @param time		Length of music
+ * @param name 		The music name
+ * @param artist 	The music artist
+ *
+ * @return		Plugin_Stop will prevent music, Plugin_Changed will change it.
+ */
+forward Action FF2_OnMusic2(char[] path, float &time, char[] name, char[] artist);
 
 /**
  * Called when FF2 picks a character for a Boss
@@ -630,22 +707,11 @@ stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
 	if(IsValidEntity(weapon))
 	{
 		if(clip > -1)
-		{
 			SetEntProp(weapon, Prop_Data, "m_iClip1", clip);
-		}
 
 		int ammoType = (ammo>-1 ? GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType") : -1);
 		if(ammoType != -1)
-		{
 			SetEntProp(client, Prop_Data, "m_iAmmo", ammo, _, ammoType);
-		}
-		else if(ammo > -1)  //Only complain if we're trying to set ammo
-		{
-			char classname[64], bossName[32];
-			GetEdictClassname(weapon, classname, sizeof(classname));
-			FF2_GetBossSpecial(FF2_GetBossIndex(client), bossName, sizeof(bossName));
-			LogError("[FF2] Cannot give ammo to weapon %s (boss %s)-check your config!", classname, bossName);
-		}
 	}
 }
 
@@ -783,6 +849,137 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 	}
 }
 
+/**
+ * Used to spawn a weapon
+ *
+ * @param client	Client index
+ * @param name		Classname of the weapon
+ * @param index		Definition index of the weapon
+ * @param level		Level of the weapon
+ * @param qual		Quality of the weapon
+ * @param att		String, containing the attributes in the following format: attr ; val ; attr ; val ; ...
+ * @param visible	Weapon will be visible?
+ *
+ * @return		Entity index of the weapon
+ */
+stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qual, char[] att, bool visible=true)
+{
+	#if defined _tf2items_included
+	Handle hWeapon = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
+	if(hWeapon == INVALID_HANDLE)
+		return -1;
+
+	TF2Items_SetClassname(hWeapon, name);
+	TF2Items_SetItemIndex(hWeapon, index);
+	TF2Items_SetLevel(hWeapon, level);
+	TF2Items_SetQuality(hWeapon, qual);
+	char atts[32][32];
+	int count = ExplodeString(att, ";", atts, 32, 32);
+
+	if(count % 2)
+		--count;
+
+	if(count > 0)
+	{
+		TF2Items_SetNumAttributes(hWeapon, count/2);
+		int i2;
+		for(int i; i<count; i+=2)
+		{
+			int attrib=StringToInt(atts[i]);
+			if(!attrib)
+			{
+				LogError("Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
+				CloseHandle(hWeapon);
+				return -1;
+			}
+
+			TF2Items_SetAttribute(hWeapon, i2, attrib, StringToFloat(atts[i+1]));
+			i2++;
+		}
+	}
+	else
+	{
+		TF2Items_SetNumAttributes(hWeapon, 0);
+	}
+
+	int entity = TF2Items_GiveNamedItem(client, hWeapon);
+	CloseHandle(hWeapon);
+	EquipPlayerWeapon(client, entity);
+	SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", visible);
+	return entity;
+	#else
+	return -1;
+	#endif
+}
+
+/**
+ * Get int argument of ability in compatible way
+ *
+ * @param boss		Boss's index
+ * @param plugin_name	Name of plugin with this ability
+ * @param ability_name 	Name of ability
+ * @param argument 	Argument name
+ * @param index         Argument number, used as fallback when the numbered arguments are used
+ * @param defValue 	Returns if argument is not defined
+ *
+ * @return         	The value of the argument or default value
+ */
+stock int GetArgI(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, int defValue=0)
+{
+	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
+	       FF2_GetArgNamedI(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgument(boss, plugin_name, ability_name, index, defValue)) :
+	       FF2_GetAbilityArgument(boss, plugin_name, ability_name, index, defValue);
+}
+
+/**
+ * Get float argument of ability in compatible way
+ *
+ * @param boss		Boss's index
+ * @param plugin_name	Name of plugin with this ability
+ * @param ability_name 	Name of ability
+ * @param argument 	Argument name
+ * @param index         Argument number, used as fallback when the numbered arguments are used
+ * @param defValue 	Returns if argument is not defined
+ *
+ * @return         	The value of the argument or default value
+ */
+stock float GetArgF(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, float defValue=0.0)
+{
+	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
+	       FF2_GetArgNamedF(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgumentFloat(boss, plugin_name, ability_name, index, defValue)) :
+	       FF2_GetAbilityArgumentFloat(boss, plugin_name, ability_name, index, defValue);
+}
+
+/**
+ * Get string argument of ability in compatible way
+ *
+ * @param boss		Boss's index
+ * @param plugin_name	Name of plugin with this ability
+ * @param ability_name 	Name of ability
+ * @param argument 	Argument name
+ * @param index         Argument number, used as fallback when the numbered arguments are used
+ * @param buffer 	Buffer for value of the argument
+ * @param bufferLength 	Size of the buffer
+ *
+ * @return         	Number of characters stored in the provided buffer
+ */
+stock int GetArgS(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, char[] buffer, int bufferLength)
+{
+	if(FF2_NamedArgumentsUsed(boss, plugin_name, ability_name))
+	{
+		FF2_GetArgNamedS(boss, plugin_name, ability_name, argument, buffer, bufferLength);
+		if(!strlen(buffer))
+		{
+			FF2_GetAbilityArgumentString(boss, plugin_name, ability_name, index, buffer, bufferLength);
+		}
+	}
+	else
+	{
+		FF2_GetAbilityArgumentString(boss, plugin_name, ability_name, index, buffer, bufferLength);
+	}
+	return strlen(buffer);
+}
+
 public SharedPlugin __pl_FF2 =
 {
 	name = "freak_fortress_2",
@@ -823,6 +1020,9 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_GetAbilityArgument");
 	MarkNativeAsOptional("FF2_GetAbilityArgumentFloat");
 	MarkNativeAsOptional("FF2_GetAbilityArgumentString");
+	MarkNativeAsOptional("FF2_GetArgNamedI");
+	MarkNativeAsOptional("FF2_GetArgNamedF");
+	MarkNativeAsOptional("FF2_GetArgNamedS");
 	MarkNativeAsOptional("FF2_RandomSound");
 	MarkNativeAsOptional("FF2_EmitVoiceToAll");
 	MarkNativeAsOptional("FF2_StartMusic");
