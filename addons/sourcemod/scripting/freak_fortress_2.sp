@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5402,7 +5402,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 
 			if(IsBoss(client))
 			{
-				if(((GetBossIndex(client)==0 && GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
+				if(((GetBossIndex(client)==0 || GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 				{
 					add_points[client]=-QueuePoints[client];
 					add_points2[client]=add_points[client];
@@ -7416,7 +7416,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	HazardDamage[client] = 0.0;
 	BossKillsF[client] = BossKills[client];
 	HealthBarModeC[client] = false;
-	if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
+	if(((GetBossIndex(client)==0 || GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 	{
 		QueuePoints[client] = 0;
 	}
