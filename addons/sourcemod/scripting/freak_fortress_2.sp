@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -16110,7 +16110,15 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 			{
 				Call_PushCell(2);  //Status
 				Call_Finish(action);
-				float charge = 100.0*0.2/GetAbilityArgumentFloat(boss, plugin_name, ability_name, 1, 1.5);
+				if(GetArgumentI(boss, plugin_name, ability_name, "slot", -2) != -2)
+				{
+					charge = 100.0*0.2/GetArgumentF(boss, plugin_name, ability_name, "charge time", 1.5);
+				}
+				else
+				{
+					charge = 100.0*0.2/GetAbilityArgumentFloat(boss, plugin_name, ability_name, 1, 1.5);
+				}
+
 				if(BossCharge[boss][slot]+charge < 100.0)
 				{
 					BossCharge[boss][slot] += charge;
@@ -16139,7 +16147,14 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 				CreateDataTimer(0.1, Timer_UseBossCharge, data);
 				WritePackCell(data, boss);
 				WritePackCell(data, slot);
-				WritePackFloat(data, -1.0*GetAbilityArgumentFloat(boss, plugin_name, ability_name, 2, 5.0));
+				if(GetArgumentI(boss, plugin_name, ability_name, "slot", -2) != -2)
+				{
+					WritePackFloat(data, -1.0*GetArgumentF(boss, plugin_name, ability_name, "cooldown", 5.0));
+				}
+				else
+				{
+					WritePackFloat(data, -1.0*GetAbilityArgumentFloat(boss, plugin_name, ability_name, 2, 5.0));
+				}
 				ResetPack(data);
 			}
 			else
