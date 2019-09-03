@@ -16110,6 +16110,7 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 			{
 				Call_PushCell(2);  //Status
 				Call_Finish(action);
+				float charge;
 				if(GetArgumentI(boss, plugin_name, ability_name, "slot", -2) != -2)
 				{
 					charge = 100.0*0.2/GetArgumentF(boss, plugin_name, ability_name, "charge time", 1.5);
