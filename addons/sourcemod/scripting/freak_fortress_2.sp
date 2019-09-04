@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "Build"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -208,8 +208,6 @@ float AirstrikeDamage[MAXTF2PLAYERS];
 float KillstreakDamage[MAXTF2PLAYERS];
 float HazardDamage[MAXTF2PLAYERS];
 bool emitRageSound[MAXTF2PLAYERS];
-bool bossHasReloadAbility[MAXTF2PLAYERS];
-bool bossHasRightMouseAbility[MAXTF2PLAYERS];
 bool SpawnTeleOnTriggerHurt = false;
 bool HealthBarMode;
 bool HealthBarModeC[MAXTF2PLAYERS];
@@ -3228,9 +3226,6 @@ public void DisableFF2()
 			KillTimer(MusicTimer[client]);
 			MusicTimer[client] = INVALID_HANDLE;
 		}
-
-		bossHasReloadAbility[client] = false;
-		bossHasRightMouseAbility[client] = false;
 	}
 
 	#if !defined _smac_included
@@ -4860,8 +4855,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			{
 				BossCharge[client][slot] = 0.0;
 			}
-			bossHasReloadAbility[client] = false;
-			bossHasRightMouseAbility[client] = false;
 			SaveClientStats(client);
 		}
 		else if(IsValidClient(client))
@@ -16084,24 +16077,22 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 		switch(buttonMode)
 		{
 			case 1:
-			{
 				button = IN_DUCK|IN_ATTACK2;
-				bossHasRightMouseAbility[boss] = true;
-			}
+
 			case 2:
-			{
 				button = IN_RELOAD;
-				bossHasReloadAbility[boss] = true;
-			}
+
 			case 3:
-			{
 				button = IN_ATTACK3;
-			}
+
+			case 4:
+				button = IN_DUCK;
+
+			case 5:
+				button = IN_SCORE;
+
 			default:
-			{	// I really don't want players relying on ducking
 				button = IN_ATTACK2;
-				bossHasRightMouseAbility[boss] = true;
-			}
 		}
 
 		if(GetClientButtons(Boss[boss]) & button)
