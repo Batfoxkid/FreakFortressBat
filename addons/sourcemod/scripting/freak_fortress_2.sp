@@ -15899,7 +15899,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	int total, charsets;
 	int shuffle = GetConVarInt(cvarShuffleCharset);
 	if(!shuffle)
-		AddMenuItem(menu, "0", "Random");*/
+		AddMenuItem(menu, "0", "Random");
 
 	do
 	{
