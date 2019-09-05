@@ -76,9 +76,9 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Build"
+#define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -308,7 +308,7 @@ ConVar cvarBvBChaos;
 ConVar cvarBvBMerc;
 ConVar cvarBvBStat;
 ConVar cvarTimesTen;
-//ConVar cvarShuffleCharset;
+ConVar cvarShuffleCharset;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -2114,7 +2114,7 @@ public void OnPluginStart()
 	cvarBvBMerc = CreateConVar("ff2_boss_vs_boss_damage", "1.0", "How much to multiply non-boss damage against non-boss while each team as a boss alive", _, true, 0.0);
 	cvarBvBStat = CreateConVar("ff2_boss_vs_boss_stats", "0", "Should Boss vs Boss mode count towards StatTrak?", _, true, 0.0, true, 1.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
-	//cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
+	cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -15897,10 +15897,10 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	int total, charsets;
-	/*int shuffle = GetConVarInt(cvarShuffleCharset);
+	int shuffle = GetConVarInt(cvarShuffleCharset);
 	if(!shuffle)
 		AddMenuItem(menu, "0", "Random");*/
-	AddMenuItem(menu, "0", "Random");
+
 	do
 	{
 		total++;
@@ -15911,57 +15911,34 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		validCharsets[charsets] = total;
 
 		KvGetSectionName(Kv, charset, sizeof(charset));
-		/*if(!shuffle)
+		if(!shuffle)
 		{
 			IntToString(total, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
-		}*/
-		IntToString(total, index, sizeof(index));
-		AddMenuItem(menu, index, charset);
+		}
 	}
 	while(KvGotoNextKey(Kv));
 
-	/*if(shuffle && charsets>1)
+	if(shuffle && charsets>1)
 	{
 		KvRewind(Kv);
 
-		int choosen, current=-1;
-		for(int tries; tries<99; tries++)
+		int packs, current;
+		bool choosen[64];
+		for(int tries; tries<99 && packs<=shuffle; tries++)
 		{
-			if(tries > 97)
-			{
-				FF2Dbg("Last try %i", tries);
-			}
-
-			if(shuffle <= choosen)
-			{
-				FF2Dbg("Ended %i of %i filled", choosen, shuffle);
-				break;
-			}
-
-			if(!KvGotoNextKey(Kv))	// Move next pack
-			{
-				current = -1;
-				KvRewind(Kv);
-			}
-
-			if(KvGetNum(Kv, "hidden", 0))
+			current = validCharsets[GetRandomInt(1, charsets)]-1;
+			if(current<=0 || choosen[current])
 				continue;
 
-			current++;
-			if(validCharsets[current]<=0 || GetRandomInt(0, charsets)<(charsets-1))	// If it's valid (because of exclusion) and randomly choosen
-				continue;
-
-			choosen++;
-			FF2Dbg("Pack %i [%i] (%i of %i) chosen on try %i", current, validCharsets[current], choosen, shuffle, tries);
-
+			packs++;
+			choosen[current] = true;
+			KvJumpToKeySymbol(Kv, current);
 			KvGetSectionName(Kv, charset, sizeof(charset));
-			IntToString(validCharsets[current], index, sizeof(index));
+			IntToString(current, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
-
-			validCharsets[current] = 0;	// Exclude from being picked twice
 		}
-	}*/
+	}
 	CloseHandle(Kv);
 
 	if(charsets > 1)  //We have enough to call a vote
