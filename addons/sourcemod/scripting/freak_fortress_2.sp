@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3809,27 +3809,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	}
 	else if(convar == cvarDuoMin)
 	{
-		if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)
-		{
-			DuoMin = true;
-		}
-		else if(DuoMin)
-		{
-			DuoMin = false;
-			for(int client=1; client<=MaxClients; client++)
-			{
-				if(IsValidClient(client) && strlen(xIncoming[client]))
-				{
-					if(!CheckValidBoss(client, xIncoming[client], true))
-					{
-						FPrintToChat(client, "%t", "boss_selection_reset");
-						xIncoming[client][0] = '\0';
-						CanBossVs[client] = 0;
-						CanBossTeam[client] = 0;
-					}
-				}
-			}
-		}
+		CheckDuoMin();
 	}
 	else if(convar == cvarAnnotations)
 	{
@@ -4672,27 +4652,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	if(HasSwitched)
 		HasSwitched = false;
 
-	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
-	{
-		DuoMin = true;
-	}
-	else if(DuoMin)
-	{
-		DuoMin = false;
-		for(int client=1; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client) && strlen(xIncoming[client]))
-			{
-				if(!CheckValidBoss(client, xIncoming[client], true))
-				{
-					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
-					CanBossVs[client] = 0;
-					CanBossTeam[client] = 0;
-				}
-			}
-		}
-	}
+	CheckDuoMin();
 
 	if(!Enabled)
 	{
@@ -9339,21 +9299,7 @@ public void OnRebuildAdminCache(AdminCachePart part)
 #endif
 {
 	if(part == AdminCache_Overrides)
-	{
-		for(int client=1; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client) && strlen(xIncoming[client]))
-			{
-				if(!CheckValidBoss(client, xIncoming[client], !DuoMin))
-				{
-					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
-					CanBossVs[client] = 0;
-					CanBossTeam[client] = 0;
-				}
-			}
-		}
-	}
+		CheckDuoMin();
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -9445,27 +9391,7 @@ public void OnClientDisconnect(int client)
 	SaveClientStats(client);
 	SaveClientPreferences(client);
 
-	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
-	{
-		DuoMin = true;
-	}
-	else if(DuoMin)
-	{
-		DuoMin = false;
-		for(int clients=1; clients<=MaxClients; clients++)
-		{
-			if(IsValidClient(clients) && strlen(xIncoming[clients]))
-			{
-				if(!CheckValidBoss(clients, xIncoming[clients], true))
-				{
-					FPrintToChat(clients, "%t", "boss_selection_reset");
-					xIncoming[clients][0] = '\0';
-					CanBossVs[clients] = 0;
-					CanBossTeam[client] = 0;
-				}
-			}
-		}
-	}
+	CheckDuoMin();
 
 	if(MusicTimer[client] != INVALID_HANDLE)
 	{
@@ -14907,6 +14833,42 @@ void DoOverlay(int client, const char[] overlay)
 	SetCommandFlags("r_screenoverlay", flags);
 }
 
+public bool CheckDuoMin()
+{
+	int i;
+	DuoMin = false;
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+		{
+			i++;
+			if(i >= GetConVarInt(cvarDuoMin))
+			{
+				DuoMin = true;
+				break;
+			}
+		}
+	}
+
+	if(!DuoMin)
+	{
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client) && strlen(xIncoming[client]))
+			{
+				if(!CheckValidBoss(client, xIncoming[client], true))
+				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
+					xIncoming[client][0] = '\0';
+					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
+				}
+			}
+		}
+	}
+	return DuoMin;
+}
+
 public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
 {
 	if(action==MenuAction_Select)
@@ -17108,16 +17070,16 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 {
 	if(IsValidClient(client))
 	{
-		GlowTimer[client]+=time1;
-		if(time2>=0)
-			GlowTimer[client]=time2;
+		GlowTimer[client] += time1;
+		if(time2 >= 0)
+			GlowTimer[client] = time2;
 
-		if(GlowTimer[client]<=0.0)
+		if(GlowTimer[client] <= 0.0)
 		{
 			GlowTimer[client]=0.0;
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 		}
-		else
+		else if(GetRoundState() == 1)
 		{
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
 		}
