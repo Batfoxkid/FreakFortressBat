@@ -251,15 +251,15 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
     /*
        Rages
     */
-	if(!strcmp(ability_name, "rage_new_weapon"))
+	if(!StrContains(ability_name, "rage_new_weapon"))
 	{
 		Rage_New_Weapon(boss, ability_name);
 	}
-	else if(!strcmp(ability_name, "rage_overlay"))
+	else if(!StrContains(ability_name, "rage_overlay"))
 	{
 		Rage_Overlay(boss, ability_name);
 	}
-	else if(!strcmp(ability_name, "rage_uber"))
+	else if(!StrContains(ability_name, "rage_uber"))
 	{
 		float duration = FF2_GetArgF(boss, this_plugin_name, ability_name, "duration", 1, 5.0);
 		if(duration <= 0)
@@ -269,7 +269,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		SetEntProp(client, Prop_Data, "m_takedamage", 0);
 		CreateTimer(duration, Timer_StopUber, boss, TIMER_FLAG_NO_MAPCHANGE);
 	}
-	else if(!strcmp(ability_name, "rage_stun"))
+	else if(StrEqual(ability_name, "rage_stun"))
 	{
 		float delay = FF2_GetArgF(boss, this_plugin_name, ability_name, "delay", 10, 0.0);
 		if(delay > 0)
@@ -281,11 +281,11 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 			Timer_Rage_Stun(INVALID_HANDLE, boss);
 		}
 	}
-	else if(!strcmp(ability_name, "rage_stunsg"))
+	else if(!StrContains(ability_name, "rage_stunsg"))
 	{
 		Rage_StunBuilding(ability_name, boss);
 	}
-	else if(!strcmp(ability_name, "rage_instant_teleport"))
+	else if(!StrContains(ability_name, "rage_instant_teleport"))
 	{
 		float position[3];
 		bool otherTeamIsAlive;
@@ -356,20 +356,20 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 			TeleportEntity(client, position, NULL_VECTOR, NULL_VECTOR);
 		}
 	}
-	else if(!strcmp(ability_name, "rage_cloneattack"))
+	else if(!StrContains(ability_name, "rage_cloneattack"))
 	{
 		Rage_Clone(ability_name, boss);
 	}
-	else if(!strcmp(ability_name, "rage_tradespam"))
+	else if(!StrContains(ability_name, "rage_tradespam"))
 	{
 		CreateTimer(0.0, Timer_Demopan_Rage, 1, TIMER_FLAG_NO_MAPCHANGE);
 		Demopan = GetClientTeam(client);
 	}
-	else if(!strcmp(ability_name, "rage_cbs_bowrage"))
+	else if(StrEqual(ability_name, "rage_cbs_bowrage"))
 	{
 		Rage_Bow(boss);
 	}
-	else if(!strcmp(ability_name, "rage_explosive_dance"))
+	else if(StrEqual(ability_name, "rage_explosive_dance"))
 	{
 		SetEntityMoveType(GetClientOfUserId(FF2_GetBossUserId(boss)), MOVETYPE_NONE);
 		Handle data;
@@ -378,14 +378,14 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		WritePackString(data, ability_name);
 		ResetPack(data);
 	}
-	else if(!strcmp(ability_name, "rage_matrix_attack"))
+	else if(!StrContains(ability_name, "rage_matrix_attack"))
 	{
 		Rage_Slowmo(boss, ability_name);
 	}
     /*
        Specials
     */
-	else if(!strcmp(ability_name, "special_democharge"))
+	else if(StrEqual(ability_name, "special_democharge"))
 	{
 		if(status<1 || Charged[client]>GetGameTime())
 			return Plugin_Continue;
@@ -813,7 +813,7 @@ int Rage_New_Weapon(int boss, const char[] ability_name)
 	TF2_RemoveWeaponSlot(client, FF2_GetArgI(boss, this_plugin_name, ability_name, "weapon slot", 4));
 
 	int index = FF2_GetArgI(boss, this_plugin_name, ability_name, "index", 2);
-	int weapon = FF2_SpawnWeapon(client, classname, index, FF2_GetArgI(boss, this_plugin_name, ability_name, "level", 8), FF2_GetArgI(boss, this_plugin_name, ability_name, "quality", 9), attributes);
+	int weapon = FF2_SpawnWeapon(client, classname, index, FF2_GetArgI(boss, this_plugin_name, ability_name, "level", 8, 101), FF2_GetArgI(boss, this_plugin_name, ability_name, "quality", 9, 5), attributes);
 	if(StrEqual(classname, "tf_weapon_builder") && index!=735)  //PDA, normal sapper
 	{
 		SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
