@@ -76,7 +76,7 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "development"
+#define FORK_DEV_REVISION "killstreak"
 
 #define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
@@ -144,6 +144,7 @@ bool smac = false;
 
 bool TimesTen = false;
 
+bool NoDeath;
 bool isCapping = false;
 int RPSWinner;
 int currentBossTeam;
@@ -10888,6 +10889,12 @@ public Action OverTimeAlert(Handle timer)
 
 public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroadcast)
 {
+	if(NoDeath && (GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+	{
+		NoDeath = false;
+		return Plugin_Continue;
+	}
+
 	if(!Enabled || CheckRoundState()!=1)
 		return Plugin_Continue;
 
@@ -11664,17 +11671,37 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 				}
 			}
 		}
+
 		i = 0;
+		int streak;
 		if(GetConVarFloat(cvarDmg2KStreak) > 0)
 		{
 			KillstreakDamage[attacker] += damage;
 			while(KillstreakDamage[attacker]>=GetConVarFloat(cvarDmg2KStreak) && i<21)
 			{
 				i++;
-				SetEntProp(attacker, Prop_Send, "m_nStreaks", GetEntProp(attacker, Prop_Send, "m_nStreaks")+1);
+				streak = GetEntProp(attacker, Prop_Send, "m_nStreaks");
+				SetEntProp(attacker, Prop_Send, "m_nStreaks", streak+1);
 				KillstreakDamage[attacker] -= GetConVarFloat(cvarDmg2KStreak);
+
+				if(!((streak+1) % 5) && RoundCount>(arenaRounds+1))
+				{
+					NoDeath = true;
+					Event hStreak = CreateEvent("player_death", true);
+					if(hStreak != INVALID_HANDLE)
+					{
+						hStreak.SetString("weapon_logclassname", "killstreak");
+						hStreak.SetInt("attacker", GetClientUserId(attacker));
+						hStreak.SetInt("userid", GetClientUserId(client));
+						hStreak.SetInt("death_flags", TF_DEATHFLAG_DEADRINGER);
+						hStreak.SetInt("kill_streak_wep", (streak+1)/5);
+						hStreak.SetInt("kill_streak_total", (streak+1)/5);
+						hStreak.Fire();
+					}
+				}
 			}
 		}
+
 		if(SapperCooldown[attacker] > 0.0)
 			SapperCooldown[attacker] -= damage;
 	}
@@ -12854,7 +12881,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								}
 							}
 						}
-
 
 						if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 						{
