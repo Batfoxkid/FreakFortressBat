@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -9732,7 +9732,7 @@ public Action ClientTimer(Handle timer)
 					FF2flags[client]&=~FF2FLAG_ISBUFFED;
 			}
 
-			int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-3 : MercAlivePlayers;
+			int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
 
 			if(lastPlayerGlow > 0)
 			{
@@ -10145,7 +10145,7 @@ public Action BossTimer(Handle timer)
 			ActivateAbilitySlot(boss, i, true);
 		}
 
-		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-3 : MercAlivePlayers;
+		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
 
 		if(lastPlayerGlow > 0)
 		{
@@ -11178,7 +11178,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 		LastMan=false;
 	}
 
-	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 3) : float(MercAlivePlayers);
+	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 1) : float(MercAlivePlayers);
 	if(countdownPlayers>0 && BossHealth[0]>=countdownHealth && (BossHealth[MAXBOSSES]>=countdownHealth || !Enabled3) && countdownTime>1 && !executed2)
 	{
 		if(countdownPlayers < 1)
@@ -11263,7 +11263,7 @@ public Action Timer_DrawGame(Handle timer)
 		return Plugin_Stop;
 	}
 
-	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 2) : float(MercAlivePlayers);
+	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 1) : float(MercAlivePlayers);
 	if(countdownPlayers < 1)
 	{
 		if(alivePlayers/playing > countdownPlayers)
@@ -17079,7 +17079,7 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 			GlowTimer[client]=0.0;
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 		}
-		else if(GetRoundState() == 1)
+		else if(CheckRoundState() == 1)
 		{
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
 		}
