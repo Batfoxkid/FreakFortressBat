@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5023,21 +5023,15 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(!Enabled3)
-	{
-		SetConVarInt(FindConVar("mp_teams_unbalance_limit"), 0);
-		CreateTimer(bonusRoundTime, Timer_CheckBossVsBoss, _, TIMER_FLAG_NO_MAPCHANGE);
-	}
-
 	if(GetConVarInt(cvarBossVsBoss) > 0)
 	{
 		if(GetRandomInt(0, 99) < GetConVarInt(cvarBossVsBoss))
 		{
-			CreateTimer(bonusRoundTime-0.5, Timer_SetEnabled3, true, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(bonusRoundTime-0.1, Timer_SetEnabled3, true, TIMER_FLAG_NO_MAPCHANGE);
 		}
 		else
 		{
-			CreateTimer(bonusRoundTime-0.5, Timer_SetEnabled3, false, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(bonusRoundTime-0.1, Timer_SetEnabled3, false, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 	else
@@ -5081,28 +5075,29 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 public Action Timer_SetEnabled3(Handle timer, bool toggle)
 {
 	Enabled3 = toggle;
-	return Plugin_Continue;
-}
-
-public Action Timer_CheckBossVsBoss(Handle timer)
-{
-	if(!Enabled3)
-		return Plugin_Continue;
-
-	int team = OtherTeam;
-	for(int client=1; client<=MaxClients; client++)
+	if(Enabled3)
 	{
-		if(IsValidClient(client))
+		SetConVarInt(FindConVar("mp_teams_unbalance_limit"), 0);
+
+		//int team = OtherTeam;
+		for(int client=1; client<=MaxClients; client++)
 		{
-			if(!IsPlayerAlive(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+			if(IsValidClient(client))
 			{
-				ChangeClientTeam(client, team);
-				team = team==BossTeam ? OtherTeam : BossTeam;
+				if(!IsPlayerAlive(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				{
+					//ChangeClientTeam(client, team);
+					//team = team==BossTeam ? OtherTeam : BossTeam;
+					FakeClientCommand(client, "autoteam");
+				}
 			}
 		}
-	}
 
-	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
+	}
+	else
+	{
+		SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
+	}
 	return Plugin_Continue;
 }
 
