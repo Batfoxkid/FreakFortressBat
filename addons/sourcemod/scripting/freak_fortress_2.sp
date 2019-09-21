@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -11457,12 +11457,6 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 		int health = GetClientHealth(client);
 		switch(GetConVarInt(cvarShieldType))
 		{
-			case 1:
-			{
-				SetEntityHealth(client, preHealth);
-				RemoveShield(client, attacker);
-				return Plugin_Handled;
-			}
 			case 2:
 			{
 				if(preHealth <= damage)
@@ -11863,6 +11857,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			{
 				damage *= 0.25;
 				return Plugin_Changed;
+			}
+
+			if(GetConVarInt(cvarShieldType) == 1)
+			{
+				RemoveShield(client, attacker);
+				return Plugin_Handled;
 			}
 
 			if(damage<=160.0 && dmgTriple[attacker])
