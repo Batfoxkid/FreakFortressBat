@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6599,8 +6599,9 @@ stock int CreateAttachedAnnotation(int client, int entity, bool effect=true, flo
 	SetEventInt(event, "follow_entindex", entity);
 	SetEventFloat(event, "lifetime", time);
 	SetEventInt(event, "visibilityBitfield", (1<<client));
-	SetEventBool(event,"show_effect", effect);
+	SetEventBool(event, "show_effect", effect);
 	SetEventString(event, "text", message);
+	SetEventString(event, "play_sound", "vo/null.wav");
 	SetEventInt(event, "id", entity); //What to enter inside? Need a way to identify annotations by entindex!
 	FireEvent(event);
 	return entity;
