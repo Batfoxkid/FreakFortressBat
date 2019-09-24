@@ -74,7 +74,7 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "2"
+#define FORK_STABLE_REVISION "3"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
@@ -308,7 +308,7 @@ ConVar cvarBvBChaos;
 ConVar cvarBvBMerc;
 ConVar cvarBvBStat;
 ConVar cvarTimesTen;
-ConVar cvarShuffleCharset;
+//ConVar cvarShuffleCharset;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -608,7 +608,8 @@ static const char ff2versiontitles[][] =
 	"1.18.6",
 	"1.19.0",
 	"1.19.1",
-	"1.19.2"
+	"1.19.2",
+	"1.19.3"
 };
 
 static const char ff2versiondates[][] =
@@ -764,13 +765,18 @@ static const char ff2versiondates[][] =
 	"June 29, 2019",		//1.18.6
 	"July 23, 2019",		//1.19.0
 	"August 10, 2019",		//1.19.1
-	"August 31, 2019"		//1.19.2
+	"August 31, 2019",		//1.19.2
+	"September 27, 2019"		//1.19.3
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 152:  //1.19.3
+		{
+			DrawPanelText(panel, "1) TODO");
+		}
 		case 151:  //1.19.2
 		{
 			DrawPanelText(panel, "1) [Core] Synced with Offical Beta 1.11 (Naydef)");
@@ -2114,7 +2120,7 @@ public void OnPluginStart()
 	cvarBvBMerc = CreateConVar("ff2_boss_vs_boss_damage", "1.0", "How much to multiply non-boss damage against non-boss while each team as a boss alive", _, true, 0.0);
 	cvarBvBStat = CreateConVar("ff2_boss_vs_boss_stats", "0", "Should Boss vs Boss mode count towards StatTrak?", _, true, 0.0, true, 1.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
-	cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
+	//cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -5079,18 +5085,45 @@ public Action Timer_SetEnabled3(Handle timer, bool toggle)
 	{
 		SetConVarInt(FindConVar("mp_teams_unbalance_limit"), 0);
 
-		//int team = OtherTeam;
+		int reds, blus;
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client))
+			if(!IsValidClient(client))
+				continue;
+
+			if(GetClientTeam(client) == OtherTeam)
 			{
-				if(!IsPlayerAlive(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
-				{
-					//ChangeClientTeam(client, team);
-					//team = team==BossTeam ? OtherTeam : BossTeam;
-					FakeClientCommand(client, "autoteam");
-				}
+				reds++;
 			}
+			else if(GetClientTeam(client) == BossTeam)
+			{
+				blus++;
+			}
+		}
+
+		int team;
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(!IsValidClient(client))
+				continue;
+
+			if(IsPlayerAlive(client) || GetClientTeam(client)<=view_as<int>(TFTeam_Spectator))
+				continue;
+
+			if(reds>blus || (reds==blus && GetRandomInt(0, 1))) // More reds or their equal with 50/50 chance
+			{
+				team = BossTeam;
+				reds--;
+				blus++;
+			}
+			else
+			{
+				team = OtherTeam;
+				reds++;
+				blus--;
+			}
+
+			ChangeClientTeam(client, team);
 		}
 
 	}
@@ -7287,14 +7320,14 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 
 	switch(KvGetNum(BossKV[Special[boss]], "pickups", 0))  //Check if the boss is allowed to pickup health/ammo
 	{
+		case 0:
+			FF2flags[client] &= ~(FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS);
+
 		case 1:
-			FF2flags[client] |= FF2FLAG_ALLOW_HEALTH_PICKUPS;
+			FF2flags[client] &= ~(FF2FLAG_ALLOW_AMMO_PICKUPS);
 
 		case 2:
-			FF2flags[client] |= FF2FLAG_ALLOW_AMMO_PICKUPS;
-
-		case 3:
-			FF2flags[client] |= FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
+			FF2flags[client] &= ~(FF2FLAG_ALLOW_HEALTH_PICKUPS);
 	}
 
 	if(!HasSwitched && !Enabled3)
@@ -9434,8 +9467,8 @@ public Action OnPostInventoryApplication(Handle event, const char[] name, bool d
 		CreateTimer(0.2, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 
-	FF2flags[client]&=~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS|FF2FLAG_ROCKET_JUMPING);
-	FF2flags[client]|=FF2FLAG_USEBOSSTIMER;
+	FF2flags[client]&=~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ROCKET_JUMPING);
+	FF2flags[client]|=FF2FLAG_USEBOSSTIMER|FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
 	return Plugin_Continue;
 }
 
@@ -9990,6 +10023,11 @@ public Action BossTimer(Handle timer)
 		int client = Boss[boss];
 		if(!IsValidClient(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
 			continue;
+
+		if(GetClientTeam(client) != (BossSwitched[boss] ? OtherTeam : BossTeam))
+		{
+			TF2_ChangeClientTeam(client, BossSwitched[boss] ? view_as<TFTeam>(OtherTeam) : view_as<TFTeam>(BossTeam));
+		}
 
 		if(!IsPlayerAlive(client))
 		{
@@ -10884,10 +10922,49 @@ public Action OverTimeAlert(Handle timer)
 
 public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroadcast)
 {
-	if(!Enabled || CheckRoundState()!=1)
+	if(!Enabled)
 		return Plugin_Continue;
 
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(client && Enabled3 && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER)) // Because those damn subplugins
+	{
+		int reds, blus;
+		if(CheckRoundState() == 1)
+		{
+			reds = MercAlivePlayers;
+			blus = BossAlivePlayers;
+		}
+		else
+		{
+			for(int target=1; target<=MaxClients; target++)
+			{
+				if(!IsValidClient(target))
+					continue;
+
+				if(GetClientTeam(target) == OtherTeam)
+				{
+					reds++;
+				}
+				else if(GetClientTeam(target) == BossTeam)
+				{
+					blus++;
+				}
+			}
+		}
+
+		if(reds>blus || (reds==blus && GetRandomInt(0, 1))) // More reds or their equal with 50/50 chance
+		{
+			TF2_ChangeClientTeam(client, view_as<TFTeam>(BossTeam));
+		}
+		else
+		{
+			TF2_ChangeClientTeam(client, view_as<TFTeam>(OtherTeam));
+		}
+	}
+
+	if(CheckRoundState() != 1)
+		return Plugin_Continue;
+
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	char sound[PLATFORM_MAX_PATH];
 	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -10898,7 +10975,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER) && (Enabled3 || GetClientTeam(client)!=BossTeam))
 			CreateTimer(1.0, Timer_Damage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 
-		if(IsBoss(attacker) && attacker)
+		if(IsBoss(attacker))
 		{
 			int boss = GetBossIndex(attacker);
 			bool firstBloodSound = true;
@@ -15855,9 +15932,10 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	int total, charsets;
-	int shuffle = GetConVarInt(cvarShuffleCharset);
+	AddMenuItem(menu, "0", "Random");
+	/*int shuffle = GetConVarInt(cvarShuffleCharset);
 	if(!shuffle)
-		AddMenuItem(menu, "0", "Random");
+		AddMenuItem(menu, "0", "Random");*/
 
 	do
 	{
@@ -15869,15 +15947,17 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		validCharsets[charsets] = total;
 
 		KvGetSectionName(Kv, charset, sizeof(charset));
-		if(!shuffle)
+		IntToString(total, index, sizeof(index));
+		AddMenuItem(menu, index, charset);
+		/*if(!shuffle)
 		{
 			IntToString(total, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
-		}
+		}*/
 	}
 	while(KvGotoNextKey(Kv));
 
-	if(shuffle && charsets>1)
+	/*if(shuffle && charsets>1)
 	{
 		KvRewind(Kv);
 
@@ -15896,7 +15976,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 			IntToString(current, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
 		}
-	}
+	}*/
 	CloseHandle(Kv);
 
 	if(charsets > 1)  //We have enough to call a vote
