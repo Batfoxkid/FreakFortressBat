@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -11943,7 +11943,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				return Plugin_Changed;
 			}
 
-			if(GetConVarInt(cvarShieldType) == 1)
+			if(shield[client] && GetConVarInt(cvarShieldType)==1)
 			{
 				RemoveShield(client, attacker);
 				return Plugin_Handled;
