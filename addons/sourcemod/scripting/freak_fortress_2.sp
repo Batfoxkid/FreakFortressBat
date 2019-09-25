@@ -78,7 +78,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -775,7 +775,11 @@ stock void FindVersionData(Handle panel, int versionIndex)
 	{
 		case 152:  //1.19.3
 		{
-			DrawPanelText(panel, "1) TODO");
+			DrawPanelText(panel, "1) [Core] Fixed selecting companions being reset constantly (Batfoxkid)");
+			DrawPanelText(panel, "2) [Gameplay] Fixed, yet more issues in Boss vs Boss mode (Batfoxkid)");
+			DrawPanelText(panel, "3) [Bosses] Allowed pickup flags to be used on non-bosses (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Fixed rival bosses being comapnions in queue points (Batfoxkid)");
+			DrawPanelText(panel, "5) [Gameplay] Reworked class info to show information based on your loadout (Batfoxkid)");
 		}
 		case 151:  //1.19.2
 		{
@@ -2324,7 +2328,9 @@ public void OnPluginStart()
 	LoadTranslations("freak_fortress_2.phrases");
 	LoadTranslations("freak_fortress_2_prefs.phrases");
 	LoadTranslations("freak_fortress_2_stats.phrases");
+	LoadTranslations("freak_fortress_2_weaps.phrases");
 	LoadTranslations("common.phrases");
+	LoadTranslations("core.phrases");
 
 	if(LateLoaded)
 		OnMapStart();
@@ -15187,55 +15193,184 @@ public Action HelpPanelClass(int client)
 	if(!Enabled)
 		return Plugin_Continue;
 
-	int boss=GetBossIndex(client);
-	if(boss!=-1)
+	int boss = GetBossIndex(client);
+	if(boss != -1)
 	{
 		HelpPanelBoss(boss);
 		return Plugin_Continue;
 	}
 
-	char text[512];
-	TFClassType class=TF2_GetPlayerClass(client);
+	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR>8
+	char translation[64], text[512];
+	TFClassType class = TF2_GetPlayerClass(client);
 	SetGlobalTransTarget(client);
-	switch(class)
+	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
+	if(IsValidEntity(weapon))
 	{
-		case TFClass_Scout:
-			Format(text, sizeof(text), "%T", "help_scout", client);
+		Format(translation, sizeof(translation), "primary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%t\n", translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Scout:
+					Format(text, sizeof(text), "%t\n", "primary_scout");
 
-		case TFClass_Soldier:
-			Format(text, sizeof(text), "%T", "help_soldier", client);
+				case TFClass_Soldier:
+					Format(text, sizeof(text), "%t\n", "primary_soldier");
 
-		case TFClass_Pyro:
-			Format(text, sizeof(text), "%T", "help_pyro", client);
+				case TFClass_Pyro:
+					Format(text, sizeof(text), "%t\n", "primary_pyro");
 
-		case TFClass_DemoMan:
-			Format(text, sizeof(text), "%T", "help_demo", client);
+				case TFClass_DemoMan:
+					Format(text, sizeof(text), "%t\n", "primary_demo");
 
-		case TFClass_Heavy:
-			Format(text, sizeof(text), "%T", "help_heavy", client);
+				case TFClass_Heavy:
+					Format(text, sizeof(text), "%t\n", "primary_heavy");
 
-		case TFClass_Engineer:
-			Format(text, sizeof(text), "%T", "help_eggineer", client);
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%t\n", "primary_engineer");
 
-		case TFClass_Medic:
-			Format(text, sizeof(text), "%T", "help_medic", client);
+				case TFClass_Medic:
+					Format(text, sizeof(text), "%t\n", "primary_medic");
 
-		case TFClass_Sniper:
-			Format(text, sizeof(text), "%T", "help_sniper", client);
+				case TFClass_Sniper:
+					Format(text, sizeof(text), "%t\n", "primary_sniper");
 
-		case TFClass_Spy:
-			Format(text, sizeof(text), "%T", "help_spie", client);
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%t\n", "primary_spy");
 
-		default:
-			Format(text, sizeof(text), "");
+				default:
+					Format(text, sizeof(text), "%t\n", "primary_merc");
+			}
+		}
 	}
 
-	Format(text, sizeof(text), "%T\n%s", "help_melee", client, text);
-	Handle panel=CreatePanel();
-	SetPanelTitle(panel, text);
-	DrawPanelItem(panel, "Exit");
-	SendPanelToClient(panel, client, HintPanelH, 20);
-	CloseHandle(panel);
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+	if(IsValidEntity(weapon))
+	{
+		Format(translation, sizeof(translation), "secondary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%s%t\n", text, translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Scout:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_scout");
+
+				case TFClass_Soldier:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_soldier");
+
+				case TFClass_Pyro:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_pyro");
+
+				case TFClass_DemoMan:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_demo");
+
+				case TFClass_Heavy:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_heavy");
+
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_engineer");
+
+				case TFClass_Medic:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_medic");
+
+				case TFClass_Sniper:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_sniper");
+
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_spy");
+
+				default:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_merc");
+			}
+		}
+	}
+
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
+	if(IsValidEntity(weapon))
+	{
+		Format(translation, sizeof(translation), "melee_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%s%t\n", text, translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Scout:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_scout");
+
+				case TFClass_Soldier:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_soldier");
+
+				case TFClass_Pyro:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_pyro");
+
+				case TFClass_DemoMan:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_demo");
+
+				case TFClass_Heavy:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_heavy");
+
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_engineer");
+
+				case TFClass_Medic:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_medic");
+
+				case TFClass_Sniper:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_sniper");
+
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_spy");
+
+				default:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_merc");
+			}
+		}
+	}
+
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Building);
+	if(IsValidEntity(weapon))
+	{
+		Format(translation, sizeof(translation), "pda_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%s%t\n", text, translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%s%t\n", text, "pda_engineer");
+
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%s%t\n", text, "pda_spy");
+			}
+		}
+	}
+
+	if(strlen(text))
+	{
+		Format(text, sizeof(text), "%t\n\n%s", "info_title", text);
+		Handle panel = CreatePanel();
+		SetPanelTitle(panel, text);
+		Format(text, sizeof(text), "%t", "Exit");
+		DrawPanelItem(panel, text);
+		SendPanelToClient(panel, client, HintPanelH, 20);
+		CloseHandle(panel);
+	}
+	#endif
 	return Plugin_Continue;
 }
 
@@ -15258,9 +15393,10 @@ void HelpPanelBoss(int boss)
 	}
 	ReplaceString(text, sizeof(text), "\\n", "\n");
 
-	Handle panel=CreatePanel();
+	Handle panel = CreatePanel();
 	SetPanelTitle(panel, text);
-	DrawPanelItem(panel, "Exit");
+	Format(text, sizeof(text), "%T", "Exit", Boss[boss]);
+	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, Boss[boss], HintPanelH, 20);
 	CloseHandle(panel);
 }
@@ -15302,7 +15438,7 @@ public Action MusicTogglePanel(int client)
 {
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
-		Handle panel=CreatePanel();
+		Handle panel = CreatePanel();
 		SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
 		DrawPanelItem(panel, "On");
 		DrawPanelItem(panel, "Off");
