@@ -15200,10 +15200,52 @@ public Action HelpPanelClass(int client)
 		return Plugin_Continue;
 	}
 
-	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR>8
-	char translation[64], text[512];
+	char text[512];
 	TFClassType class = TF2_GetPlayerClass(client);
 	SetGlobalTransTarget(client);
+	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=8
+	switch(class)
+	{
+		case TFClass_Scout:
+			Format(text, sizeof(text), "%t", "help_scout");
+
+		case TFClass_Soldier:
+			Format(text, sizeof(text), "%t", "help_soldier");
+
+		case TFClass_Pyro:
+			Format(text, sizeof(text), "%t", "help_pyro");
+
+		case TFClass_DemoMan:
+			Format(text, sizeof(text), "%t", "help_demo");
+
+		case TFClass_Heavy:
+			Format(text, sizeof(text), "%t", "help_heavy");
+
+		case TFClass_Engineer:
+			Format(text, sizeof(text), "%t", "help_eggineer");
+
+		case TFClass_Medic:
+			Format(text, sizeof(text), "%t", "help_medic");
+
+		case TFClass_Sniper:
+			Format(text, sizeof(text), "%t", "help_sniper");
+
+		case TFClass_Spy:
+			Format(text, sizeof(text), "%t", "help_spie");
+
+		default:
+			Format(text, sizeof(text), "");
+	}
+
+	Format(text, sizeof(text), "%t\n%s", "help_melee", text);
+	Handle panel = CreatePanel();
+	SetPanelTitle(panel, text);
+	Format(text, sizeof(text), "%t", "Exit");
+	DrawPanelItem(panel, text);
+	SendPanelToClient(panel, client, HintPanelH, 20);
+	CloseHandle(panel);
+	#else
+	char translation[64];
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 	if(IsValidEntity(weapon))
 	{
