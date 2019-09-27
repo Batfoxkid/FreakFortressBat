@@ -74,11 +74,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "2"
+#define FORK_STABLE_REVISION "3"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "Build"
+#define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -208,8 +208,6 @@ float AirstrikeDamage[MAXTF2PLAYERS];
 float KillstreakDamage[MAXTF2PLAYERS];
 float HazardDamage[MAXTF2PLAYERS];
 bool emitRageSound[MAXTF2PLAYERS];
-bool bossHasReloadAbility[MAXTF2PLAYERS];
-bool bossHasRightMouseAbility[MAXTF2PLAYERS];
 bool SpawnTeleOnTriggerHurt = false;
 bool HealthBarMode;
 bool HealthBarModeC[MAXTF2PLAYERS];
@@ -610,7 +608,8 @@ static const char ff2versiontitles[][] =
 	"1.18.6",
 	"1.19.0",
 	"1.19.1",
-	"1.19.2"
+	"1.19.2",
+	"1.19.3"
 };
 
 static const char ff2versiondates[][] =
@@ -766,13 +765,22 @@ static const char ff2versiondates[][] =
 	"June 29, 2019",		//1.18.6
 	"July 23, 2019",		//1.19.0
 	"August 10, 2019",		//1.19.1
-	"August 31, 2019"		//1.19.2
+	"August 31, 2019",		//1.19.2
+	"September 27, 2019"		//1.19.3
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 152:  //1.19.3
+		{
+			DrawPanelText(panel, "1) [Core] Fixed selecting companions being reset constantly (Batfoxkid)");
+			DrawPanelText(panel, "2) [Gameplay] Fixed, yet more issues in Boss vs Boss mode (Batfoxkid)");
+			DrawPanelText(panel, "3) [Bosses] Allowed pickup flags to be used on non-bosses (Batfoxkid)");
+			DrawPanelText(panel, "4) [Gameplay] Fixed rival bosses being comapnions in queue points (Batfoxkid)");
+			DrawPanelText(panel, "5) [Gameplay] Reworked class info to show information based on your loadout (Batfoxkid)");
+		}
 		case 151:  //1.19.2
 		{
 			DrawPanelText(panel, "1) [Core] Synced with Offical Beta 1.11 (Naydef)");
@@ -2320,7 +2328,9 @@ public void OnPluginStart()
 	LoadTranslations("freak_fortress_2.phrases");
 	LoadTranslations("freak_fortress_2_prefs.phrases");
 	LoadTranslations("freak_fortress_2_stats.phrases");
+	LoadTranslations("freak_fortress_2_weaps.phrases");
 	LoadTranslations("common.phrases");
+	LoadTranslations("core.phrases");
 
 	if(LateLoaded)
 		OnMapStart();
@@ -3228,9 +3238,6 @@ public void DisableFF2()
 			KillTimer(MusicTimer[client]);
 			MusicTimer[client] = INVALID_HANDLE;
 		}
-
-		bossHasReloadAbility[client] = false;
-		bossHasRightMouseAbility[client] = false;
 	}
 
 	#if !defined _smac_included
@@ -3814,27 +3821,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	}
 	else if(convar == cvarDuoMin)
 	{
-		if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)
-		{
-			DuoMin = true;
-		}
-		else if(DuoMin)
-		{
-			DuoMin = false;
-			for(int client=1; client<=MaxClients; client++)
-			{
-				if(IsValidClient(client) && strlen(xIncoming[client]))
-				{
-					if(!CheckValidBoss(client, xIncoming[client], true))
-					{
-						FPrintToChat(client, "%t", "boss_selection_reset");
-						xIncoming[client][0] = '\0';
-						CanBossVs[client] = 0;
-						CanBossTeam[client] = 0;
-					}
-				}
-			}
-		}
+		CheckDuoMin();
 	}
 	else if(convar == cvarAnnotations)
 	{
@@ -4677,27 +4664,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	if(HasSwitched)
 		HasSwitched = false;
 
-	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
-	{
-		DuoMin = true;
-	}
-	else if(DuoMin)
-	{
-		DuoMin = false;
-		for(int client=1; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client) && strlen(xIncoming[client]))
-			{
-				if(!CheckValidBoss(client, xIncoming[client], true))
-				{
-					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
-					CanBossVs[client] = 0;
-					CanBossTeam[client] = 0;
-				}
-			}
-		}
-	}
+	CheckDuoMin();
 
 	if(!Enabled)
 	{
@@ -4860,8 +4827,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			{
 				BossCharge[client][slot] = 0.0;
 			}
-			bossHasReloadAbility[client] = false;
-			bossHasRightMouseAbility[client] = false;
 			SaveClientStats(client);
 		}
 		else if(IsValidClient(client))
@@ -5070,21 +5035,15 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(!Enabled3)
-	{
-		SetConVarInt(FindConVar("mp_teams_unbalance_limit"), 0);
-		CreateTimer(bonusRoundTime, Timer_CheckBossVsBoss, _, TIMER_FLAG_NO_MAPCHANGE);
-	}
-
 	if(GetConVarInt(cvarBossVsBoss) > 0)
 	{
 		if(GetRandomInt(0, 99) < GetConVarInt(cvarBossVsBoss))
 		{
-			CreateTimer(bonusRoundTime-0.5, Timer_SetEnabled3, true, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(bonusRoundTime-0.1, Timer_SetEnabled3, true, TIMER_FLAG_NO_MAPCHANGE);
 		}
 		else
 		{
-			CreateTimer(bonusRoundTime-0.5, Timer_SetEnabled3, false, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(bonusRoundTime-0.1, Timer_SetEnabled3, false, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 	else
@@ -5128,28 +5087,56 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 public Action Timer_SetEnabled3(Handle timer, bool toggle)
 {
 	Enabled3 = toggle;
-	return Plugin_Continue;
-}
-
-public Action Timer_CheckBossVsBoss(Handle timer)
-{
-	if(!Enabled3)
-		return Plugin_Continue;
-
-	int team = OtherTeam;
-	for(int client=1; client<=MaxClients; client++)
+	if(Enabled3)
 	{
-		if(IsValidClient(client))
+		SetConVarInt(FindConVar("mp_teams_unbalance_limit"), 0);
+
+		int reds, blus;
+		for(int client=1; client<=MaxClients; client++)
 		{
-			if(!IsPlayerAlive(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+			if(!IsValidClient(client))
+				continue;
+
+			if(GetClientTeam(client) == OtherTeam)
 			{
-				ChangeClientTeam(client, team);
-				team = team==BossTeam ? OtherTeam : BossTeam;
+				reds++;
+			}
+			else if(GetClientTeam(client) == BossTeam)
+			{
+				blus++;
 			}
 		}
-	}
 
-	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
+		int team;
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(!IsValidClient(client))
+				continue;
+
+			if(IsPlayerAlive(client) || GetClientTeam(client)<=view_as<int>(TFTeam_Spectator))
+				continue;
+
+			if(reds>blus || (reds==blus && GetRandomInt(0, 1))) // More reds or their equal with 50/50 chance
+			{
+				team = BossTeam;
+				reds--;
+				blus++;
+			}
+			else
+			{
+				team = OtherTeam;
+				reds++;
+				blus--;
+			}
+
+			ChangeClientTeam(client, team);
+		}
+
+	}
+	else
+	{
+		SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
+	}
 	return Plugin_Continue;
 }
 
@@ -5402,7 +5389,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 
 			if(IsBoss(client))
 			{
-				if(((GetBossIndex(client)==0 && GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
+				if(((GetBossIndex(client)==0 || GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 				{
 					add_points[client]=-QueuePoints[client];
 					add_points2[client]=add_points[client];
@@ -6651,8 +6638,9 @@ stock int CreateAttachedAnnotation(int client, int entity, bool effect=true, flo
 	SetEventInt(event, "follow_entindex", entity);
 	SetEventFloat(event, "lifetime", time);
 	SetEventInt(event, "visibilityBitfield", (1<<client));
-	SetEventBool(event,"show_effect", effect);
+	SetEventBool(event, "show_effect", effect);
 	SetEventString(event, "text", message);
+	SetEventString(event, "play_sound", "vo/null.wav");
 	SetEventInt(event, "id", entity); //What to enter inside? Need a way to identify annotations by entindex!
 	FireEvent(event);
 	return entity;
@@ -7338,14 +7326,14 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 
 	switch(KvGetNum(BossKV[Special[boss]], "pickups", 0))  //Check if the boss is allowed to pickup health/ammo
 	{
+		case 0:
+			FF2flags[client] &= ~(FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS);
+
 		case 1:
-			FF2flags[client] |= FF2FLAG_ALLOW_HEALTH_PICKUPS;
+			FF2flags[client] &= ~(FF2FLAG_ALLOW_AMMO_PICKUPS);
 
 		case 2:
-			FF2flags[client] |= FF2FLAG_ALLOW_AMMO_PICKUPS;
-
-		case 3:
-			FF2flags[client] |= FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
+			FF2flags[client] &= ~(FF2FLAG_ALLOW_HEALTH_PICKUPS);
 	}
 
 	if(!HasSwitched && !Enabled3)
@@ -7416,7 +7404,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	HazardDamage[client] = 0.0;
 	BossKillsF[client] = BossKills[client];
 	HealthBarModeC[client] = false;
-	if((GetBossIndex(client)==0 && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
+	if(((GetBossIndex(client)==0 || GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 	{
 		QueuePoints[client] = 0;
 	}
@@ -9346,21 +9334,7 @@ public void OnRebuildAdminCache(AdminCachePart part)
 #endif
 {
 	if(part == AdminCache_Overrides)
-	{
-		for(int client=1; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client) && strlen(xIncoming[client]))
-			{
-				if(!CheckValidBoss(client, xIncoming[client], !DuoMin))
-				{
-					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
-					CanBossVs[client] = 0;
-					CanBossTeam[client] = 0;
-				}
-			}
-		}
-	}
+		CheckDuoMin();
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -9452,27 +9426,7 @@ public void OnClientDisconnect(int client)
 	SaveClientStats(client);
 	SaveClientPreferences(client);
 
-	if(playing>=GetConVarInt(cvarDuoMin) && !DuoMin)  // Check if theres enough players for companions
-	{
-		DuoMin = true;
-	}
-	else if(DuoMin)
-	{
-		DuoMin = false;
-		for(int clients=1; clients<=MaxClients; clients++)
-		{
-			if(IsValidClient(clients) && strlen(xIncoming[clients]))
-			{
-				if(!CheckValidBoss(clients, xIncoming[clients], true))
-				{
-					FPrintToChat(clients, "%t", "boss_selection_reset");
-					xIncoming[clients][0] = '\0';
-					CanBossVs[clients] = 0;
-					CanBossTeam[client] = 0;
-				}
-			}
-		}
-	}
+	CheckDuoMin();
 
 	if(MusicTimer[client] != INVALID_HANDLE)
 	{
@@ -9519,8 +9473,8 @@ public Action OnPostInventoryApplication(Handle event, const char[] name, bool d
 		CreateTimer(0.2, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 
-	FF2flags[client]&=~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS|FF2FLAG_ROCKET_JUMPING);
-	FF2flags[client]|=FF2FLAG_USEBOSSTIMER;
+	FF2flags[client]&=~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ROCKET_JUMPING);
+	FF2flags[client]|=FF2FLAG_USEBOSSTIMER|FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS;
 	return Plugin_Continue;
 }
 
@@ -9813,7 +9767,7 @@ public Action ClientTimer(Handle timer)
 					FF2flags[client]&=~FF2FLAG_ISBUFFED;
 			}
 
-			int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-3 : MercAlivePlayers;
+			int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
 
 			if(lastPlayerGlow > 0)
 			{
@@ -10076,6 +10030,11 @@ public Action BossTimer(Handle timer)
 		if(!IsValidClient(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
 			continue;
 
+		if(GetClientTeam(client) != (BossSwitched[boss] ? OtherTeam : BossTeam))
+		{
+			TF2_ChangeClientTeam(client, BossSwitched[boss] ? view_as<TFTeam>(OtherTeam) : view_as<TFTeam>(BossTeam));
+		}
+
 		if(!IsPlayerAlive(client))
 		{
 			if(!IsClientObserver(client) || HudSettings[client][0])
@@ -10226,7 +10185,7 @@ public Action BossTimer(Handle timer)
 			ActivateAbilitySlot(boss, i, true);
 		}
 
-		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-3 : MercAlivePlayers;
+		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
 
 		if(lastPlayerGlow > 0)
 		{
@@ -10969,10 +10928,49 @@ public Action OverTimeAlert(Handle timer)
 
 public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroadcast)
 {
-	if(!Enabled || CheckRoundState()!=1)
+	if(!Enabled)
 		return Plugin_Continue;
 
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(client && Enabled3 && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER)) // Because those damn subplugins
+	{
+		int reds, blus;
+		if(CheckRoundState() == 1)
+		{
+			reds = MercAlivePlayers;
+			blus = BossAlivePlayers;
+		}
+		else
+		{
+			for(int target=1; target<=MaxClients; target++)
+			{
+				if(!IsValidClient(target))
+					continue;
+
+				if(GetClientTeam(target) == OtherTeam)
+				{
+					reds++;
+				}
+				else if(GetClientTeam(target) == BossTeam)
+				{
+					blus++;
+				}
+			}
+		}
+
+		if(reds>blus || (reds==blus && GetRandomInt(0, 1))) // More reds or their equal with 50/50 chance
+		{
+			TF2_ChangeClientTeam(client, view_as<TFTeam>(BossTeam));
+		}
+		else
+		{
+			TF2_ChangeClientTeam(client, view_as<TFTeam>(OtherTeam));
+		}
+	}
+
+	if(CheckRoundState() != 1)
+		return Plugin_Continue;
+
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	char sound[PLATFORM_MAX_PATH];
 	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -10983,7 +10981,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER) && (Enabled3 || GetClientTeam(client)!=BossTeam))
 			CreateTimer(1.0, Timer_Damage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 
-		if(IsBoss(attacker) && attacker)
+		if(IsBoss(attacker))
 		{
 			int boss = GetBossIndex(attacker);
 			bool firstBloodSound = true;
@@ -11259,7 +11257,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 		LastMan=false;
 	}
 
-	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 3) : float(MercAlivePlayers);
+	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 1) : float(MercAlivePlayers);
 	if(countdownPlayers>0 && BossHealth[0]>=countdownHealth && (BossHealth[MAXBOSSES]>=countdownHealth || !Enabled3) && countdownTime>1 && !executed2)
 	{
 		if(countdownPlayers < 1)
@@ -11344,7 +11342,7 @@ public Action Timer_DrawGame(Handle timer)
 		return Plugin_Stop;
 	}
 
-	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 2) : float(MercAlivePlayers);
+	float alivePlayers = Enabled3 ? float(MercAlivePlayers + BossAlivePlayers - 1) : float(MercAlivePlayers);
 	if(countdownPlayers < 1)
 	{
 		if(alivePlayers/playing > countdownPlayers)
@@ -11543,12 +11541,6 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 		int health = GetClientHealth(client);
 		switch(GetConVarInt(cvarShieldType))
 		{
-			case 1:
-			{
-				SetEntityHealth(client, preHealth);
-				RemoveShield(client, attacker);
-				return Plugin_Handled;
-			}
 			case 2:
 			{
 				if(preHealth <= damage)
@@ -11949,6 +11941,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			{
 				damage *= 0.25;
 				return Plugin_Changed;
+			}
+
+			if(shield[client] && GetConVarInt(cvarShieldType)==1)
+			{
+				RemoveShield(client, attacker);
+				return Plugin_Handled;
 			}
 
 			if(damage<=160.0 && dmgTriple[attacker])
@@ -14914,6 +14912,42 @@ void DoOverlay(int client, const char[] overlay)
 	SetCommandFlags("r_screenoverlay", flags);
 }
 
+public bool CheckDuoMin()
+{
+	int i;
+	DuoMin = false;
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+		{
+			i++;
+			if(i >= GetConVarInt(cvarDuoMin))
+			{
+				DuoMin = true;
+				break;
+			}
+		}
+	}
+
+	if(!DuoMin)
+	{
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client) && strlen(xIncoming[client]))
+			{
+				if(!CheckValidBoss(client, xIncoming[client], true))
+				{
+					FPrintToChat(client, "%t", "boss_selection_reset");
+					xIncoming[client][0] = '\0';
+					CanBossVs[client] = 0;
+					CanBossTeam[client] = 0;
+				}
+			}
+		}
+	}
+	return DuoMin;
+}
+
 public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
 {
 	if(action==MenuAction_Select)
@@ -15159,55 +15193,226 @@ public Action HelpPanelClass(int client)
 	if(!Enabled)
 		return Plugin_Continue;
 
-	int boss=GetBossIndex(client);
-	if(boss!=-1)
+	int boss = GetBossIndex(client);
+	if(boss != -1)
 	{
 		HelpPanelBoss(boss);
 		return Plugin_Continue;
 	}
 
 	char text[512];
-	TFClassType class=TF2_GetPlayerClass(client);
+	TFClassType class = TF2_GetPlayerClass(client);
 	SetGlobalTransTarget(client);
+	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=8
 	switch(class)
 	{
 		case TFClass_Scout:
-			Format(text, sizeof(text), "%T", "help_scout", client);
+			Format(text, sizeof(text), "%t", "help_scout");
 
 		case TFClass_Soldier:
-			Format(text, sizeof(text), "%T", "help_soldier", client);
+			Format(text, sizeof(text), "%t", "help_soldier");
 
 		case TFClass_Pyro:
-			Format(text, sizeof(text), "%T", "help_pyro", client);
+			Format(text, sizeof(text), "%t", "help_pyro");
 
 		case TFClass_DemoMan:
-			Format(text, sizeof(text), "%T", "help_demo", client);
+			Format(text, sizeof(text), "%t", "help_demo");
 
 		case TFClass_Heavy:
-			Format(text, sizeof(text), "%T", "help_heavy", client);
+			Format(text, sizeof(text), "%t", "help_heavy");
 
 		case TFClass_Engineer:
-			Format(text, sizeof(text), "%T", "help_eggineer", client);
+			Format(text, sizeof(text), "%t", "help_eggineer");
 
 		case TFClass_Medic:
-			Format(text, sizeof(text), "%T", "help_medic", client);
+			Format(text, sizeof(text), "%t", "help_medic");
 
 		case TFClass_Sniper:
-			Format(text, sizeof(text), "%T", "help_sniper", client);
+			Format(text, sizeof(text), "%t", "help_sniper");
 
 		case TFClass_Spy:
-			Format(text, sizeof(text), "%T", "help_spie", client);
+			Format(text, sizeof(text), "%t", "help_spie");
 
 		default:
 			Format(text, sizeof(text), "");
 	}
 
-	Format(text, sizeof(text), "%T\n%s", "help_melee", client, text);
-	Handle panel=CreatePanel();
+	Format(text, sizeof(text), "%t\n%s", "help_melee", text);
+	Handle panel = CreatePanel();
 	SetPanelTitle(panel, text);
-	DrawPanelItem(panel, "Exit");
+	Format(text, sizeof(text), "%t", "Exit");
+	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, HintPanelH, 20);
 	CloseHandle(panel);
+	#else
+	char translation[64];
+	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
+	if(IsValidEntity(weapon))
+	{
+		Format(translation, sizeof(translation), "primary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%t\n", translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Scout:
+					Format(text, sizeof(text), "%t\n", "primary_scout");
+
+				case TFClass_Soldier:
+					Format(text, sizeof(text), "%t\n", "primary_soldier");
+
+				case TFClass_Pyro:
+					Format(text, sizeof(text), "%t\n", "primary_pyro");
+
+				case TFClass_DemoMan:
+					Format(text, sizeof(text), "%t\n", "primary_demo");
+
+				case TFClass_Heavy:
+					Format(text, sizeof(text), "%t\n", "primary_heavy");
+
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%t\n", "primary_engineer");
+
+				case TFClass_Medic:
+					Format(text, sizeof(text), "%t\n", "primary_medic");
+
+				case TFClass_Sniper:
+					Format(text, sizeof(text), "%t\n", "primary_sniper");
+
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%t\n", "primary_spy");
+
+				default:
+					Format(text, sizeof(text), "%t\n", "primary_merc");
+			}
+		}
+	}
+
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+	if(IsValidEntity(weapon))
+	{
+		Format(translation, sizeof(translation), "secondary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%s%t\n", text, translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Scout:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_scout");
+
+				case TFClass_Soldier:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_soldier");
+
+				case TFClass_Pyro:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_pyro");
+
+				case TFClass_DemoMan:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_demo");
+
+				case TFClass_Heavy:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_heavy");
+
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_engineer");
+
+				case TFClass_Medic:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_medic");
+
+				case TFClass_Sniper:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_sniper");
+
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_spy");
+
+				default:
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_merc");
+			}
+		}
+	}
+
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
+	if(IsValidEntity(weapon))
+	{
+		Format(translation, sizeof(translation), "melee_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%s%t\n", text, translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Scout:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_scout");
+
+				case TFClass_Soldier:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_soldier");
+
+				case TFClass_Pyro:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_pyro");
+
+				case TFClass_DemoMan:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_demo");
+
+				case TFClass_Heavy:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_heavy");
+
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_engineer");
+
+				case TFClass_Medic:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_medic");
+
+				case TFClass_Sniper:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_sniper");
+
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_spy");
+
+				default:
+					Format(text, sizeof(text), "%s%t\n", text, "melee_merc");
+			}
+		}
+	}
+
+	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Building);
+	if(IsValidEntity(weapon))
+	{
+		Format(translation, sizeof(translation), "pda_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		if(TranslationPhraseExists(translation))
+		{
+			Format(text, sizeof(text), "%s%t\n", text, translation);
+		}
+		else
+		{
+			switch(class)
+			{
+				case TFClass_Engineer:
+					Format(text, sizeof(text), "%s%t\n", text, "pda_engineer");
+
+				case TFClass_Spy:
+					Format(text, sizeof(text), "%s%t\n", text, "pda_spy");
+			}
+		}
+	}
+
+	if(strlen(text))
+	{
+		Format(text, sizeof(text), "%t\n\n%s", "info_title", text);
+		Handle panel = CreatePanel();
+		SetPanelTitle(panel, text);
+		Format(text, sizeof(text), "%t", "Exit");
+		DrawPanelItem(panel, text);
+		SendPanelToClient(panel, client, HintPanelH, 20);
+		CloseHandle(panel);
+	}
+	#endif
 	return Plugin_Continue;
 }
 
@@ -15230,9 +15435,10 @@ void HelpPanelBoss(int boss)
 	}
 	ReplaceString(text, sizeof(text), "\\n", "\n");
 
-	Handle panel=CreatePanel();
+	Handle panel = CreatePanel();
 	SetPanelTitle(panel, text);
-	DrawPanelItem(panel, "Exit");
+	Format(text, sizeof(text), "%T", "Exit", Boss[boss]);
+	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, Boss[boss], HintPanelH, 20);
 	CloseHandle(panel);
 }
@@ -15274,7 +15480,7 @@ public Action MusicTogglePanel(int client)
 {
 	if(!GetConVarBool(cvarAdvancedMusic))
 	{
-		Handle panel=CreatePanel();
+		Handle panel = CreatePanel();
 		SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
 		DrawPanelItem(panel, "On");
 		DrawPanelItem(panel, "Off");
@@ -15904,10 +16110,11 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	int total, charsets;
+	AddMenuItem(menu, "0", "Random");
 	/*int shuffle = GetConVarInt(cvarShuffleCharset);
 	if(!shuffle)
 		AddMenuItem(menu, "0", "Random");*/
-	AddMenuItem(menu, "0", "Random");
+
 	do
 	{
 		total++;
@@ -15918,13 +16125,13 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		validCharsets[charsets] = total;
 
 		KvGetSectionName(Kv, charset, sizeof(charset));
+		IntToString(total, index, sizeof(index));
+		AddMenuItem(menu, index, charset);
 		/*if(!shuffle)
 		{
 			IntToString(total, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
 		}*/
-		IntToString(total, index, sizeof(index));
-		AddMenuItem(menu, index, charset);
 	}
 	while(KvGotoNextKey(Kv));
 
@@ -15932,41 +16139,20 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	{
 		KvRewind(Kv);
 
-		int choosen, current=-1;
-		for(int tries; tries<99; tries++)
+		int packs, current;
+		bool choosen[64];
+		for(int tries; tries<99 && packs<=shuffle; tries++)
 		{
-			if(tries > 97)
-			{
-				FF2Dbg("Last try %i", tries);
-			}
-
-			if(shuffle <= choosen)
-			{
-				FF2Dbg("Ended %i of %i filled", choosen, shuffle);
-				break;
-			}
-
-			if(!KvGotoNextKey(Kv))	// Move next pack
-			{
-				current = -1;
-				KvRewind(Kv);
-			}
-
-			if(KvGetNum(Kv, "hidden", 0))
+			current = validCharsets[GetRandomInt(1, charsets)]-1;
+			if(current<=0 || choosen[current])
 				continue;
 
-			current++;
-			if(validCharsets[current]<=0 || GetRandomInt(0, charsets)<(charsets-1))	// If it's valid (because of exclusion) and randomly choosen
-				continue;
-
-			choosen++;
-			FF2Dbg("Pack %i [%i] (%i of %i) chosen on try %i", current, validCharsets[current], choosen, shuffle, tries);
-
+			packs++;
+			choosen[current] = true;
+			KvJumpToKeySymbol(Kv, current);
 			KvGetSectionName(Kv, charset, sizeof(charset));
-			IntToString(validCharsets[current], index, sizeof(index));
+			IntToString(current, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
-
-			validCharsets[current] = 0;	// Exclude from being picked twice
 		}
 	}*/
 	CloseHandle(Kv);
@@ -16084,24 +16270,22 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 		switch(buttonMode)
 		{
 			case 1:
-			{
 				button = IN_DUCK|IN_ATTACK2;
-				bossHasRightMouseAbility[boss] = true;
-			}
+
 			case 2:
-			{
 				button = IN_RELOAD;
-				bossHasReloadAbility[boss] = true;
-			}
+
 			case 3:
-			{
 				button = IN_ATTACK3;
-			}
+
+			case 4:
+				button = IN_DUCK;
+
+			case 5:
+				button = IN_SCORE;
+
 			default:
-			{	// I really don't want players relying on ducking
 				button = IN_ATTACK2;
-				bossHasRightMouseAbility[boss] = true;
-			}
 		}
 
 		if(GetClientButtons(Boss[boss]) & button)
@@ -16110,7 +16294,16 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 			{
 				Call_PushCell(2);  //Status
 				Call_Finish(action);
-				float charge = 100.0*0.2/GetAbilityArgumentFloat(boss, plugin_name, ability_name, 1, 1.5);
+				float charge;
+				if(GetArgumentI(boss, plugin_name, ability_name, "slot", -2) != -2)
+				{
+					charge = 100.0*0.2/GetArgumentF(boss, plugin_name, ability_name, "charge time", 1.5);
+				}
+				else
+				{
+					charge = 100.0*0.2/GetAbilityArgumentFloat(boss, plugin_name, ability_name, 1, 1.5);
+				}
+
 				if(BossCharge[boss][slot]+charge < 100.0)
 				{
 					BossCharge[boss][slot] += charge;
@@ -16139,7 +16332,14 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 				CreateDataTimer(0.1, Timer_UseBossCharge, data);
 				WritePackCell(data, boss);
 				WritePackCell(data, slot);
-				WritePackFloat(data, -1.0*GetAbilityArgumentFloat(boss, plugin_name, ability_name, 2, 5.0));
+				if(GetArgumentI(boss, plugin_name, ability_name, "slot", -2) != -2)
+				{
+					WritePackFloat(data, -1.0*GetArgumentF(boss, plugin_name, ability_name, "cooldown", 5.0));
+				}
+				else
+				{
+					WritePackFloat(data, -1.0*GetAbilityArgumentFloat(boss, plugin_name, ability_name, 2, 5.0));
+				}
 				ResetPack(data);
 			}
 			else
@@ -16988,7 +17188,7 @@ public void OnItemSpawned(int entity)
 
 public Action OnPickup(int entity, int client)  //Thanks friagram!
 {
-	if(IsBoss(client))
+	if(Enabled)
 	{
 		char classname[32];
 		GetEntityClassname(entity, classname, sizeof(classname));
@@ -17124,16 +17324,16 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 {
 	if(IsValidClient(client))
 	{
-		GlowTimer[client]+=time1;
-		if(time2>=0)
-			GlowTimer[client]=time2;
+		GlowTimer[client] += time1;
+		if(time2 >= 0)
+			GlowTimer[client] = time2;
 
-		if(GlowTimer[client]<=0.0)
+		if(GlowTimer[client] <= 0.0)
 		{
 			GlowTimer[client]=0.0;
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 		}
-		else
+		else if(CheckRoundState() == 1)
 		{
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
 		}

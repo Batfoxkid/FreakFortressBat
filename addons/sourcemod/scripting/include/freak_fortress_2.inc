@@ -865,6 +865,32 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qual, char[] att, bool visible=true)
 {
 	#if defined _tf2items_included
+	if(StrEqual(name, "saxxy", false))	// if "saxxy" is specified as the name, replace with appropiate name
+	{ 
+		switch(TF2_GetPlayerClass(client))
+		{
+			case TFClass_Scout:	ReplaceString(name, 64, "saxxy", "tf_weapon_bat", false);
+			case TFClass_Soldier:	ReplaceString(name, 64, "saxxy", "tf_weapon_shovel", false);
+			case TFClass_Pyro:	ReplaceString(name, 64, "saxxy", "tf_weapon_fireaxe", false);
+			case TFClass_DemoMan:	ReplaceString(name, 64, "saxxy", "tf_weapon_bottle", false);
+			case TFClass_Heavy:	ReplaceString(name, 64, "saxxy", "tf_weapon_fists", false);
+			case TFClass_Engineer:	ReplaceString(name, 64, "saxxy", "tf_weapon_wrench", false);
+			case TFClass_Medic:	ReplaceString(name, 64, "saxxy", "tf_weapon_bonesaw", false);
+			case TFClass_Sniper:	ReplaceString(name, 64, "saxxy", "tf_weapon_club", false);
+			case TFClass_Spy:	ReplaceString(name, 64, "saxxy", "tf_weapon_knife", false);
+		}
+	}
+	else if(StrEqual(name, "tf_weapon_shotgun", false))	// If using tf_weapon_shotgun for Soldier/Pyro/Heavy/Engineer
+	{
+		switch(TF2_GetPlayerClass(client))
+		{
+			case TFClass_Soldier:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_soldier", false);
+			case TFClass_Pyro:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_pyro", false);
+			case TFClass_Heavy:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_hwg", false);
+			case TFClass_Engineer:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_primary", false);
+		}
+	}
+
 	Handle hWeapon = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
 	if(hWeapon == INVALID_HANDLE)
 		return -1;
@@ -903,9 +929,18 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
 	}
 
 	int entity = TF2Items_GiveNamedItem(client, hWeapon);
-	CloseHandle(hWeapon);
+	delete hWeapon;
 	EquipPlayerWeapon(client, entity);
-	SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", visible);
+
+	if(visible)
+	{
+		SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", 1);
+	}
+	else
+	{
+		SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
+		SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+	}
 	return entity;
 	#else
 	return -1;
@@ -924,7 +959,7 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
  *
  * @return         	The value of the argument or default value
  */
-stock int GetArgI(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, int defValue=0)
+stock int FF2_GetArgI(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, int defValue=0)
 {
 	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
 	       FF2_GetArgNamedI(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgument(boss, plugin_name, ability_name, index, defValue)) :
@@ -943,7 +978,7 @@ stock int GetArgI(int boss, const char[] plugin_name, const char[] ability_name,
  *
  * @return         	The value of the argument or default value
  */
-stock float GetArgF(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, float defValue=0.0)
+stock float FF2_GetArgF(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, float defValue=0.0)
 {
 	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
 	       FF2_GetArgNamedF(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgumentFloat(boss, plugin_name, ability_name, index, defValue)) :
@@ -963,7 +998,7 @@ stock float GetArgF(int boss, const char[] plugin_name, const char[] ability_nam
  *
  * @return         	Number of characters stored in the provided buffer
  */
-stock int GetArgS(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, char[] buffer, int bufferLength)
+stock int FF2_GetArgS(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, char[] buffer, int bufferLength)
 {
 	if(FF2_NamedArgumentsUsed(boss, plugin_name, ability_name))
 	{

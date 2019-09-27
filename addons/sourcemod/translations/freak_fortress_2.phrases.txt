@@ -130,53 +130,53 @@
 		"en"		"It's {blue}super{default} effective..."
 		"ru"		"Это {blue}супер{default} эффективно..."
 	}
-	"help_scout"	// Menu
+	"help_scout"	// Deprecated
 	{
 		"en"		"Baby Face's Blaster drains boost.\nStock pistol always mini-crit.\nAll bleed damage is crit-boosted.\nCandy Cane drops a health pack on hit.\nFan O' War gives a slight speed boost, faster fire rate,\nbut lower damage and disables double jump."
 		"ru"		"Обрез малыша ускоряет.\nПистолет даёт мини-криты.\nКровоточащий урон критует.\nКарамельная трость выбивает аптечку.\nВеер Войны слегка ускоряет бег и скорострельность,\nно понижает урон и отменяет двойной прыжок."
 	}
-	"help_soldier"	// Menu
+	"help_soldier"	// Deprecated
 	{
 		"en"		"Airstrike gains a head on hit.\nBattalion's Backup heavily reduces damage to nearby players while active.\nBoth boots reduce fall damage but Mantreads create greater rocketjumps.\nPain Train acts like a Boston Basher."
 		"ru"		"Авиаудар считывает головы за удар.\nПоддержка батальона сильно снижает урон по ближайшим игрокам.\nОба предмета снижают урон от падения, а Людодавы улучшают ракетный прыжок.\nКостыль действует как Бостонский раздолбай."
 	}
-	"help_pyro"	// Menu
+	"help_pyro"	// Deprecated
 	{
 		"en"		"Airblasting causes the boss to build rage.\nThe Detonator has increased push force.\nGas Passer explodes the boss if hit.\nHomewrecker and Maul applies more knockback.\nThird Degree gives Uber on hit to the medic healing you.\nNeon Annihilator slows shortly on hit.\nSharpened Volcano Fragment removes your flamethrower."
 		"ru"		"Отталкивание босса заполняет ему шкалу ярости.\nУ Детонатора увеличена толкающая сила.\nЗапасной бак подрывает босса при ударе.\nКрушитель и Молот сильнее отбрасывают.\nТретья степень даёт Убер при ударе по лечащему вас медику.\nНеоновый аннигилятор ненадолго замедляет при ударе.\nЗаострённый осколок вулкана удаляет огнемёт."
 	}
-	"help_demo"	// Menu
+	"help_demo"	// Deprecated
 	{
 		"en"		"All shields block one hit from the Boss.\nChargin' Targe gives faster melee swing.\nEyelander and reskins gain heads on hit.\nUllapool Caber explosion has increased damage.\nPain Train acts like a Boston Basher."
 		"ru"		"Все щиты блокируют 1 удар босса.\nШтурмовой щит ускоряет размах рукопашного оружия.\nОдноглазый горец и рескины считывают головы при ударе.\nУ взрыва Аллапульского бревна увеличен урон.\nКостыль действует как Бостонский раздолбай."
 	}
-	"help_heavy"	// Menu
+	"help_heavy"	// Deprecated
 	{
 		"en"		"Natascha gives faster movement speed while deployed.\nHuo-Long Heater fires flares instead of bullets.\nK.G.B. makes you a melee tank.\nGloves of Running Urently gives massive speed but decays HP.\nEviction Notice gives a passive speed boost.\nHoliday Punch gives you faster weapon switch."
 		"ru"		"Наташа ускоряет передвижение при раскрутке.\nОгненный дракон стреляет огнём вместо пуль.\nК.Г.Б. превращают тебя в рукопашного танка.\nГ.Р.У. сильно ускоряют, но отнимают ОЗ.\nУведомление о выселении даёт пассивное ускорение.\nПраздничный удар ускоряет смену оружия."
 	}
-	"help_eggineer"	// Menu
+	"help_eggineer"	// Deprecated
 	{
 		"en"		"Frontier Justice gains crits while your sentry is attacking.\nWrangler slows you down while deployed.\nPomson 6000 and Short Circuit slows on hit.\nEureka Effect has bi-teleporters but can't self-teleport."
 		"ru"		"Самосуд даёт криты, если турель видит босса.\nПоводырь замедляет бег при использовании.\nПомсон 6000 и Короткое замыкание замедляют при ударе.\nОзарение имеет би-телепорты, но нельзя телепортировать себя."
 	}
-	"help_medic"	// Menu
+	"help_medic"	// Deprecated
 	{
 		"en"		"Medi Guns give Uber, Crits, and no knockback on use.\nCan overheal to twice the max HP.\nSyringe Gun and Crossbow give ubercharge on hit."
 		"ru"		"Лечебные пушки дают Убер, криты, и имуннитет к отбрасыванию.\nСверхлечение дважды увеличивает ОЗ от макс.\nШприцемёт и Арбалет дают убер-заряд при ударе."
 	}
-	"help_sniper"	// Menu
+	"help_sniper"	// Deprecated
 	{
 		"en"		"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nRazorback blocks a hit from the boss.\nDarwin's Danger Shield gives you +85 HP.\nCozy Camper gives you a modified SMG.\nAll melees can wall climb at the cost of 15 HP."
 		"ru"		"Обычные винтовки подсвечивают босса, основываясь на заряд.\nВместо Банкате бросается бомба.\nБронепанцирь блокирует 1 удар босса.\nДарвинистский щит даёт +85 ОЗ.\nНабор для кемпинга даёт ППМ.\nРукопашное оружие позволяет лазить по стенам, но стоит 15 ОЗ."
 		// Remove wall climb if your not using it
 	}
-	"help_spie"	// Menu
+	"help_spie"	// Deprecated
 	{
 		"en"		"All revolvers minicrit while not disguised.\nBut Enforcer deals crits while disguised.\nEnforcer, Ambassador, and Diamondback crits deal more damage.\nBackstabs does about 10%% of the boss's max HP.\nYour Eternal Reward/Wanga Prick backstabs disguise you instantly and silently.\nKunai backstabs will give you a health bonus.\nBig Earner gives you full cloak and speed on backstab."
 		"ru"		"Все револьверы мини-критуют вне маскировки.\nНо Принудитель критует в маскировке.\nКриты Принудителя, Амбассадора, и Алмазного змея усилены.\nУдары в спину сносят ~10%% от макс. ОЗ босса.\nУдар в спину Вечным Покоем/Иголкой Вуду замаскирует тебя.\nУдар в спину Кунаем даёт прирост ОЗ.\nУдар в спину Главным Дельцом даёт полный запас часов и скорость."
 	}
-	"help_melee"	// Menu
+	"help_melee"	// Deprecated
 	{
 		"en"		"Most of melee weapons (except the Spy knives) deal critical hits.\nUse /ff2 menu to disable this notifications."
 		"ru"		"Многие рукопашные оружия (кроме ножей шпионов) наносят криты.\nДанное уведомление отключается в меню /ff2."

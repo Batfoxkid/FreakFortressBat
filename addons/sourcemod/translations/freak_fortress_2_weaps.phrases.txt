@@ -1,0 +1,618 @@
+"Phrases"
+{
+	// Required Translations (Default Translations)
+	"info_title"
+	{
+		"en"		"Use /ff2infotoggle to disable these notifications."
+	}
+	"primary_scout"
+	{
+		"en"		""
+	}
+	"primary_soldier"
+	{
+		"en"		""
+	}
+	"primary_pyro"
+	{
+		"en"		"Airblast causes the boss to build 8%% rage"
+	}
+	"primary_demo"
+	{
+		"en"		""
+	}
+	"primary_heavy"
+	{
+		"en"		""
+	}
+	"primary_engineer"
+	{
+		"en"		""
+	}
+	"primary_medic"
+	{
+		"en"		"Syringe Guns gains 5%% Ubercharge for every hit."
+	}
+	"primary_sniper"
+	{
+		"en"		"Sniper Rifles causes the boss to glow based on charge time."
+	}
+	"primary_spy"
+	{
+		"en"		"Revolvers are mini-crit boosted."
+	}
+	"primary_merc"
+	{
+		"en"		""
+	}
+	"secondary_scout"
+	{
+		"en"		"Stock Pistols are mini-crit boosted."
+	}
+	"secondary_soldier"
+	{
+		"en"		""
+	}
+	"secondary_pyro"
+	{
+		"en"		""
+	}
+	"secondary_demo"
+	{
+		"en"		""
+	}
+	"secondary_heavy"
+	{
+		"en"		""
+	}
+	"secondary_engineer"
+	{
+		"en"		""
+	}
+	"secondary_medic"
+	{
+		"en"		"Medi-Guns can overheal twice as much, slightly faster Ubercharge rate,\nfaster switch speed, and gives crits and self-overheal on Ubercharge."
+	}
+	"secondary_sniper"
+	{
+		"en"		"SMGs are mini-crit boosted."
+	}
+	"secondary_spy"
+	{
+		"en"		"Sappers can be used to stun some bosses."
+	}
+	"secondary_merc"
+	{
+		"en"		""
+	}
+	"melee_scout"
+	{
+		"en"		"Bats (except the Sandman) are always crit boosted."
+	}
+	"melee_soldier"
+	{
+		"en"		"Shovels (except the Market Garnder) are always crit boosted."
+	}
+	"melee_pyro"
+	{
+		"en"		"Fire Axes are always crit boosted."
+	}
+	"melee_demo"
+	{
+		"en"		"Bottles are always crit boosted."
+	}
+	"melee_heavy"
+	{
+		"en"		"Fists (except the Holiday Punch) are always crit boosted."
+	}
+	"melee_engineer"
+	{
+		"en"		"Wrenches are always crit boosted."
+	}
+	"melee_medic"
+	{
+		"en"		"Bonesaws are always crit boosted."
+	}
+	"melee_sniper"
+	{
+		"en"		"Kukris are always crit boosted."
+	}
+	"melee_spy"
+	{
+		"en"		"Knives deal a high amount of damage upon backstabbing a boss."
+	}
+	"melee_merc"
+	{
+		"en"		""
+	}
+	"pda_engineer"
+	{
+		"en"		"Sentries you own are destoryed upon dieing."
+	}
+	"pda_spy"
+	{
+		"en"		"\nDisguise Kit allows you to look like a boss or minion."
+	}
+
+	// Optional Translations (Weapon Indexes)
+	"primary_772"
+	{
+		"en"		"Baby Face's Blaster loses boost over time."
+	}
+	"primary_127"
+	{
+		"en"		"The Direct Hit causes a critical hit upon hitting mid-air targets."
+	}
+	"primary_237"
+	{
+		"en"		"Rocket Jumper causes little damage and gives no extra reserve ammo."
+	}
+	"primary_414"
+	{
+		"en"		"The Liberty Launcher deals slightly less damage."
+	}
+	"primary_441"
+	{
+		"en"		"The Cow Mangler 5000 has increased afterburn damage."
+	}
+	"primary_730"
+	{
+		"en"		"The Beggar's Bazooka has increased reserve ammo."
+	}
+	"primary_1104"
+	{
+		"en"		"The Air Strike gains heads with damage dealt against the boss."
+	}
+	"primary_40"
+	{
+		"en"		"The Backburner's airblast requires less ammo but causes the boss to build 8%% rage."
+	}
+	"primary_594"
+	{
+		"en"		"The Phlogistinator gives damage reduction during 'Mmmph'."
+	}
+	"primary_1146"
+	{
+		"en"		"The Backburner's airblast requires less ammo but causes the boss to build 8%% rage."
+	}
+	"primary_405"
+	{
+		"en"		"Ali Baba's Wee Booties doesn't need a shield for extra movement speed."
+	}
+	"primary_405"
+	{
+		"en"		"The Bootlegger doesn't need a shield for extra movement speed."
+	}
+	"primary_41"
+	{
+		"en"		"Natascha doesn't have slow on hit but gives faster movement speed while deployed."
+	}
+	"primary_312"
+	{
+		"en"		"The Brass Beast has increased melee vulnerability while active."
+	}
+	"primary_811"
+	{
+		"en"		"The Huo-Long Heater has increased afterburn damage."
+	}
+	"primary_832"
+	{
+		"en"		"The Huo-Long Heater has increased afterburn damage."
+	}
+	"primary_141"
+	{
+		"en"		"The Frontier Justice is crit boosted while your sentry is attacking."
+	}
+	"primary_588"
+	{
+		"en"		"The Pomson 6000 is always crit boosted and slows on hit."
+	}
+	"primary_1004"
+	{
+		"en"		"The Frontier Justice is crit boosted while your sentry is attacking."
+	}
+	"primary_305"
+	{
+		"en"		"Crusader's Crossbow is always crit boosted and gains 20%% Ubercharge on hit."
+	}
+	"primary_1079"
+	{
+		"en"		"Crusader's Crossbow is always crit boosted and gains 20%% Ubercharge on hit."
+	}
+	"primary_56"
+	{
+		"en"		"The Huntsman is always crit boosted, deals extra damage, and has increased reserve ammo."
+	}
+	"primary_230"
+	{
+		"en"		"The Sydney Sleeper deals less damage while the boss has less than 90%% rage."
+	}
+	"primary_402"
+	{
+		"en"		"The Bazaar Bargain removes deployed movement speed penalty and gives faster weapon switch"
+	}
+	"primary_526"
+	{
+		"en"		""	// Machina
+	}
+	"primary_752"
+	{
+		"en"		"The Hitman's Heatmaker allows gaining Focus while using Focus."
+	}
+	"primary_1005"
+	{
+		"en"		"The Huntsman is always crit boosted, deals extra damage, and has increased reserve ammo."
+	}
+	"primary_1092"
+	{
+		"en"		"The Fortified Compound is always crit boosted, deals extra damage, and has increased reserve ammo."
+	}
+	"primary_30665"
+	{
+		"en"		""	// Shooting Star
+	}
+	"primary_61"
+	{
+		"en"		"The Ambassador deals extra damage on headshots."
+	}
+	"primary_224"
+	{
+		"en"		"L'Etranger has less cloak on hit."
+	}
+	"primary_460"
+	{
+		"en"		"The Enforcer is crit boosted while your disguised."
+	}
+	"primary_525"
+	{
+		"en"		"The Diamondback deals extra damage with Revenge crits and gains 3 Revenge crits upon backstabbing the boss."
+	}
+	"primary_1006"
+	{
+		"en"		"The Ambassador deals extra damage on headshots."
+	}
+	"secondary_46"
+	{
+		"en"		""
+	}
+	"secondary_163"
+	{
+		"en"		"Crit-a-Cola gives criticals during the effect."
+	}
+	"secondary_222"
+	{
+		"en"		""
+	}
+	"secondary_449"
+	{
+		"en"		""
+	}
+	"secondary_773"
+	{
+		"en"		""
+	}
+	"secondary_812"
+	{
+		"en"		"The Flying Guillotine is always crit boosted."
+	}
+	"secondary_833"
+	{
+		"en"		"The Flying Guillotine is always crit boosted."
+	}
+	"secondary_1121"
+	{
+		"en"		""
+	}
+	"secondary_1145"
+	{
+		"en"		""
+	}
+	"secondary_129"
+	{
+		"en"		"The Buff Banner's rage lasts longer."
+	}
+	"secondary_133"
+	{
+		"en"		"Gunboats gives resistance to fall damage."
+	}
+	"secondary_226"
+	{
+		"en"		"The Battalion's Backup rage gives increased damage resistance."
+	}
+	"secondary_442"
+	{
+		"en"		"The Righteous Bison is always crit boosted and slows on hit."
+	}
+	"secondary_444"
+	{
+		"en"		"The Mantreads gives higher blast jump height and resistance to fall damage."
+	}
+	"secondary_1001"
+	{
+		"en"		"The Buff Banner's rage lasts longer."
+	}
+	"secondary_39"
+	{
+		"en"		"The Flare Gun attacks faster."
+	}
+	"secondary_351"
+	{
+		"en"		"The Detonator has massive self push force but less ammo and no mini-crits against burning players"
+	}
+	"secondary_595"
+	{
+		"en"		"The Manmelter attacks faster."
+	}
+	"secondary_740"
+	{
+		"en"		"The Scorch Shot has less ammo."
+	}
+	"secondary_1081"
+	{
+		"en"		"The Flare Gun attacks faster."
+	}
+	"secondary_1179"
+	{
+		"en"		"Thermal Thruster is able to re-launch mid-air."
+	}
+	"secondary_1180"
+	{
+		"en"		"Gas Passer explodes ignited enemies but requires more damage for recharge."
+	}
+	"secondary_131"
+	{
+		"en"		"The Chargin' Targe gives slightly faster melee attack speed and blocks hits before breaking."
+	}
+	"secondary_265"
+	{
+		"en"		"Sticky Jumper causes little damage and gives no extra reserve ammo."
+	}
+	"secondary_406"
+	{
+		"en"		"The Splendid Screen has more impact damage, no faster recharge speed, and blocks hits before breaking."
+	}
+	"secondary_1099"
+	{
+		"en"		"The Tide Turner blocks hits before breaking."
+	}
+	"secondary_1144"
+	{
+		"en"		"The Chargin' Targe gives slightly faster melee attack speed and blocks hits before breaking."
+	}
+	"secondary_140"
+	{
+		"en"		"The Wrangler gives less movement speed and has increased melee vulnerability while active."
+	}
+	"secondary_528"
+	{
+		"en"		"The Short Circuit is always crit boosted and slows on hit."
+	}
+	"secondary_1086"
+	{
+		"en"		"The Wrangler gives less movement speed and has increased melee vulnerability while active."
+	}
+	"secondary_30668"
+	{
+		"en"		"The Gigar Counter gives less movement speed and has increased melee vulnerability while active."
+	}
+	"secondary_35"
+	{
+		"en"		"The Kritzkrieg can overheal twice as much, faster Ubercharge rate,\nfaster switch speed, and longer Ubercharge."
+	}
+	"secondary_411"
+	{
+		"en"		"The Quick-Fix can fully overheal, faster Ubercharge rate,\nfaster switch speed, and provides crits on Ubercharge."
+	}
+	"secondary_998"
+	{
+		"en"		"The Vaccinator can overheal twice as much, slower Ubercharge rate, faster switch speed,\nno resistances, shorter Ubercharge, but gives crits on Ubercharge and a projectile shield meter."
+	}
+	"secondary_57"
+	{
+		"en"		"The Razorback blocks hits before breaking."
+	}
+	"secondary_58"
+	{
+		"en"		"Jarate drains 8%% rage on bosses but doesn't give mini-crits."
+	}
+	"secondary_231"
+	{
+		"en"		"Darwin's Danger Shield gives a massive health boost but less health from healers and health packs."
+	}
+	"secondary_642"
+	{
+		"en"		"Cozy Camper gives a modified SMG that bleeds on hit but deals less damage."
+	}
+	"secondary_751"
+	{
+		"en"		"The Cleaner's Carbine is crit boosted during rage."
+	}
+	"secondary_1083"
+	{
+		"en"		"Jarate drains 8%% rage on bosses but doesn't give mini-crits."
+	}
+	"secondary_1105"
+	{
+		"en"		"Jarate drains 8%% rage on bosses but doesn't give mini-crits."
+	}
+	"secondary_810"
+	{
+		"en"		"The Red-Tape Recorder can be used to Mark-For-Death some bosses."
+	}
+	"secondary_831"
+	{
+		"en"		"The Red-Tape Recorder can be used to Mark-For-Death some bosses."
+	}
+	"secondary_415"
+	{
+		"en"		"The Reserve Shooter has a smaller clip size but causes a critical hit upon hitting mid-air targets."
+	}
+	"melee_44"
+	{
+		"en"		"The Sandman doesn't receive a crit boost."
+	}
+	"melee_317"
+	{
+		"en"		"The Candy Cane drops a health kit upon hitting a boss but slightly less healing from Medics."
+	}
+	"melee_349"
+	{
+		"en"		"Sun-on-a-Stick deals more damage against enemies on fire."
+	}
+	"melee_355"
+	{
+		"en"		"The Fan O'War gives faster swing speed, movement speed, but less primary ammo and no double jumps."
+	}
+	"melee_128"
+	{
+		"en"		"The Equalizer has increased melee vulnerability while active."
+	}
+	"melee_154"
+	{
+		"en"		"The Pain Train bleeds on hit but causes to hit yourself if you miss. Idiot."
+	}
+	"melee_357"
+	{
+		"en"		"The Half-Zatoichi's Honorbound fades upon hitting a boss, consecutive hits give less health."
+	}
+	"melee_416"
+	{
+		"en"		"The Market Gardener is only crit boosted while your rocket jumping,\ngives slower attack speed, and hitting the boss while mid-air deals massive damage."
+	}
+	"melee_775"
+	{
+		"en"		"The Escape Plan has increased melee vulnerability while active."
+	}
+	"melee_153"
+	{
+		"en"		"Homewrecker deals more damage but attacks slower."
+	}
+	"melee_214"
+	{
+		"en"		"The Powerjack heals upon hitting the boss."
+	}
+	"melee_348"
+	{
+		"en"		"Sharpened Volcano Fragment removes your primary weapon, gives damage reduction while active,\nheals on hit and afterburn, faster movement speed, and slower switch speed."
+	}
+	"melee_466"
+	{
+		"en"		"The Maul deals more damage but attacks slower."
+	}
+	"melee_593"
+	{
+		"en"		"The Third Degree gives Ubercharge on hit to the Medic(s) currently healing you but slightly less healing from Medics."
+	}
+	"melee_813"
+	{
+		"en"		"Neon Annihilator slows on hit."
+	}
+	"melee_834"
+	{
+		"en"		"Neon Annihilator slows on hit."
+	}
+	"melee_1181"
+	{
+		"en"		"Hot Hand's speed boost lasts slightly longer."
+	}
+	"melee_132"
+	{
+		"en"		"The Eyelander gains a head upon hitting a boss."
+	}
+	"melee_266"
+	{
+		"en"		"Horseless Headless Horsemann's Headtaker gains a head upon hitting a boss."
+	}
+	"melee_307"
+	{
+		"en"		"Ullapool Caber deals more damage on explosion but loses crit boost afterwards."
+	}
+	"melee_327"
+	{
+		"en"		"The Claidheamh Mòr gains health and charge upon hitting a boss and gives slightly more damage vulnerability."
+	}
+	"melee_404"
+	{
+		"en"		"Gives more charge on hit, slower charge recharge, no ammo penalty, and slightly slower switch speed."
+	}
+	"melee_482"
+	{
+		"en"		"Nessie's Nine Iron gains a head upon hitting a boss."
+	}
+	"melee_1082"
+	{
+		"en"		"The Eyelander gains a head upon hitting a boss."
+	}
+	"melee_43"
+	{
+		"en"		"The Killing Gloves of Boxing removes your primary weapon, gives damage reduction while active,\nheals on hit, less healing, faster movement speed, and slower switch speed."
+	}
+	"melee_239"
+	{
+		"en"		"Gloves of Running Urgently gives increase movement speed but drains health instead of max health."
+	}
+	"melee_310"
+	{
+		"en"		"Warrior's Spirit heals upon hitting a boss."
+	}
+	"melee_331"
+	{
+		"en"		"Fists of Steel gives ranged and melee damage reduction while active."
+	}
+	"melee_426"
+	{
+		"en"		"The Eviction Notice gives passive increased movement speed, no max health drain, and maximum attack speed."
+	}
+	"melee_656"
+	{
+		"en"		"The Holiday Punch gives instant switch speed but doesn't receive a crit boost and unable to force joy."
+	}
+	"melee_1084"
+	{
+		"en"		"Gloves of Running Urgently gives increase movement speed but drains health instead of max health."
+	}
+	"melee_1100"
+	{
+		"en"		"The Bread Bite gives increase movement speed but drains health instead of max health."
+	}
+	"melee_155"
+	{
+		"en"		"The Southern Hospitality's fire vulnerability is effected by all damage types."
+	}
+	"melee_329"
+	{
+		"en"		"The Jag has slower repair speed and deals less damage."
+	}
+	"melee_589"
+	{
+		"en"		"The Eureka Effect building hit speed boost and metal from pickups is increased,\nteleporters are bi-directional, but unable to self teleport."
+	}
+	"melee_173"
+	{
+		"en"		"The Vita-Saw gains 15%% Ubercharge on hit and gains a short speed boost."
+	}
+	"melee_232"
+	{
+		"en"		"The Bushwacka increases wall climb force."
+	}
+	"melee_225"
+	{
+		"en"		"Your Eternal Reward disguises you upon backstabbing a boss and makes little noise."
+	}
+	"melee_356"
+	{
+		"en"		"Conniver's Kunai overheals upon backstabbing a boss."
+	}
+	"melee_461"
+	{
+		"en"		"The Big Earner gives a speed boost and full cloak upon backstabbing a boss."
+	}
+	"melee_574"
+	{
+		"en"		"The Wanga Prick disguises you upon backstabbing a boss and makes little noise."
+	}
+	"pda_60"
+	{
+		"en"		"The Cloak and Dagger recharges slower and drains based on time.\nDisguise Kit allows you to look like a boss or minion."
+	}
+}
