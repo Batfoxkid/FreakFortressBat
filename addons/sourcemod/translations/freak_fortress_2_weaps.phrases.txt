@@ -4,6 +4,7 @@
 	"info_title"
 	{
 		"en"		"Use /ff2infotoggle to disable these notifications."
+		"ru"		"Используйте /ff2infotoggle для отключения этих уведомлений."
 	}
 	"primary_scout"
 	{
@@ -16,6 +17,7 @@
 	"primary_pyro"
 	{
 		"en"		"Airblast causes the boss to build 8%% rage"
+		"ru"		"Исп. сжатого воздуха добавляет 8%% к ярости босса"
 	}
 	"primary_demo"
 	{
@@ -32,14 +34,17 @@
 	"primary_medic"
 	{
 		"en"		"Syringe Guns gains 5%% Ubercharge for every hit."
+		"ru"		"Шприцемёты дают 5%% Уберзаряда за каждое попадание."
 	}
 	"primary_sniper"
 	{
 		"en"		"Sniper Rifles causes the boss to glow based on charge time."
+		"ru"		"Снайпер. Винтовки подсвечивают босса (время зависит от заряда)."
 	}
 	"primary_spy"
 	{
 		"en"		"Revolvers are mini-crit boosted."
+		"ru"		"Револьверы имеют мини-криты."
 	}
 	"primary_merc"
 	{
@@ -48,6 +53,7 @@
 	"secondary_scout"
 	{
 		"en"		"Stock Pistols are mini-crit boosted."
+		"ru"		"Обычные пистолеты имеют мини-криты."
 	}
 	"secondary_soldier"
 	{
@@ -72,14 +78,17 @@
 	"secondary_medic"
 	{
 		"en"		"Medi-Guns can overheal twice as much, slightly faster Ubercharge rate,\nfaster switch speed, and gives crits and self-overheal on Ubercharge."
+		"ru"		"Сверхлечение в 2 раза больше, ускоренное накопление Уберзаряда,\nускоренная смена оружия, Уберзаряд даёт криты и само-сверхлечение."
 	}
 	"secondary_sniper"
 	{
 		"en"		"SMGs are mini-crit boosted."
+		"ru"		"ППМы имеют мини-криты."
 	}
 	"secondary_spy"
 	{
 		"en"		"Sappers can be used to stun some bosses."
+		"ru"		"Жучки могут оглушать некоторых боссов."
 	}
 	"secondary_merc"
 	{
@@ -88,38 +97,47 @@
 	"melee_scout"
 	{
 		"en"		"Bats (except the Sandman) are always crit boosted."
+		"ru"		"Биты (кроме Дрёмы) всегда критуют."
 	}
 	"melee_soldier"
 	{
 		"en"		"Shovels (except the Market Garnder) are always crit boosted."
+		"ru"		"Лопаты (кроме Землекопа) всегда критуют."
 	}
 	"melee_pyro"
 	{
 		"en"		"Fire Axes are always crit boosted."
+		"ru"		"Топоры всегда критуют."
 	}
 	"melee_demo"
 	{
 		"en"		"Bottles are always crit boosted."
+		"ru"		"Бутылки всегда критуют."
 	}
 	"melee_heavy"
 	{
 		"en"		"Fists (except the Holiday Punch) are always crit boosted."
+		"ru"		"Кулаки (кроме Праздничного Удара) всегда критуют."
 	}
 	"melee_engineer"
 	{
 		"en"		"Wrenches are always crit boosted."
+		"ru"		"Гаечные ключи всегда критуют."
 	}
 	"melee_medic"
 	{
 		"en"		"Bonesaws are always crit boosted."
+		"ru"		"Пилы всегда критуют."
 	}
 	"melee_sniper"
 	{
 		"en"		"Kukris are always crit boosted."
+		"ru"		"Кукри всегда критуют."
 	}
 	"melee_spy"
 	{
 		"en"		"Knives deal a high amount of damage upon backstabbing a boss."
+		"ru"		"Ножи наносят большое кол-во урона при ударе в спину."
 	}
 	"melee_merc"
 	{
@@ -128,108 +146,134 @@
 	"pda_engineer"
 	{
 		"en"		"Sentries you own are destoryed upon dieing."
+		"ru"		"Турели уничтожаются после вашей смерти."
 	}
 	"pda_spy"
 	{
 		"en"		"\nDisguise Kit allows you to look like a boss or minion."
+		"ru"		"\nМаскировка позволяет вам выглядеть как босс или миньон."
 	}
 
 	// Optional Translations (Weapon Indexes)
 	"primary_772"
 	{
 		"en"		"Baby Face's Blaster loses boost over time."
+		"ru"		"Обрез Малыша теряет ускорение со временем."
 	}
 	"primary_127"
 	{
 		"en"		"The Direct Hit causes a critical hit upon hitting mid-air targets."
+		"ru"		"Прямое Попадание наносит крит по воздушным целям."
 	}
 	"primary_237"
 	{
 		"en"		"Rocket Jumper causes little damage and gives no extra reserve ammo."
+		"ru"		"Тренировочный ракетомёт немного ранит вас и не даёт запасных патронов."
 	}
 	"primary_414"
 	{
 		"en"		"The Liberty Launcher deals slightly less damage."
+		"ru"		"Освободитель наносит немного меньше урона."
 	}
 	"primary_441"
 	{
 		"en"		"The Cow Mangler 5000 has increased afterburn damage."
+		"ru"		"Линчеватель Скота 5000 повышает урон от догорания."
 	}
 	"primary_730"
 	{
 		"en"		"The Beggar's Bazooka has increased reserve ammo."
+		"ru"		"Базука Бродяги повышает кол-во патронов (ракет)."
 	}
 	"primary_1104"
 	{
 		"en"		"The Air Strike gains heads with damage dealt against the boss."
+		"ru"		"Авиаудар собирает головы с уроном, нанесённым по боссу."
 	}
 	"primary_40"
 	{
 		"en"		"The Backburner's airblast requires less ammo but causes the boss to build 8%% rage."
+		"ru"		"Сжатый воздух Дожигателя требует меньше патронов, но увеличивает ярость босса на 8%%."
 	}
 	"primary_594"
 	{
 		"en"		"The Phlogistinator gives damage reduction during 'Mmmph'."
+		"ru"		"Флогистонатор даёт сопротивление к урону во время 'МММФХ'."
 	}
 	"primary_1146"
 	{
 		"en"		"The Backburner's airblast requires less ammo but causes the boss to build 8%% rage."
+		"ru"		"Сжатый воздух Дожигателя требует меньше патронов, но увеличивает ярость босса на 8%%."
 	}
 	"primary_405"
 	{
 		"en"		"Ali Baba's Wee Booties doesn't need a shield for extra movement speed."
+		"ru"		"Ботиночки Али-Бабы не требуют наличие щита для ускорения бега."
 	}
 	"primary_405"
 	{
 		"en"		"The Bootlegger doesn't need a shield for extra movement speed."
+		"ru"		"Бутлегер не требует наличие щита для ускорения бега."
 	}
 	"primary_41"
 	{
 		"en"		"Natascha doesn't have slow on hit but gives faster movement speed while deployed."
+		"ru"		"Наташа не замедляет цель, но ускоряет передвижение при прокруте."
 	}
 	"primary_312"
 	{
 		"en"		"The Brass Beast has increased melee vulnerability while active."
+		"ru"		"Латунный монстр повышает получаемый рукопашный урон, когда активен."
 	}
 	"primary_811"
 	{
 		"en"		"The Huo-Long Heater has increased afterburn damage."
+		"ru"		"Огненный дракон повышает урон от догорания."
 	}
 	"primary_832"
 	{
 		"en"		"The Huo-Long Heater has increased afterburn damage."
+		"ru"		"Огненный дракон повышает урон от догорания."
 	}
 	"primary_141"
 	{
 		"en"		"The Frontier Justice is crit boosted while your sentry is attacking."
+		"ru"		"Самосуд критует, когда ваша турель атакует."
 	}
 	"primary_588"
 	{
 		"en"		"The Pomson 6000 is always crit boosted and slows on hit."
+		"ru"		"Помсон 6000 всегда критует и замедляет при попадании."
 	}
 	"primary_1004"
 	{
 		"en"		"The Frontier Justice is crit boosted while your sentry is attacking."
+		"ru"		"Самосуд критует, когда ваша турель атакует."
 	}
 	"primary_305"
 	{
 		"en"		"Crusader's Crossbow is always crit boosted and gains 20%% Ubercharge on hit."
+		"ru"		"Арбалет крестоносца всегда критует и даёт 20%% Уберзаряда при попадании."
 	}
 	"primary_1079"
 	{
 		"en"		"Crusader's Crossbow is always crit boosted and gains 20%% Ubercharge on hit."
+		"ru"		"Арбалет крестоносца всегда критует и даёт 20%% Уберзаряда при попадании."
 	}
 	"primary_56"
 	{
 		"en"		"The Huntsman is always crit boosted, deals extra damage, and has increased reserve ammo."
+		"ru"		"Охотник всегда критует, наносит больше урона, и имеет больше патронов (стрел)."
 	}
 	"primary_230"
 	{
 		"en"		"The Sydney Sleeper deals less damage while the boss has less than 90%% rage."
+		"ru"		"Сиднейская соня наносит меньше урона, когда у босса меньше 90%% ярости."
 	}
 	"primary_402"
 	{
 		"en"		"The Bazaar Bargain removes deployed movement speed penalty and gives faster weapon switch"
+		"ru"		"Базарная безделушка ускоряет передвижение в прицеле и ускоряет смену оружия"
 	}
 	"primary_526"
 	{
@@ -238,14 +282,17 @@
 	"primary_752"
 	{
 		"en"		"The Hitman's Heatmaker allows gaining Focus while using Focus."
+		"ru"		"Разжигатель разбойника позволяет копить заряд при исп. концентрации."
 	}
 	"primary_1005"
 	{
 		"en"		"The Huntsman is always crit boosted, deals extra damage, and has increased reserve ammo."
+		"ru"		"Охотник всегда критует, наносит больше урона, и имеет больше патронов (стрел)."
 	}
 	"primary_1092"
 	{
 		"en"		"The Fortified Compound is always crit boosted, deals extra damage, and has increased reserve ammo."
+		"ru"		"Укреплённый составной лук всегда критует, наносит больше урона, и имеет больше патронов (стрел)."
 	}
 	"primary_30665"
 	{
@@ -254,365 +301,450 @@
 	"primary_61"
 	{
 		"en"		"The Ambassador deals extra damage on headshots."
+		"ru"		"Амбассадор наносит больше урона при попадании в голову."
 	}
 	"primary_224"
 	{
 		"en"		"L'Etranger has less cloak on hit."
+		"ru"		"Незнакомец быстрее копит заряд часов при попадании."
 	}
 	"primary_460"
 	{
 		"en"		"The Enforcer is crit boosted while your disguised."
+		"ru"		"Принудитель критует в маскировке."
 	}
 	"primary_525"
 	{
 		"en"		"The Diamondback deals extra damage with Revenge crits and gains 3 Revenge crits upon backstabbing the boss."
+		"ru"		"Алмазный змей наносит больше урона критами мести и даёт 3 таких крита при ударе ножом в спину."
 	}
 	"primary_1006"
 	{
 		"en"		"The Ambassador deals extra damage on headshots."
+		"ru"		"Амбассадор наносит больше урона при попадании в голову."
 	}
 	"secondary_46"
 	{
-		"en"		""
+		"en"		""	// Bonk! Atomic Punch
 	}
 	"secondary_163"
 	{
 		"en"		"Crit-a-Cola gives criticals during the effect."
+		"ru"		"Крит-а-кола даёт криты во время эффекта."
 	}
 	"secondary_222"
 	{
-		"en"		""
+		"en"		""	// Mad Milk
 	}
 	"secondary_449"
 	{
-		"en"		""
+		"en"		""	// Winger
 	}
 	"secondary_773"
 	{
-		"en"		""
+		"en"		""	// Pretty Boy's Pocket Pistol
 	}
 	"secondary_812"
 	{
 		"en"		"The Flying Guillotine is always crit boosted."
+		"ru"		"Летающая гильотина всегда критует."
 	}
 	"secondary_833"
 	{
 		"en"		"The Flying Guillotine is always crit boosted."
+		"ru"		"Летающая гильотина всегда критует."
 	}
 	"secondary_1121"
 	{
-		"en"		""
+		"en"		""	// Mutated Milk
 	}
 	"secondary_1145"
 	{
-		"en"		""
+		"en"		""	// Festive Bonk!
 	}
 	"secondary_129"
 	{
 		"en"		"The Buff Banner's rage lasts longer."
+		"ru"		"Ярость Вдохновляющего знамени длится дольше."
 	}
 	"secondary_133"
 	{
 		"en"		"Gunboats gives resistance to fall damage."
+		"ru"		"Штурмботинки дают сопротивление к урону от падения."
 	}
 	"secondary_226"
 	{
 		"en"		"The Battalion's Backup rage gives increased damage resistance."
+		"ru"		"Ярость Поддержки Батальона увеличивает сопротивление к урону."
 	}
 	"secondary_442"
 	{
 		"en"		"The Righteous Bison is always crit boosted and slows on hit."
+		"ru"		"Благочестивый бизон всегда критует и замедляет при попадании."
 	}
 	"secondary_444"
 	{
 		"en"		"The Mantreads gives higher blast jump height and resistance to fall damage."
+		"ru"		"Людодавы увеличивают высоту прыжка и сопротивление к урону от падения."
 	}
 	"secondary_1001"
 	{
 		"en"		"The Buff Banner's rage lasts longer."
+		"ru"		"Ярость Вдохновляющего знамени длится дольше."
 	}
 	"secondary_39"
 	{
 		"en"		"The Flare Gun attacks faster."
+		"ru"		"Ракетница атакует быстрее."
 	}
 	"secondary_351"
 	{
 		"en"		"The Detonator has massive self push force but less ammo and no mini-crits against burning players"
+		"ru"		"У Детонатора сильное самоотталкивание, меньше снарядов и нет мини-критов по горящим игрокам"
 	}
 	"secondary_595"
 	{
 		"en"		"The Manmelter attacks faster."
+		"ru"		"Людоплав атакует быстрее."
 	}
 	"secondary_740"
 	{
 		"en"		"The Scorch Shot has less ammo."
+		"ru"		"У Обжигающего выстрела меньше снарядов."
 	}
 	"secondary_1081"
 	{
 		"en"		"The Flare Gun attacks faster."
+		"ru"		"Ракетница атакует быстрее."
 	}
 	"secondary_1179"
 	{
 		"en"		"Thermal Thruster is able to re-launch mid-air."
+		"ru"		"Термальная тяга может делать повторный запуск в воздухе."
 	}
 	"secondary_1180"
 	{
 		"en"		"Gas Passer explodes ignited enemies but requires more damage for recharge."
+		"ru"		"Запасной бак подрывает горящих врагов, но требует больше урона для перезарядки."
 	}
 	"secondary_131"
 	{
 		"en"		"The Chargin' Targe gives slightly faster melee attack speed and blocks hits before breaking."
+		"ru"		"Штурмовой щит слегка ускоряет рукопашные атаки и блокирует удары перед своей поломкой."
 	}
 	"secondary_265"
 	{
 		"en"		"Sticky Jumper causes little damage and gives no extra reserve ammo."
+		"ru"		"Тренировочный липучкомет немного ранит вас и не даёт запасных патронов."
 	}
 	"secondary_406"
 	{
 		"en"		"The Splendid Screen has more impact damage, no faster recharge speed, and blocks hits before breaking."
+		"ru"		"Роскошное прикрытие сильнее ранит при столкновении, дольше восстанавливается, и блокирует удары перед своей поломкой."
 	}
 	"secondary_1099"
 	{
 		"en"		"The Tide Turner blocks hits before breaking."
+		"ru"		"Верный штурвал блокирует удары перед своей поломкой."
 	}
 	"secondary_1144"
 	{
 		"en"		"The Chargin' Targe gives slightly faster melee attack speed and blocks hits before breaking."
+		"ru"		"Штурмовой щит слегка ускоряет рукопашные атаки и блокирует удары перед своей поломкой."
 	}
 	"secondary_140"
 	{
 		"en"		"The Wrangler gives less movement speed and has increased melee vulnerability while active."
+		"ru"		"Поводырь замедляет передвижение и повышает получаемый рукопашный урон, когда активен."
 	}
 	"secondary_528"
 	{
 		"en"		"The Short Circuit is always crit boosted and slows on hit."
+		"ru"		"Короткое замыкание всегда критует и замедляет при попадании."
 	}
 	"secondary_1086"
 	{
 		"en"		"The Wrangler gives less movement speed and has increased melee vulnerability while active."
+		"ru"		"Поводырь замедляет передвижение и повышает получаемый рукопашный урон, когда активен."
 	}
 	"secondary_30668"
 	{
 		"en"		"The Gigar Counter gives less movement speed and has increased melee vulnerability while active."
+		"ru"		"Счётчик Гигера замедляет передвижение и повышает получаемый рукопашный урон, когда активен."
 	}
 	"secondary_35"
 	{
 		"en"		"The Kritzkrieg can overheal twice as much, faster Ubercharge rate,\nfaster switch speed, and longer Ubercharge."
+		"ru"		"Сверхлечение Крицкригом в 2 раза больше, ускоренное накопление Уберзаряда,\nускоренная смена оружия, и дольше сам Уберзаряд."
 	}
 	"secondary_411"
 	{
 		"en"		"The Quick-Fix can fully overheal, faster Ubercharge rate,\nfaster switch speed, and provides crits on Ubercharge."
+		"ru"		"Полное сверхлечение Быстроправом, ускоренное накопление Уберзаряда,\nускоренная смена оружия, и криты при Уберзаряде."
 	}
 	"secondary_998"
 	{
 		"en"		"The Vaccinator can overheal twice as much, slower Ubercharge rate, faster switch speed,\nno resistances, shorter Ubercharge, but gives crits on Ubercharge and a projectile shield meter."
+		"ru"		"Сверхлечение Вакцинатором в 2 раза больше, медленнее накопление Уберзаряда, ускоренная смена оружия,\nбез сопротивлений, меньше сам Уберзаряд, но даёт криты и щит при активации."
 	}
 	"secondary_57"
 	{
 		"en"		"The Razorback blocks hits before breaking."
+		"ru"		"Бронепанцирь блокирует удары перед своей поломкой."
 	}
 	"secondary_58"
 	{
 		"en"		"Jarate drains 8%% rage on bosses but doesn't give mini-crits."
+		"ru"		"Банкате отбирает 8%% ярости у боссов, но не даёт мини-криты."
 	}
 	"secondary_231"
 	{
 		"en"		"Darwin's Danger Shield gives a massive health boost but less health from healers and health packs."
+		"ru"		"Дарвинистский щит даёт большой прирост к макс. ОЗ, но меньше ОЗ от медиков и аптечек."
 	}
 	"secondary_642"
 	{
 		"en"		"Cozy Camper gives a modified SMG that bleeds on hit but deals less damage."
+		"ru"		"Набор для кемпинга даёт модифиц. ППМ, вызывающий кровотечение от пуль, но наносит меньше урона."
 	}
 	"secondary_751"
 	{
 		"en"		"The Cleaner's Carbine is crit boosted during rage."
+		"ru"		"Карабин Чистильщика критует при ярости."
 	}
 	"secondary_1083"
 	{
 		"en"		"Jarate drains 8%% rage on bosses but doesn't give mini-crits."
+		"ru"		"Банкате отбирает 8%% ярости у боссов, но не даёт мини-криты."
 	}
 	"secondary_1105"
 	{
 		"en"		"Jarate drains 8%% rage on bosses but doesn't give mini-crits."
+		"ru"		"Банкате отбирает 8%% ярости у боссов, но не даёт мини-криты."
 	}
 	"secondary_810"
 	{
 		"en"		"The Red-Tape Recorder can be used to Mark-For-Death some bosses."
+		"ru"		"Откатофон можно использовать, чтобы добавлять метку смерти некоторым боссам."
 	}
 	"secondary_831"
 	{
 		"en"		"The Red-Tape Recorder can be used to Mark-For-Death some bosses."
+		"ru"		"Откатофон можно использовать, чтобы добавлять метку смерти некоторым боссам."
 	}
 	"secondary_415"
 	{
 		"en"		"The Reserve Shooter has a smaller clip size but causes a critical hit upon hitting mid-air targets."
+		"ru"		"У Офицера запаса меньше размер обоймы, но критует по воздушным целям."
 	}
 	"melee_44"
 	{
 		"en"		"The Sandman doesn't receive a crit boost."
+		"ru"		"Дрёма не критует."
 	}
 	"melee_317"
 	{
 		"en"		"The Candy Cane drops a health kit upon hitting a boss but slightly less healing from Medics."
+		"ru"		"Леденцовая трость создаёт аптечку при попадании, но даёт меньше ОЗ от медиков."
 	}
 	"melee_349"
 	{
 		"en"		"Sun-on-a-Stick deals more damage against enemies on fire."
+		"ru"		"Солнце на палочке наносит больше урона по горящим врагам."
 	}
 	"melee_355"
 	{
 		"en"		"The Fan O'War gives faster swing speed, movement speed, but less primary ammo and no double jumps."
+		"ru"		"Веер войны ускоряет вас, но меньше патронов у основного оружия и отсутствуют двойные прыжки."
 	}
 	"melee_128"
 	{
 		"en"		"The Equalizer has increased melee vulnerability while active."
+		"ru"		"Уравнитель повышает получаемый рукопашный урон, когда активен."
 	}
 	"melee_154"
 	{
 		"en"		"The Pain Train bleeds on hit but causes to hit yourself if you miss. Idiot."
+		"ru"		"Костыль вызывает кровотечение при попадании, но при промахе ранит тебя. Идиот."
 	}
 	"melee_357"
 	{
 		"en"		"The Half-Zatoichi's Honorbound fades upon hitting a boss, consecutive hits give less health."
+		"ru"		"Честь Полудзатоити затухает при попадании, последующие удары дают меньше ОЗ."
 	}
 	"melee_416"
 	{
 		"en"		"The Market Gardener is only crit boosted while your rocket jumping,\ngives slower attack speed, and hitting the boss while mid-air deals massive damage."
+		"ru"		"Землекоп критует только при ракетном прыжке,\nуменьшает скорость атаки, но удар с воздуха наносит больше урона."
 	}
 	"melee_775"
 	{
 		"en"		"The Escape Plan has increased melee vulnerability while active."
+		"ru"		"План побега повышает получаемый рукопашный урон, когда активен."
 	}
 	"melee_153"
 	{
 		"en"		"Homewrecker deals more damage but attacks slower."
+		"ru"		"Крушитель наносит больше урона, но атакует медленнее."
 	}
 	"melee_214"
 	{
 		"en"		"The Powerjack heals upon hitting the boss."
+		"ru"		"Разъединитель лечит при попадании."
 	}
 	"melee_348"
 	{
 		"en"		"Sharpened Volcano Fragment removes your primary weapon, gives damage reduction while active,\nheals on hit and afterburn, faster movement speed, and slower switch speed."
+		"ru"		"Заостренный осколок вулкана удаляет основное оружие, даёт сопротивление к урону (когда активен),\nлечит при попадании и догорании врага, ускоряет передвижение, замедляет смену оружия."
 	}
 	"melee_466"
 	{
 		"en"		"The Maul deals more damage but attacks slower."
+		"ru"		"Молот наносит больше урона, но атакует медленнее."
 	}
 	"melee_593"
 	{
 		"en"		"The Third Degree gives Ubercharge on hit to the Medic(s) currently healing you but slightly less healing from Medics."
+		"ru"		"Третья степень при попадании даёт Уберзаряд лечащему вас медику, но даёт немного меньше ОЗ от медиков."
 	}
 	"melee_813"
 	{
 		"en"		"Neon Annihilator slows on hit."
+		"ru"		"Неоновый аннигилятор замедляет при попадании."
 	}
 	"melee_834"
 	{
 		"en"		"Neon Annihilator slows on hit."
+		"ru"		"Неоновый аннигилятор замедляет при попадании."
 	}
 	"melee_1181"
 	{
 		"en"		"Hot Hand's speed boost lasts slightly longer."
+		"ru"		"Ускорение Горячей руки длится дольше."
 	}
 	"melee_132"
 	{
 		"en"		"The Eyelander gains a head upon hitting a boss."
+		"ru"		"Одноглазый горец копит головы при попадании."
 	}
 	"melee_266"
 	{
 		"en"		"Horseless Headless Horsemann's Headtaker gains a head upon hitting a boss."
+		"ru"		"Секира Пешего всадника без головы копит головы при попадании."
 	}
 	"melee_307"
 	{
 		"en"		"Ullapool Caber deals more damage on explosion but loses crit boost afterwards."
+		"ru"		"Аллапульское бревно наносит больше урона при взрыве, но впоследствии теряет криты."
 	}
 	"melee_327"
 	{
 		"en"		"The Claidheamh Mòr gains health and charge upon hitting a boss and gives slightly more damage vulnerability."
+		"ru"		"Клеймор даёт ОЗ и заряд при попадании, но слегка повышает получаемый урон."
 	}
 	"melee_404"
 	{
 		"en"		"Gives more charge on hit, slower charge recharge, no ammo penalty, and slightly slower switch speed."
+		"ru"		"Даёт больше заряда при попадании, медленнее восст. заряд, нет санкций на патроны, и слегка медленнее смена оружия."
 	}
 	"melee_482"
 	{
 		"en"		"Nessie's Nine Iron gains a head upon hitting a boss."
+		"ru"		"Железная девятка Несси копит головы при попадании."
 	}
 	"melee_1082"
 	{
 		"en"		"The Eyelander gains a head upon hitting a boss."
+		"ru"		"Одноглазый горец копит головы при попадании."
 	}
 	"melee_43"
 	{
 		"en"		"The Killing Gloves of Boxing removes your primary weapon, gives damage reduction while active,\nheals on hit, less healing, faster movement speed, and slower switch speed."
+		"ru"		"Кулаки грозного боксёра удаляют основное оружие, дают сопротивление к урону (когда активны),\nлечат при попадании, дают меньше ОЗ, ускоряют передвижение, и замедляют смену оружия."
 	}
 	"melee_239"
 	{
 		"en"		"Gloves of Running Urgently gives increase movement speed but drains health instead of max health."
+		"ru"		"Горящие рукавицы ускорения ускоряют передвижение, но потребляют ОЗ вместо макс. ОЗ."
 	}
 	"melee_310"
 	{
 		"en"		"Warrior's Spirit heals upon hitting a boss."
+		"ru"		"Воинский дух лечит при попадании."
 	}
 	"melee_331"
 	{
 		"en"		"Fists of Steel gives ranged and melee damage reduction while active."
+		"ru"		"Стальные кулаки дают сопротивление к рукопашному урону и урону от стрелковых оружий, когда активны."
 	}
 	"melee_426"
 	{
 		"en"		"The Eviction Notice gives passive increased movement speed, no max health drain, and maximum attack speed."
+		"ru"		"Уведомление о выселении пассивно ускоряет передвижение, не потребляет макс. ОЗ, и максимально ускоряет атаки."
 	}
 	"melee_656"
 	{
 		"en"		"The Holiday Punch gives instant switch speed but doesn't receive a crit boost and unable to force joy."
+		"ru"		"Праздничный удар позволяет моментально менять оружие, но не критует и не вызывает насмешку."
 	}
 	"melee_1084"
 	{
 		"en"		"Gloves of Running Urgently gives increase movement speed but drains health instead of max health."
+		"ru"		"Горящие рукавицы ускорения ускоряют передвижение, но потребляют ОЗ вместо макс. ОЗ."
 	}
 	"melee_1100"
 	{
 		"en"		"The Bread Bite gives increase movement speed but drains health instead of max health."
+		"ru"		"Кусай-хлеб ускоряет передвижение, но потребляет ОЗ вместо макс. ОЗ."
 	}
 	"melee_155"
 	{
 		"en"		"The Southern Hospitality's fire vulnerability is effected by all damage types."
+		"ru"		"На уязвимость к окню Южного гостеприимства влияют все типы урона."
 	}
 	"melee_329"
 	{
 		"en"		"The Jag has slower repair speed and deals less damage."
+		"ru"		"Острозуб медленнее чинит постройки и наносит меньше урона."
 	}
 	"melee_589"
 	{
 		"en"		"The Eureka Effect building hit speed boost and metal from pickups is increased,\nteleporters are bi-directional, but unable to self teleport."
+		"ru"		"Озарение быстрее чинит постройки, даёт больше металла,\nтелепорты двусторонние, но самому телепортироваться нельзя."
 	}
 	"melee_173"
 	{
 		"en"		"The Vita-Saw gains 15%% Ubercharge on hit and gains a short speed boost."
+		"ru"		"Вита-пила даёт 15%% Уберзаряда при попадании и слегка ускоряет передвижение."
 	}
 	"melee_232"
 	{
 		"en"		"The Bushwacka increases wall climb force."
+		"ru"		"Кустолом увеличивает силу лазанья по стенам."
 	}
 	"melee_225"
 	{
 		"en"		"Your Eternal Reward disguises you upon backstabbing a boss and makes little noise."
+		"ru"		"Вечный покой маскирует вас при ударе в спину и создаёт небольшой шум."
 	}
 	"melee_356"
 	{
 		"en"		"Conniver's Kunai overheals upon backstabbing a boss."
+		"ru"		"Кунай заговорщика даёт сверхлечение при ударе в спину."
 	}
 	"melee_461"
 	{
 		"en"		"The Big Earner gives a speed boost and full cloak upon backstabbing a boss."
+		"ru"		"Главный делец ускоряет передвижение и восстанавливает запас часов при ударе в спину."
 	}
 	"melee_574"
 	{
 		"en"		"The Wanga Prick disguises you upon backstabbing a boss and makes little noise."
+		"ru"		"Иголка вуду маскирует вас при ударе в спину и создаёт небольшой шум."
 	}
 	"pda_60"
 	{
 		"en"		"The Cloak and Dagger recharges slower and drains based on time.\nDisguise Kit allows you to look like a boss or minion."
+		"ru"		"Плащ и кинжал заряжается медленнее, а потребление зависит от времени.\nМаскировка позволяет вам выглядеть как босс или миньон."
 	}
 }
