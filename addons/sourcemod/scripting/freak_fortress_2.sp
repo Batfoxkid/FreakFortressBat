@@ -74,11 +74,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "3"
+#define FORK_STABLE_REVISION "4"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -200,6 +200,7 @@ float Cabered[MAXTF2PLAYERS];
 float KSpreeTimer[MAXTF2PLAYERS];
 int KSpreeCount[MAXTF2PLAYERS];
 float GlowTimer[MAXTF2PLAYERS];
+bool IsGlowing[MAXTF2PLAYERS];
 int shortname[MAXTF2PLAYERS];
 float RPSLoser[MAXTF2PLAYERS];
 int RPSLosses[MAXTF2PLAYERS];
@@ -308,7 +309,8 @@ ConVar cvarBvBChaos;
 ConVar cvarBvBMerc;
 ConVar cvarBvBStat;
 ConVar cvarTimesTen;
-//ConVar cvarShuffleCharset;
+ConVar cvarShuffleCharset;
+ConVar cvarBroadcast;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -384,6 +386,7 @@ ConVar cvarTags;
 Handle cvarNextmap;
 bool areSubPluginsEnabled;
 
+int CurrentCharSet;
 int FF2CharSet;
 int validCharsets[64];
 char FF2CharSetString[42];
@@ -2124,7 +2127,8 @@ public void OnPluginStart()
 	cvarBvBMerc = CreateConVar("ff2_boss_vs_boss_damage", "1.0", "How much to multiply non-boss damage against non-boss while each team as a boss alive", _, true, 0.0);
 	cvarBvBStat = CreateConVar("ff2_boss_vs_boss_stats", "0", "Should Boss vs Boss mode count towards StatTrak?", _, true, 0.0, true, 1.0);
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
-	//cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
+	cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
+	cvarBroadcast = CreateConVar("ff2_broadcast", "0", "0-Block round end sounds, 1-Play round end sounds", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2210,6 +2214,7 @@ public void OnPluginStart()
 	RegConsoleCmd("ff2resetpoints", ResetQueuePointsCmd, "Reset your queue points");
 	RegConsoleCmd("ff2_boss", Command_SetMyBoss, "View FF2 Boss Preferences");
 	RegConsoleCmd("ff2boss", Command_SetMyBoss, "View FF2 Boss Preferences");
+	RegConsoleCmd("sm_setboss", Command_SetMyBoss, "View FF2 Boss Preferences");
 	RegConsoleCmd("ff2toggle", BossMenu, "Toggle being a FF2 boss");
 	RegConsoleCmd("ff2_toggle", BossMenu, "Toggle being a FF2 boss");
 	RegConsoleCmd("ff2companion", CompanionMenu, "Toggle being a FF2 companion");
@@ -3290,7 +3295,7 @@ public void CacheWeapons()
 public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextKey
 {
 	char config[PLATFORM_MAX_PATH], key[4], charset[42];
-	Specials=0;
+	Specials = 0;
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
 	if(!FileExists(config))
@@ -3308,18 +3313,18 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 		return;
 	}
 
-	Handle Kv=CreateKeyValues("");
+	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
-	int NumOfCharSet=FF2CharSet;
-	Action action=Plugin_Continue;
+	int NumOfCharSet = FF2CharSet;
+	Action action = Plugin_Continue;
 	Call_StartForward(OnLoadCharacterSet);
 	Call_PushCellRef(NumOfCharSet);
 	strcopy(charset, sizeof(charset), FF2CharSetString);
 	Call_PushStringEx(charset, sizeof(charset), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_Finish(action);
-	if(action==Plugin_Changed)
+	if(action == Plugin_Changed)
 	{
-		int i=-1;
+		int i = -1;
 		if(strlen(charset))
 		{
 			KvRewind(Kv);
@@ -3328,7 +3333,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 				KvGetSectionName(Kv, config, sizeof(config));
 				if(!strcmp(config, charset, false))
 				{
-					FF2CharSet=i;
+					FF2CharSet = i;
 					strcopy(FF2CharSetString, PLATFORM_MAX_PATH, charset);
 					KvGotoFirstSubKey(Kv);
 					break;
@@ -3336,15 +3341,15 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 
 				if(!KvGotoNextKey(Kv))
 				{
-					i=-1;
+					i = -1;
 					break;
 				}
 			}
 		}
 
-		if(i==-1)
+		if(i == -1)
 		{
-			FF2CharSet=NumOfCharSet;
+			FF2CharSet = NumOfCharSet;
 			for(i=0; i<FF2CharSet; i++)
 			{
 				KvGotoNextKey(Kv);
@@ -3353,6 +3358,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 			KvGetSectionName(Kv, FF2CharSetString, sizeof(FF2CharSetString));
 		}
 	}
+	CurrentCharSet = FF2CharSet;
 
 	KvRewind(Kv);
 	for(int i; i<FF2CharSet; i++)
@@ -3365,9 +3371,8 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 		IntToString(i, key, sizeof(key));
 		KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
 		if(!config[0])  //TODO: Make this more user-friendly (don't immediately break-they might have missed a number)
-		{
 			break;
-		}
+
 		LoadCharacter(config);
 	}
 
@@ -3378,12 +3383,12 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	{
 		char stringChances[MAXSPECIALS*2][8];
 
-		int amount=ExplodeString(ChancesString, ";", stringChances, MAXSPECIALS*2, 8);
+		int amount = ExplodeString(ChancesString, ";", stringChances, MAXSPECIALS*2, 8);
 		if(amount % 2)
 		{
 			LogToFile(eLog, "[Characters] Invalid chances string, disregarding chances");
 			strcopy(ChancesString, sizeof(ChancesString), "");
-			amount=0;
+			amount = 0;
 		}
 
 		chances[0] = StringToInt(stringChances[0]);
@@ -5332,25 +5337,26 @@ public int SkipBossPanelH(Handle menu, MenuAction action, int client, int positi
 public int SortQueueDesc(const x[], const y[], const array[][], Handle data)
 {
 	if(x[1] > y[1])
+	{
 		return -1;
+	}
 	else if(x[1] < y[1])
+	{
 		return 1;
+	}
 	return 0;
 }
 
 public Action OnBroadcast(Handle event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled)
-	{
+	if(!Enabled || GetConVarBool(cvarBroadcast))
 		return Plugin_Continue;
-	}
 
 	char sound[PLATFORM_MAX_PATH];
 	GetEventString(event, "sound", sound, sizeof(sound));
 	if(!StrContains(sound, "Game.Your", false) || StrEqual(sound, "Game.Stalemate", false) || !StrContains(sound, "Announcer.AM_RoundStartRandom", false))
-	{
 		return Plugin_Handled;
-	}
+
 	return Plugin_Continue;
 }
 
@@ -5373,15 +5379,15 @@ public Action Timer_CalcQueuePoints(Handle timer)
 
 		if(IsValidClient(client))
 		{
-			damage=Damage[client];
-			damage2=Damage[client];
-			Handle event=CreateEvent("player_escort_score", true);
+			damage = Damage[client];
+			damage2 = Damage[client];
+			Handle event = CreateEvent("player_escort_score", true);
 			SetEventInt(event, "player", client);
 
 			int points;
-			while(damage-PointsInterval>0)
+			while(damage-PointsInterval > 0)
 			{
-				damage-=PointsInterval;
+				damage -= PointsInterval;
 				points++;
 			}
 			SetEventInt(event, "points", points);
@@ -5397,11 +5403,11 @@ public Action Timer_CalcQueuePoints(Handle timer)
 			}
 			else if(GetClientTeam(client)>view_as<int>(TFTeam_Spectator) || SpecForceBoss)
 			{
-				if(damage2>=PointsDamage)
+				if(damage2 >= PointsDamage)
 				{
-					if(PointsExtra>PointsMin)
+					if(PointsExtra > PointsMin)
 					{
-						if(points>(PointsExtra-PointsMin))
+						if(points > (PointsExtra-PointsMin))
 						{
 							add_points[client]=PointsExtra;
 							add_points2[client]=PointsExtra;
@@ -5443,7 +5449,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 						QueuePoints[client] += RoundFloat(add_points2[client]*0.5);
 					}
 
-					if(add_points2[client]>0)
+					if(add_points2[client] > 0)
 					{
 						FPrintToChat(client, "%t", "add_points", add_points2[client]);
 					}
@@ -5462,7 +5468,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 						QueuePoints[client] += RoundFloat(add_points[client]*0.5);
 					}
 
-					if(add_points[client]>0)
+					if(add_points[client] > 0)
 					{
 						FPrintToChat(client, "%t", "add_points", add_points[client]);
 					}
@@ -5856,9 +5862,9 @@ void SetupClientCookies(int client)
 		return;
 	}
 
-	char cookies[48];
-	char cookieValues[8][6];
-	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
+	char cookies[454];
+	char cookieValues[8][64];
+	GetClientCookie(client, FF2Cookies, cookies, 48);
 	ExplodeString(cookies, " ", cookieValues, 8, 6);
 
 	QueuePoints[client] = StringToInt(cookieValues[0][0]);
@@ -5869,12 +5875,12 @@ void SetupClientCookies(int client)
 	ToggleBoss[client] = view_as<SettingPrefs>(StringToInt(cookieValues[5][0]));
 
 	if(ToggleDuo[client] == Setting_Temp)
-		ToggleDuo[client] = Setting_Undef;
+		ToggleDuo[client] = Setting_On;
 
 	if(ToggleBoss[client] == Setting_Temp)
-		ToggleBoss[client] = Setting_On;
+		ToggleBoss[client] = Setting_Undef;
 
-	GetClientCookie(client, StatCookies, cookies, sizeof(cookies));
+	GetClientCookie(client, StatCookies, cookies, 48);
 	ExplodeString(cookies, " ", cookieValues, 8, 6);
 
 	BossWins[client] = StringToInt(cookieValues[0][0]);
@@ -5885,12 +5891,17 @@ void SetupClientCookies(int client)
 	PlayerKills[client] = StringToInt(cookieValues[4][0]);
 	PlayerMVPs[client] =  StringToInt(cookieValues[5][0]);
 
-	GetClientCookie(client, HudCookies, cookies, sizeof(cookies));
+	GetClientCookie(client, HudCookies, cookies, 48);
 	ExplodeString(cookies, " ", cookieValues, 8, 6);
 	for(int i=0; i<HUDTYPES; i++)
 	{
 		HudSettings[client][i] = view_as<bool>(StringToInt(cookieValues[i]));
 	}
+
+	GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+	ExplodeString(cookies, ";", cookieValues, 8, 64);
+	if(CheckValidBoss(client, cookieValues[CurrentCharSet], !DuoMin))
+		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
 }
 
 void SaveClientPreferences(int client)
@@ -6281,7 +6292,7 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 	}
 	SetMenuExitButton(dMenu, true);
-	DisplayMenu(dMenu, client, 20);
+	DisplayMenu(dMenu, client, MENU_TIME_FOREVER);
 	return Plugin_Handled;
 }
 
@@ -6427,7 +6438,7 @@ public Action ConfirmBoss(int client)
 	AddMenuItem(dMenu, text, text);
 
 	SetMenuExitButton(dMenu, false);
-	DisplayMenu(dMenu, client, 20);
+	DisplayMenu(dMenu, client, MENU_TIME_FOREVER);
 	return Plugin_Handled;
 }
 
@@ -6555,7 +6566,18 @@ void SaveKeepBossCookie(int client)
 	if(!AreClientCookiesCached(client) || !GetConVarBool(cvarSelectBoss))
 		return;
 
-	SetClientCookie(client, SelectionCookie, xIncoming[client]);
+	char cookies[454];
+	char cookieValues[8][64];
+	GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+	ExplodeString(cookies, ";", cookieValues, 8, 64);
+	strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
+
+	strcopy(cookies, sizeof(cookies), cookieValues[0]);
+	for(int i=1; i<8; i++)
+	{
+		Format(cookies, sizeof(cookies), ";%s", cookieValues[i]);
+	}
+	SetClientCookie(client, SelectionCookie, cookies);
 }
 
 bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
@@ -6617,6 +6639,7 @@ public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialNam
 				xIncoming[client][0] = '\0';
 				CanBossVs[client] = 0;
 				CanBossTeam[client] = 0;
+				SaveKeepBossCookie(client);
 			}
 			return Plugin_Changed;
 		}
@@ -7049,7 +7072,7 @@ void EquipBoss(int boss)
 				{
 					if(overridewep)
 					{
-						Format(attributes, sizeof(attributes), "");
+						attributes[0] = '\0';
 					}
 					else
 					{
@@ -9368,14 +9391,11 @@ public void OnClientPostAdminCheck(int client)
 			SetClientCookie(client, HudCookies, "0 0 0 0 0 0 0");
 			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED
 
-		SetupClientCookies(client);
-
 		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
-		if(buffer[0])
-		{
-			if(CheckValidBoss(client, buffer, !DuoMin))
-				strcopy(xIncoming[client], sizeof(xIncoming[]), buffer);
-		}
+		if(!buffer[0])
+			SetClientCookie(client, SelectionCookie, ";;;;;;");
+
+		SetupClientCookies(client);
 	}
 
 	//We use the 0th index here because client indices can change.
@@ -16110,10 +16130,9 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	int total, charsets;
-	AddMenuItem(menu, "0", "Random");
-	/*int shuffle = GetConVarInt(cvarShuffleCharset);
+	int shuffle = GetConVarInt(cvarShuffleCharset);
 	if(!shuffle)
-		AddMenuItem(menu, "0", "Random");*/
+		AddMenuItem(menu, "0", "Random");
 
 	do
 	{
@@ -16125,17 +16144,15 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		validCharsets[charsets] = total;
 
 		KvGetSectionName(Kv, charset, sizeof(charset));
-		IntToString(total, index, sizeof(index));
-		AddMenuItem(menu, index, charset);
-		/*if(!shuffle)
+		if(!shuffle)
 		{
 			IntToString(total, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
-		}*/
+		}
 	}
 	while(KvGotoNextKey(Kv));
 
-	/*if(shuffle && charsets>1)
+	if(shuffle && charsets>1)
 	{
 		KvRewind(Kv);
 
@@ -16144,7 +16161,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		for(int tries; tries<99 && packs<=shuffle; tries++)
 		{
 			current = validCharsets[GetRandomInt(1, charsets)]-1;
-			if(current<=0 || choosen[current])
+			if(current<0 || choosen[current] || (charsets>shuffle && current==CurrentCharSet))
 				continue;
 
 			packs++;
@@ -16154,7 +16171,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 			IntToString(current, index, sizeof(index));
 			AddMenuItem(menu, index, charset);
 		}
-	}*/
+	}
 	CloseHandle(Kv);
 
 	if(charsets > 1)  //We have enough to call a vote
@@ -17330,12 +17347,17 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 
 		if(GlowTimer[client] <= 0.0)
 		{
-			GlowTimer[client]=0.0;
-			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
+			GlowTimer[client] = 0.0;
+			if(IsGlowing[client])	// Prevent removing outlines from other plugins
+			{
+				SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
+				IsGlowing[client] = false;
+			}
 		}
 		else if(CheckRoundState() == 1)
 		{
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
+			IsGlowing[client] = true;
 		}
 	}
 }
