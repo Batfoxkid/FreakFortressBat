@@ -54,11 +54,12 @@ last time or to encourage others to do the same.
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <tf2items>
-#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=9
 #undef REQUIRE_EXTENSIONS
+#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=9
 #tryinclude <steamtools>
-#define REQUIRE_EXTENSIONS
 #endif
+#tryinclude <SteamWorks>
+#define REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #tryinclude <smac>
 #tryinclude <goomba>
@@ -121,9 +122,12 @@ last time or to encourage others to do the same.
 #define SpawnTeleportBlacklistCFG "spawn_teleport_blacklist.cfg"
 #define WeaponCFG "weapons.cfg"
 
+bool EnabledDesc = false;
 #if defined _steamtools_included
 bool steamtools = false;
-bool EnabledDesc = false;
+#endif
+#if defined _SteamWorks_Included
+bool steamworks = false;
 #endif
 
 #if defined _tf2attributes_included
@@ -1960,6 +1964,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	MarkNativeAsOptional("Steam_SetGameDescription");
 	#endif
 
+	#if defined _SteamWorks_Included
+	MarkNativeAsOptional("SteamWorks_SetGameDescription");
+	#endif
+
 	#if defined _tf2attributes_included
 	MarkNativeAsOptional("TF2Attrib_SetByDefIndex");
 	MarkNativeAsOptional("TF2Attrib_RemoveByDefIndex");
@@ -2107,7 +2115,7 @@ public void OnPluginStart()
 	cvarRPSLimit = CreateConVar("ff2_rps_limit", "0", "0-Disable, #-Number of times the boss loses before being slayed", _, true, 0.0);
 	cvarRPSDivide = CreateConVar("ff2_rps_divide", "0", "0-Disable, 1-Divide current boss health with ff2_rps_limit", _, true, 0.0, true, 1.0);
 	cvarHealingHud = CreateConVar("ff2_hud_heal", "0", "0-Disable, 1-Show player's healing in damage HUD with they done healing, 2-Always show", _, true, 0.0, true, 2.0);
-	cvarSteamTools = CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools)", _, true, 0.0, true, 1.0);
+	cvarSteamTools = CreateConVar("ff2_steam_tools", "1", "0-Disable, 1-Show 'Freak Fortress 2' in game description (requires SteamTools or SteamWorks)", _, true, 0.0, true, 1.0);
 	cvarSappers = CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
 	cvarSapperCooldown = CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
 	cvarSapperStart = CreateConVar("ff2_sapper_starting", "0", "#-Damage needed for first usage (Not used if ff2_sapper or ff2_sapper_cooldown is 0)", _, true, 0.0);
@@ -2349,6 +2357,10 @@ public void OnPluginStart()
 
 	#if defined _steamtools_included
 	steamtools = LibraryExists("SteamTools");
+	#endif
+
+	#if defined _SteamWorks_Included
+	steamworks = LibraryExists("SteamWorks");
 	#endif
 
 	#if defined _goomba_included
@@ -2959,6 +2971,13 @@ public void OnLibraryAdded(const char[] name)
 	}
 	#endif
 
+	#if defined _SteamWorks_Included
+	if(!strcmp(name, "SteamWorks", false))
+	{
+		steamworks = true;
+	}
+	#endif
+
 	#if defined _tf2attributes_included
 	if(!strcmp(name, "tf2attributes", false))
 	{
@@ -2999,6 +3018,13 @@ public void OnLibraryRemoved(const char[] name)
 	if(!strcmp(name, "SteamTools", false))
 	{
 		steamtools = false;
+	}
+	#endif
+
+	#if defined _SteamWorks_Included
+	if(!strcmp(name, "SteamWorks", false))
+	{
+		steamworks = false;
 	}
 	#endif
 
@@ -3182,9 +3208,16 @@ public void EnableFF2()
 	bMedieval = FindEntityByClassname(-1, "tf_logic_medieval")!=-1 || GetConVarBool(FindConVar("tf_medieval"));
 	FindHealthBar();
 
-	#if defined _steamtools_included
+	changeGamemode=0;
+
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client))
+			OnClientPostAdminCheck(client);
+	}
+
 	EnabledDesc = true;
-	if(steamtools && GetConVarBool(cvarSteamTools))
+	if(GetConVarBool(cvarSteamTools))
 	{
 		char gameDesc[64];
 		if(TimesTen)
@@ -3195,16 +3228,21 @@ public void EnableFF2()
 		{
 			Format(gameDesc, sizeof(gameDesc), "Freak Fortress 2 (%s)", PLUGIN_VERSION);
 		}
-		Steam_SetGameDescription(gameDesc);
-	}
-	#endif
 
-	changeGamemode=0;
+		#if defined _SteamWorks_Included
+		if(steamworks)
+		{
+			SteamWorks_SetGameDescription(gameDesc);
+			return;
+		}
+		#endif
 
-	for(int client=1; client<=MaxClients; client++)
-	{
-		if(IsValidClient(client))
-			OnClientPostAdminCheck(client);
+		#if defined _steamtools_included
+		if(steamtools)
+		{
+			Steam_SetGameDescription(gameDesc);
+		}
+		#endif
 	}
 }
 
@@ -3253,15 +3291,27 @@ public void DisableFF2()
 	}
 	#endif
 
-	#if defined _steamtools_included
-	if(EnabledDesc && steamtools && GetConVarBool(cvarSteamTools))
+	changeGamemode = 0;
+
+	if(EnabledDesc && GetConVarBool(cvarSteamTools))
 	{
-		Steam_SetGameDescription("Team Fortress");
+		#if defined _SteamWorks_Included
+		if(steamworks)
+		{
+			SteamWorks_SetGameDescription("Team Fortress");
+			EnabledDesc = false;
+			return;
+		}
+		#endif
+
+		#if defined _steamtools_included
+		if(steamtools)
+		{
+			Steam_SetGameDescription("Team Fortress");
+		}
+		#endif
 	}
 	EnabledDesc = false;
-	#endif
-
-	changeGamemode = 0;
 }
 
 public void CacheWeapons()
@@ -4128,26 +4178,40 @@ void CheckToTeleportToSpawn()
 public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 {
 	teamplay_round_start_TeleportToMultiMapSpawn(); // Cache spawns
-	isCapping=false;
-	if(changeGamemode==1)
+	isCapping = false;
+	if(changeGamemode == 1)
 	{
 		EnableFF2();
 	}
-	else if(changeGamemode==2)
+	else if(changeGamemode == 2)
 	{
 		DisableFF2();
 	}
 
 	if(!GetConVarBool(cvarEnabled))
 	{
-		#if defined _steamtools_included
-		if(EnabledDesc && steamtools && GetConVarBool(cvarSteamTools))
-			Steam_SetGameDescription("Team Fortress");
-
-		EnabledDesc = false;
-		#endif
 		Enabled2 = false;
 		Enabled3 = false;
+		if(EnabledDesc && GetConVarBool(cvarSteamTools))
+		{
+			#if defined _SteamWorks_Included
+			if(steamworks)
+			{
+				SteamWorks_SetGameDescription("Team Fortress");
+				Enabled = false;
+				EnabledDesc = false;
+				return Plugin_Continue;
+			}
+			#endif
+
+			#if defined _steamtools_included
+			if(steamtools)
+			{
+				Steam_SetGameDescription("Team Fortress");
+			}
+			#endif
+		}
+		EnabledDesc = false;
 	}
 
 	Enabled = Enabled2;
@@ -4161,13 +4225,13 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 	switch(GetConVarInt(cvarForceBossTeam))
 	{
 		case 1:
-			blueBoss=view_as<bool>(GetRandomInt(0, 1));
+			blueBoss = view_as<bool>(GetRandomInt(0, 1));
 
 		case 2:
-			blueBoss=false;
+			blueBoss = false;
 
 		default:
-			blueBoss=true;
+			blueBoss = true;
 	}
 
 	if(blueBoss)
