@@ -15731,7 +15731,7 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 			Handle menu2 = CreateMenu(EmptyMenuH);
 			char translation[64], text[256];
 			int slot;
-			for(int i; i<sizeof(Indexes[]); i++)
+			for(int i; i<sizeof(indexes[]); i++)
 			{
 				if(indexes[i] < 0)
 					break;
