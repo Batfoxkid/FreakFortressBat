@@ -15532,6 +15532,16 @@ void HelpPanelBoss(int boss)
 	#endif
 }
 
+static int ScoutIndexes[] = { 45, 220, 448, 772, 1103, 46, 163, 222, 449, 773, 812, 44, 317, 325, 349, 355, 450, 452, 648 };
+static int SoldierIndexes[] = { 127, 228, 237, 414, 441, 730, 1104, 129, 133, 226, 354, 415, 442, 444, 1101, 1153, 128, 154, 357, 416, 447, 775 };
+static int PyroIndexes[] = { 40, 215, 594, 1178, 39, 351, 415, 595, 740, 1153, 1179, 1180, 38, 153, 214, 326, 348, 593, 813, 1181 };
+static int DemoIndexes[] = { 308, 405, 996, 1101, 1151, 130, 131, 265, 406, 1099, 1150, 132, 154, 172, 307, 327, 357, 404 };
+static int HeavyIndexes[] = { 41, 312, 424, 811, 850, 42, 159, 311, 425, 1153, 1190, 43, 239, 310, 331, 426, 656, 1181 };
+static int EngiIndexes[] = { 141, 527, 588, 997, 1153, 140, 528, 142, 155, 589 };
+static int MedicIndexes[] = { 36, 305, 412, 35, 411, 998, 37, 173, 304, 413 };
+static int SniperIndexes[] = { 56, 230, 402, 526, 752, 1098, 57, 58, 231, 642, 751, 171, 232, 401 };
+static int SpyIndexes[] = { 61, 224, 460, 525, 810, 225, 356, 461, 649, 59, 60 };
+
 public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 {
 	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=8
@@ -15542,7 +15552,8 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 	{
 		case MenuAction_End:
 		{
-			delete menu;
+			CloseHandle(menu);
+			FF2flags[client] |= FF2FLAG_CLASSHELPED;
 		}
 		case MenuAction_Select:
 		{
@@ -15553,37 +15564,37 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 			switch(TF2_GetPlayerClass(client))
 			{
 				case TFClass_Scout:
-					Indexes = { 45, 220, 448, 772, 1103, 46, 163, 222, 449, 773, 812, 44, 317, 325, 349, 355, 450, 452, 648 };
+					Indexes = ScoutIndexes;
 
 				case TFClass_Soldier:
-					Indexes = { 127, 228, 237, 414, 441, 730, 1104, 129, 133, 226, 354, 415, 442, 444, 1101, 1153, 128, 154, 357, 416, 447, 775 };
+					Indexes = SoldierIndexes;
 
 				case TFClass_Pyro:
-					Indexes = { 40, 215, 594, 1178, 39, 351, 415, 595, 740, 1153, 1179, 1180, 38, 153, 214, 326, 348, 593, 813, 1181 };
+					Indexes = PyroIndexes;
 
 				case TFClass_DemoMan:
-					Indexes = { 308, 405, 996, 1101, 1151, 130, 131, 265, 406, 1099, 1150, 132, 154, 172, 307, 327, 357, 404 };
+					Indexes = DemoIndexes;
 
 				case TFClass_Heavy:
-					Indexes = { 41, 312, 424, 811, 850, 42, 159, 311, 425, 1153, 1190, 43, 239, 310, 331, 426, 656, 1181 };
+					Indexes = HeavyIndexes;
 
 				case TFClass_Engineer:
-					Indexes = { 141, 527, 588, 997, 1153, 140, 528, 142, 155, 589 };
+					Indexes = EngiIndexes;
 
 				case TFClass_Medic:
-					Indexes = { 36, 305, 412, 35, 411, 998, 37, 173, 304, 413 };
+					Indexes = MedicIndexes;
 
 				case TFClass_Sniper:
-					Indexes = { 56, 230, 402, 526, 752, 1098, 57, 58, 231, 642, 751, 171, 232, 401 };
+					Indexes = SniperIndexes;
 
 				case TFClass_Spy:
-					Indexes = { 61, 224, 460, 525, 810, 225, 356, 461, 649, 59, 60 };
+					Indexes = SpyIndexes;
 
 				default:
 					return;
 			}
 
-			Handle menu2 = CreateMenu(HintPanelH);
+			Handle menu2 = CreateMenu(EmptyMenuH);
 			char translation[64], text[256];
 			int slot;
 			for(int i; i<sizeof(Indexes[]); i++)
@@ -15614,16 +15625,26 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 				}
 
 				if(!TranslationPhraseExists(translation))
+				{
+					i--;
+					slot++;
 					continue;
+				}
 
 				Format(text, sizeof(text), "%t", translation);
-				AddMenuItem(menu, text, text, ITEMDRAW_DISABLED|ITEMDRAW_RAWLINE);
+				AddMenuItem(menu2, text, text, ITEMDRAW_DISABLED|ITEMDRAW_RAWLINE);
 			}
-			SetMenuExitButton(menu, true);
-			DisplayMenu(menu, Boss[boss], 20);
+			SetMenuExitButton(menu2, true);
+			DisplayMenu(menu2, client, MENU_TIME_FOREVER);
 		}
 	}
 	#endif
+}
+
+public int EmptyMenuH(Handle menu, MenuAction action, int client, int selection)
+{
+	if(action == MenuAction_End)
+		CloseHandle(menu);
 }
 
 public Action MusicTogglePanelCmd(int client, int args)
@@ -15661,16 +15682,7 @@ public Action MusicTogglePanelCmd(int client, int args)
 
 public Action MusicTogglePanel(int client)
 {
-	if(!GetConVarBool(cvarAdvancedMusic))
-	{
-		Handle panel = CreatePanel();
-		SetPanelTitle(panel, "Turn the Freak Fortress 2 music...");
-		DrawPanelItem(panel, "On");
-		DrawPanelItem(panel, "Off");
-		SendPanelToClient(panel, client, MusicTogglePanelH, MENU_TIME_FOREVER);
-		CloseHandle(panel);
-	}
-	else
+	if(GetConVarBool(cvarAdvancedMusic))
 	{
 		char title[128];
 		Handle togglemusic = CreateMenu(MusicTogglePanelH);
@@ -15685,7 +15697,7 @@ public Action MusicTogglePanel(int client)
 			AddMenuItem(togglemusic, title, title);
 			Format(title, sizeof(title), "%t", "theme_shuffle");
 			AddMenuItem(togglemusic, title, title);
-			if(GetConVarInt(cvarSongInfo)>=0)
+			if(GetConVarInt(cvarSongInfo) >= 0)
 			{
 				Format(title, sizeof(title), "%t", "theme_select");
 				AddMenuItem(togglemusic, title, title);
@@ -15697,54 +15709,66 @@ public Action MusicTogglePanel(int client)
 			AddMenuItem(togglemusic, title, title);
 		}
 		SetMenuExitButton(togglemusic, true);
-		DisplayMenu(togglemusic, client, MENU_TIME_FOREVER);
+		DisplayMenu(togglemusic, client, 20);
+	}
+	else
+	{
+		Handle menu = CreateMenu(MusicTogglePanelH);
+		SetMenuTitle(menu, "Turn the Freak Fortress 2 music...");
+		AddMenuItem(menu, "On", "On");
+		AddMenuItem(menu, "Off", "Off");
+		SetMenuExitButton(menu, false);
+		DisplayMenu(menu, client, MusicTogglePanelH, 20);
 	}
 	return Plugin_Continue;
 }
 
 public int MusicTogglePanelH(Handle menu, MenuAction action, int client, int selection)
 {
-	if(IsValidClient(client) && action==MenuAction_Select)
+	swtich(action)
 	{
-		if(!GetConVarBool(cvarAdvancedMusic))
+		case MenuAction_End:
 		{
-			if(selection==2)  //Off
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			if(GetConVarBool(cvarAdvancedMusic))
 			{
-				ToggleMusic[client] = false;
-				StopMusic(client, true);
+				switch(selection)
+				{
+					case 0:
+					{
+						ToggleBGM(client, ToggleMusic[client] ? false : true);
+						FPrintToChat(client, "%t", "ff2_music", ToggleVoice[client] ? "on" : "off");	// And here too
+					}
+					case 1:
+					{
+						Command_SkipSong(client, 0);
+					}
+					case 2:
+					{
+						Command_ShuffleSong(client, 0);
+					}
+					case 3:
+					{
+						Command_Tracklist(client, 0);
+					}
+				}
 			}
-			else  //On
+			else if(IsValidClient(client))
 			{
-				//If they already have music enabled don't do anything
-				if(!ToggleMusic[client])
+				if(selection)  //Off
+				{
+					ToggleMusic[client] = false;
+					StopMusic(client, true);
+				}
+				else if(!ToggleMusic[client])  //If they already have music enabled don't do anything
 				{
 					ToggleMusic[client] = true;
 					StartMusic(client);
 				}
-			}
-			FPrintToChat(client, "%t", "ff2_music", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
-		}
-		else
-		{
-			switch(selection)
-			{
-				case 0:
-				{
-					ToggleBGM(client, ToggleMusic[client] ? false : true);
-					FPrintToChat(client, "%t", "ff2_music", ToggleVoice[client] ? "on" : "off");	// And here too
-				}
-				case 1:
-				{
-					Command_SkipSong(client, 0);
-				}
-				case 2:
-				{
-					Command_ShuffleSong(client, 0);
-				}
-				case 3:
-				{
-					Command_Tracklist(client, 0);
-				}
+				FPrintToChat(client, "%t", "ff2_music", selection ? "off" : "on");	// TODO: Make this more multi-language friendly
 			}
 		}
 	}
