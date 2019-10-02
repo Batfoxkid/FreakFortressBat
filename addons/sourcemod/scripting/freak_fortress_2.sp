@@ -15521,7 +15521,7 @@ void HelpPanelBoss(int boss)
 	SendPanelToClient(panel, Boss[boss], HintPanelH, 20);
 	CloseHandle(panel);
 	#else
-	SetGlobalTransTarget(client);
+	SetGlobalTransTarget(Boss[boss]);
 	Handle menu = CreateMenu(HintPanelH);
 	SetMenuOptionFlags(menu, GetMenuOptionFlags(menu)|MENUFLAG_NO_SOUND);
 	SetMenuTitle(menu, text);
@@ -15531,16 +15531,6 @@ void HelpPanelBoss(int boss)
 	DisplayMenu(menu, Boss[boss], 20);
 	#endif
 }
-
-static int ScoutIndexes[] = { 45, 220, 448, 772, 1103, 46, 163, 222, 449, 773, 812, 44, 317, 325, 349, 355, 450, 452, 648 };
-static int SoldierIndexes[] = { 127, 228, 237, 414, 441, 730, 1104, 129, 133, 226, 354, 415, 442, 444, 1101, 1153, 128, 154, 357, 416, 447, 775 };
-static int PyroIndexes[] = { 40, 215, 594, 1178, 39, 351, 415, 595, 740, 1153, 1179, 1180, 38, 153, 214, 326, 348, 593, 813, 1181 };
-static int DemoIndexes[] = { 308, 405, 996, 1101, 1151, 130, 131, 265, 406, 1099, 1150, 132, 154, 172, 307, 327, 357, 404 };
-static int HeavyIndexes[] = { 41, 312, 424, 811, 850, 42, 159, 311, 425, 1153, 1190, 43, 239, 310, 331, 426, 656, 1181 };
-static int EngiIndexes[] = { 141, 527, 588, 997, 1153, 140, 528, 142, 155, 589 };
-static int MedicIndexes[] = { 36, 305, 412, 35, 411, 998, 37, 173, 304, 413 };
-static int SniperIndexes[] = { 56, 230, 402, 526, 752, 1098, 57, 58, 231, 642, 751, 171, 232, 401 };
-static int SpyIndexes[] = { 61, 224, 460, 525, 810, 225, 356, 461, 649, 59, 60 };
 
 public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 {
@@ -15560,38 +15550,182 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 			if(!selection || IsBoss(client))
 				return;
 
-			static int Indexes[23];
+			int indexes[22] = { -1, ... };
 			switch(TF2_GetPlayerClass(client))
 			{
 				case TFClass_Scout:
-					Indexes = ScoutIndexes;
-
+				{
+					indexes[0] = 45;
+					indexes[1] = 220;
+					indexes[2] = 448;
+					indexes[3] = 772;
+					indexes[4] = 1103;
+					indexes[5] = 45;
+					indexes[6] = 163;
+					indexes[7] = 222;
+					indexes[8] = 449;
+					indexes[9] = 773;
+					indexes[10] = 812;
+					indexes[11] = 44;
+					indexes[12] = 317;
+					indexes[13] = 325;
+					indexes[14] = 349;
+					indexes[15] = 355;
+					indexes[16] = 450;
+					indexes[17] = 452;
+					indexes[18] = 648;
+				}
 				case TFClass_Soldier:
-					Indexes = SoldierIndexes;
-
+				{
+					indexes[0] = 127;
+					indexes[1] = 228;
+					indexes[2] = 237;
+					indexes[3] = 414;
+					indexes[4] = 441;
+					indexes[5] = 730;
+					indexes[6] = 1104;
+					indexes[7] = 129;
+					indexes[8] = 133;
+					indexes[9] = 226;
+					indexes[10] = 354;
+					indexes[11] = 415;
+					indexes[12] = 442;
+					indexes[13] = 444;
+					indexes[14] = 1101;
+					indexes[15] = 1153;
+					indexes[16] = 128;
+					indexes[17] = 154;
+					indexes[18] = 357;
+					indexes[19] = 416;
+					indexes[20] = 447;
+					indexes[21] = 775;
+				}
 				case TFClass_Pyro:
-					Indexes = PyroIndexes;
-
+				{
+					indexes[0] = 40;
+					indexes[1] = 215;
+					indexes[2] = 594;
+					indexes[3] = 1178;
+					indexes[4] = 39;
+					indexes[5] = 351;
+					indexes[6] = 415;
+					indexes[7] = 595;
+					indexes[8] = 740;
+					indexes[9] = 1153;
+					indexes[10] = 1179;
+					indexes[11] = 1180;
+					indexes[12] = 38;
+					indexes[13] = 153;
+					indexes[14] = 214;
+					indexes[15] = 326;
+					indexes[16] = 348;
+					indexes[17] = 593;
+					indexes[18] = 813;
+					indexes[19] = 1181;
+				}
 				case TFClass_DemoMan:
-					Indexes = DemoIndexes;
-
+				{
+					indexes[0] = 308;
+					indexes[1] = 405;
+					indexes[2] = 996;
+					indexes[3] = 1101;
+					indexes[4] = 1151;
+					indexes[5] = 130;
+					indexes[6] = 131;
+					indexes[7] = 265;
+					indexes[8] = 406;
+					indexes[9] = 1099;
+					indexes[10] = 1150;
+					indexes[11] = 132;
+					indexes[12] = 154;
+					indexes[13] = 172;
+					indexes[14] = 307;
+					indexes[15] = 327;
+					indexes[16] = 357;
+					indexes[17] = 404;
+				}
 				case TFClass_Heavy:
-					Indexes = HeavyIndexes;
-
+				{
+					indexes[0] = 41;
+					indexes[1] = 312;
+					indexes[2] = 424;
+					indexes[3] = 811;
+					indexes[4] = 850;
+					indexes[5] = 42;
+					indexes[6] = 159;
+					indexes[7] = 311;
+					indexes[8] = 425;
+					indexes[9] = 1153;
+					indexes[10] = 1190;
+					indexes[11] = 43;
+					indexes[12] = 239;
+					indexes[13] = 310;
+					indexes[14] = 331;
+					indexes[15] = 426;
+					indexes[16] = 656;
+					indexes[17] = 1181;
+				}
 				case TFClass_Engineer:
-					Indexes = EngiIndexes;
-
+				{
+					indexes[0] = 141;
+					indexes[1] = 527;
+					indexes[2] = 588;
+					indexes[3] = 997;
+					indexes[4] = 1153;
+					indexes[5] = 140;
+					indexes[6] = 528;
+					indexes[7] = 142;
+					indexes[8] = 155;
+					indexes[9] = 589;
+				}
 				case TFClass_Medic:
-					Indexes = MedicIndexes;
-
+				{
+					indexes[0] = 36;
+					indexes[1] = 305;
+					indexes[2] = 412;
+					indexes[3] = 35;
+					indexes[4] = 411;
+					indexes[5] = 998;
+					indexes[6] = 37;
+					indexes[7] = 173;
+					indexes[8] = 304;
+					indexes[9] = 413;
+				}
 				case TFClass_Sniper:
-					Indexes = SniperIndexes;
-
+				{
+					indexes[0] = 56;
+					indexes[1] = 230;
+					indexes[2] = 402;
+					indexes[3] = 526;
+					indexes[4] = 752;
+					indexes[5] = 1098;
+					indexes[6] = 57;
+					indexes[7] = 58;
+					indexes[8] = 231;
+					indexes[9] = 642;
+					indexes[10] = 751;
+					indexes[11] = 171;
+					indexes[12] = 232;
+					indexes[13] = 401;
+				}
 				case TFClass_Spy:
-					Indexes = SpyIndexes;
-
+				{
+					indexes[0] = 61;
+					indexes[1] = 224;
+					indexes[2] = 460;
+					indexes[3] = 525;
+					indexes[4] = 810;
+					indexes[5] = 225;
+					indexes[6] = 356;
+					indexes[7] = 461;
+					indexes[8] = 649;
+					indexes[9] = 59;
+					indexes[10] = 60;
+				}
 				default:
+				{
 					return;
+				}
 			}
 
 			Handle menu2 = CreateMenu(EmptyMenuH);
@@ -15599,23 +15733,26 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 			int slot;
 			for(int i; i<sizeof(Indexes[]); i++)
 			{
+				if(indexes[i] < 0)
+					break;
+
 				switch(slot)
 				{
 					case 0:
 					{
-						Format(translation, sizeof(translation), "primary_%i", Indexes[i]);
+						Format(translation, sizeof(translation), "primary_%i", indexes[i]);
 					}
 					case 1:
 					{
-						Format(translation, sizeof(translation), "secondary_%i", Indexes[i]);
+						Format(translation, sizeof(translation), "secondary_%i", indexes[i]);
 					}
 					case 2:
 					{
-						Format(translation, sizeof(translation), "melee_%i", Indexes[i]);
+						Format(translation, sizeof(translation), "melee_%i", indexes[i]);
 					}
 					case 3:
 					{
-						Format(translation, sizeof(translation), "pda_%i", Indexes[i]);
+						Format(translation, sizeof(translation), "pda_%i", indexes[i]);
 					}
 					default:
 					{
@@ -15718,14 +15855,14 @@ public Action MusicTogglePanel(int client)
 		AddMenuItem(menu, "On", "On");
 		AddMenuItem(menu, "Off", "Off");
 		SetMenuExitButton(menu, false);
-		DisplayMenu(menu, client, MusicTogglePanelH, 20);
+		DisplayMenu(menu, client, 20);
 	}
 	return Plugin_Continue;
 }
 
 public int MusicTogglePanelH(Handle menu, MenuAction action, int client, int selection)
 {
-	swtich(action)
+	switch(action)
 	{
 		case MenuAction_End:
 		{
