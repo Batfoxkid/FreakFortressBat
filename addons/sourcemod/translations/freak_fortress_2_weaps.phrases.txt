@@ -6,6 +6,10 @@
 		"en"		"Use /ff2infotoggle to disable these notifications."
 		"ru"		"Используйте /ff2infotoggle для отключения этих уведомлений."
 	}
+	"info_more"
+	{
+		"en"		"View All Weapons"
+	}
 	"primary_scout"
 	{
 		"en"		""
