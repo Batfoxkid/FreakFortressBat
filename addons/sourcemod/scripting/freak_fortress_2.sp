@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "all-weps"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -15484,12 +15484,11 @@ public Action HelpPanelClass(int client)
 		SetMenuTitle(menu, "%t\n%s", "info_title", text);
 		SetMenuOptionFlags(menu, GetMenuOptionFlags(menu)|MENUFLAG_NO_SOUND);
 		Format(text, sizeof(text), "%t", "info_more");
-		AddMenuItem(menu, text);
+		AddMenuItem(menu, text, text);
 		Format(text, sizeof(text), "%t", "Exit");
-		AddMenuItem(menu, text);
+		AddMenuItem(menu, text, text);
 		SetMenuExitButton(menu, true);
 		DisplayMenu(menu, client, 20);
-		CloseHandle(menu);
 	}
 	#endif
 	return Plugin_Continue;
@@ -15527,10 +15526,9 @@ void HelpPanelBoss(int boss)
 	SetMenuOptionFlags(menu, GetMenuOptionFlags(menu)|MENUFLAG_NO_SOUND);
 	SetMenuTitle(menu, text);
 	Format(text, sizeof(text), "%t", "Exit");
-	AddMenuItem(menu, text);
+	AddMenuItem(menu, text, text);
 	SetMenuExitButton(menu, false);
 	DisplayMenu(menu, Boss[boss], 20);
-	CloseHandle(menu);
 	#endif
 }
 
@@ -15555,31 +15553,31 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 			switch(TF2_GetPlayerClass(client))
 			{
 				case TFClass_Scout:
-					Indexes[] = { 45, 220, 448, 772, 1103, 46, 163, 222, 449, 773, 812, 44, 317, 325, 349, 355, 450, 452, 648 };
+					Indexes = { 45, 220, 448, 772, 1103, 46, 163, 222, 449, 773, 812, 44, 317, 325, 349, 355, 450, 452, 648 };
 
 				case TFClass_Soldier:
-					Indexes[] = { 127, 228, 237, 414, 441, 730, 1104, 129, 133, 226, 354, 415, 442, 444, 1101, 1153, 128, 154, 357, 416, 447, 775 };
+					Indexes = { 127, 228, 237, 414, 441, 730, 1104, 129, 133, 226, 354, 415, 442, 444, 1101, 1153, 128, 154, 357, 416, 447, 775 };
 
 				case TFClass_Pyro:
-					Indexes[] = { 40, 215, 594, 1178, 39, 351, 415, 595, 740, 1153, 1179, 1180, 38, 153, 214, 326, 348, 593, 813, 1181 };
+					Indexes = { 40, 215, 594, 1178, 39, 351, 415, 595, 740, 1153, 1179, 1180, 38, 153, 214, 326, 348, 593, 813, 1181 };
 
 				case TFClass_DemoMan:
-					Indexes[] = { 308, 405, 996, 1101, 1151, 130, 131, 265, 406, 1099, 1150, 132, 154, 172, 307, 327, 357, 404 };
+					Indexes = { 308, 405, 996, 1101, 1151, 130, 131, 265, 406, 1099, 1150, 132, 154, 172, 307, 327, 357, 404 };
 
 				case TFClass_Heavy:
-					Indexes[] = { 41, 312, 424, 811, 850, 42, 159, 311, 425, 1153, 1190, 43, 239, 310, 331, 426, 656, 1181 };
+					Indexes = { 41, 312, 424, 811, 850, 42, 159, 311, 425, 1153, 1190, 43, 239, 310, 331, 426, 656, 1181 };
 
 				case TFClass_Engineer:
-					Indexes[] = { 141, 527, 588, 997, 1153, 140, 528, 142, 155, 589 };
+					Indexes = { 141, 527, 588, 997, 1153, 140, 528, 142, 155, 589 };
 
 				case TFClass_Medic:
-					Indexes[] = { 36, 305, 412, 35, 411, 998, 37, 173, 304, 413 };
+					Indexes = { 36, 305, 412, 35, 411, 998, 37, 173, 304, 413 };
 
 				case TFClass_Sniper:
-					Indexes[] = { 56, 230, 402, 526, 752, 1098, 57, 58, 231, 642, 751, 171, 232, 401 };
+					Indexes = { 56, 230, 402, 526, 752, 1098, 57, 58, 231, 642, 751, 171, 232, 401 };
 
 				case TFClass_Spy:
-					Indexes[] = { 61, 224, 460, 525, 810, 225, 356, 461, 649, 59, 60 };
+					Indexes = { 61, 224, 460, 525, 810, 225, 356, 461, 649, 59, 60 };
 
 				default:
 					return;
@@ -15619,11 +15617,10 @@ public int HintPanelH(Handle menu, MenuAction action, int client, int selection)
 					continue;
 
 				Format(text, sizeof(text), "%t", translation);
-				AddMenuItem(menu, text, ITEMDRAW_DISABLED|ITEMDRAW_RAWLINE);
+				AddMenuItem(menu, text, text, ITEMDRAW_DISABLED|ITEMDRAW_RAWLINE);
 			}
 			SetMenuExitButton(menu, true);
 			DisplayMenu(menu, Boss[boss], 20);
-			CloseHandle(menu);
 		}
 	}
 	#endif
