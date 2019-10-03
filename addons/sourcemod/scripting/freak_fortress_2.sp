@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6689,7 +6689,7 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
 	int client = Boss[boss];
-	if((!boss || boss==MAXBOSSES) && strlen(xIncoming[client]) && GetConVarBool(cvarSelectBoss))
+	if((!boss || boss==MAXBOSSES) && strlen(xIncoming[client]) && GetConVarBool(cvarSelectBoss) && CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
 		if(preset)
 		{
@@ -13832,7 +13832,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 	int winner;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && (!Enabled3 || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam) || !ignorePrefs) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
+		if(IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam) || !ignorePrefs) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
 		{
 			if(GetConVarBool(cvarToggleBoss) && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
 				continue;
@@ -13849,7 +13849,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && (!Enabled3 || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam)) && !omit[client])
+			if(IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam)) && !omit[client])
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					winner=client;
@@ -13903,7 +13903,7 @@ stock int GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 	int winner;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && (!Enabled3 || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
+		if(IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
 		{
 			if(GetConVarBool(cvarToggleBoss) && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
 				continue;
@@ -13917,7 +13917,7 @@ stock int GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && (!Enabled3 || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && !omit[client])
+			if(IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && !omit[client])
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					winner=client;
@@ -15021,7 +15021,9 @@ public bool CheckDuoMin()
 			{
 				if(!CheckValidBoss(client, xIncoming[client], true))
 				{
-					FPrintToChat(client, "%t", "boss_selection_reset");
+					if(CheckCommandAccess(client, "ff2_boss", 0, true))
+						FPrintToChat(client, "%t", "boss_selection_reset");
+
 					xIncoming[client][0] = '\0';
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
