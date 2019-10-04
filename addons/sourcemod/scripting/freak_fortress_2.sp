@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -423,6 +423,8 @@ char BossIcon[64];
 int SelfHealing[MAXTF2PLAYERS];
 float LifeHealing[MAXTF2PLAYERS];
 float OverHealing[MAXTF2PLAYERS];
+int GoombaMode;
+int CapMode;
 
 static const char OTVoice[][] =
 {
@@ -460,6 +462,28 @@ static const char HudTypes[][] =	// Names used in translation files
 	"Hud Message",
 	"Hud Countdown",
 	"Hud Health"
+};
+
+enum
+{
+	GOOMBA_NONE = 0,
+	GOOMBA_ALL,
+	GOOMBA_BOSSTEAM,
+	GOOMBA_OTHERTEAM,
+	GOOMBA_NOTBOSS,
+	GOOMBA_NOMINION,
+	GOOMBA_BOSS
+};
+
+enum
+{
+	CAP_ALL,
+	CAP_NONE,
+	CAP_BOSS_ONLY,
+	CAP_BOSS_TEAM,
+	CAP_NOT_BOSS,
+	CAP_MERC_TEAM,
+	CAP_NO_MINIONS
 };
 
 static const char ff2versiontitles[][] =
@@ -3552,6 +3576,30 @@ public void LoadCharacter(const char[] character)
 	BossKV[Specials] = CreateKeyValues("character");
 	FileToKeyValues(BossKV[Specials], config);
 
+	if(KvJumpToKey(BossKV[Specials], "map_exclude"))
+	{
+		char item[6];
+		char buffer[34];
+		int size = 1;
+
+		do
+		{
+			FormatEx(item, 8, "map%d", size);
+			KvGetString(BossKV[Specials], item, buffer, 34);
+			if(buffer[0] == '\0')
+				break;
+
+			if(StrEqual(currentmap, buffer))		// don't load this character!
+			{
+				CloseHandle(BossKV[Specials]);
+				BossKV[Specials] = INVALID_HANDLE;
+				return;
+			}
+			size++;
+		} while(size);
+	}
+	KvRewind(BossKV[Specials]);
+
 	int version = KvGetNum(BossKV[Specials], "version", StringToInt(MAJOR_REVISION));
 	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
@@ -4567,12 +4615,20 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	if(!isBossAlive)
 		return Plugin_Continue;
 
+	int point = MaxClients+1;
+	while((point=FindEntityByClassname2(point, "trigger_capture_area")) != -1)
+	{
+		SDKHook(point, SDKHook_StartTouch, OnCPTouch);
+		SDKHook(point, SDKHook_Touch, OnCPTouch);
+	}
+
 	playing = 0;
 	playing2 = 0;
 	playingboss = 0;
 	playingmerc = 0;
 	bosses = 0;
-	int medigun;
+	int medigun, boss;
+	char command[512];
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client))
@@ -4604,6 +4660,11 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 			else if(IsBoss(client))
 			{
 				bosses++;
+				boss = GetBossIndex(client);
+				KvRewind(BossKV[Special[boss]]);
+				KvGetString(BossKV[Special[boss]], "command", command, sizeof(command));
+				if(strlen(command))
+					ServerCommand(command);
 			}
 		}
 	}
@@ -4613,7 +4674,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	{
 		players += playingmerc + bosses - playingboss*0.45;
 		float players2 = playingboss + 1 + bosses - playingmerc*0.45;
-		for(int boss; boss<=MaxClients; boss++)
+		for(boss=0; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 			{
@@ -4636,7 +4697,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	else
 	{
 		players += playing;
-		for(int boss; boss<=MaxClients; boss++)
+		for(boss=0; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 			{
@@ -5613,10 +5674,8 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(StringToInt(lives))
 			{
-				if(StringToInt(lives)!=BossLives[Special[0]])
-				{
+				if(StringToInt(lives) != BossLives[Special[0]])
 					continue;
-				}
 			}
 			break;
 		}
@@ -7319,6 +7378,8 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	KvGetString(BossKV[Special[boss]], "icon", BossIcon, sizeof(BossIcon));
 	rageMax[client] = KvGetFloat(BossKV[Special[boss]], "ragemax", 100.0);
 	rageMin[client] = KvGetFloat(BossKV[Special[boss]], "ragemin", 100.0);
+	GoombaMode = KvGetNum(BossKV[Special[boss]], "goomba", GOOMBA_ALL);
+	CapMode = KvGetNum(BossKV[Special[boss]], "blockcap", CAP_ALL);
 
 	// Timer/point settings
 	if(KvGetNum(BossKV[Special[boss]], "pointtype", -1)>=0 && KvGetNum(BossKV[Special[boss]], "pointtype", -1)<=2)
@@ -12415,7 +12476,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(GetEntityClassname(weapon, classname, sizeof(classname)) && !StrContains(classname, "tf_weapon_knife", false))
 						bIsBackstab = true;
 				}
-				else if(!IsValidEntity(weapon) && (damagetype & DMG_CRUSH)==DMG_CRUSH && damage==1000.0)
+				else if(!IsValidEntity(weapon) && (damagetype & DMG_CRUSH) && damage==1000.0)
 				{
 					bIsTelefrag = true;
 				}
@@ -12537,7 +12598,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 307:  //Ullapool Caber
 					{
-						if(GetEntProp(weapon, Prop_Send, "m_iDetonated") == 0)	// If using ullapool caber, only trigger if bomb hasn't been detonated
+						if(GetEntProp(weapon, Prop_Send, "m_iDetonated")==0 && allowedDetonations<4)	// If using ullapool caber, only trigger if bomb hasn't been detonated
                         			{
 							if(TimesTen)
 							{
@@ -13063,10 +13124,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				if(bIsTelefrag)
 				{
-					damagecustom=0;
+					damagecustom = 0;
 					if(!IsPlayerAlive(attacker))
 					{
-						damage=1.0;
+						damage = 1.0;
 						return Plugin_Changed;
 					}
 					damage = (TimesTen ? 5000.0*GetConVarFloat(cvarTimesTen) : 9001.0);
@@ -13097,7 +13158,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(GetClientTeam(teleowner) == GetClientTeam(attacker))
 						{
-							Damage[teleowner] += (TimesTen ? 3000.0*GetConVarFloat(cvarTimesTen) : 5401.0);
+							Damage[teleowner] += RoundFloat(TimesTen ? 3000.0*GetConVarFloat(cvarTimesTen) : 5401.0);
 
 							if(!HudSettings[teleowner][2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 							{
@@ -13193,7 +13254,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					return Plugin_Changed;
 				}
 
-				if((damagetype & DMG_CLUB) && TF2_GetPlayerClass(client)!=TFClass_Spy)
+				if((damagetype & DMG_CLUB) && TF2_GetPlayerClass(attacker)!=TFClass_Spy)
 				{
 					int melee = GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Melee);
 					if(melee!=416 && melee!=307 && melee!=44)
@@ -13316,10 +13377,83 @@ public Action TF2_OnPlayerTeleport(int client, int teleporter, bool &result)
 	return Plugin_Continue;
 }
 
+public Action OnCPTouch(int entity, int client)
+{
+	if(IsValidClient(client))
+	{
+		switch(CapMode)
+		{
+			case CAP_NONE:
+			{
+				return Plugin_Handled;		// nobody can cap
+			}
+			case CAP_BOSS_ONLY:
+			{
+				if(!IsBoss(client))			// non bosses can't cap
+					return Plugin_Handled;
+			}
+			case CAP_BOSS_TEAM:
+			{
+				if(!Enabled3 && GetClientTeam(client)==OtherTeam)	// merc team can't cap
+					return Plugin_Handled;
+			}
+			case CAP_NOT_BOSS:
+			{
+				if(IsBoss(client))			// bosses can't cap
+					return Plugin_Handled;
+			}
+			case CAP_MERC_TEAM:
+			{
+				if(!Enabled3 && GetClientTeam(client)==BossTeam)	// boss team can't cap
+					return Plugin_Handled;
+			}
+			case CAP_NO_MINIONS:
+			{
+				if(!Enabled3 && GetClientTeam(client)==BossTeam && !IsBoss(client))
+					return Plugin_Handled;
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
 public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
 {
 	if(!Enabled || !IsValidClient(attacker) || !IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
+
+	switch(GoombaMode)
+	{
+		case GOOMBA_NONE:					// none allowed
+		{
+			return Plugin_Handled;
+		}
+		case GOOMBA_BOSSTEAM:				// boss team only
+		{
+			if(!Enabled3 && GetClientTeam(attacker)==OtherTeam)	// they are on non-boss team
+				return Plugin_Handled;
+		}
+		case GOOMBA_OTHERTEAM:				// non boss team only
+		{
+			if(!Enabled3 && GetClientTeam(attacker)==BossTeam)		// they are on boss team
+				return Plugin_Handled;
+		}
+		case GOOMBA_NOTBOSS:				// all but boss
+		{
+			if(IsBoss(attacker))					// they are boss
+				return Plugin_Handled;
+		}
+		case GOOMBA_NOMINION:				// all but minions
+		{
+			if(!Enabled3 && !IsBoss(attacker) && GetClientTeam(attacker)==BossTeam)	// they are a minion
+				return Plugin_Handled;
+		}
+		case GOOMBA_BOSS:					// boss only
+		{
+			if(!IsBoss(attacker))
+				return Plugin_Handled;
+		}
+	}
 
 	if(IsBoss(victim))
 	{
@@ -14376,7 +14510,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		return false;  //Requested sound not implemented for this boss
 	}
 
-	char key[4];
+	char key[10];
 	int sounds;
 	while(++sounds)  //Just keep looping until there's no keys left
 	{
@@ -14392,7 +14526,38 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	if(!sounds)
 		return false;  //Found sound, but no sounds inside of it
 
-	IntToString(GetRandomInt(1, sounds), key, sizeof(key));
+	char temp[6];
+	int choosen = GetRandomInt(1, sounds);
+	Format(key, sizeof(key), "%imusic", choosen);	//Don't ask me why this format just go with it
+	KvGetString(BossKV[Special[boss]], key, temp, sizeof(temp));
+	if(strlen(temp))
+	{
+		float time = KvGetFloat(BossKV[Special[boss]], key, 0.0);
+
+		char path[64], name[64], artist[64];
+
+		IntToString(choosen, key, sizeof(key));
+		KvGetString(BossKV[Special[boss]], key, path, sizeof(path));
+
+		Format(key, sizeof(key), "%iname", choosen);
+		KvGetString(BossKV[Special[boss]], key, name, sizeof(name));
+
+		Format(key, sizeof(key), "%iartist", choosen);
+		KvGetString(BossKV[Special[boss]], key, artist, sizeof(artist));
+
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsValidClient(client))
+			{
+				StopMusic(client);
+				strcopy(currentBGM[client], sizeof(currentBGM[]), path);
+				PlayBGM(client, path, time, name, artist);
+			}
+		}
+		return false; //Don't return to play sound
+	}
+
+	IntToString(choosen, key, sizeof(key));
 	KvGetString(BossKV[Special[boss]], key, file, length);  //Populate file
 	return true;
 }
@@ -17271,7 +17436,7 @@ public void OnItemSpawned(int entity)
 
 public Action OnPickup(int entity, int client)  //Thanks friagram!
 {
-	if(Enabled)
+	if(Enabled && IsValidClient(client))
 	{
 		char classname[32];
 		GetEntityClassname(entity, classname, sizeof(classname));
