@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10756,7 +10756,7 @@ public Action Timer_RPS(Handle timer, int client)
 
 	if(RPSLosses[client] >= GetConVarInt(cvarRPSLimit))
 	{
-		if(IsValidClient(RPSWinner) && FF2_GetBossHealth(boss)>1349)
+		if(IsValidClient(RPSWinner) && BossHealth[boss]>1349)
 		{
 			SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float(BossHealth[boss]), DMG_GENERIC, -1);
 		}
@@ -10765,7 +10765,7 @@ public Action Timer_RPS(Handle timer, int client)
 			ForcePlayerSuicide(client);
 		}
 	}
-	else if(FF2_GetBossHealth(boss) > (1349*GetConVarInt(cvarRPSLimit)) && GetConVarBool(cvarRPSDivide))
+	else if(BossHealth[boss]>(1349*GetConVarInt(cvarRPSLimit)) && GetConVarBool(cvarRPSDivide))
 	{
 		if(IsValidClient(RPSWinner))
 			SDKHooks_TakeDamage(client, RPSWinner, RPSWinner, float((RPSHealth[client]/GetConVarInt(cvarRPSLimit))-999)/1.35, DMG_GENERIC, -1);
