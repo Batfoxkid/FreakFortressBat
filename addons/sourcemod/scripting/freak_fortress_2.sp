@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -217,6 +217,7 @@ bool SpawnTeleOnTriggerHurt = false;
 bool HealthBarMode;
 bool HealthBarModeC[MAXTF2PLAYERS];
 bool ShowHealthText;
+int CritBoosted[MAXTF2PLAYERS][3];
 
 int timeleft;
 int cursongId[MAXTF2PLAYERS] = 1;
@@ -315,6 +316,7 @@ ConVar cvarBvBStat;
 ConVar cvarTimesTen;
 ConVar cvarShuffleCharset;
 ConVar cvarBroadcast;
+ConVar cvarMarket;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -477,7 +479,7 @@ enum
 
 enum
 {
-	CAP_ALL,
+	CAP_ALL = 0,
 	CAP_NONE,
 	CAP_BOSS_ONLY,
 	CAP_BOSS_TEAM,
@@ -640,7 +642,8 @@ static const char ff2versiontitles[][] =
 	"1.19.0",
 	"1.19.1",
 	"1.19.2",
-	"1.19.3"
+	"1.19.3",
+	"1.19.4"
 };
 
 static const char ff2versiondates[][] =
@@ -797,13 +800,22 @@ static const char ff2versiondates[][] =
 	"July 23, 2019",		//1.19.0
 	"August 10, 2019",		//1.19.1
 	"August 31, 2019",		//1.19.2
-	"September 27, 2019"		//1.19.3
+	"September 27, 2019",		//1.19.3
+	"Development"			//1.19.4
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
 {
 	switch(versionIndex)
 	{
+		case 153:  //1.19.4
+		{
+			DrawPanelText(panel, "1) [Core] Added support for SteamWorks over SteamTools (Batfoxkid)");
+			DrawPanelText(panel, "2) [Gameplay] Fixed other plugins unable to give outlines (Batfoxkid)");
+			DrawPanelText(panel, "3) [Bosses] Added 'goomba', 'blockcap', 'command', 'map_exclude' settings (Fire)");
+			DrawPanelText(panel, "4) [Gameplay] Made boss selection save up to 8 boss packs (Batfoxkid)");
+			DrawPanelText(panel, "5) [Gameplay] Added 'crits', 'slot' for weapons config (Batfoxkid)");
+		}
 		case 152:  //1.19.3
 		{
 			DrawPanelText(panel, "1) [Core] Fixed selecting companions being reset constantly (Batfoxkid)");
@@ -2089,7 +2101,7 @@ public void OnPluginStart()
 	cvarBossTeleporter = CreateConVar("ff2_boss_teleporter", "0", "-1 to disallow all bosses from using teleporters, 0 to use TF2 logic, 1 to allow all bosses", _, true, -1.0, true, 1.0);
 	cvarBossSuicide = CreateConVar("ff2_boss_suicide", "0", "Allow the boss to suicide after the round starts?", _, true, 0.0, true, 1.0);
 	cvarPreroundBossDisconnect = CreateConVar("ff2_replace_disconnected_boss", "0", "If a boss disconnects before the round starts, use the next player in line instead? 0 - No, 1 - Yes", _, true, 0.0, true, 1.0);
-	cvarCaberDetonations = CreateConVar("ff2_caber_detonations", "1", "Amount of times somebody can detonate the Ullapool Caber", _, true, 1.0);
+	cvarCaberDetonations = CreateConVar("ff2_caber_detonations", "1", "Amount of times somebody can detonate the Ullapool Caber (0 = Infinite)", _, true, 0.0);
 	cvarShieldCrits = CreateConVar("ff2_shield_crits", "0", "0 to disable grenade launcher crits when equipping a shield, 1 for minicrits, 2 for crits", _, true, 0.0, true, 2.0);
 	cvarGoombaDamage = CreateConVar("ff2_goomba_damage", "0.05", "How much the Goomba damage should be multipled by when goomba stomping the boss (requires Goomba Stomp)", _, true, 0.01, true, 1.0);
 	cvarGoombaRebound = CreateConVar("ff2_goomba_jump", "300.0", "How high players should rebound after goomba stomping the boss (requires Goomba Stomp)", _, true, 0.0);
@@ -2161,6 +2173,7 @@ public void OnPluginStart()
 	cvarTimesTen = CreateConVar("ff2_times_ten", "5.0", "Amount to multiply boss's health and ragedamage when TF2x10 is enabled", _, true, 0.0);
 	cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
 	cvarBroadcast = CreateConVar("ff2_broadcast", "0", "0-Block round end sounds, 1-Play round end sounds", _, true, 0.0, true, 1.0);
+	cvarMarket = CreateConVar("ff2_market_garden", "1.0", "0-Disable market gardens, #-Damage ratio of market gardens", _, true, 0.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -6698,7 +6711,7 @@ void SaveKeepBossCookie(int client)
 	strcopy(cookies, sizeof(cookies), cookieValues[0]);
 	for(int i=1; i<8; i++)
 	{
-		Format(cookies, sizeof(cookies), ";%s", cookieValues[i]);
+		Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 	}
 	SetClientCookie(client, SelectionCookie, cookies);
 }
@@ -7752,6 +7765,12 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 				KvGetString(kvWeaponMods, "classname", weapon, sizeof(weapon));
 				KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
 				KvGetString(kvWeaponMods, "attributes", attributes, sizeof(attributes));
+				int slot = KvGetNum(kvWeaponMods, "slot", -1);
+				if(slot>=0 && slot<3)
+				{
+					CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
+				}
+
 				if(isOverride)
 				{
 					if(StrContains(wepIndexStr, "-2")!=-1 && StrContains(classname, weapon, false)!=-1 || StrContains(wepIndexStr, "-1")!=-1 && StrEqual(classname, weapon, false))
@@ -7854,19 +7873,19 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 44:  //Sandman
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "773 ; 1.15");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "773 ; 1.15");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 56, 1005, 1092:  //Huntsman, Festive Huntsman, Fortified Compound
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "76 ; 2");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "76 ; 2");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -8170,28 +8189,37 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 416:  //Market Gardener
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "5 ; 2");
+				Handle itemOverride;
+				if(GetConVarFloat(cvarMarket))
+				{
+					itemOverride = PrepareItemHandle(item, _, _, "5 ; 2");
+				}
+				else
+				{
+					itemOverride = PrepareItemHandle(item, _, _, "", true);
+				}
+
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 426:  //Eviction Notice
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.2 ; 6 ; 0.25 ; 107 ; 1.2 ; 737 ; 2.25", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.2 ; 6 ; 0.25 ; 107 ; 1.2 ; 737 ; 2.25", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 441:  //Cow Mangler
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "71 ; 2.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "71 ; 2.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -8204,7 +8232,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 				}
 				else
 				{
-					Handle itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.5");
+					Handle itemOverride = PrepareItemHandle(item, _, _, "58 ; 1.5");
 					if(itemOverride != INVALID_HANDLE)
 					{
 						item=itemOverride;
@@ -8212,29 +8240,29 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 					}
 				}
 				#else
-				Handle itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "58 ; 1.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 				#endif
 			}
 			case 442, 588:  //Bison, Pomson
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "182 ; 2");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "182 ; 2");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 528:  //Short Circuit
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 182 ; 2 ; 408 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "20 ; 1 ; 182 ; 2 ; 408 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -8279,10 +8307,10 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 656:  //Holiday Punch
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "178 ; 0.001", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "178 ; 0.001", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -8352,7 +8380,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 1103:  //Back Scatter
 			{
 				Handle itemOverride=PrepareItemHandle(item, _, _, "179 ; 1");
-					//179: Crit instead of mini-critting
 				if(itemOverride != INVALID_HANDLE)
 				{
 					item=itemOverride;
@@ -8396,7 +8423,8 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 				}
 			}
 		}
-		if(TF2_GetPlayerClass(client)==TFClass_Medic && !StrContains(classname, "tf_weapon_syringegun_medic"))  //Syringe guns
+
+		if(!StrContains(classname, "tf_weapon_syringegun_medic"))  //Syringe guns
 		{
 			Handle itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.05");
 			if(itemOverride != INVALID_HANDLE)
@@ -8405,7 +8433,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 				return Plugin_Changed;
 			}
 		}
-		else if(TF2_GetPlayerClass(client)==TFClass_Medic && !StrContains(classname, "tf_weapon_medigun"))  //Medi Gun
+		else if(!StrContains(classname, "tf_weapon_medigun"))  //Medi Gun
 		{
 			Handle itemOverride;
 			switch(iItemDefinitionIndex == 35)  //Kritzkrieg
@@ -8452,14 +8480,16 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 		flags|=PRESERVE_ATTRIBUTES;
 	}
 
-	if(weapon==INVALID_HANDLE)
+	weapon = TF2Items_CreateItem(flags);
+
+	/*if(weapon==INVALID_HANDLE)
 	{
 		weapon=TF2Items_CreateItem(flags);
 	}
 	else
 	{
 		TF2Items_SetFlags(weapon, flags);
-	}
+	}*/
 
 	if(item!=INVALID_HANDLE)
 	{
@@ -9948,75 +9978,113 @@ public Action ClientTimer(Handle timer)
 			if(Enabled3 || bMedieval)
 				continue;
 
-			cond=TFCond_HalloweenCritCandy;
+			cond = TFCond_HalloweenCritCandy;
 			if(TF2_IsPlayerInCondition(client, TFCond_CritCola) && (class==TFClass_Scout || class==TFClass_Sniper))
 			{
 				TF2_AddCondition(client, cond, 0.3);
 				continue;
 			}
 
-			int healer=-1;
+			int healer = -1;
 			for(int healtarget=1; healtarget<=MaxClients; healtarget++)
 			{
 				if(IsValidClient(healtarget) && IsPlayerAlive(healtarget) && GetHealingTarget(healtarget, true)==client)
 				{
-					healer=healtarget;
+					healer = healtarget;
 					break;
 				}
 			}
 
-			bool addthecrit=false;
-			if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Melee) && StrContains(classname, "tf_weapon_knife", false)==-1)  //Every melee except knives
+			bool addthecrit = false;
+			if(TF2_IsPlayerInCondition(client, TFCond_Cloaked) || TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 			{
-				addthecrit=true;
-				if(index==416)  //Market Gardener
+				addthecrit = false;
+			}
+			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Melee))  //Every melee except knives
+			{
+				addthecrit = CritBoosted[client][2]!=0;
+				if(CritBoosted[client][2] == -1)
 				{
-					addthecrit=FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
+					if(index==416 && GetConVarFloat(cvarMarket))  //Market Gardener
+					{
+						addthecrit = FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
+					}
+					else if(index==44 || index==656 || StrContains(classname, "tf_weapon_knife", false)==-1)  //Sandman, Holiday Punch, Knives
+					{
+						addthecrit = false;
+					}
+					else if(index == 307)	//Ullapool Caber
+					{
+						addthecrit = GetEntProp(weapon, Prop_Send, "m_iDetonated") ? false : true;
+					}
 				}
-				else if(index==44 || index==656)  //Sandman, Holiday Punch
+				else if(CritBoosted[client][2]==1 && cond==TFCond_HalloweenCritCandy)
 				{
-					addthecrit=false;
-				}
-				else if(index==307)	//Ullapool Caber
-				{
-					addthecrit=GetEntProp(weapon, Prop_Send, "m_iDetonated") ? false : true;
+					cond = TFCond_Buffed;
 				}
 			}
-			else if((!StrContains(classname, "tf_weapon_smg") && index!=751) ||  //Cleaner's Carbine
-			         !StrContains(classname, "tf_weapon_compound_bow") ||
-			         !StrContains(classname, "tf_weapon_crossbow") ||
-			         !StrContains(classname, "tf_weapon_cleaver") ||
-			         !StrContains(classname, "tf_weapon_mechanical_arm") ||
-			         !StrContains(classname, "tf_weapon_drg_pomson") ||
-			         !StrContains(classname, "tf_weapon_raygun") ||
-			         !StrContains(classname, "tf_weapon_pistol") ||
-			         !StrContains(classname, "tf_weapon_handgun_scout_secondary"))
+			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
 			{
-				addthecrit=true;
-				if(class==TFClass_Sniper && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_smg"))
+				addthecrit = CritBoosted[client][1]>0;
+				if(CritBoosted[client][1] == -1)
 				{
-					cond=TFCond_Buffed;
+					if(!StrContains(classname, "tf_weapon_smg"))  //SMGs
+					{
+						if(index!=16 || !IsValidEntity(FindPlayerBack(client, 642)) || SniperClimbDelay==0)	//Nerf Cozy Camper SMGs if Wall Climb is on
+						{
+							addthecrit = true;
+							if(cond == TFCond_HalloweenCritCandy)
+								cond = TFCond_Buffed;
+						}
+					}
+					else if(!StrContains(classname, "tf_weapon_cleaver") ||
+						!StrContains(classname, "tf_weapon_mechanical_arm") ||
+						!StrContains(classname, "tf_weapon_raygun"))  //Cleaver, Short Circuit, Righteous Bison
+					{
+						addthecrit = true;
+					}
+					else if(class==TFClass_Scout &&
+					       (!StrContains(classname, "tf_weapon_pistol") ||
+						!StrContains(classname, "tf_weapon_handgun_scout_secondary")))	//Scout Pistols
+					{
+						addthecrit = true;
+						if(cond == TFCond_HalloweenCritCandy)
+							cond = TFCond_Buffed;
+					}
+					else if(StrContains(classname, "tf_weapon_knife", false)==-1)
+					{
+						addthecrit = false;
+					}
 				}
-				else if(class==TFClass_Scout && cond==TFCond_HalloweenCritCandy && (!StrContains(classname, "tf_weapon_pistol") || !StrContains(classname, "tf_weapon_handgun_scout_secondary")))
+				else if(CritBoosted[client][1]==1 && cond==TFCond_HalloweenCritCandy)
 				{
-					cond=TFCond_Buffed;
-				}
-				else if(class==TFClass_Engineer && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_pistol"))
-				{
-					addthecrit=false;
-				}
-				if(class==TFClass_Sniper && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_compound_bow") && BowDamageNon>0.0)
-				{
-					addthecrit=false;
-				}
-				else if(class==TFClass_Sniper && cond==TFCond_HalloweenCritCandy && !StrContains(classname, "tf_weapon_compound_bow") && BowDamageMini>0.0)
-				{
-					cond=TFCond_Buffed;
+					cond = TFCond_Buffed;
 				}
 			}
-
-			if(index==16 && IsValidEntity(FindPlayerBack(client, 642)) && SniperClimbDelay!=0)  //SMG, Cozy Camper
-				addthecrit=false;
+			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
+			{
+				addthecrit = CritBoosted[client][0]>0;
+				if(CritBoosted[client][0] == -1)
+				{
+					if(!StrContains(classname, "tf_weapon_compound_bow"))  //Huntsmans
+					{
+						if(BowDamageNon <= 0)	//If non-crit boosted damage cvar is off
+						{
+							addthecrit = true;
+							if(cond==TFCond_HalloweenCritCandy && BowDamageMini>0)	//If mini-crit boosted damage cvar is on
+								cond = TFCond_Buffed;
+						}
+					}
+					else if(!StrContains(classname, "tf_weapon_crossbow") || !StrContains(classname, "tf_weapon_drg_pomson"))  //Crusader's Crossbow, Pomson 6000
+					{
+						addthecrit = true;
+					}
+				}
+				else if(CritBoosted[client][0]==1 && cond==TFCond_HalloweenCritCandy)
+				{
+					cond = TFCond_Buffed;
+				}
+			}
 
 			switch(class)
 			{
@@ -10056,7 +10124,10 @@ public Action ClientTimer(Handle timer)
 				}
 				case TFClass_DemoMan:
 				{
-					if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && !IsValidEntity(GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)) && shieldCrits)  //Demoshields
+					if(CritBoosted[client][0]==-1 &&
+					   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
+					  !IsValidEntity(GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)) &&
+					   shieldCrits)  //Demoshields
 					{
 						addthecrit = true;
 						if(shieldCrits == 1)
@@ -10065,21 +10136,21 @@ public Action ClientTimer(Handle timer)
 				}
 				case TFClass_Spy:
 				{
-					if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
-					{
-						if(!TF2_IsPlayerCritBuffed(client) && !TF2_IsPlayerInCondition(client, TFCond_Buffed) && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Disguised) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
-						{
-							TF2_AddCondition(client, TFCond_CritCola, 0.3);
-						}
-						else if(TF2_IsPlayerInCondition(client, TFCond_Disguised) && index==460)
-						{
-							TF2_AddCondition(client, TFCond_CritOnDamage, 0.3);
-						}
-					}
+					if(validwep &&
+					   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
+					  !TF2_IsPlayerCritBuffed(client) &&
+					  !TF2_IsPlayerInCondition(client, TFCond_Buffed) &&
+					  !TF2_IsPlayerInCondition(client, TFCond_Cloaked) &&
+					   TF2_IsPlayerInCondition(client, TFCond_Disguised) &&
+					  !TF2_IsPlayerInCondition(client, TFCond_Stealthed) &&
+					   index==460)
+						TF2_AddCondition(client, TFCond_CritOnDamage, 0.3);
 				}
 				case TFClass_Engineer:
 				{
-					if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))
+					if(validwep &&
+					   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
+					   StrEqual(classname, "tf_weapon_sentry_revenge", false))
 					{
 						int sentry = FindSentry(client);
 						if(IsValidEntity(sentry) && IsBoss(GetEntPropEnt(sentry, Prop_Send, "m_hEnemy")))
@@ -11123,8 +11194,16 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 
 	if(!IsBoss(client) && client)
 	{
-		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER) && (Enabled3 || GetClientTeam(client)!=BossTeam))
-			CreateTimer(1.0, Timer_Damage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+		{
+			for(int i; i<3; i++)
+			{
+				CritBoosted[client][i] = -1;
+			}
+
+			if(Enabled3 || GetClientTeam(client)!=BossTeam)
+				CreateTimer(1.0, Timer_Damage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		}
 
 		if(IsBoss(attacker))
 		{
@@ -12781,20 +12860,20 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 416:  //Market Gardener (courtesy of Chdata)
 					{
-						if(RemoveCond(attacker, TFCond_BlastJumping))	// New way to check explosive jumping status
-						//if(FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING)
+						if(RemoveCond(attacker, TFCond_BlastJumping) && GetConVarFloat(cvarMarket))	// New way to check explosive jumping status
+						//if((FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING) && GetConVarFloat(cvarMarket))
                         			{
 							if(TimesTen)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(GetConVarFloat(cvarTimesTen)*3))*bosses;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(GetConVarFloat(cvarTimesTen)*3))*bosses*GetConVarFloat(cvarMarket);
 							}
 							else if(GetConVarBool(cvarLowStab))
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses*GetConVarFloat(cvarMarket);
 							}
 							else
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses*GetConVarFloat(cvarMarket);
 							}
 							damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 
@@ -12837,6 +12916,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									}
 								}
 							}
+
 							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
 							{
 								if(TellName)
@@ -13254,10 +13334,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					return Plugin_Changed;
 				}
 
-				if((damagetype & DMG_CLUB) && TF2_GetPlayerClass(attacker)!=TFClass_Spy)
+				if((damagetype & DMG_CLUB) && CritBoosted[client][2]!=0 && CritBoosted[client][2]!=1 && (TF2_GetPlayerClass(attacker)!=TFClass_Spy || CritBoosted[client][2]>1))
 				{
 					int melee = GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Melee);
-					if(melee!=416 && melee!=307 && melee!=44)
+					if(CritBoosted[client][2]>1 || (melee!=416 && melee!=307 && melee!=44))
 					{
 						damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 						return Plugin_Changed;
@@ -13316,20 +13396,19 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		}
 		else
 		{
-			if(allowedDetonations > 1)
+			if(allowedDetonations != 1)
 			{
 				int index = (IsValidEntity(weapon) && weapon>MaxClients && attacker<=MaxClients ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
 				if(index == 307)  //Ullapool Caber
 				{
-					if(detonations[attacker] < allowedDetonations)
+					if(allowedDetonations<1 || allowedDetonations-detonations[attacker]>1)
 					{
 						detonations[attacker]++;
-						PrintHintText(attacker, "%t", "Detonations Left", allowedDetonations-detonations[attacker]);
-						if(allowedDetonations-detonations[attacker])  //Don't reset their caber if they have 0 detonations left
-						{
-							SetEntProp(weapon, Prop_Send, "m_bBroken", 0);
-							SetEntProp(weapon, Prop_Send, "m_iDetonated", 0);
-						}
+						if(allowedDetonations > 1)
+							PrintHintText(attacker, "%t", "Detonations Left", allowedDetonations-detonations[attacker]);
+	
+						SetEntProp(weapon, Prop_Send, "m_bBroken", 0);
+						SetEntProp(weapon, Prop_Send, "m_iDetonated", 0);
 					}
 				}
 			}
@@ -13341,7 +13420,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					int secondary = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 					if(secondary<=0 || !IsValidEntity(secondary))
 					{
-						damage/=10.0;
+						damage /= 10.0;
 						return Plugin_Changed;
 					}
 				}
