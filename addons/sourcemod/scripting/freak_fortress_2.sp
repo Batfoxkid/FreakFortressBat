@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."009"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -317,6 +317,8 @@ ConVar cvarTimesTen;
 ConVar cvarShuffleCharset;
 ConVar cvarBroadcast;
 ConVar cvarMarket;
+ConVar cvarCloak;
+ConVar cvarRinger;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -2174,6 +2176,8 @@ public void OnPluginStart()
 	cvarShuffleCharset = CreateConVar("ff2_bosspack_vote", "0", "0-Random option and show all packs, #-Random amount of packs to choose", _, true, 0.0, true, 64.0);
 	cvarBroadcast = CreateConVar("ff2_broadcast", "0", "0-Block round end sounds, 1-Play round end sounds", _, true, 0.0, true, 1.0);
 	cvarMarket = CreateConVar("ff2_market_garden", "1.0", "0-Disable market gardens, #-Damage ratio of market gardens", _, true, 0.0);
+	cvarCloak = CreateConVar("ff2_cloak_damage", "1.0", "#-Extra damage multipler for cloak watches from bosses", _, true, 0.0);
+	cvarRinger = CreateConVar("ff2_deadringer_damage", "1.0", "#-Extra damage multipler for dead ringers from bosses", _, true, 0.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -8431,7 +8435,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 		else if(!StrContains(classname, "tf_weapon_medigun"))  //Medi Gun
 		{
 			Handle itemOverride;
-			switch(iItemDefinitionIndex == 35)  //Kritzkrieg
+			switch(iItemDefinitionIndex)
 			{
 				case 35:
 					itemOverride=PrepareItemHandle(item, _, _, "10 ; 2.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 314 ; 3 ; 547 ; 0.75");
@@ -12333,37 +12337,47 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		int boss = GetBossIndex(client);
 		if(boss==-1 && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
 		{
-			if(TF2_IsPlayerInCondition(client, TFCond_DefenseBuffed))
-			{
-				ScaleVector(damageForce, 9.0);
-				damage *= 0.3;
-				return Plugin_Changed;
-			}
-
-			if(TF2_IsPlayerInCondition(client, TFCond_DefenseBuffMmmph))
-			{
-				damage *= 9;
-				TF2_AddCondition(client, TFCond_Bonked, 0.1);
-				return Plugin_Changed;
-			}
-
-			if(TF2_IsPlayerInCondition(client, TFCond_CritMmmph))
-			{
-				damage *= 0.25;
-				return Plugin_Changed;
-			}
-
 			if(shield[client] && GetConVarInt(cvarShieldType)==1)
 			{
 				RemoveShield(client, attacker);
 				return Plugin_Handled;
 			}
 
+			bool changed;
+			if(TF2_IsPlayerInCondition(client, TFCond_DefenseBuffed))
+			{
+				ScaleVector(damageForce, 9.0);
+				damage *= 0.3;
+				changed = true;
+			}
+
+			if(TF2_IsPlayerInCondition(client, TFCond_CritMmmph))
+			{
+				damage *= 0.25;
+				changed = true;
+			}
+
+			if(TF2_IsPlayerInCondition(client, TFCond_Cloaked))
+			{
+				int weapon = GetPlayerWeaponSlot(client, 4);
+				if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==59)
+				{
+					damage *= GetConVarFloat(cvarRinger);
+				}
+				else
+				{
+					damage *= GetConVarFloat(cvarCloak);
+				}
+				changed = true;
+			}
+
 			if(damage<=160.0 && dmgTriple[attacker])
 			{
 				damage *= 3;
-				return Plugin_Changed;
+				changed = true;
 			}
+
+			return changed ? Plugin_Changed : Plugin_Continue;
 		}
 		else if(boss != -1)
 		{
