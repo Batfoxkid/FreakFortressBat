@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."009"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."010"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -8916,10 +8916,12 @@ public Action OnUberDeployed(Handle event, const char[] name, bool dontBroadcast
 			GetEntityClassname(medigun, classname, sizeof(classname));
 			if(StrEqual(classname, "tf_weapon_medigun"))
 			{
+				TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
 				int target = GetHealingTarget(client);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
+					TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
 					uberTarget[client] = target;
 				}
@@ -8946,9 +8948,11 @@ public Action Timer_Uber(Handle timer, any medigunid)
 			int target = GetHealingTarget(client);
 			if(charge > 0.05)
 			{
+				TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
+					TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5);
 					uberTarget[client] = target;
 				}
@@ -12357,17 +12361,14 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				changed = true;
 			}
 
-			if(TF2_IsPlayerInCondition(client, TFCond_Cloaked))
+			if(GetEntProp(client, Prop_Send, "m_bFeignDeathReady") || TF2_IsPlayerInCondition(client, TFCond_DeadRingered))
 			{
-				int weapon = GetPlayerWeaponSlot(client, 4);
-				if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==59)
-				{
-					damage *= GetConVarFloat(cvarRinger);
-				}
-				else
-				{
-					damage *= GetConVarFloat(cvarCloak);
-				}
+				damage *= GetConVarFloat(cvarRinger);
+				changed = true;
+			}
+			else if(TF2_IsPlayerInCondition(client, TFCond_Cloaked))
+			{
+				damage *= GetConVarFloat(cvarCloak);
 				changed = true;
 			}
 
