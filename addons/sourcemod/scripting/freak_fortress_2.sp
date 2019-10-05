@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10334,8 +10334,6 @@ public Action ClientTimer(Handle timer)
 				{
 					if(validwep &&
 					   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
-					  !TF2_IsPlayerCritBuffed(client) &&
-					  !TF2_IsPlayerInCondition(client, TFCond_Buffed) &&
 					  !TF2_IsPlayerInCondition(client, TFCond_Cloaked) &&
 					   TF2_IsPlayerInCondition(client, TFCond_Disguised) &&
 					  !TF2_IsPlayerInCondition(client, TFCond_Stealthed) &&
