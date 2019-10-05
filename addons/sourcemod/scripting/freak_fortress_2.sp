@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -7765,11 +7765,6 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 				KvGetString(kvWeaponMods, "classname", weapon, sizeof(weapon));
 				KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
 				KvGetString(kvWeaponMods, "attributes", attributes, sizeof(attributes));
-				int slot = KvGetNum(kvWeaponMods, "slot", -1);
-				if(slot>=0 && slot<3)
-				{
-					CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
-				}
 
 				if(isOverride)
 				{
@@ -8599,14 +8594,73 @@ public Action Timer_CheckItems(Handle timer, any userid)
 		FF2_SpawnWeapon(client, "tf_weapon_invis", 60, 1, 0, "35 ; 1.65 ; 728 ; 1 ; 729 ; 0.65");
 	}
 
+	for(int i; i<3; i++)
+	{
+		CritBoosted[client][i] = -1;
+	}
+
 	if(bMedieval)
 		return Plugin_Continue;
 
+	int slot, index;
+	char classname[32], format[64], wepIndexStr[768];
 	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
-	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==402 && (kvWeaponMods == null || GetConVarInt(cvarHardcodeWep)>0))
+	if(IsValidEntity(weapon))
 	{
-		TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
-		FF2_SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
+		index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+		if(index==402 && (kvWeaponMods==null || GetConVarInt(cvarHardcodeWep)>0))
+		{
+			TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
+			FF2_SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
+		}
+
+		GetEntityClassname(weapon, classname, sizeof(classname));
+		if(kvWeaponMods!=null && ConfigWeapons)
+		{
+			for(int i=1; ; i++)
+			{
+				KvRewind(kvWeaponMods);
+				Format(format, 10, "weapon%i", i);
+				if(KvJumpToKey(kvWeaponMods, format))
+				{
+					KvGetString(kvWeaponMods, "classname", format, sizeof(format));
+					KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
+					slot = KvGetNum(kvWeaponMods, "slot", -1);
+					if(slot<0 || slot>2)
+						slot = 0;
+
+					if(StrContains(wepIndexStr, "-2")!=-1 && StrContains(classname, format, false)!=-1 || StrContains(wepIndexStr, "-1")!=-1 && StrEqual(classname, format, false))
+					{
+						CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
+						break;
+					}
+
+					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
+					{
+						int wepIndex;
+						char wepIndexes[768][32];
+						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for(int wepIdx = 0; wepIdx<=weaponIdxcount ; wepIdx++)
+						{
+							if(strlen(wepIndexes[wepIdx])>0)
+							{
+								wepIndex = StringToInt(wepIndexes[wepIdx]);
+								if(wepIndex == index)
+								{
+									CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
+									break;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+			KvGoBack(kvWeaponMods);
+		}
 	}
 	else
 	{
@@ -8623,6 +8677,55 @@ public Action Timer_CheckItems(Handle timer, any userid)
 				SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
 				SetEntityRenderColor(weapon, 255, 255, 255, 75);
 			}
+		}
+
+		index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+		GetEntityClassname(weapon, classname, sizeof(classname));
+		if(kvWeaponMods!=null && ConfigWeapons)
+		{
+			for(int i=1; ; i++)
+			{
+				KvRewind(kvWeaponMods);
+				Format(format, 10, "weapon%i", i);
+				if(KvJumpToKey(kvWeaponMods, format))
+				{
+					KvGetString(kvWeaponMods, "classname", format, sizeof(format));
+					KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
+					slot = KvGetNum(kvWeaponMods, "slot", -1);
+					if(slot<0 || slot>2)
+						slot = 1;
+
+					if(StrContains(wepIndexStr, "-2")!=-1 && StrContains(classname, format, false)!=-1 || StrContains(wepIndexStr, "-1")!=-1 && StrEqual(classname, format, false))
+					{
+						CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
+						break;
+					}
+
+					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
+					{
+						int wepIndex;
+						char wepIndexes[768][32];
+						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for(int wepIdx = 0; wepIdx<=weaponIdxcount ; wepIdx++)
+						{
+							if(strlen(wepIndexes[wepIdx])>0)
+							{
+								wepIndex = StringToInt(wepIndexes[wepIdx]);
+								if(wepIndex == index)
+								{
+									CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
+									break;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+			KvGoBack(kvWeaponMods);
 		}
 	}
 	else
@@ -8667,8 +8770,61 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	}
 
 	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
-	if(!IsValidEntity(weapon))
+	if(IsValidEntity(weapon))
+	{
+		index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+		GetEntityClassname(weapon, classname, sizeof(classname));
+		if(kvWeaponMods!=null && ConfigWeapons)
+		{
+			for(int i=1; ; i++)
+			{
+				KvRewind(kvWeaponMods);
+				Format(format, 10, "weapon%i", i);
+				if(KvJumpToKey(kvWeaponMods, format))
+				{
+					KvGetString(kvWeaponMods, "classname", format, sizeof(format));
+					KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
+					slot = KvGetNum(kvWeaponMods, "slot", -1);
+					if(slot<0 || slot>2)
+						slot = 2;
+
+					if(StrContains(wepIndexStr, "-2")!=-1 && StrContains(classname, format, false)!=-1 || StrContains(wepIndexStr, "-1")!=-1 && StrEqual(classname, format, false))
+					{
+						CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
+						break;
+					}
+
+					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
+					{
+						int wepIndex;
+						char wepIndexes[768][32];
+						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for(int wepIdx = 0; wepIdx<=weaponIdxcount ; wepIdx++)
+						{
+							if(strlen(wepIndexes[wepIdx])>0)
+							{
+								wepIndex = StringToInt(wepIndexes[wepIdx]);
+								if(wepIndex == index)
+								{
+									CritBoosted[client][slot] = KvGetNum(kvWeaponMods, "crits", -1);
+									break;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+			KvGoBack(kvWeaponMods);
+		}
+	}
+	else
+	{
 		civilianCheck[client]++;
+	}
 
 	if(civilianCheck[client] == 3)
 	{
@@ -9612,9 +9768,19 @@ public void OnClientDisconnect(int client)
 
 public Action OnPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
-	if(Enabled && CheckRoundState()==1)
-	{
+	if(!Enabled)
+		return Plugin_Continue;
+
+	if(CheckRoundState() == 1)
 		CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
+
+	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!IsValidClient(client))
+		return Plugin_Continue;
+
+	for(int i; i<3; i++)
+	{
+		CritBoosted[client][i] = -1;
 	}
 	return Plugin_Continue;
 }
@@ -9995,94 +10161,124 @@ public Action ClientTimer(Handle timer)
 				}
 			}
 
-			bool addthecrit = false;
+			bool addthecrit;
 			if(TF2_IsPlayerInCondition(client, TFCond_Cloaked) || TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 			{
 				addthecrit = false;
 			}
-			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Melee))  //Every melee except knives
+			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Melee))
 			{
-				addthecrit = CritBoosted[client][2]!=0;
-				if(CritBoosted[client][2] == -1)
+				switch(CritBoosted[client][2])
 				{
-					if(index==416 && GetConVarFloat(cvarMarket))  //Market Gardener
+					case -1:
 					{
-						addthecrit = FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
+						if(index==416 && GetConVarFloat(cvarMarket))  //Market Gardener
+						{
+							addthecrit = FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
+						}
+						else if(index==44 || index==656 || !StrContains(classname, "tf_weapon_knife", false))  //Sandman, Holiday Punch, Knives
+						{
+							addthecrit = false;
+						}
+						else if(index == 307)	//Ullapool Caber
+						{
+							addthecrit = GetEntProp(weapon, Prop_Send, "m_iDetonated") ? false : true;
+						}
+						else
+						{
+							addthecrit = true;
+						}
 					}
-					else if(index==44 || index==656 || StrContains(classname, "tf_weapon_knife", false)==-1)  //Sandman, Holiday Punch, Knives
+					case 1:
 					{
-						addthecrit = false;
+						addthecrit = true;
+						if(cond == TFCond_HalloweenCritCandy)
+							cond = TFCond_Buffed;
 					}
-					else if(index == 307)	//Ullapool Caber
+					case 2:
 					{
-						addthecrit = GetEntProp(weapon, Prop_Send, "m_iDetonated") ? false : true;
+						addthecrit = true;
 					}
-				}
-				else if(CritBoosted[client][2]==1 && cond==TFCond_HalloweenCritCandy)
-				{
-					cond = TFCond_Buffed;
 				}
 			}
 			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
 			{
-				addthecrit = CritBoosted[client][1]>0;
-				if(CritBoosted[client][1] == -1)
+				switch(CritBoosted[client][1])
 				{
-					if(!StrContains(classname, "tf_weapon_smg"))  //SMGs
+					case -1:
 					{
-						if(index!=16 || !IsValidEntity(FindPlayerBack(client, 642)) || SniperClimbDelay==0)	//Nerf Cozy Camper SMGs if Wall Climb is on
+						if(!StrContains(classname, "tf_weapon_smg"))  //SMGs
+						{
+							if(index!=16 || !IsValidEntity(FindPlayerBack(client, 642)) || SniperClimbDelay==0)	//Nerf Cozy Camper SMGs if Wall Climb is on
+							{
+								addthecrit = true;
+								if(cond == TFCond_HalloweenCritCandy)
+									cond = TFCond_Buffed;
+							}
+						}
+						else if(!StrContains(classname, "tf_weapon_cleaver") ||
+							!StrContains(classname, "tf_weapon_mechanical_arm") ||
+							!StrContains(classname, "tf_weapon_raygun"))  //Cleaver, Short Circuit, Righteous Bison
+						{
+							addthecrit = true;
+						}
+						else if(class==TFClass_Scout &&
+						       (!StrContains(classname, "tf_weapon_pistol") ||
+							!StrContains(classname, "tf_weapon_handgun_scout_secondary")))	//Scout Pistols
 						{
 							addthecrit = true;
 							if(cond == TFCond_HalloweenCritCandy)
 								cond = TFCond_Buffed;
 						}
 					}
-					else if(!StrContains(classname, "tf_weapon_cleaver") ||
-						!StrContains(classname, "tf_weapon_mechanical_arm") ||
-						!StrContains(classname, "tf_weapon_raygun"))  //Cleaver, Short Circuit, Righteous Bison
-					{
-						addthecrit = true;
-					}
-					else if(class==TFClass_Scout &&
-					       (!StrContains(classname, "tf_weapon_pistol") ||
-						!StrContains(classname, "tf_weapon_handgun_scout_secondary")))	//Scout Pistols
+					case 1:
 					{
 						addthecrit = true;
 						if(cond == TFCond_HalloweenCritCandy)
 							cond = TFCond_Buffed;
 					}
-					else if(StrContains(classname, "tf_weapon_knife", false)==-1)
-					{
-						addthecrit = false;
-					}
-				}
-				else if(CritBoosted[client][1]==1 && cond==TFCond_HalloweenCritCandy)
-				{
-					cond = TFCond_Buffed;
-				}
-			}
-			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
-			{
-				addthecrit = CritBoosted[client][0]>0;
-				if(CritBoosted[client][0] == -1)
-				{
-					if(!StrContains(classname, "tf_weapon_compound_bow"))  //Huntsmans
-					{
-						if(BowDamageNon <= 0)	//If non-crit boosted damage cvar is off
-						{
-							addthecrit = true;
-							if(cond==TFCond_HalloweenCritCandy && BowDamageMini>0)	//If mini-crit boosted damage cvar is on
-								cond = TFCond_Buffed;
-						}
-					}
-					else if(!StrContains(classname, "tf_weapon_crossbow") || !StrContains(classname, "tf_weapon_drg_pomson"))  //Crusader's Crossbow, Pomson 6000
+					case 2:
 					{
 						addthecrit = true;
 					}
 				}
-				else if(CritBoosted[client][0]==1 && cond==TFCond_HalloweenCritCandy)
+			}
+			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
+			{
+				switch(CritBoosted[client][0])
 				{
-					cond = TFCond_Buffed;
+					case -1:
+					{
+						if(!StrContains(classname, "tf_weapon_compound_bow"))  //Huntsmans
+						{
+							if(BowDamageNon <= 0)	//If non-crit boosted damage cvar is off
+							{
+								addthecrit = true;
+								if(cond==TFCond_HalloweenCritCandy && BowDamageMini>0)	//If mini-crit boosted damage cvar is on
+									cond = TFCond_Buffed;
+							}
+						}
+						else if(!StrContains(classname, "tf_weapon_revolver"))  //Revolver
+						{
+							addthecrit = true;
+							if(cond==TFCond_HalloweenCritCandy)
+								cond = TFCond_Buffed;
+						}
+						else if(!StrContains(classname, "tf_weapon_crossbow") || !StrContains(classname, "tf_weapon_drg_pomson"))  //Crusader's Crossbow, Pomson 6000
+						{
+							addthecrit = true;
+						}
+					}
+					case 1:
+					{
+						addthecrit = true;
+						if(cond == TFCond_HalloweenCritCandy)
+							cond = TFCond_Buffed;
+					}
+					case 2:
+					{
+						addthecrit = true;
+					}
 				}
 			}
 
@@ -11194,16 +11390,8 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 
 	if(!IsBoss(client) && client)
 	{
-		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
-		{
-			for(int i; i<3; i++)
-			{
-				CritBoosted[client][i] = -1;
-			}
-
-			if(Enabled3 || GetClientTeam(client)!=BossTeam)
-				CreateTimer(1.0, Timer_Damage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-		}
+		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER) && (Enabled3 || GetClientTeam(client)!=BossTeam))
+			CreateTimer(1.0, Timer_Damage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 
 		if(IsBoss(attacker))
 		{
