@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."010"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."011"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -226,6 +226,7 @@ ConVar cvarVersion;
 ConVar cvarPointDelay;
 ConVar cvarPointTime;
 ConVar cvarAnnounce;
+ConVar cvarAnnounceAds;
 ConVar cvarEnabled;
 ConVar cvarAliveToEnable;
 ConVar cvarPointType;
@@ -319,6 +320,11 @@ ConVar cvarBroadcast;
 ConVar cvarMarket;
 ConVar cvarCloak;
 ConVar cvarRinger;
+ConVar cvarKunai;
+ConVar cvarKunaiMax;
+ConVar cvarDisguise;
+ConVar cvarDiamond;
+ConVar cvarCloakStun;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -2087,6 +2093,7 @@ public void OnPluginStart()
 	cvarPointTime = CreateConVar("ff2_point_time", "45", "Time before unlocking the control point");
 	cvarAliveToEnable = CreateConVar("ff2_point_alive", "0.2", "The control point will only activate when there are this many people or less left alive, can be a ratio", _, true, 0.0, true, 34.0);
 	cvarAnnounce = CreateConVar("ff2_announce", "120", "Amount of seconds to wait until FF2 info is displayed again.  0 to disable", _, true, 0.0);
+	cvarAnnounceAds = CreateConVar("ff2_announce_ads", "1", "0-Disable mentioning authors/links, 1-Mention authors/links", _, true, 0.0, true, 1.0);
 	cvarEnabled = CreateConVar("ff2_enabled", "1", "0-Force Disable, 1-Standby, 2-Force Enable", FCVAR_DONTRECORD, true, 0.0, true, 2.0);
 	cvarCrits = CreateConVar("ff2_crits", "0", "Can the boss get random crits?", _, true, 0.0, true, 1.0);
 	cvarArenaRounds = CreateConVar("ff2_arena_rounds", "1", "Number of rounds to make arena before switching to FF2 (helps for slow-loading players)", _, true, 0.0);
@@ -2178,6 +2185,11 @@ public void OnPluginStart()
 	cvarMarket = CreateConVar("ff2_market_garden", "1.0", "0-Disable market gardens, #-Damage ratio of market gardens", _, true, 0.0);
 	cvarCloak = CreateConVar("ff2_cloak_damage", "1.0", "#-Extra damage multipler for cloak watches from bosses", _, true, 0.0);
 	cvarRinger = CreateConVar("ff2_deadringer_damage", "1.0", "#-Extra damage multipler for dead ringers from bosses", _, true, 0.0);
+	cvarKunai = CreateConVar("ff2_kunai_health", "200", "#-Overheal gained via Conniver's Kunai");
+	cvarKunaiMax = CreateConVar("ff2_kunai_max", "600", "#-Maximum overheal gained via Conniver's Kunai", _, true, 1.0);
+	cvarDisguise = CreateConVar("ff2_disguise", "1", "0-Disable, 1-Enable disguises showing player models (requires tf2attributes)", _, true, 0.0, true, 1.0);
+	cvarDiamond = CreateConVar("ff2_diamondback", "2", "#-Amount of revenge crits gained upon backstabbing a boss", _, true, 0.0);
+	cvarCloakStun = CreateConVar("ff2_cloak_stun", "2.0", "#-Amount in seconds before allowing to cloak after a backstab", _, true, 0.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -3995,52 +4007,76 @@ public Action Timer_Announce(Handle timer)
 	announcecount++;
 	if(Announce>1.0 && Enabled2)
 	{
-		switch(announcecount)
+		if(GetConVarBool(cvarAnnounceAds))
 		{
-			case 1:
+			switch(announcecount)
 			{
-				FPrintToChatAll("%t", "ServerAd");
-			}
-			case 2:
-			{
-				FPrintToChatAll("%t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
-			}
-			case 3:
-			{
-				FPrintToChatAll("%t", "ClassicAd");
-			}
-			case 4:
-			{
-				if(GetConVarBool(cvarToggleBoss))	// Toggle Command?
+				case 1:
 				{
-					FPrintToChatAll("%t", "FF2 Toggle Command");
+					FPrintToChatAll("%t", "ServerAd");
 				}
-				else					// Guess not, play the 4th thing and next is 5
+				case 2:
 				{
-					announcecount = 5;
+					FPrintToChatAll("%t", "ff2_last_update", PLUGIN_VERSION, ff2versiondates[maxVersion]);
+				}
+				case 3:
+				{
+					FPrintToChatAll("%t", "ClassicAd");
+				}
+				case 4:
+				{
+					if(GetConVarBool(cvarToggleBoss))	// Toggle Command?
+					{
+						FPrintToChatAll("%t", "FF2 Toggle Command");
+					}
+					else					// Guess not, play the 4th thing and next is 5
+					{
+						announcecount = 5;
+						FPrintToChatAll("%t", "DevAd", PLUGIN_VERSION);
+					}
+				}
+				case 5:
+				{
 					FPrintToChatAll("%t", "DevAd", PLUGIN_VERSION);
 				}
-			}
-			case 5:
-			{
-				FPrintToChatAll("%t", "DevAd", PLUGIN_VERSION);
-			}
-			case 6:
-			{
-				if(GetConVarBool(cvarDuoBoss))		// Companion Toggle?
+				case 6:
 				{
-					FPrintToChatAll("%t", "FF2 Companion Command");
+					if(GetConVarBool(cvarDuoBoss))		// Companion Toggle?
+					{
+						FPrintToChatAll("%t", "FF2 Companion Command");
+					}
+					else					// Guess not either, play the last thing and next is 0
+					{
+						announcecount = 0;
+						FPrintToChatAll("%t", "type_ff2_to_open_menu");
+					}
 				}
-				else					// Guess not either, play the last thing and next is 0
+				default:
 				{
 					announcecount = 0;
 					FPrintToChatAll("%t", "type_ff2_to_open_menu");
 				}
 			}
-			default:
+		}
+		else
+		{
+			switch(announcecount)
 			{
-				announcecount = 0;
-				FPrintToChatAll("%t", "type_ff2_to_open_menu");
+				case 1:
+				{
+					if(GetConVarBool(cvarToggleBoss))	// Toggle Command?
+						FPrintToChatAll("%t", "FF2 Toggle Command");
+				}
+				case 2:
+				{
+					if(GetConVarBool(cvarDuoBoss))		// Companion Toggle?
+						FPrintToChatAll("%t", "FF2 Companion Command");
+				}
+				default:
+				{
+					announcecount = 0;
+					FPrintToChatAll("%t", "type_ff2_to_open_menu");
+				}
 			}
 		}
 	}
@@ -9840,7 +9876,7 @@ public Action ClientTimer(Handle timer)
 		return Plugin_Stop;
 
 	#if defined _tf2attributes_included
-	if(tf2attributes)
+	if(tf2attributes && GetConVarBool(cvarDisguise))
 	{
 		for(int client=1; client<=MaxClients; client++)
 		{
@@ -10391,7 +10427,7 @@ void ModelOverrides_Clear(int client)
 
 void VisionFlags_Update(int client)
 {
-	if(!tf2attributes)
+	if(!tf2attributes || !GetConVarBool(cvarDisguise))
 		return;
 
 	// RED will see index 4 (rome vision)
@@ -12423,7 +12459,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 				SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+1.5);
 				SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", GetGameTime()+1.5);
-				SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.5);
+				SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+(GetConVarFloat(cvarCloakStun)*0.75));
 
 				int viewmodel = GetEntPropEnt(attacker, Prop_Send, "m_hViewModel");
 				if(viewmodel>MaxClients && IsValidEntity(viewmodel) && TF2_GetPlayerClass(attacker)==TFClass_Spy)
@@ -13269,7 +13305,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 					SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+2.0);
 					SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", GetGameTime()+2.0);
-					SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+2.0);
+					SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+GetConVarFloat(cvarCloakStun));
 
 					int viewmodel = GetEntPropEnt(attacker, Prop_Send, "m_hViewModel");
 					if(viewmodel>MaxClients && IsValidEntity(viewmodel) && TF2_GetPlayerClass(attacker)==TFClass_Spy)
@@ -13379,9 +13415,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						case 356:	//Conniver's Kunai
 						{
-							int health = GetClientHealth(attacker)+200;
-							if(health > 600)
-								health = 600;
+							int overheal = GetConVarInt(cvarKunaiMax);
+							int health = GetClientHealth(attacker)+GetConVarInt(cvarKunai);
+							if(health > overheal)
+								health = overheal;
 
 							SetEntityHealth(attacker, health);
 						}
@@ -13393,7 +13430,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 
 					if(GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Primary)==525)  //Diamondback
-						SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+3);
+						SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+GetConVarInt(cvarDiamond));
 
 					ActivateAbilitySlot(boss, 6);
 
@@ -16635,7 +16672,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	Handle menu = CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
 	SetMenuTitle(menu, "%t", "select_charset");
 
-	char config[PLATFORM_MAX_PATH], charset[64], index[8];
+	char config[PLATFORM_MAX_PATH], charset[16][64], index[8];
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
@@ -16654,11 +16691,11 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		charsets++;
 		validCharsets[charsets] = total;
 
-		KvGetSectionName(Kv, charset, sizeof(charset));
+		KvGetSectionName(Kv, charset[total-1], sizeof(charset[]));
 		if(!shuffle)
 		{
 			IntToString(total, index, sizeof(index));
-			AddMenuItem(menu, index, charset);
+			AddMenuItem(menu, index, charset[total-1]);
 		}
 	}
 	while(KvGotoNextKey(Kv));
@@ -16668,7 +16705,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		KvRewind(Kv);
 
 		int packs, current;
-		bool choosen[64];
+		bool choosen[16];
 		for(int tries; tries<99 && packs<=shuffle; tries++)
 		{
 			current = validCharsets[GetRandomInt(1, charsets)]-1;
@@ -16677,10 +16714,8 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 
 			packs++;
 			choosen[current] = true;
-			KvJumpToKeySymbol(Kv, current);
-			KvGetSectionName(Kv, charset, sizeof(charset));
-			IntToString(current, index, sizeof(index));
-			AddMenuItem(menu, index, charset);
+			IntToString(current+1, index, sizeof(index));
+			AddMenuItem(menu, index, charset[current]);
 		}
 	}
 	CloseHandle(Kv);
