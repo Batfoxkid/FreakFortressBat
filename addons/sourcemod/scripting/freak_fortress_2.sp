@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."011"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -422,6 +422,7 @@ Handle hostName;
 char oldName[256];
 int changeGamemode;
 Handle kvWeaponMods = INVALID_HANDLE;
+Handle SDKEquipWearable = null;
 
 bool IsBossSelected[MAXTF2PLAYERS];
 bool dmgTriple[MAXTF2PLAYERS];
@@ -2425,6 +2426,22 @@ public void OnPluginStart()
 	#endif
 
 	TimesTen = LibraryExists("tf2x10");
+
+	Handle gameData = LoadGameConfigFile("equipwearable");
+	if(gameData == null)
+	{
+		FF2_LogError("[Gamedata] Failed to find equipwearable.txt");
+		return;
+	}
+
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	SDKEquipWearable = EndPrepSDKCall();
+	if(SDKEquipWearable == null)
+		FF2_LogError("[Gamedata] Failed to create call: CBasePlayer::EquipWearable");
+
+	delete gameData;
 }
 
 public Action Command_SetRage(int client, int args)
@@ -7059,7 +7076,9 @@ void EquipBoss(int boss)
 	int client = Boss[boss];
 	DoOverlay(client, "");
 	TF2_RemoveAllWeapons(client);
-	char key[10], classname[64], attributes[256];
+	char key[10], classname[64], attributes[256], wModel[PLATFORM_MAX_PATH];
+	int weapon, strangerank, weaponlevel, index, strangekills, rgba[4];
+	bool strangewep, overridewep;
 	for(int i=1; ; i++)
 	{
 		KvRewind(BossKV[Special[boss]]);
@@ -7068,12 +7087,12 @@ void EquipBoss(int boss)
 		{
 			KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
 			KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
-			int strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
-			int weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
-			int index = KvGetNum(BossKV[Special[boss]], "index");
-			bool overridewep = view_as<bool>(KvGetNum(BossKV[Special[boss]], "override", 0));
-			int strangekills = -1;
-			int strangewep = 1;
+			strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
+			weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
+			index = KvGetNum(BossKV[Special[boss]], "index");
+			overridewep = view_as<bool>(KvGetNum(BossKV[Special[boss]], "override", 0));
+			strangekills = -1;
+			strangewep = true;
 			switch(strangerank)
 			{
 				case 0:
@@ -7199,7 +7218,7 @@ void EquipBoss(int boss)
 				{
 					strangekills = GetRandomInt(0, 9999);
 					if(!GetConVarBool(cvarStrangeWep) || weaponlevel!=-1 || overridewep)
-						strangewep=0;
+						strangewep = false;
 				}
 			}
 
@@ -7257,7 +7276,7 @@ void EquipBoss(int boss)
 				}
 			}
 
-			int weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+			weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 			FF2_SetAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", -1), KvGetNum(BossKV[Special[boss]], "clip", -1));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
@@ -7276,7 +7295,14 @@ void EquipBoss(int boss)
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 3);
 			}
 
-			if(!KvGetNum(BossKV[Special[boss]], "show", 0))
+			if(KvGetNum(BossKV[Special[boss]], "show", 0))
+			{
+				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
+				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
+				if(strlen(wModel))
+					ConfigureWorldModelOverride(weapon, index, wModel);
+			}
+			else
 			{
 				SetEntPropFloat(weapon, Prop_Send, "m_flModelScale", 0.001);
 				if(index==221 || index==572 || index==939 || index==999 || index==1013) // Workaround for jiggleboned weapons
@@ -7285,22 +7311,7 @@ void EquipBoss(int boss)
 					SetEntProp(weapon, Prop_Send, "m_nModelIndexOverrides", -1, _, 0);
 				}
 			}
-			else
-			{
-				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
 
-				char wModel[PLATFORM_MAX_PATH];
-				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
-				if(strlen(wModel))
-				{
-					for(int type=0; type<=3; type++)
-					{
-						ConfigureWorldModelOverride(weapon, index, wModel, type);
-					}
-				}
-			}
-
-			int rgba[4];
 			rgba[0] = KvGetNum(BossKV[Special[boss]], "alpha", 255);
 			rgba[1] = KvGetNum(BossKV[Special[boss]], "red", 255);
 			rgba[2] = KvGetNum(BossKV[Special[boss]], "green", 255);
@@ -7317,30 +7328,460 @@ void EquipBoss(int boss)
 		}
 	}
 
+	if(SDKEquipWearable != null)
+	{
+		for(int i=1; ; i++)
+		{
+			KvRewind(BossKV[Special[boss]]);
+			Format(key, sizeof(key), "wearable%i", i);
+			if(KvJumpToKey(BossKV[Special[boss]], key))
+			{
+				KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
+				KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
+				strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
+				weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
+				index = KvGetNum(BossKV[Special[boss]], "index");
+				strangekills = -1;
+				strangewep = true;
+				switch(strangerank)
+				{
+					case 0:
+					{
+						if(index==133 || index==444 || index==655)	// Gunboats, Mantreads, or Spirit of Giving
+						{
+							strangekills = 0;
+						}
+						else
+						{
+							strangekills = GetRandomInt(0, 14);
+						}
+					}
+					case 1:
+					{
+						if(index==133 || index==444 || index==655)	// Gunboats, Mantreads, or Spirit of Giving
+						{
+							strangekills = GetRandomInt(1, 2);
+						}
+						else
+						{
+							strangekills = GetRandomInt(15, 29);
+						}
+					}
+					case 2:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(3, 4);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(3, 6);
+						}
+						else
+						{
+							strangekills = GetRandomInt(30, 49);
+						}
+					}
+					case 3:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(5, 6);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(7, 11);
+						}
+						else
+						{
+							strangekills = GetRandomInt(50, 74);
+						}
+					}
+					case 4:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(7, 9);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(12, 19);
+						}
+						else
+						{
+							strangekills = GetRandomInt(75, 99);
+						}
+					}
+					case 5:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(10, 13);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(20, 27);
+						}
+						else
+						{
+							strangekills =  GetRandomInt(100, 134);
+						}
+					}
+					case 6:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(14, 17);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(28, 36);
+						}
+						else
+						{
+							strangekills = GetRandomInt(135, 174);
+						}
+					}
+					case 7:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(18, 22);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(37, 46);
+						}
+						else
+						{
+							strangekills = GetRandomInt(175, 249);
+						}
+					}
+					case 8:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(23, 27);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(47, 56);
+						}
+						else
+						{
+							strangekills = GetRandomInt(250, 374);
+						}
+					}
+					case 9:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(28, 34);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(57, 67);
+						}
+						else
+						{
+							strangekills = GetRandomInt(375, 499);
+						}
+					}
+					case 10:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(35, 49);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(68, 78);
+						}
+						else
+						{
+							strangekills = GetRandomInt(500, 724);
+						}
+					}
+					case 11:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(50, 74);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(79, 90);
+						}
+						else
+						{
+							strangekills = GetRandomInt(725, 999);
+						}
+					}
+					case 12:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(75, 98);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(91, 103);
+						}
+						else
+						{
+							strangekills = GetRandomInt(1000, 1499);
+						}
+					}
+					case 13:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = 99;
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(104, 119);
+						}
+						else
+						{
+							strangekills = GetRandomInt(1500, 1999);
+						}
+					}
+					case 14:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(100, 149);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(120, 137);
+						}
+						else
+						{
+							strangekills = GetRandomInt(2000, 2749);
+						}
+					}
+					case 15:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(150, 249);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(138, 157);
+						}
+						else
+						{
+							strangekills = GetRandomInt(2750, 3999);
+						}
+					}
+					case 16:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(250, 499);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(158, 178);
+						}
+						else
+						{
+							strangekills = GetRandomInt(4000, 5499);
+						}
+					}
+					case 17:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(500, 749);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(179, 209);
+						}
+						else
+						{
+							strangekills = GetRandomInt(5500, 7499);
+						}
+					}
+					case 18:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(750, 783);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(210, 249);
+						}
+						else
+						{
+							strangekills = GetRandomInt(7500, 9999);
+						}
+					}
+					case 19:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(784, 849);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(250, 299);
+						}
+						else
+						{
+							strangekills = GetRandomInt(10000, 14999);
+						}
+					}
+					case 20:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(850, 999);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(300, 399);
+						}
+						else
+						{
+							strangekills = GetRandomInt(15000, 19999);
+						}
+					}
+					default:
+					{
+						if(index==133 || index==444)	// Gunboats or Mantreads
+						{
+							strangekills = GetRandomInt(0, 999);
+						}
+						else if(index==655)	// Spirit of Giving
+						{
+							strangekills = GetRandomInt(0, 399);
+						}
+						else
+						{
+							strangekills = GetRandomInt(0, 19999);
+						}
+
+						if(!GetConVarBool(cvarStrangeWep) || weaponlevel!=-1)
+							strangewep = false;
+					}
+				}
+
+				if(weaponlevel < 0)
+					weaponlevel = 101;
+
+				if(strangewep)
+				{
+					if(strlen(attributes))
+					{
+						Format(attributes, sizeof(attributes), "214 ; %d ; %s", strangekills, attributes);
+					}
+					else
+					{
+						Format(attributes, sizeof(attributes), "214 ; %d", strangekills);
+					}
+				}
+
+				weapon = TF2_CreateAndEquipWearable(client, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+				if(!IsValidEntity(weapon))
+					continue;
+
+				if(KvGetNum(BossKV[Special[boss]], "show", 0))
+				{
+					SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
+					KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
+					if(strlen(wModel))
+						ConfigureWorldModelOverride(weapon, index, wModel, true);
+				}
+				else
+				{
+					SetEntPropFloat(weapon, Prop_Send, "m_flModelScale", 0.001);
+					SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", -1);
+					SetEntProp(weapon, Prop_Send, "m_nModelIndexOverrides", -1, _, 0);
+				}
+
+				rgba[0] = KvGetNum(BossKV[Special[boss]], "alpha", 255);
+				rgba[1] = KvGetNum(BossKV[Special[boss]], "red", 255);
+				rgba[2] = KvGetNum(BossKV[Special[boss]], "green", 255);
+				rgba[3] = KvGetNum(BossKV[Special[boss]], "blue", 255);
+
+				SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
+				SetEntityRenderColor(weapon, rgba[1], rgba[2], rgba[3], rgba[0]);
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
 	KvGoBack(BossKV[Special[boss]]);
 	TFClassType class = view_as<TFClassType>(KvGetNum(BossKV[Special[boss]], "class", 1));
 	if(TF2_GetPlayerClass(client) != class)
-	{
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
-	}
 }
 
-stock bool ConfigureWorldModelOverride(int entity, int index, const char[] model, int type, bool wearable=false)
+stock bool ConfigureWorldModelOverride(int entity, int index, const char[] model, bool wearable=false)
 {
 	if(!FileExists(model, true))
 		return false;
 
 	int modelIndex = PrecacheModel(model);
-	if(!type)
-	{
-		SetEntProp(entity, Prop_Send, "m_nModelIndex", modelIndex);
-	}
-	else
-	{
-		SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, type);
-		SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", (!wearable ? GetEntProp(entity, Prop_Send, "m_iWorldModelIndex") : GetEntProp(entity, Prop_Send, "m_nModelIndex")), _, 0);
-	}
+	SetEntProp(entity, Prop_Send, "m_nModelIndex", modelIndex);
+	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, 1);
+	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, 2);
+	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, 3);
+	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", (!wearable ? GetEntProp(entity, Prop_Send, "m_iWorldModelIndex") : GetEntProp(entity, Prop_Send, "m_nModelIndex")), _, 0);
 	return true;
+}
+
+stock int TF2_CreateAndEquipWearable(int client, int index, int level, int quality, char[] attributes)
+{
+	int wearable = CreateEntityByName("tf_wearable");
+	if(!IsValidEntity(wearable))
+		return -1;
+
+	SetEntProp(wearable, Prop_Send, "m_iItemDefinitionIndex", index);
+	SetEntProp(wearable, Prop_Send, "m_bInitialized", 1);
+		
+	// Allow quality / level override by updating through the offset.
+	char netClass[64];
+	GetEntityNetClass(weapon, netClass, sizeof(netClass));
+	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityQuality"), quality);
+	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityLevel"), level);
+
+	SetEntProp(wearable, Prop_Send, "m_iEntityQuality", quality);
+	SetEntProp(wearable, Prop_Send, "m_iEntityLevel", level);
+
+	#if defined _tf2attributes_included
+	if(strlen(attributes) && tf2attributes)
+	{
+		char atts[32][32];
+		int count = ExplodeString(attributes, " ; ", atts, 32, 32);
+		if(count > 1)
+		{
+			for(int i; i<count; i+=2)
+			{
+				TF2Attrib_SetByDefIndex(wearable, StringToInt(atts[i]), StringToFloat(atts[i+1]));
+			}
+		}
+	}
+	#endif
+		
+	DispatchSpawn(wearable);
+	SDK_EquipWearable(client, wearable);
+	return wearable;
+}
+
+stock void SDK_EquipWearable(int client, int wearable)
+{
+	if(SDKEquipWearable != null)
+		SDKCall(SDKEquipWearable, client, wearable);
 }
 
 public Action Timer_MakeBoss(Handle timer, any boss)
