@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."013"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4477,25 +4477,21 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 		CheatsUsed = true;
 	}
 
-	bool teamHasPlayers[TFTeam];
+	bool teamHasPlayers[2];
 	for(int client=1; client<=MaxClients; client++)  //Find out if each team has at least one player on it
 	{
 		if(IsValidClient(client))
 		{
 			TFTeam team = view_as<TFTeam>(GetClientTeam(client));
 			if(team > TFTeam_Spectator)
-			{
-				teamHasPlayers[team] = true;
-			}
+				teamHasPlayers[team-2] = true;
 
-			if(teamHasPlayers[TFTeam_Blue] && teamHasPlayers[TFTeam_Red])
-			{
+			if(teamHasPlayers[0] && teamHasPlayers[1])
 				break;
-			}
 		}
 	}
 
-	if(!teamHasPlayers[TFTeam_Blue] || !teamHasPlayers[TFTeam_Red])  //If there's an empty team make sure it gets populated
+	if(!teamHasPlayers[0] || !teamHasPlayers[1])  //If there's an empty team make sure it gets populated
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -7751,7 +7747,7 @@ stock int TF2_CreateAndEquipWearable(int client, int index, int level, int quali
 		
 	// Allow quality / level override by updating through the offset.
 	char netClass[64];
-	GetEntityNetClass(weapon, netClass, sizeof(netClass));
+	GetEntityNetClass(wearable, netClass, sizeof(netClass));
 	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityQuality"), quality);
 	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityLevel"), level);
 
