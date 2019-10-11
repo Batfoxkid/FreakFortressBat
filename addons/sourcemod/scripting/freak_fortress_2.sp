@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."014"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."015"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4482,8 +4482,8 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 	{
 		if(IsValidClient(client))
 		{
-			TFTeam team = view_as<TFTeam>(GetClientTeam(client));
-			if(team > TFTeam_Spectator)
+			int team = GetClientTeam(client);
+			if(team > view_as<int>(TFTeam_Spectator))
 				teamHasPlayers[team-2] = true;
 
 			if(teamHasPlayers[0] && teamHasPlayers[1])
