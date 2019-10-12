@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."015"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."016"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -7296,7 +7296,7 @@ void EquipBoss(int boss)
 				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
 				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
 				if(strlen(wModel))
-					ConfigureWorldModelOverride(weapon, index, wModel);
+					ConfigureWorldModelOverride(weapon, wModel);
 			}
 			else
 			{
@@ -7332,7 +7332,6 @@ void EquipBoss(int boss)
 			Format(key, sizeof(key), "wearable%i", i);
 			if(KvJumpToKey(BossKV[Special[boss]], key))
 			{
-				KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
 				KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
 				strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
 				weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
@@ -7687,12 +7686,12 @@ void EquipBoss(int boss)
 				if(!IsValidEntity(weapon))
 					continue;
 
-				if(KvGetNum(BossKV[Special[boss]], "show", 0))
+				if(KvGetNum(BossKV[Special[boss]], "show", 1))
 				{
 					SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
 					KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
 					if(strlen(wModel))
-						ConfigureWorldModelOverride(weapon, index, wModel, true);
+						ConfigureWorldModelOverride(weapon, wModel, true);
 				}
 				else
 				{
@@ -7722,7 +7721,7 @@ void EquipBoss(int boss)
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 }
 
-stock bool ConfigureWorldModelOverride(int entity, int index, const char[] model, bool wearable=false)
+stock bool ConfigureWorldModelOverride(int entity, const char[] model, bool wearable=false)
 {
 	if(!FileExists(model, true))
 		return false;
