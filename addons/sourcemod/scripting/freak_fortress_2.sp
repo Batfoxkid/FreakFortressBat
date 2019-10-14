@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."016"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."017"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -810,7 +810,7 @@ static const char ff2versiondates[][] =
 	"August 10, 2019",		//1.19.1
 	"August 31, 2019",		//1.19.2
 	"September 27, 2019",		//1.19.3
-	"Development"			//1.19.4
+	"Soon™"			//1.19.4
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
@@ -7332,6 +7332,7 @@ void EquipBoss(int boss)
 			Format(key, sizeof(key), "wearable%i", i);
 			if(KvJumpToKey(BossKV[Special[boss]], key))
 			{
+				KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
 				KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
 				strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
 				weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
@@ -7682,7 +7683,7 @@ void EquipBoss(int boss)
 					}
 				}
 
-				weapon = TF2_CreateAndEquipWearable(client, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+				weapon = TF2_CreateAndEquipWearable(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 				if(!IsValidEntity(weapon))
 					continue;
 
@@ -7735,9 +7736,12 @@ stock bool ConfigureWorldModelOverride(int entity, const char[] model, bool wear
 	return true;
 }
 
-stock int TF2_CreateAndEquipWearable(int client, int index, int level, int quality, char[] attributes)
+stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int index, int level, int quality, char[] attributes)
 {
-	int wearable = CreateEntityByName("tf_wearable");
+	if(!strlen(classname))
+		strcopy(classname, 64, "tf_wearable");
+
+	int wearable = CreateEntityByName(classname);
 	if(!IsValidEntity(wearable))
 		return -1;
 
