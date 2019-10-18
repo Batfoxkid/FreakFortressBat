@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."017"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6771,6 +6771,9 @@ void SaveKeepBossCookie(int client)
 
 bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 {
+	if(!Enabled)
+		return false;
+
 	char boss[64], companionName[64];
 	for(int config; config<Specials; config++)
 	{
@@ -7738,10 +7741,16 @@ stock bool ConfigureWorldModelOverride(int entity, const char[] model, bool wear
 
 stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int index, int level, int quality, char[] attributes)
 {
-	if(!strlen(classname))
-		strcopy(classname, 64, "tf_wearable");
+	int wearable;
+	if(strlen(classname))
+	{
+		wearable = CreateEntityByName(classname);
+	}
+	else
+	{
+		wearable = CreateEntityByName("tf_wearable");
+	}
 
-	int wearable = CreateEntityByName(classname);
 	if(!IsValidEntity(wearable))
 		return -1;
 
