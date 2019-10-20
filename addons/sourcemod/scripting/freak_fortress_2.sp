@@ -7742,13 +7742,13 @@ stock bool ConfigureWorldModelOverride(int entity, const char[] model, bool wear
 stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int index, int level, int quality, char[] attributes)
 {
 	int wearable;
-	if(strlen(classname))
+	if(classname[0] == 0)
 	{
-		wearable = CreateEntityByName(classname);
+		wearable = CreateEntityByName("tf_wearable");
 	}
 	else
 	{
-		wearable = CreateEntityByName("tf_wearable");
+		wearable = CreateEntityByName(classname);
 	}
 
 	if(!IsValidEntity(wearable))
