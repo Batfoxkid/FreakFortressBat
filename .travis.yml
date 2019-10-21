@@ -11,19 +11,22 @@ addons:
 env:
     - SMVERSION=1.7  # Legacy
     - SMVERSION=1.8  # Legacy
-    - SMVERSION=1.9  # Stable
-    - SMVERSION=1.10 # Unstable
+    - SMVERSION=1.9  # Legacy
+    - SMVERSION=1.10 # Stable
+    - SMVERSION=1.11 # Unstable
 
-# Allow 1.10 to fail
+# Allow non-priority versions to fail
 jobs:
     allow_failures:
         - env: SMVERSION=1.7
-        - env: SMVERSION=1.10
+        - env: SMVERSION=1.8
+        - env: SMVERSION=1.11
 
 # And compile!
 install:
     - wget --input-file=http://sourcemod.net/smdrop/$SMVERSION/sourcemod-latest-linux
     - tar -xzf $(cat sourcemod-latest-linux)
+
 before_script:
     - cd addons/sourcemod/scripting/
     - wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc" -O include/tf2items.inc
@@ -43,7 +46,9 @@ before_script:
 
     - chmod +x spcomp
     - mkdir compiled compiled/freaks
-script: ./compile.sh freak_fortress_2.sp freaks/ffbat_defaults.sp
+
+script:
+    - ./spcomp -E freak_fortress_2.sp freaks/ffbat_defaults.sp
 
 # Notifications
 notifications:
