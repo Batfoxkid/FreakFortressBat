@@ -77,7 +77,7 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "4"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "development"
+//#define FORK_DEV_REVISION "development"
 
 #define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
 
@@ -810,7 +810,7 @@ static const char ff2versiondates[][] =
 	"August 10, 2019",		//1.19.1
 	"August 31, 2019",		//1.19.2
 	"September 27, 2019",		//1.19.3
-	"Soon™"			//1.19.4
+	"October 22, 2019"		//1.19.4
 };
 
 stock void FindVersionData(Handle panel, int versionIndex)
