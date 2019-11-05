@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3486,15 +3486,17 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	}
 
 	KvRewind(Kv);
-	for(int i; i<FF2CharSet; i++)
+	int i;
+	for(; i<FF2CharSet; i++)
 	{
-		KvGotoNextKey(Kv);
+		if(!KvGotoNextKey(Kv))
+			break;
 	}
 
-	CurrentCharSet = FF2CharSet-1;
+	CurrentCharSet = i;
 	KvGetSectionName(Kv, CurrentCharSetString, sizeof(CurrentCharSetString));
 
-	for(int i=1; i<MAXSPECIALS; i++)
+	for(i=1; i<MAXSPECIALS; i++)
 	{
 		IntToString(i, key, sizeof(key));
 		KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
@@ -6723,7 +6725,7 @@ public void PackMenu(int client)
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
-	int total, charsets;
+	int total;
 	char cookies[454];
 	char cookieValues[8][64];
 	if(AreClientCookiesCached(client))
@@ -6744,7 +6746,6 @@ public void PackMenu(int client)
 			Format(pack, sizeof(pack), "%s: %s", pack, cookieValues[total-1]);
 
 		AddMenuItem(dMenu, num, pack, CurrentCharSet==total-1 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-		validCharsets[charsets] = total;
 	}
 	while(KvGotoNextKey(Kv));
 	CloseHandle(Kv);
@@ -10041,25 +10042,18 @@ public Action Command_Charset(int client, int args)
 
 		Handle Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
-		int total, charsets;
-		AddMenuItem(menu, "Random", "Random");
+		int total;
 		do
 		{
 			total++;
 			KvGetSectionName(Kv, charset, sizeof(charset));
 			AddMenuItem(menu, charset, charset);
-
-			if(KvGetNum(Kv, "hidden", 0))
-				continue;
-
-			charsets++;
-			validCharsets[charsets] = total;
 		}
 		while(KvGotoNextKey(Kv));
 		CloseHandle(Kv);
 
 		SetMenuExitButton(menu, true);
-		DisplayMenu(menu, client, 20);
+		DisplayMenu(menu, client, MENU_TIME_FOREVER);
 		return Plugin_Handled;
 	}
 
@@ -10080,11 +10074,11 @@ public Action Command_Charset(int client, int args)
 	for(int i; ; i++)
 	{
 		KvGetSectionName(Kv, config, sizeof(config));
-		if(StrContains(config, charset, false)>=0)
+		if(StrContains(config, charset, false) >= 0)
 		{
 			FReplyToCommand(client, "Charset for nextmap is %s", config);
-			isCharSetSelected=true;
-			FF2CharSet=i;
+			isCharSetSelected = true;
+			FF2CharSet = i;
 			break;
 		}
 
@@ -10108,13 +10102,13 @@ public int Command_CharsetH(Handle menu, MenuAction action, int client, int choi
 		}
 		case MenuAction_Select:
 		{
-			FF2CharSet=choice ? choice-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;
+			FF2CharSet = choice;
 
 			char nextmap[32];
 			GetConVarString(cvarNextmap, nextmap, sizeof(nextmap));
 			GetMenuItem(menu, choice, FF2CharSetString, sizeof(FF2CharSetString));
 			FPrintToChat(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
-			isCharSetSelected=true;
+			isCharSetSelected = true;
 		}
 	}
 }
@@ -10134,33 +10128,26 @@ public Action Command_LoadCharset(int client, int args)
 			return Plugin_Handled;
 		}
 
-		Handle menu=CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
+		Handle menu = CreateMenu(Command_LoadCharsetH);
 		SetMenuTitle(menu, "Charset");
 
 		char config[PLATFORM_MAX_PATH], charset[64];
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
-		Handle Kv=CreateKeyValues("");
+		Handle Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
-		int total, charsets;
-		AddMenuItem(menu, "Random", "Random");
+		int total;
 		do
 		{
 			total++;
 			KvGetSectionName(Kv, charset, sizeof(charset));
 			AddMenuItem(menu, charset, charset);
-
-			if(KvGetNum(Kv, "hidden", 0))
-				continue;
-
-			charsets++;
-			validCharsets[charsets]=total;
 		}
 		while(KvGotoNextKey(Kv));
 		CloseHandle(Kv);
 
 		SetMenuExitButton(menu, true);
-		DisplayMenu(menu, client, 20);
+		DisplayMenu(menu, client, MENU_TIME_FOREVER);
 		return Plugin_Handled;
 	}
 
@@ -10176,15 +10163,15 @@ public Action Command_LoadCharset(int client, int args)
 	char config[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
-	Handle Kv=CreateKeyValues("");
+	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	for(int i; ; i++)
 	{
 		KvGetSectionName(Kv, config, sizeof(config));
-		if(StrContains(config, charset, false)>=0)
+		if(StrContains(config, charset, false) >= 0)
 		{
-			FF2CharSet=i;
-			LoadCharset=true;
+			FF2CharSet = i;
+			LoadCharset = true;
 			if(CheckRoundState()==0 || CheckRoundState()==1)
 			{
 				FReplyToCommand(client, "The current character set is set to be switched to %s!", config);
@@ -10194,7 +10181,7 @@ public Action Command_LoadCharset(int client, int args)
 			FReplyToCommand(client, "Character set has been switched to %s", config);
 			FindCharacters();
 			strcopy(FF2CharSetString, 2, "");
-			LoadCharset=false;
+			LoadCharset = false;
 			break;
 		}
 
@@ -10218,7 +10205,7 @@ public int Command_LoadCharsetH(Handle menu, MenuAction action, int client, int 
 		}
 		case MenuAction_Select:
 		{
-			FF2CharSet = choice ? choice-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;
+			FF2CharSet = choice;
 			LoadCharset = true;
 			if(CheckRoundState()==0 || CheckRoundState()==1)
 			{
