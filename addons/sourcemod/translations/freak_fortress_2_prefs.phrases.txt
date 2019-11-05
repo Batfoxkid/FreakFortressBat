@@ -35,8 +35,14 @@
 	"ff2_boss_selection"
 	{
 		"#format"	"{1:s}"
-		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent selection: {1}"
+		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Selection: {1}"
 		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n\nТекущий выбор: {1}"
+	}
+	"ff2_boss_selection_pack"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Boss Pack: {1}\nCurrent Selection: {2}"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n\nТекущий выбор: {2}"
 	}
 	"boss_selection_overridden"
 	{
@@ -98,11 +104,20 @@
 		"en"		"Change Difficulty"
 		"ru"		"Выбрать сложность"
 	}
+	"to0_viewall"
+	{
+		"en"		"View All Bosses"
+	}
 	"to0_confirm"
 	{
 		"#format"	"{1:s}"
 		"en"		"Select {1}"
 		"ru"		"Выбрать {1}"
+	}
+	"to0_confirmpack"
+	{
+		"#format"	"{1:s}"
+		"en"		"Select {1} for {2}"
 	}
 	"to0_cancel"
 	{
@@ -113,6 +128,15 @@
 	{
 		"en"		"No Boss Description"
 		"ru"		"Нет описания босса"
+	}
+	"to0_packmenu"
+	{
+		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \n"
+	}
+	"to0_viewpack"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \nBoss Pack: {1}\nSelection: {2}"
 	}
 	"to0_comfirmrandom"
 	{
@@ -438,6 +462,10 @@
 	{
 		"en"		"You turned off companions, enable to play this boss!"
 		"ru"		"Нужно сперва включить выбор на роль компаньона, чтобы играть за этого босса!"
+	}
+	"deny_map"
+	{
+		"en"		"This boss can't be played on this map!"
 	}
 	"deny_recent"
 	{

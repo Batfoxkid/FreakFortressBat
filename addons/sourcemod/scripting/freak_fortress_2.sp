@@ -75,11 +75,11 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "4"
+#define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "development"
+#define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."018"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -97,7 +97,7 @@ last time or to encourage others to do the same.
 #define DEV_REVISION "Beta"
 
 #define MAXENTITIES 2048			// Probably shouldn't touch this
-#define MAXSPECIALS 144				// Maximum bosses in a pack
+#define MAXSPECIALS 128				// Maximum bosses in a pack
 #define MAXRANDOMS 64				// Maximum abilites in a boss
 #define MAXTF2PLAYERS 36			// Maximum TF2 players + bots
 #define MAXBOSSES RoundToFloor(MaxClients/2.0)	// Maximum number of bosses per a team
@@ -403,8 +403,10 @@ bool areSubPluginsEnabled;
 int CurrentCharSet;
 int FF2CharSet;
 int validCharsets[64];
+char CurrentCharSetString[42];
 char FF2CharSetString[42];
 bool isCharSetSelected = false;
+bool HasCharSets;
 
 int healthBar = -1;
 int g_Monoculus = -1;
@@ -1913,6 +1915,7 @@ Handle OnLoseLife;
 Handle OnAlivePlayersChanged;
 
 bool bBlockVoice[MAXSPECIALS];
+bool MapBlocked[MAXSPECIALS];
 float BossSpeed[MAXSPECIALS];
 
 char ChancesString[512];
@@ -3134,11 +3137,11 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnConfigsExecuted()
 {
-	tf_arena_use_queue=GetConVarInt(FindConVar("tf_arena_use_queue"));
-	mp_teams_unbalance_limit=GetConVarInt(FindConVar("mp_teams_unbalance_limit"));
-	tf_arena_first_blood=GetConVarInt(FindConVar("tf_arena_first_blood"));
-	mp_forcecamera=GetConVarInt(FindConVar("mp_forcecamera"));
-	tf_dropped_weapon_lifetime=GetConVarBool(FindConVar("tf_dropped_weapon_lifetime"));
+	tf_arena_use_queue = GetConVarInt(FindConVar("tf_arena_use_queue"));
+	mp_teams_unbalance_limit = GetConVarInt(FindConVar("mp_teams_unbalance_limit"));
+	tf_arena_first_blood = GetConVarInt(FindConVar("tf_arena_first_blood"));
+	mp_forcecamera = GetConVarInt(FindConVar("mp_forcecamera"));
+	tf_dropped_weapon_lifetime = GetConVarBool(FindConVar("tf_dropped_weapon_lifetime"));
 	GetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team, sizeof(mp_humans_must_join_team));
 	GetConVarString(hostName=FindConVar("hostname"), oldName, sizeof(oldName));
 
@@ -3386,7 +3389,7 @@ public void DisableFF2()
 
 public void CacheWeapons()
 {
-	if(GetConVarInt(cvarHardcodeWep)>1)
+	if(GetConVarInt(cvarHardcodeWep) > 1)
 	{
 		ConfigWeapons = false;
 		return;
@@ -3394,18 +3397,23 @@ public void CacheWeapons()
 
 	char config[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, WeaponCFG);
-
 	if(!FileExists(config))
 	{
-		LogToFile(eLog, "[Weapons] Could not find '%s'!", WeaponCFG);
-		ConfigWeapons = false;
-		return;
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, WeaponCFG);
+		if(!FileExists(config))
+		{
+			LogToFile(eLog, "[Weapons] Could not find '%s'!", WeaponCFG);
+			ConfigWeapons = false;
+			return;
+		}
+
+		LogToFile(eLog, "[Weapons] Please move '%s' from '%s' to '%s'!", WeaponCFG, ConfigPath, DataPath);
 	}
 
 	kvWeaponMods = CreateKeyValues("Weapons");
 	if(!FileToKeyValues(kvWeaponMods, config))
 	{
-		LogToFile(eLog, "[Weapons] Freak Fortress 2 disabled-'%s' is improperly formatted!", WeaponCFG);
+		LogToFile(eLog, "[Weapons] '%s' is improperly formatted!", WeaponCFG);
 		ConfigWeapons = false;
 		return;
 	}
@@ -3421,16 +3429,14 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	if(!FileExists(config))
 	{
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, CharsetCFG);
-		if(FileExists(config))
-		{
-			LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-please move '%s' from '%s' to '%s'!", CharsetCFG, ConfigPath, DataPath);
-		}
-		else
+		if(!FileExists(config))
 		{
 			LogToFile(eLog, "[!!!] Freak Fortress 2 disabled-can not find '%s!", CharsetCFG);
+			Enabled2 = false;
+			return;
 		}
-		Enabled2=false;
-		return;
+
+		LogToFile(eLog, "[Characters] Please move '%s' from '%s' to '%s'!", CharsetCFG, ConfigPath, DataPath);
 	}
 
 	Handle Kv = CreateKeyValues("");
@@ -3478,13 +3484,15 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 			KvGetSectionName(Kv, FF2CharSetString, sizeof(FF2CharSetString));
 		}
 	}
-	CurrentCharSet = FF2CharSet;
 
 	KvRewind(Kv);
 	for(int i; i<FF2CharSet; i++)
 	{
 		KvGotoNextKey(Kv);
 	}
+
+	CurrentCharSet = FF2CharSet-1;
+	KvGetSectionName(Kv, CurrentCharSetString, sizeof(CurrentCharSetString));
 
 	for(int i=1; i<MAXSPECIALS; i++)
 	{
@@ -3497,6 +3505,13 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	}
 
 	KvGetString(Kv, "chances", ChancesString, sizeof(ChancesString));
+
+	// Check if the current charset is not the first
+	// one or if there's a charset after this one
+	HasCharSets = view_as<bool>(CurrentCharSet);
+	if(!HasCharSets)
+		HasCharSets = KvGotoNextKey(Kv);
+
 	CloseHandle(Kv);
 
 	if(ChancesString[0])
@@ -3549,7 +3564,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	PrecacheSound("player/doubledonk.wav", true);
 	PrecacheSound("ambient/lightson.wav", true);
 	PrecacheSound("ambient/lightsoff.wav", true);
-	isCharSetSelected=false;
+	isCharSetSelected = false;
 }
 
 void EnableSubPlugins(bool force=false)
@@ -3622,6 +3637,7 @@ public void LoadCharacter(const char[] character)
 	BossKV[Specials] = CreateKeyValues("character");
 	FileToKeyValues(BossKV[Specials], config);
 
+	MapBlocked[Specials] = false;
 	if(KvJumpToKey(BossKV[Specials], "map_exclude"))
 	{
 		char item[6];
@@ -3635,12 +3651,12 @@ public void LoadCharacter(const char[] character)
 			if(buffer[0] == '\0')
 				break;
 
-			if(StrEqual(currentmap, buffer))		// don't load this character!
+			if(!StrContains(currentmap, buffer))
 			{
-				CloseHandle(BossKV[Specials]);
-				BossKV[Specials] = INVALID_HANDLE;
-				return;
+				MapBlocked[Specials] = true;
+				break;
 			}
+
 			size++;
 		} while(size);
 	}
@@ -6297,6 +6313,12 @@ public Action Command_SetMyBoss(int client, int args)
 				return Plugin_Handled;
 			}
 
+			if(MapBlocked[config])
+			{
+				FReplyToCommand(client, "%t", "deny_map");
+				return Plugin_Handled;
+			}
+
 			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 			{
 				FReplyToCommand(client, "%t", "deny_nofirst");
@@ -6356,10 +6378,18 @@ public Action Command_SetMyBoss(int client, int args)
 			break;
 		}
 	}
-	SetMenuTitle(dMenu, "%t", "ff2_boss_selection", bossName);
+
+	if(HasCharSets)
+	{
+		SetMenuTitle(dMenu, "%t", "ff2_boss_selection_pack", CurrentCharSetString, bossName);
+	}
+	else
+	{
+		SetMenuTitle(dMenu, "%t", "ff2_boss_selection", bossName);
+	}
 
 	Format(boss, sizeof(boss), "%t", "to0_random");
-	if(!Enabled2 || Specials<1)
+	if(!Enabled2)
 	{
 		AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
 	}
@@ -6426,6 +6456,19 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 	}
 
+	if(HasCharSets)
+	{
+		Format(boss, sizeof(boss), "%t", "to0_viewall");
+		AddMenuItem(dMenu, boss, boss);
+	}
+
+	if(!Enabled2)
+	{
+		SetMenuExitButton(dMenu, true);
+		DisplayMenu(dMenu, client, MENU_TIME_FOREVER);
+		return Plugin_Handled;
+	}
+
 	char companionName[64];
 	for(int config; config<Specials; config++)
 	{
@@ -6455,6 +6498,10 @@ public Action Command_SetMyBoss(int client, int args)
 			KvGetNum(BossKV[config], "owner", 0)))
 		{
 			// Don't show
+		}
+		else if(MapBlocked[config])
+		{
+			AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
 		else if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 		{
@@ -6497,7 +6544,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 		{
 			if(!param2)
 			{
-				IsBossSelected[param1]=true;
+				IsBossSelected[param1] = true;
 				xIncoming[param1][0] = '\0';
 				CanBossVs[param1] = 0;
 				CanBossTeam[param1] = 0;
@@ -6506,59 +6553,67 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				return;
 			}
 
-			int option1, option2, option4;
-			#if defined _freak_fortress_2_kstreak_included
-			int option3;
-			#endif
-			for(int choices=1; choices<5; choices++)
+			int option[5];
+			for(int choices=1; choices<6; choices++)
 			{
-				if(!option1 && GetConVarBool(cvarToggleBoss))
+				if(!option[0] && GetConVarBool(cvarToggleBoss))
 				{
-					option1 = choices;
+					option[0] = choices;
 					continue;
 				}
-				if(!option2 && GetConVarBool(cvarDuoBoss))
+				if(!option[1] && GetConVarBool(cvarDuoBoss))
 				{
-					option2 = choices;
+					option[1] = choices;
 					continue;
 				}
 				#if defined _freak_fortress_2_kstreak_included
-				if(!option3 && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+				if(!option[2] && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
 				{
-					option3 = choices;
+					option[2] = choices;
 					continue;
 				}
 				#endif
-				if(!option4 && GetConVarBool(cvarSkipBoss))
+				if(!option[3] && GetConVarBool(cvarSkipBoss))
 				{
-					option4 = choices;
+					option[3] = choices;
+					continue;
+				}
+				if(!option[4] && HasCharSets)
+				{
+					option[4] = choices;
 					continue;
 				}
 			}
 
-			if(param2 == option1)
+			if(param2 == option[0])
 			{
 				BossMenu(param1, 0);
 				return;
 			}
 
-			if(param2 == option2)
+			if(param2 == option[1])
 			{
 				CompanionMenu(param1, 0);
 				return;
 			}
 
 			#if defined _freak_fortress_2_kstreak_included
-			if(param2 == option3)
+			if(param2 == option[2])
 			{
 				FF2_KStreak_Menu(param1, 0);
 				return;
 			}
 			#endif
 
-			if(param2 == option4)
+			if(param2 == option[3])
 			{
 				SkipBossPanel(param1);
+				return;
+			}
+
+			if(param2 == option[4])
+			{
+				PackMenu(param1);
 				return;
 			}
 
@@ -6589,9 +6644,6 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 
 public Action ConfirmBoss(int client)
 {
-	if(!GetConVarBool(cvarBossDesc))
-		return Plugin_Handled;
-
 	char text[512], language[20], boss[64];
 	GetLanguageInfo(GetClientLanguage(client), language, 8, text, 8);
 	Format(language, sizeof(language), "description_%s", language);
@@ -6658,11 +6710,200 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 	}
 }
 
+public void PackMenu(int client)
+{
+	char pack[128], num[6], config[PLATFORM_MAX_PATH];
+	Handle dMenu = CreateMenu(PackMenuH);
+	SetGlobalTransTarget(client);
+	Format(pack, sizeof(pack), "%t", "to0_packmenu");
+	SetMenuTitle(dMenu, pack);
+
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
+
+	Handle Kv = CreateKeyValues("");
+	FileToKeyValues(Kv, config);
+	int total, charsets;
+	char cookies[454];
+	char cookieValues[8][64];
+	if(AreClientCookiesCached(client))
+	{
+		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+		ExplodeString(cookies, ";", cookieValues, 8, 64);
+	}
+
+	do
+	{
+		total++;
+		if(KvGetNum(Kv, "hidden", 0))
+			continue;
+
+		KvGetSectionName(Kv, pack, sizeof(pack));
+		IntToString(total, num, sizeof(num));
+		if(AreClientCookiesCached(client) && total<8)
+			Format(pack, sizeof(pack), "%s: %s", pack, cookieValues[total-1]);
+
+		AddMenuItem(dMenu, num, pack, CurrentCharSet==total-1 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+		validCharsets[charsets] = total;
+	}
+	while(KvGotoNextKey(Kv));
+	CloseHandle(Kv);
+
+	SetMenuExitButton(dMenu, true);
+	SetMenuExitBackButton(dMenu, true);
+	DisplayMenu(dMenu, client, MENU_TIME_FOREVER);
+}
+
+public int PackMenuH(Handle menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			char pack[4];
+			GetMenuItem(menu, param2, pack, sizeof(pack));
+			PackBoss(param1, StringToInt(pack)-1);
+		}
+		case MenuAction_Cancel:
+		{
+			if(param2 == MenuCancel_ExitBack)
+				Command_SetMyBoss(param1, 0);
+		}
+	}
+}
+
+public void PackBoss(int client, int pack)
+{
+	char key[4], boss[66], bossName[64], character[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH];
+	Handle dMenu = CreateMenu(PackBossH);
+	SetGlobalTransTarget(client);
+
+	if(AreClientCookiesCached(client) && pack<8)
+	{
+		char cookies[454];
+		char cookieValues[8][64];
+		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+		ExplodeString(cookies, ";", cookieValues, 8, 64);
+		if(strlen(cookieValues[pack]))
+			strcopy(boss, sizeof(boss), cookieValues[pack]);
+	}
+
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
+	Handle Kv = CreateKeyValues("");
+	FileToKeyValues(Kv, config);
+	for(int i; i<pack; i++)
+	{
+		KvGotoNextKey(Kv);
+	}
+
+	KvGetSectionName(Kv, bossName, sizeof(bossName));
+	SetMenuTitle(dMenu, "%t", "to0_viewpack", bossName, boss);
+
+	Format(boss, sizeof(boss), "%t", "to0_random");
+	AddMenuItem(dMenu, "", boss);
+
+	for(int i=1; i<MAXSPECIALS; i++)
+	{
+		IntToString(i, key, sizeof(key));
+		KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
+		if(!config[0])	// No more bosses
+			break;
+
+		BuildPath(Path_SM, character, sizeof(character), "%s/%s.cfg", ConfigPath, config);
+		if(!FileExists(character))	// Boss doesn't exist?
+			continue;
+
+		Handle bossKV = CreateKeyValues("character");
+		FileToKeyValues(bossKV, character);
+		if(KvGetNum(bossKV, "blocked", 0))
+		{
+			CloseHandle(bossKV);
+			continue;
+		}
+
+		KvGetString(bossKV, "name", bossName, sizeof(bossName));
+		if((KvGetNum(bossKV, "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(bossKV, "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
+		{
+			if(!KvGetNum(bossKV, "hidden", 0))
+				AddMenuItem(dMenu, bossName, bossName, ITEMDRAW_DISABLED);
+
+			CloseHandle(bossKV);
+			continue;
+		}
+		else if(KvGetNum(bossKV, "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+		{
+			if(!KvGetNum(bossKV, "hidden", 1))
+				AddMenuItem(dMenu, bossName, bossName, ITEMDRAW_DISABLED);
+
+			CloseHandle(bossKV);
+			continue;
+		}
+
+		Format(boss, sizeof(boss), "%s;%i", bossName, pack);
+		AddMenuItem(dMenu, boss, bossName);
+		CloseHandle(bossKV);
+	}
+
+	SetMenuExitButton(dMenu, true);
+	SetMenuExitBackButton(dMenu, true);
+	DisplayMenu(dMenu, client, MENU_TIME_FOREVER);
+}
+
+public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			if(!AreClientCookiesCached(param1))
+			{
+				PrintToChat(param1, "[SM] %t", "Could not connect to database");
+				return;
+			}
+
+			char name[2][64];
+			char cookies[454];
+			GetMenuItem(menu, param2, cookies, sizeof(cookies));
+			ExplodeString(cookies, ";", name, 2, 64);
+			int pack = StringToInt(name[1]);
+			if(pack < 8)
+			{
+				char cookieValues[8][64];
+				GetClientCookie(param1, SelectionCookie, cookies, sizeof(cookies));
+				ExplodeString(cookies, ";", cookieValues, 8, 64);
+				strcopy(cookieValues[pack], 64, name[0]);
+
+				strcopy(cookies, sizeof(cookies), cookieValues[0]);
+				for(int i=1; i<8; i++)
+				{
+					Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
+				}
+				SetClientCookie(param1, SelectionCookie, cookies);
+			}
+
+			PackMenu(param1);
+		}
+		case MenuAction_Cancel:
+		{
+			if(param2 == MenuCancel_ExitBack)
+				PackMenu(param1);
+		}
+	}
+}
+
 bool BossTheme(int config)
 {
 	KvRewind(BossKV[config]);
-	int theme=KvGetNum(BossKV[config], "theme", 0);
-	if(theme>0)
+	int theme = KvGetNum(BossKV[config], "theme", 0);
+	if(theme > 0)
 	{
 		switch(GetConVarInt(cvarTheme))
 		{
@@ -6771,7 +7012,7 @@ void SaveKeepBossCookie(int client)
 
 bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 {
-	if(!Enabled)
+	if(!Enabled2)
 		return false;
 
 	char boss[64], companionName[64];
@@ -9791,13 +10032,13 @@ public Action Command_Charset(int client, int args)
 			return Plugin_Handled;
 		}
 
-		Handle menu=CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
+		Handle menu = CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
 		SetMenuTitle(menu, "Charset");
 
 		char config[PLATFORM_MAX_PATH], charset[64];
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
-		Handle Kv=CreateKeyValues("");
+		Handle Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
 		int total, charsets;
 		AddMenuItem(menu, "Random", "Random");
@@ -9811,7 +10052,7 @@ public Action Command_Charset(int client, int args)
 				continue;
 
 			charsets++;
-			validCharsets[charsets]=total;
+			validCharsets[charsets] = total;
 		}
 		while(KvGotoNextKey(Kv));
 		CloseHandle(Kv);
@@ -9823,7 +10064,7 @@ public Action Command_Charset(int client, int args)
 
 	char charset[32], rawText[16][16];
 	GetCmdArgString(charset, sizeof(charset));
-	int amount=ExplodeString(charset, " ", rawText, 16, 16);
+	int amount = ExplodeString(charset, " ", rawText, 16, 16);
 	for(int i; i<amount; i++)
 	{
 		StripQuotes(rawText[i]);
@@ -9833,7 +10074,7 @@ public Action Command_Charset(int client, int args)
 	char config[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, CharsetCFG);
 
-	Handle Kv=CreateKeyValues("");
+	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	for(int i; ; i++)
 	{
@@ -17181,20 +17422,23 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 
 public int Handler_VoteCharset(Handle menu, MenuAction action, int param1, int param2)
 {
-	if(action==MenuAction_VoteEnd)
+	switch(action)
 	{
-		char index[8], nextmap[32];
-		GetMenuItem(menu, param1, index, sizeof(index), _, FF2CharSetString, sizeof(FF2CharSetString));
-		FF2CharSet = StringToInt(index) ? StringToInt(index)-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;  //If param1 is 0 then we need to find a random charset
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_VoteEnd:
+		{
+			char index[8], nextmap[32];
+			GetMenuItem(menu, param1, index, sizeof(index), _, FF2CharSetString, sizeof(FF2CharSetString));
+			FF2CharSet = StringToInt(index) ? StringToInt(index)-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;  //If param1 is 0 then we need to find a random charset
 
-		GetConVarString(cvarNextmap, nextmap, sizeof(nextmap));
-		FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);  //"The character set for {1} will be {2}."
-		FF2Dbg("Pack Index: %i", FF2CharSet);
-		isCharSetSelected = true;
-	}
-	else if(action==MenuAction_End)
-	{
-		CloseHandle(menu);
+			GetConVarString(cvarNextmap, nextmap, sizeof(nextmap));
+			FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);  //"The character set for {1} will be {2}."
+			FF2Dbg("Pack Index: %i", FF2CharSet);
+			isCharSetSelected = true;
+		}
 	}
 }
 
@@ -17389,8 +17633,8 @@ public void SwitchTeams(int bossteam, int otherteam, bool respawn)
 {
 	SetTeamScore(bossteam, GetTeamScore(bossteam));
 	SetTeamScore(otherteam, GetTeamScore(otherteam));
-	OtherTeam=otherteam;
-	BossTeam=bossteam;
+	OtherTeam = otherteam;
+	BossTeam = bossteam;
 
 	if(Enabled)
 	{
@@ -17418,7 +17662,7 @@ public void SwitchTeams(int bossteam, int otherteam, bool respawn)
 
 public Action Timer_UseBossCharge(Handle timer, Handle data)
 {
-	BossCharge[ReadPackCell(data)][ReadPackCell(data)]=ReadPackFloat(data);
+	BossCharge[ReadPackCell(data)][ReadPackCell(data)] = ReadPackFloat(data);
 	return Plugin_Continue;
 }
 
