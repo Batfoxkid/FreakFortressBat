@@ -206,6 +206,7 @@ float KSpreeTimer[MAXTF2PLAYERS];
 int KSpreeCount[MAXTF2PLAYERS];
 float GlowTimer[MAXTF2PLAYERS];
 bool IsGlowing[MAXTF2PLAYERS];
+bool HasEquipped[MAXTF2PLAYERS];
 int shortname[MAXTF2PLAYERS];
 float RPSLoser[MAXTF2PLAYERS];
 int RPSLosses[MAXTF2PLAYERS];
@@ -18374,10 +18375,10 @@ public void OnTakeDamagePost(int client, int attacker, int inflictor, float dama
 
 stock void MyAddServerTag(const char[] tag)
 {
-	char currtags[128];
-	if(cvarTags == INVALID_HANDLE)
+	if(cvarTags == view_as<ConVar>(INVALID_HANDLE))
 		return;
 
+	char currtags[128];
 	GetConVarString(cvarTags, currtags, sizeof(currtags));
 	if(StrContains(currtags, tag) > -1)
 		return;
@@ -18392,10 +18393,10 @@ stock void MyAddServerTag(const char[] tag)
 
 stock void MyRemoveServerTag(const char[] tag)
 {
-	char newtags[128];
-	if (cvarTags == INVALID_HANDLE)
+	if(cvarTags == view_as<ConVar>(INVALID_HANDLE))
 		return;
 
+	char newtags[128];
 	GetConVarString(cvarTags, newtags, sizeof(newtags));
 	if(StrContains(newtags, tag) == -1)
 		return;
