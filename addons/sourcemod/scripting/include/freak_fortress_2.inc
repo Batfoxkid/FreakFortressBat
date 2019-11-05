@@ -576,14 +576,26 @@ native bool FF2_Debug();
  *
  * @noreturn
  */
-native void FF2_SetCheats(bool status);
+native void FF2_SetCheats(bool status=true);
 
 /**
  * Returns whether or not FF2 cheat commands was in the round
  *
- * @return			True if used, false otherwise
+ * @return		True if used, false otherwise
  */
 native bool FF2_GetCheats();
+
+/**
+ * Creates a boss of a given client
+ *
+ * @param client	Client's index
+ * @param boss		Boss index (-1 to make someone not a boss)
+ * @param special	Boss selection override
+ * @param rival		Have boss on non-boss team
+ *
+ * @noreturn
+ */
+native void FF2_MakeBoss(int client, int boss, int special=-1, bool rival=false);
 
 /**
  * FF2_ONABILITY IS KNOWN TO BE BUGGED AND WILL NOT BE FIXED TO PRESERVE BACKWARDS COMPATABILITY.  DO NOT USE IT.
