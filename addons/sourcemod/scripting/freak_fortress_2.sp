@@ -61,6 +61,7 @@ last time or to encourage others to do the same.
 #tryinclude <SteamWorks>
 #define REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
+#tryinclude <cw3>
 #tryinclude <smac>
 #tryinclude <goomba>
 #tryinclude <tf2attributes>
@@ -79,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1993,6 +1994,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_Debug", Native_Debug);
 	CreateNative("FF2_SetCheats", Native_SetCheats);
 	CreateNative("FF2_GetCheats", Native_GetCheats);
+	CreateNative("FF2_MakeBoss", Native_MakeBoss);
 
 	PreAbility = CreateGlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
 	OnAbility = CreateGlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
@@ -2952,6 +2954,7 @@ public Action Command_MakeBoss(int client, int args)
 			if(special >= 0)
 				Incoming[boss] = special;
 
+			HasEquipped[boss] = false;
 			PickCharacter(boss, boss);
 			CreateTimer(0.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 		}
@@ -2972,6 +2975,7 @@ public Action Command_MakeBoss(int client, int args)
 				if(special >= 0)
 					Incoming[index] = special;
 
+				HasEquipped[boss] = false;
 				PickCharacter(index, index);
 				CreateTimer(0.3, Timer_MakeBoss, index, TIMER_FLAG_NO_MAPCHANGE);
 			}
@@ -2994,6 +2998,7 @@ public Action Command_MakeBoss(int client, int args)
 						if(special >= 0)
 							Incoming[boss] = special;
 
+						HasEquipped[boss] = false;
 						PickCharacter(boss2, boss2);
 						CreateTimer(0.3, Timer_MakeBoss, boss2, TIMER_FLAG_NO_MAPCHANGE);
 						boss2++;
@@ -4036,6 +4041,17 @@ public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionTyp
 }
 #endif
 
+public void CW3_OnWeaponSpawned(int weapon, int slot, int client)
+{
+	if(!IsBoss(client))
+		return;
+
+	TF2_RemoveWeaponSlot(client, slot);
+	int boss = GetBossIndex(client);
+	if(HasEquipped[boss])
+		EquipBoss(boss);
+}
+
 public Action Timer_Announce(Handle timer)
 {
 	static int announcecount = -1;
@@ -4461,6 +4477,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 	{
 		Boss[client] = 0;
 		BossSwitched[client] = false;
+		HasEquipped[client] = false;
 		if(IsValidClient(client) && IsPlayerAlive(client) && !(FF2flags[client] & FF2FLAG_HASONGIVED))
 			TF2_RespawnPlayer(client);
 	}
@@ -5606,8 +5623,8 @@ public Action Timer_CalcQueuePoints(Handle timer)
 			{
 				if(((GetBossIndex(client)==0 || GetBossIndex(client)==MAXBOSSES) && GetConVarBool(cvarDuoRestore)) || !GetConVarBool(cvarDuoRestore))
 				{
-					add_points[client]=-QueuePoints[client];
-					add_points2[client]=add_points[client];
+					add_points[client] = -QueuePoints[client];
+					add_points2[client] = add_points[client];
 				}
 			}
 			else if(GetClientTeam(client)>view_as<int>(TFTeam_Spectator) || SpecForceBoss)
@@ -5618,19 +5635,19 @@ public Action Timer_CalcQueuePoints(Handle timer)
 					{
 						if(points > (PointsExtra-PointsMin))
 						{
-							add_points[client]=PointsExtra;
-							add_points2[client]=PointsExtra;
+							add_points[client] = PointsExtra;
+							add_points2[client] = PointsExtra;
 						}
 						else
 						{
-							add_points[client]=PointsMin+points;
-							add_points2[client]=PointsMin+points;
+							add_points[client] = PointsMin+points;
+							add_points2[client] = PointsMin+points;
 						}
 					}
 					else
 					{
-						add_points[client]=PointsMin;
-						add_points2[client]=PointsMin;
+						add_points[client] = PointsMin;
+						add_points2[client] = PointsMin;
 					}
 				}
 			}
@@ -5651,38 +5668,32 @@ public Action Timer_CalcQueuePoints(Handle timer)
 		{
 			for(int client=1; client<=MaxClients; client++)
 			{
-				if(IsValidClient(client))
-				{
-					if(IsFakeClient(client))
-					{
-						QueuePoints[client] += RoundFloat(add_points2[client]*0.5);
-					}
+				if(!IsValidClient(client))
+					continue;
 
-					if(add_points2[client] > 0)
-					{
-						FPrintToChat(client, "%t", "add_points", add_points2[client]);
-					}
-					QueuePoints[client] += add_points2[client];
-				}
+				if(IsFakeClient(client))
+					add_points2[client] /= 2;
+
+				if(add_points2[client] > 0)
+					FPrintToChat(client, "%t", "add_points", add_points2[client]);
+
+				QueuePoints[client] += add_points2[client];
 			}
 		}
 		default:
 		{
 			for(int client=1; client<=MaxClients; client++)
 			{
-				if(IsValidClient(client))
-				{
-					if(IsFakeClient(client))
-					{
-						QueuePoints[client] += RoundFloat(add_points[client]*0.5);
-					}
+				if(!IsValidClient(client))
+					continue;
 
-					if(add_points[client] > 0)
-					{
-						FPrintToChat(client, "%t", "add_points", add_points[client]);
-					}
-					QueuePoints[client] += add_points[client];
-				}
+				if(IsFakeClient(client))
+					add_points[client] /= 2;
+
+				if(add_points[client] > 0)
+					FPrintToChat(client, "%t", "add_points", add_points[client]);
+
+				QueuePoints[client] += add_points[client];
 			}
 		}
 	}
@@ -5698,16 +5709,16 @@ public Action StartResponseTimer(Handle timer)
 		bool isIntro2 = RandomSound("sound_begin", sound2, sizeof(sound2), MAXBOSSES);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client) && ToggleVoice[client])
+			if(!IsValidClient(client) || !ToggleVoice[client])
+				continue;
+
+			if(GetClientTeam(client)==BossTeam && isIntro2)
 			{
-				if(GetClientTeam(client)==BossTeam && isIntro2)
-				{
-					EmitSoundToClient(client, sound2);
-				}
-				else if(isIntro)
-				{
-					EmitSoundToClient(client, sound);
-				}
+				EmitSoundToClient(client, sound2);
+			}
+			else if(isIntro)
+			{
+				EmitSoundToClient(client, sound);
 			}
 		}
 		return Plugin_Continue;
@@ -5723,9 +5734,8 @@ public Action StartIntroMusicTimer(Handle timer)
 {
 	char sound[PLATFORM_MAX_PATH];
 	if(RandomSound("sound_intromusic", sound, sizeof(sound)))
-	{
 		EmitMusicToAllExcept(sound);
-	}
+
 	return Plugin_Continue;
 }
 
@@ -7964,6 +7974,7 @@ void EquipBoss(int boss)
 
 	KvGoBack(BossKV[Special[boss]]);
 	TFClassType class = view_as<TFClassType>(KvGetNum(BossKV[Special[boss]], "class", 1));
+	HasEquipped[boss] = true;
 	if(TF2_GetPlayerClass(client) != class)
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 }
@@ -8059,10 +8070,8 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		AssignTeam(client, ForcedTeam);
 
 	BossRageDamage[boss] = ParseFormula(boss, "ragedamage", "1900", 1900);
-	if(KvGetNum(BossKV[Special[boss]], "ragedamage", 1900) < 0)	// -1 or below, disable RAGE
-	{
+	if(BossRageDamage[boss] <= 0)	// 0 or below, disable RAGE
 		BossRageDamage[boss] = 99999;
-	}
 
 	BossLivesMax[boss] = KvGetNum(BossKV[Special[boss]], "lives", 1);
 	if(BossLivesMax[boss] <= 0)
@@ -10453,6 +10462,7 @@ public void OnClientDisconnect(int client)
 		bool[] omit = new bool[MaxClients+1];
 		omit[client] = true;
 		Boss[boss] = GetClientWithoutBlacklist(omit, BossSwitched[boss] ? BossTeam : OtherTeam);
+		HasEquipped[boss] = false;
 		PickCharacter(boss, boss);
 		if((Special[boss]<0) || !BossKV[Special[boss]])
 			LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", boss);
@@ -10520,7 +10530,11 @@ public Action OnPostInventoryApplication(Handle event, const char[] name, bool d
 	AcceptEntityInput(client, "SetCustomModel");
 
 	if(IsBoss(client))
-		CreateTimer(0.1, Timer_MakeBoss, GetBossIndex(client), TIMER_FLAG_NO_MAPCHANGE);
+	{
+		int boss = GetBossIndex(client);
+		HasEquipped[boss] = false;
+		CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
+	}
 
 	if(!(FF2flags[client] & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
 	{
@@ -12271,9 +12285,7 @@ public Action OnJarate(UserMsg msg_id, Handle bf, const int[] players, int playe
 			{
 				BossCharge[boss][0] -= rageMax[victim]*8.0/rageMin[victim];  //TODO: Allow this to be customizable
 				if(BossCharge[boss][0] < 0.0)
-				{
 					BossCharge[boss][0] = 0.0;
-				}
 			}
 		}
 	}
@@ -12282,8 +12294,8 @@ public Action OnJarate(UserMsg msg_id, Handle bf, const int[] players, int playe
 
 public Action OnDeployBackup(Handle event, const char[] name, bool dontBroadcast)
 {
-	if(Enabled && GetEventInt(event, "buff_type")==2)
-		FF2flags[GetClientOfUserId(GetEventInt(event, "buff_owner"))]|=FF2FLAG_ISBUFFED;
+	if(Enabled && GetEventInt(event, "buff_type") == 2)
+		FF2flags[GetClientOfUserId(GetEventInt(event, "buff_owner"))] |= FF2FLAG_ISBUFFED;
 
 	return Plugin_Continue;
 }
@@ -18233,6 +18245,38 @@ public int Native_SetCheats(Handle plugin, int numParams)
 public int Native_GetCheats(Handle plugin, int numParams)
 {
 	return CheatsUsed;
+}
+
+public int Native_MakeBoss(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if(!IsValidClient(client))
+		return;
+
+	int boss = GetNativeCell(2);
+	if(boss == -1)
+	{
+		boss = FF2_GetBossIndex(client);
+		if(boss < 0)
+			return;
+
+		Boss[boss] = 0;
+		BossSwitched[boss] = false;
+		CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		if(IsPlayerAlive(client))
+			TF2_RespawnPlayer(client);
+
+		return;
+	}
+
+	int special = GetNativeCell(3);
+	if(special >= 0)
+		Incoming[boss] = special;
+
+	HasEquipped[boss] = false;
+	BossSwitched[boss] = GetNativeCell(4);
+	PickCharacter(boss, boss);
+	CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public int Native_IsVSHMap(Handle plugin, int numParams)
