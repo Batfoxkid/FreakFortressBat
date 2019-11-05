@@ -79,7 +79,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6105,8 +6105,7 @@ void SetupClientCookies(int client)
 
 	GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
 	ExplodeString(cookies, ";", cookieValues, 8, 64);
-	if(CheckValidBoss(client, cookieValues[CurrentCharSet], !DuoMin))
-		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
+	strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
 }
 
 void SaveClientPreferences(int client)
@@ -6374,7 +6373,9 @@ public Action Command_SetMyBoss(int client, int args)
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		if(StrEqual(boss, xIncoming[client], false))
 		{
-			GetBossSpecial(config, bossName, sizeof(bossName), client);
+			if(CheckValidBoss(client, xIncoming[client], !DuoMin))
+				GetBossSpecial(config, bossName, sizeof(bossName), client);
+
 			break;
 		}
 	}
@@ -7058,7 +7059,7 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
 	int client = Boss[boss];
-	if((!boss || boss==MAXBOSSES) && strlen(xIncoming[client]) && GetConVarBool(cvarSelectBoss) && CheckCommandAccess(client, "ff2_boss", 0, true))
+	if((!boss || boss==MAXBOSSES) && CheckValidBoss(client, xIncoming[client], !DuoMin) && GetConVarBool(cvarSelectBoss) && CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
 		if(preset)
 		{
@@ -16168,10 +16169,9 @@ void DoOverlay(int client, const char[] overlay)
 	SetCommandFlags("r_screenoverlay", flags);
 }
 
-public bool CheckDuoMin()
+public void CheckDuoMin()
 {
 	int i;
-	DuoMin = false;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
@@ -16180,30 +16180,11 @@ public bool CheckDuoMin()
 			if(i >= GetConVarInt(cvarDuoMin))
 			{
 				DuoMin = true;
-				break;
+				return;
 			}
 		}
 	}
-
-	if(!DuoMin)
-	{
-		for(int client=1; client<=MaxClients; client++)
-		{
-			if(IsValidClient(client) && strlen(xIncoming[client]))
-			{
-				if(!CheckValidBoss(client, xIncoming[client], true))
-				{
-					if(CheckCommandAccess(client, "ff2_boss", 0, true))
-						FPrintToChat(client, "%t", "boss_selection_reset");
-
-					xIncoming[client][0] = '\0';
-					CanBossVs[client] = 0;
-					CanBossTeam[client] = 0;
-				}
-			}
-		}
-	}
-	return DuoMin;
+	DuoMin = false;
 }
 
 public int FF2PanelH(Handle menu, MenuAction action, int client, int selection)
