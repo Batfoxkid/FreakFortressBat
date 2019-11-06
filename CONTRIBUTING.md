@@ -26,66 +26,68 @@ If there are mistakes, we can resolve them, no need to close and make a new one 
 ***
 ## Pull Request Formatting Example:
 ```sourcepawn
-#define TABS  true
+#define DEFINESUSEALLCAPS	"Tabs!"
 
-#define SpacesForTheUnbalanced 1
-#define OrWhatLooksNice 3
+bool GlobalVariable;
 
-#define FLAG1	(1<<1)
-#define FLAG2	(1<<2)
-#define FLAG3	(1<<3)
-
-bool Yes = true;
-int No;
-int AlsoGood;
-char forLocalVariables[64];
-Handle NOGOOD;
-float notgood;
-
-public Action OnThisEvent(Handle NOGOOD, int Switches)
+public Action OnThisEvent(Handle localHandle, int &localInt, const char[] localString)
 {
-	if(NOGOOD==INVALID_HANDLE)
+	if(localHandle == INVALID_HANDLE)
 		return Plugin_Handled;
-	/*
-		Long comments
-	*/
-	if(Yes)	// Commment tabs
-	{
-		char maybe[64];	// Assign when needed
 
-		if(No == 3)
+	if(strlen(localString) && StringToInt(localString)==localInt)	// Commment have tabs
+	{
+		char localString2[64];
+		switch(localInt)
 		{
-			switch(Switches)
-			{
-				case 2:
-					maybe='No brackets needed';
+			case 2:
+				strcopy(localString2, sizeof(localString2), "Small Example");
 
-				case 5:
-					maybe='Needed for multiple things';
+			case 5:
+				localInt = 3;
 
-				default:
-					maybe='\0';
-			}
-
-			for(int forLoop=1; forLoop<OrWhatLooksNice; forLoop++)
-			{
-				No--;
-			}
-// No tabs here
-			AlsoGood |= FLAG1|FLAG3;
+			default:
+				localInt--;
 		}
-		return maybe;
+
+		for(int i; i<5; i++)
+		{
+			localInt--;
+		}
+
+		float yes;
+		switch(localInt)
+		{
+			case 2:
+			{
+				strcopy(localString2, sizeof(localString2), "Large Example");
+				yes = (5.0/localInt) + 2.1;
+			}
+			case 7:
+			{
+				yes = 2.6 - float(localInt);
+			}
+			default:
+			{
+				strcopy(localString2, sizeof(localString2), DEFINESUSEALLCAPS);
+			}
+		}
+
+		while(localInt > 0)
+		{
+			localInt--;
+			yes += 1.3;
+		}
+		return yes>5 ? Plugin_Stop : Plugin_Continue;
 	}
-	else if(strlen(forLocalVariables) || notgood!=0)
-	{
-		No++;
-	}
+
+	if(localInt < 0)
+		return Plugin_Continue;
+
+	localInt++;
+	GlobalVariable = true;
 	return Plugin_Continue; 
 }
-
-#file "Formatting Example for Pull Requests"
-
-#error "Your not supposed to compile this boio"
 ```
 ***
 ### Thank you for reading and contributing to the repository
