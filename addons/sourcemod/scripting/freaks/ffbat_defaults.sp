@@ -39,7 +39,7 @@
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"5"
-#define STABLE_REVISION	"2"
+#define STABLE_REVISION	"4"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -77,6 +77,8 @@ ConVar cvarCheats;
 //	Global
 Handle OnHaleRage = INVALID_HANDLE;
 int FF2Flags[MAXPLAYERS+1];
+int Players;
+int TotalPlayers;
 
 //	Clone Attack
 int CloneOwnerIndex[MAXPLAYERS+1] = -1;
@@ -130,8 +132,8 @@ public void OnPluginStart2()
 	if(version[0]!=1 || version[1]<19)
 		SetFailState("This subplugin depends on at least Unofficial FF2 v1.19.0");
 
-	HookEvent("teamplay_round_start", OnRoundStart);
-	HookEvent("teamplay_round_win", OnRoundEnd);
+	HookEvent("teamplay_round_start", OnRoundStart, EventHookMode_PostNoCopy);
+	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
 	HookEvent("player_death", OnPlayerDeath);
 
 	cvarTimeScale = FindConVar("host_timescale");
@@ -161,7 +163,12 @@ public void OnPluginStart2()
 			CloseHandle(cvar_ss);
 		}
 	} 
-	while(FindNextConCommand(interator, name, sizeof(name), isCommand, flags)); 
+	while(FindNextConCommand(interator, name, sizeof(name), isCommand, flags));
+
+	if(FF2_GetRoundState() != 2)	// In case the plugin is loaded in late
+	{
+		OnRoundStart(INVALID_HANDLE, "plugin_lateload", false);
+	}
 }
 
 public void OnMapStart()
@@ -261,7 +268,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 	}
 	else if(!StrContains(ability_name, "rage_uber"))
 	{
-		float duration = FF2_GetArgF(boss, this_plugin_name, ability_name, "duration", 1, 5.0);
+		float duration = GetArgF(boss, ability_name, "duration", 1, 5.0, 2);
 		if(duration <= 0)
 			return Plugin_Continue;
 
@@ -271,7 +278,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 	}
 	else if(StrEqual(ability_name, "rage_stun"))
 	{
-		float delay = FF2_GetArgF(boss, this_plugin_name, ability_name, "delay", 10, 0.0);
+		float delay = GetArgF(boss, ability_name, "delay", 10, 0.0, 1);
 		if(delay > 0)
 		{
 			CreateTimer(delay, Timer_Rage_Stun, boss);
@@ -287,15 +294,16 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 	}
 	else if(!StrContains(ability_name, "rage_instant_teleport"))
 	{
-		float position[3];
+		static float position[3];
 		bool otherTeamIsAlive;
-		char flagOverrideStr[12], particleEffect[48];
+		char flagOverrideStr[12];
+		static char particleEffect[48];
 
-		Tstun = FF2_GetArgF(boss, this_plugin_name, ability_name, "stun", 1, 2.0);
-		//bool friendly = view_as<bool>(FF2_GetArgI(boss, this_plugin_name, ability_name, "friendly", 2, 1));
+		Tstun = GetArgF(boss, ability_name, "stun", 1, 2.0, 2);
+		//bool friendly = view_as<bool>(GetArgF(boss, ability_name, "friendly", 2, 1.0, 0));
 		FF2_GetArgS(boss, this_plugin_name, ability_name, "flags", 3, flagOverrideStr, sizeof(flagOverrideStr));
-		Tslowdown = FF2_GetArgF(boss, this_plugin_name, ability_name, "slowdown", 4, 0.0);
-		bool sounds = view_as<bool>(FF2_GetArgI(boss, this_plugin_name, ability_name, "sound", 5, 1));
+		Tslowdown = GetArgF(boss, ability_name, "slowdown", 4, 0.0, 1);
+		bool sounds = view_as<bool>(GetArgF(boss, ability_name, "sound", 5, 1.0, 0));
 		FF2_GetArgS(boss, this_plugin_name, ability_name, "particle", 6, particleEffect, sizeof(particleEffect));
 
 		TflagOverride = ReadHexOrDecInt(flagOverrideStr);
@@ -336,7 +344,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 			SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime() + 2.0);
 			if(GetEntProp(target, Prop_Send, "m_bDucked"))
 			{
-				float temp[3] = {24.0, 24.0, 62.0};  //Compiler won't accept directly putting it into SEPV -.-
+				static float temp[3] = {24.0, 24.0, 62.0};  //Compiler won't accept directly putting it into SEPV -.-
 				SetEntPropVector(client, Prop_Send, "m_vecMaxs", temp);
 				SetEntProp(client, Prop_Send, "m_bDucked", 1);
 				SetEntityFlags(client, GetEntityFlags(client)|FL_DUCKING);
@@ -378,9 +386,9 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		WritePackString(data, ability_name);
 		ResetPack(data);
 	}
-	else if(!StrContains(ability_name, "rage_matrix_attack"))
+	else if(StrEqual(ability_name, "rage_matrix_attack"))
 	{
-		Rage_Slowmo(boss, ability_name);
+		Rage_Slowmo(boss);
 	}
     /*
        Specials
@@ -390,12 +398,12 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		if(status<1 || Charged[client]>GetGameTime())
 			return Plugin_Continue;
 
-		float delay = FF2_GetArgF(boss, this_plugin_name, ability_name, "delay", 3);
+		float delay = GetArgF(boss, ability_name, "delay", 3, 0.0, 1);
 		if(!delay)
 		{
 			Timer_DemoCharge(INVALID_HANDLE, boss);
 		}
-		else if(delay > 0)
+		else
 		{
 			Charged[client] = GetGameTime()+delay;
 			CreateTimer(delay, Timer_DemoCharge, boss);
@@ -404,13 +412,30 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 	return Plugin_Continue;
 }
 
+public void FF2_OnAlivePlayersChanged(int players, int bosses)
+{
+	if(!bosses || !players || FF2_GetRoundState()!=1)
+		return;
+
+	Players = players+bosses;
+	if(TotalPlayers > players+bosses)
+		TotalPlayers = players+bosses;
+}
+
 public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
+	TotalPlayers = 0;
 	int boss;
 	for(int client; client<MaxClients; client++)
 	{
 		FF2Flags[client] = 0;
 		CloneOwnerIndex[client] = -1;
+		if(!client || !IsClientInGame(client))
+			continue;
+
+		if(GetClientTeam(client) > view_as<int>(TFTeam_Spectator))
+			TotalPlayers++;
+
 		#if defined _smac_included
 		if(!HasSlowdown)
 		#else
@@ -431,6 +456,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 			}
 		}
 	}
+	Players = TotalPlayers;
 
 	CreateTimer(0.41, Timer_Disable_Anims, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(9.31, Timer_Disable_Anims, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -521,10 +547,10 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 	{
 		if(FF2_HasAbility(boss, this_plugin_name, OBJECTS))
 		{
-			char classname[PLATFORM_MAX_PATH], model[PLATFORM_MAX_PATH];
+			static char classname[PLATFORM_MAX_PATH], model[PLATFORM_MAX_PATH];
 			FF2_GetArgS(boss, this_plugin_name, OBJECTS, "classname", 1, classname, PLATFORM_MAX_PATH);
 			FF2_GetArgS(boss, this_plugin_name, OBJECTS, "model", 2, model, PLATFORM_MAX_PATH);
-			SpawnManyObjects(classname, client, model, FF2_GetArgI(boss, this_plugin_name, OBJECTS, "skin", 3), FF2_GetArgI(boss, this_plugin_name, OBJECTS, "amount", 4, 14), FF2_GetArgF(boss, this_plugin_name, OBJECTS, "distance", 5, 30.0));
+			SpawnManyObjects(classname, client, model, RoundFloat(GetArgF(boss, OBJECTS, "skin", 3, 0.0, 1)), RoundFloat(GetArgF(boss, OBJECTS, "amount", 4, 14.0, 2)), GetArgF(boss, OBJECTS, "distance", 5, 30.0, 1));
 		}
 		if(FF2_HasAbility(boss, this_plugin_name, "special_dissolve"))
 		{
@@ -535,7 +561,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 			if(GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon") == GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee))
 			{
 				TF2_RemoveWeaponSlot(attacker, TFWeaponSlot_Melee);
-				char attributes[128];
+				static char attributes[128];
 				if(!FF2_GetArgS(boss, this_plugin_name, "special_cbs_multimelee", "attributes", 1, attributes, sizeof(attributes)))
 					strcopy(attributes, sizeof(attributes), "68 ; 2 ; 2 ; 3.1 ; 275 ; 1");
 
@@ -560,12 +586,12 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		}
 		if(FF2_HasAbility(boss, this_plugin_name, "special_dropprop"))
 		{
-			char model[PLATFORM_MAX_PATH];
+			static char model[PLATFORM_MAX_PATH];
 			if(FF2_GetArgS(boss, this_plugin_name, "special_dropprop", "model", 1, model, PLATFORM_MAX_PATH))
 			{
 				if(!IsModelPrecached(model))	// Make sure the boss author precached the model (similar to above)
 				{
-					char bossName[64];
+					static char bossName[64];
 					FF2_GetBossName(boss, bossName, sizeof(bossName));
 					if(!FileExists(model, true))
 					{
@@ -578,7 +604,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 					}
 				}
 
-				if(FF2_GetArgI(boss, this_plugin_name, "special_dropprop", "remove ragdolls", 3))
+				if(GetArgF(boss, "special_dropprop", "remove ragdolls", 3, 0.0, 0))
 					CreateTimer(0.01, Timer_RemoveRagdoll, GetEventInt(event, "userid"), TIMER_FLAG_NO_MAPCHANGE);
 
 				int prop = CreateEntityByName("prop_physics_override");
@@ -590,11 +616,11 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 					SetEntProp(prop, Prop_Send, "m_usSolidFlags", 16);
 					DispatchSpawn(prop);
 
-					float position[3];
+					static float position[3];
 					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 					position[2] += 20;
 					TeleportEntity(prop, position, NULL_VECTOR, NULL_VECTOR);
-					float duration = FF2_GetArgF(boss, this_plugin_name, "special_dropprop", "duration", 2);
+					float duration = GetArgF(boss, "special_dropprop", "duration", 2, 0.0, 1);
 					if(duration > 0.5)
 						CreateTimer(duration, Timer_RemoveEntity, EntIndexToEntRef(prop), TIMER_FLAG_NO_MAPCHANGE);
 				}
@@ -607,13 +633,13 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 	{
 		if(FF2_HasAbility(boss, this_plugin_name, OBJECTS_DEATH))
 		{
-			char classname[PLATFORM_MAX_PATH], model[PLATFORM_MAX_PATH];
+			static char classname[PLATFORM_MAX_PATH], model[PLATFORM_MAX_PATH];
 			FF2_GetArgS(boss, this_plugin_name, OBJECTS_DEATH, "classname", 1, classname, PLATFORM_MAX_PATH);
 			FF2_GetArgS(boss, this_plugin_name, OBJECTS_DEATH, "model", 2, model, PLATFORM_MAX_PATH);
-			SpawnManyObjects(classname, client, model, FF2_GetArgI(boss, this_plugin_name, OBJECTS_DEATH, "skin", 3), FF2_GetArgI(boss, this_plugin_name, OBJECTS_DEATH, "count", 4, 14), FF2_GetArgF(boss, this_plugin_name, OBJECTS_DEATH, "distance", 5, 30.0));
+			SpawnManyObjects(classname, client, model, RoundFloat(GetArgF(boss, OBJECTS_DEATH, "skin", 3, 0.0, 1)), RoundFloat(GetArgF(boss, OBJECTS_DEATH, "count", 4, 14.0, 2)), GetArgF(boss, OBJECTS_DEATH, "distance", 5, 30.0, 1));
 		}
 
-		if(FF2_HasAbility(boss, this_plugin_name, "rage_cloneattack") && FF2_GetArgI(boss, this_plugin_name, "rage_cloneattack", "die on boss death", 12, 1) && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+		if(FF2_HasAbility(boss, this_plugin_name, "rage_cloneattack") && GetArgF(boss, "rage_cloneattack", "die on boss death", 12, 1.0, 0) && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
 		{
 			for(int target=1; target<=MaxClients; target++)
 			{
@@ -645,8 +671,8 @@ public Action Timer_Disable_Anims(Handle timer)
 	{
 		if(FF2_HasAbility(boss, this_plugin_name, "special_noanims"))
 		{
-			SetEntProp(client, Prop_Send, "m_bUseClassAnimations", FF2_GetArgI(boss, this_plugin_name, "special_noanims", "custom model animation", 2));
-			SetEntProp(client, Prop_Send, "m_bCustomModelRotates", FF2_GetArgI(boss, this_plugin_name, "special_noanims", "custom model rotates", 1));
+			SetEntProp(client, Prop_Send, "m_bUseClassAnimations", RoundFloat(GetArgF(boss, "special_noanims", "custom model animation", 2, 0.0, 1)));
+			SetEntProp(client, Prop_Send, "m_bCustomModelRotates", RoundFloat(GetArgF(boss, "special_noanims", "custom model rotates", 1, 0.0, 1)));
 		}
 	}
 	return Plugin_Continue;
@@ -669,22 +695,27 @@ public void OnProjectileSpawned(int entity)
 		int boss = FF2_GetBossIndex(client);
 		if(boss>=0 && FF2_HasAbility(boss, this_plugin_name, PROJECTILE))
 		{
-			char projectile[PLATFORM_MAX_PATH], classname[PLATFORM_MAX_PATH];
+			static char projectile[PLATFORM_MAX_PATH], classname[PLATFORM_MAX_PATH];
 			FF2_GetArgS(boss, this_plugin_name, PROJECTILE, "projectile", 1, projectile, PLATFORM_MAX_PATH);
 			GetEntityClassname(entity, classname, sizeof(classname));
 			if(StrEqual(classname, projectile, false))
 			{
 				FF2_GetArgS(boss, this_plugin_name, PROJECTILE, "model", 2, classname, PLATFORM_MAX_PATH);
-				if(IsModelPrecached(classname))
+				if(!IsModelPrecached(classname))
 				{
-					SetEntityModel(entity, classname);
+					if(FileExists(classname, true))
+					{
+						PrecacheModel(classname);
+					}
+					else
+					{
+						static char bossName[64];
+						FF2_GetBossName(boss, bossName, sizeof(bossName));
+						FF2_LogError("[Boss] Model '%s' doesn't exist!  Please check %s's config", classname, bossName);
+						return;
+					}
 				}
-				else
-				{
-					char bossName[64];
-					FF2_GetBossName(boss, bossName, sizeof(bossName));
-					FF2_LogError("[Boss] Model %s (used by boss %s for ability %s) isn't precached!", classname, bossName, PROJECTILE);
-				}
+				SetEntityModel(entity, classname);
 			}
 		}
 	}
@@ -695,8 +726,8 @@ int SpawnManyObjects(char[] classname, int client, char[] model, int skin=0, int
 	if(!client || !IsClientInGame(client))
 		return;
 
-	float position[3], velocity[3];
-	float angle[] = {90.0, 0.0, 0.0};
+	static float position[3], velocity[3];
+	static float angle[] = {90.0, 0.0, 0.0};
 	GetClientAbsOrigin(client, position);
 	position[2] += distance;
 	for(int i; i<amount; i++)
@@ -744,9 +775,9 @@ public Action Timer_RemoveRagdoll(Handle timer, any userid)
 
 void Rage_Overlay(int boss, const char[] ability_name)
 {
-	char overlay[PLATFORM_MAX_PATH];
+	static char overlay[PLATFORM_MAX_PATH];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "path", 1, overlay, PLATFORM_MAX_PATH);
-	float duration = FF2_GetArgF(boss, this_plugin_name, ability_name, "duration", 2, 6.0);
+	float duration = GetArgF(boss, ability_name, "duration", 2, 6.0, 1);
 	TFTeam bossTeam = TF2_GetClientTeam(GetClientOfUserId(FF2_GetBossUserId(boss)));
 
 	Format(overlay, PLATFORM_MAX_PATH, "r_screenoverlay \"%s\"", overlay);
@@ -780,7 +811,7 @@ public Action Timer_Remove_Overlay(Handle timer, TFTeam bossTeam)
 
 public Action Timer_DemoCharge(Handle timer, int boss)
 {
-	float duration = FF2_GetArgF(boss, this_plugin_name, "special_democharge", "duration", 1, 0.25);
+	float duration = GetArgF(boss, "special_democharge", "duration", 1, 0.25, 0);
 	if(duration<0 && duration!=TFCondDuration_Infinite)
 		return Plugin_Continue;
 
@@ -789,11 +820,11 @@ public Action Timer_DemoCharge(Handle timer, int boss)
 	TF2_AddCondition(client, TFCond_Charging, duration);
 
 	float charge = FF2_GetBossCharge(boss, 0);
-	if(charge>FF2_GetArgF(boss, this_plugin_name, "special_democharge", "minimum", 5, 10.0) &&
-	   charge<FF2_GetArgF(boss, this_plugin_name, "special_democharge", "maximum", 6, 90.0))
-		FF2_SetBossCharge(boss, 0, charge-FF2_GetArgF(boss, this_plugin_name, "special_democharge", "rage", 4, 0.4));
+	if(charge>GetArgF(boss, "special_democharge", "minimum", 5, 10.0, 0) &&
+	   charge<GetArgF(boss, "special_democharge", "maximum", 6, 90.0, 0))
+		FF2_SetBossCharge(boss, 0, charge-GetArgF(boss, "special_democharge", "rage", 4, 0.4, 0));
 
-	Charged[client] = GetGameTime()+FF2_GetArgF(boss, this_plugin_name, "special_democharge", "cooldown", 2);
+	Charged[client] = GetGameTime()+GetArgF(boss, "special_democharge", "cooldown", 2, 0.0, 1);
 	return Plugin_Continue;
 }
 
@@ -806,14 +837,14 @@ int Rage_New_Weapon(int boss, const char[] ability_name)
 	if(!client || !IsClientInGame(client) || !IsPlayerAlive(client))
 		return;
 
-	char classname[64], attributes[256];
+	static char classname[64], attributes[256];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "classname", 1, classname, sizeof(classname));
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "attributes", 3, attributes, sizeof(attributes));
 
-	TF2_RemoveWeaponSlot(client, FF2_GetArgI(boss, this_plugin_name, ability_name, "weapon slot", 4));
+	TF2_RemoveWeaponSlot(client, RoundFloat(GetArgF(boss, ability_name, "weapon slot", 4, 0.0, 1)));
 
-	int index = FF2_GetArgI(boss, this_plugin_name, ability_name, "index", 2);
-	int weapon = FF2_SpawnWeapon(client, classname, index, FF2_GetArgI(boss, this_plugin_name, ability_name, "level", 8, 101), FF2_GetArgI(boss, this_plugin_name, ability_name, "quality", 9, 5), attributes);
+	int index = RoundFloat(GetArgF(boss, ability_name, "index", 2, 0.0, 1));
+	int weapon = FF2_SpawnWeapon(client, classname, index, RoundFloat(GetArgF(boss, ability_name, "level", 8, 101.0, 1)), RoundFloat(GetArgF(boss, ability_name, "quality", 9, 5.0, 1)), attributes);
 	if(StrEqual(classname, "tf_weapon_builder") && index!=735)  //PDA, normal sapper
 	{
 		SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -831,11 +862,11 @@ int Rage_New_Weapon(int boss, const char[] ability_name)
 		SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 3);
 	}
 
-	if(FF2_GetArgI(boss, this_plugin_name, ability_name, "force switch", 6))
+	if(GetArgF(boss, ability_name, "force switch", 6, 0.0, 0))
 		SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
 
-	int ammo = FF2_GetArgI(boss, this_plugin_name, ability_name, "ammo", 5);
-	int clip = FF2_GetArgI(boss, this_plugin_name, ability_name, "clip", 7);
+	int ammo = RoundFloat(GetArgF(boss, ability_name, "ammo", 5, 0.0, 1));
+	int clip = RoundFloat(GetArgF(boss, ability_name, "clip", 7, 0.0, 1));
 	if(ammo || clip)
 		FF2_SetAmmo(client, weapon, ammo, clip);
 }
@@ -847,12 +878,12 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 {
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 	bool solorage = false;
-	float bossPosition[3], targetPosition[3];
+	static float bossPosition[3], targetPosition[3];
 	GetEntPropVector(client, Prop_Send, "m_vecOrigin", bossPosition);
  // Initial Duration
-	float duration = FF2_GetArgF(boss, this_plugin_name, "rage_stun", "duration", 1, 5.0);
+	float duration = GetArgF(boss, "rage_stun", "duration", 1, 5.0, 0);
  // Distance
-	float distance = FF2_GetArgF(boss, this_plugin_name, "rage_stun", "distance", 2, -1.0);
+	float distance = GetArgF(boss, "rage_stun", "distance", 2, 0.0, 1);
 	if(distance <= 0)
 		distance = FF2_GetRageDist(boss, this_plugin_name, "rage_stun");
  // Stun Flags
@@ -862,33 +893,31 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 	if(!flagOverride)
 		flagOverride = TF_STUNFLAGS_GHOSTSCARE|TF_STUNFLAG_NOSOUNDOREFFECT;
  // Slowdown
-	float slowdown = FF2_GetArgF(boss, this_plugin_name, "rage_stun", "slowdown", 4);
+	float slowdown = GetArgF(boss, "rage_stun", "slowdown", 4, 0.0, 1);
  // Sound To Boss
-	bool sounds = view_as<bool>(FF2_GetArgI(boss, this_plugin_name, "rage_stun", "sound", 5, 1));
+	bool sounds = view_as<bool>(GetArgF(boss, "rage_stun", "sound", 5, 1.0, 0));
  // Particle Effect
 	char particleEffect[48];
 	FF2_GetArgS(boss, this_plugin_name, "rage_stun", "particle", 6, particleEffect, sizeof(particleEffect));
 	if(!strlen(particleEffect))
 		particleEffect = SPOOK;
  // Ignore
-	int ignore = FF2_GetArgI(boss, this_plugin_name, "rage_stun", "uber", 7, 0);
+	int ignore = RoundFloat(GetArgF(boss, "rage_stun", "uber", 7, 0.0, 1));
  // Friendly Fire
-	int friendly = FF2_GetArgI(boss, this_plugin_name, "rage_stun", "friendly", 8, -1);
-	if(friendly < 0)
-		friendly = GetConVarInt(FindConVar("mp_friendlyfire"));
+	bool friendly = view_as<bool>(GetArgF(boss, "rage_stun", "friendly", 8, float(GetConVarInt(FindConVar("mp_friendlyfire"))), 0));
  // Remove Parachute
-	bool removeBaseJumperOnStun = view_as<bool>(FF2_GetArgI(boss, this_plugin_name, "rage_stun", "basejumper", 9, GetConVarInt(cvarBaseJumperStun)));
+	bool removeBaseJumperOnStun = view_as<bool>(GetArgF(boss, "rage_stun", "basejumper", 9, float(GetConVarInt(cvarBaseJumperStun)), 0));
  // Max Duration
-	float maxduration = FF2_GetArgF(boss, this_plugin_name, "rage_stun", "max", 11, -1.0);
+	float maxduration = GetArgF(boss, "rage_stun", "max", 11, 0.0, 1);
  // Add Duration
-	float addduration = FF2_GetArgF(boss, this_plugin_name, "rage_stun", "add", 12, 0.0);
+	float addduration = GetArgF(boss, "rage_stun", "add", 12, 0.0, 0);
 	if(maxduration <= 0)
 	{
 		maxduration = duration;
 		addduration = 0.0;
 	}
  // Solo Rage Duration
-	float soloduration = FF2_GetArgF(boss, this_plugin_name, "rage_stun", "solo", 13, -1.0);
+	float soloduration = GetArgF(boss, "rage_stun", "solo", 13, 0.0, 1);
 	if(soloduration <= 0)
 		soloduration = duration;
 
@@ -898,7 +927,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 	{
 		for(int target=1; target<=MaxClients; target++)
 		{
-			if(IsClientInGame(target) && IsPlayerAlive(target) && target!=client && (friendly>0 || GetClientTeam(target)!=GetClientTeam(client)))
+			if(IsClientInGame(target) && IsPlayerAlive(target) && target!=client && (friendly || GetClientTeam(target)!=GetClientTeam(client)))
 			{
 				GetEntPropVector(target, Prop_Send, "m_vecOrigin", targetPosition);
 				if((!TF2_IsPlayerInCondition(target, TFCond_Ubercharged) || (ignore>0 && ignore!=2)) && (!TF2_IsPlayerInCondition(target, TFCond_MegaHeal) || ignore>1) && GetVectorDistance(bossPosition, targetPosition)<=distance)
@@ -931,7 +960,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 
 	if(solorage)
 	{
-		char bossName[64];
+		static char bossName[64];
 		for(int target=1; target<=MaxClients; target++)
 		{
 			if(IsClientInGame(target))
@@ -946,7 +975,6 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 	while(victims > 0)
 	{
 		victims--;
-
 		if(removeBaseJumperOnStun)
 			TF2_RemoveCondition(victim[victims], TFCond_Parachute);
 
@@ -976,24 +1004,24 @@ public Action Timer_SoloRageResult(Handle timer, any client)
 
 stock int ReadHexOrDecInt(char hexOrDecString[12])	// Credits to sarysa
 {
-	if(StrContains(hexOrDecString, "0x")==0)
+	if(!StrContains(hexOrDecString, "0x"))
 	{
-		int result=0;
+		int result = 0;
 		for(int i=2; i<10 && hexOrDecString[i]!=0; i++)
 		{
-			result=result<<4;
+			result = result<<4;
 				
 			if(hexOrDecString[i]>='0' && hexOrDecString[i]<='9')
 			{
-				result+=hexOrDecString[i]-'0';
+				result += hexOrDecString[i]-'0';
 			}
 			else if(hexOrDecString[i]>='a' && hexOrDecString[i]<='f')
 			{
-				result+=hexOrDecString[i]-'a'+10;
+				result += hexOrDecString[i]-'a'+10;
 			}
 			else if(hexOrDecString[i]>='A' && hexOrDecString[i]<='F')
 			{
-				result+=hexOrDecString[i]-'A'+10;
+				result += hexOrDecString[i]-'A'+10;
 			}
 		}
 		return result;
@@ -1002,13 +1030,6 @@ stock int ReadHexOrDecInt(char hexOrDecString[12])	// Credits to sarysa
 	{
 		return StringToInt(hexOrDecString);
 	}
-}
-
-stock int ReadHexOrDecString(int boss, const char[] ability_name, int args)
-{
-	static char hexOrDecString[12];
-	FF2_GetAbilityArgumentString(boss, this_plugin_name, ability_name, args, hexOrDecString, sizeof(hexOrDecString));
-	return ReadHexOrDecInt(hexOrDecString);
 }
 
 
@@ -1026,31 +1047,31 @@ public Action Timer_StopUber(Handle timer, any boss)
 void Rage_StunBuilding(const char[] ability_name, int boss)
 {
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
-	float bossPosition[3], sentryPosition[3];
+	static float bossPosition[3], sentryPosition[3];
 	GetEntPropVector(GetClientOfUserId(FF2_GetBossUserId(boss)), Prop_Send, "m_vecOrigin", bossPosition);
 
  // Duration
-	float duration = FF2_GetArgF(boss, this_plugin_name, ability_name, "duration", 1, 7.0);
+	float duration = GetArgF(boss, ability_name, "duration", 1, 7.0, 2);
  // Distance
-	float distance = FF2_GetArgF(boss, this_plugin_name, ability_name, "distance", 2, -1.0);
+	float distance = GetArgF(boss, ability_name, "distance", 2, 0.0, 1);
 	if(distance <= 0)
 		distance = FF2_GetRageDist(boss, this_plugin_name, ability_name);
  // Building Health
  	bool destory = false;
-	float health = FF2_GetArgF(boss, this_plugin_name, ability_name, "health", 3, 1.0);
+	float health = GetArgF(boss, ability_name, "health", 3, 1.0, 1);
 	if(health <= 0)
 		destory = true;
  // Sentry Ammo
-	float ammo = FF2_GetArgF(boss, this_plugin_name, ability_name, "ammo", 4, 1.0);
+	float ammo = GetArgF(boss, ability_name, "ammo", 4, 1.0, 1);
  // Sentry Rockets
-	float rockets = FF2_GetArgF(boss, this_plugin_name, ability_name, "rocket", 5, 1.0);
+	float rockets = GetArgF(boss, ability_name, "rocket", 5, 1.0, 1);
  // Particle Effect
 	char particleEffect[48];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "particle", 6, particleEffect, sizeof(particleEffect));
 	if(!strlen(particleEffect))
 		particleEffect = SPOOK;
  // Buildings
-	int buildings = FF2_GetArgI(boss, this_plugin_name, ability_name, "building", 7, 1);
+	int buildings = RoundFloat(GetArgF(boss, ability_name, "building", 7, 1.0, 2));
 	// 1: Sentry
 	// 2: Dispenser
 	// 3: Teleporter
@@ -1059,16 +1080,14 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 	// 6: Dispenser + Teleporter
 	// 7: ALL
  // Friendly Fire
-	int friendly = FF2_GetArgI(boss, this_plugin_name, ability_name, "friendly", 8, -1);
-	if(friendly < 0)
-		friendly = GetConVarInt(FindConVar("mp_friendlyfire"));
+	bool friendly = view_as<bool>(GetArgF(boss, ability_name, "friendly", 8, float(GetConVarInt(FindConVar("mp_friendlyfire"))), 0));
 
 	if(buildings>0 && buildings!=2 && buildings!=3 && buildings!=6)
 	{
 		int sentry;
 		while((sentry=FindEntityByClassname(sentry, "obj_sentrygun")) != -1)
 		{
-			if((((GetEntProp(sentry, Prop_Send, "m_nSkin") % 2)!=(GetClientTeam(client) % 2)) || friendly>0) && !GetEntProp(sentry, Prop_Send, "m_bCarried") && !GetEntProp(sentry, Prop_Send, "m_bPlacing"))
+			if((((GetEntProp(sentry, Prop_Send, "m_nSkin") % 2)!=(GetClientTeam(client) % 2)) || friendly) && !GetEntProp(sentry, Prop_Send, "m_bCarried") && !GetEntProp(sentry, Prop_Send, "m_bPlacing"))
 			{
 				GetEntPropVector(sentry, Prop_Send, "m_vecOrigin", sentryPosition);
 				if(GetVectorDistance(bossPosition, sentryPosition) <= distance)
@@ -1105,7 +1124,7 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 		int dispenser;
 		while((dispenser=FindEntityByClassname(dispenser, "obj_dispenser")) != -1)
 		{
-			if((((GetEntProp(dispenser, Prop_Send, "m_nSkin") % 2)!=(GetClientTeam(client) % 2)) || friendly>0) && !GetEntProp(dispenser, Prop_Send, "m_bCarried") && !GetEntProp(dispenser, Prop_Send, "m_bPlacing"))
+			if((((GetEntProp(dispenser, Prop_Send, "m_nSkin") % 2)!=(GetClientTeam(client) % 2)) || friendly) && !GetEntProp(dispenser, Prop_Send, "m_bCarried") && !GetEntProp(dispenser, Prop_Send, "m_bPlacing"))
 			{
 				GetEntPropVector(dispenser, Prop_Send, "m_vecOrigin", sentryPosition);
 				if(GetVectorDistance(bossPosition, sentryPosition) <= distance)
@@ -1136,7 +1155,7 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 		int teleporter;
 		while((teleporter=FindEntityByClassname(teleporter, "obj_teleporter")) != -1)
 		{
-			if((((GetEntProp(teleporter, Prop_Send, "m_nSkin") % 2)!=(GetClientTeam(client) % 2)) || friendly>0) && !GetEntProp(teleporter, Prop_Send, "m_bCarried") && !GetEntProp(teleporter, Prop_Send, "m_bPlacing"))
+			if((((GetEntProp(teleporter, Prop_Send, "m_nSkin") % 2)!=(GetClientTeam(client) % 2)) || friendly) && !GetEntProp(teleporter, Prop_Send, "m_bCarried") && !GetEntProp(teleporter, Prop_Send, "m_bPlacing"))
 			{
 				GetEntPropVector(teleporter, Prop_Send, "m_vecOrigin", sentryPosition);
 				if(GetVectorDistance(bossPosition, sentryPosition) <= distance)
@@ -1219,31 +1238,30 @@ int DissolveRagdoll(int ragdoll)
 void Rage_Clone(const char[] ability_name, int boss)
 {
 	Handle bossKV[8];
-	char bossName[64];
+	static char bossName[64];
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
-	bool changeModel = view_as<bool>(FF2_GetArgI(boss, this_plugin_name, ability_name, "custom model", 1));
-	int weaponMode = FF2_GetArgI(boss, this_plugin_name, ability_name, "weapon mode", 2);
-	char model[PLATFORM_MAX_PATH];
+	bool changeModel = view_as<bool>(GetArgF(boss, ability_name, "custom model", 1, 0.0, 0));
+	int weaponMode = RoundFloat(GetArgF(boss, ability_name, "weapon mode", 2, 0.0, 0));
+	static char model[PLATFORM_MAX_PATH];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "model", 3, model, sizeof(model));
-	int class = FF2_GetArgI(boss, this_plugin_name, ability_name, "class", 4);
-	float ratio = FF2_GetArgF(boss, this_plugin_name, ability_name, "ratio", 5);
-	char classname[64] = "tf_weapon_bottle";
+	int class = RoundFloat(GetArgF(boss, ability_name, "class", 4, 0.0, 0));
+	float ratio = GetArgF(boss, ability_name, "ratio", 5, 0.0, 0);
+	static char classname[64];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "classname", 6, classname, sizeof(classname));
-	int index = FF2_GetArgI(boss, this_plugin_name, ability_name, "index", 7, 191);
-	char attributes[128] = "68 ; -1";
+	int index = RoundFloat(GetArgF(boss, ability_name, "index", 7, 191.0, 1));
+	static char attributes[128];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "attributes", 8, attributes, sizeof(attributes));
-	int ammo = FF2_GetArgI(boss, this_plugin_name, ability_name, "ammo", 9, -1);
-	int clip = FF2_GetArgI(boss, this_plugin_name, ability_name, "clip", 10, -1);
-	char healthformula[768];
-	FF2_GetArgS(boss, this_plugin_name, ability_name, "health", 11, healthformula, sizeof(healthformula));
+	int ammo = RoundFloat(GetArgF(boss, ability_name, "ammo", 9, 0.0, 1));
+	int clip = RoundFloat(GetArgF(boss, ability_name, "clip", 10, 0.0, 1));
+	int health = RoundFloat(GetArgF(boss, ability_name, "health", 11, 0.0, 1));
 
-	float position[3], velocity[3];
+	static float position[3], velocity[3];
 	GetEntPropVector(GetClientOfUserId(FF2_GetBossUserId(boss)), Prop_Data, "m_vecOrigin", position);
 
 	int maxKV;
 	for(maxKV=0; maxKV<8; maxKV++)
 	{
-		if(!(bossKV[maxKV]=FF2_GetSpecialKV(maxKV)))
+		if(!(bossKV[maxKV] = FF2_GetSpecialKV(maxKV)))
 			break;
 	}
 
@@ -1269,7 +1287,6 @@ void Rage_Clone(const char[] ability_name, int boss)
 		}
 	}
 
-	int health = ParseFormula(boss, healthformula, 0, alive);
 	int totalMinions = (ratio ? RoundToCeil(alive*ratio) : MaxClients);  //If ratio is 0, use MaxClients instead
 	int config = GetRandomInt(0, maxKV-1);
 	int clone, temp;
@@ -1311,7 +1328,7 @@ void Rage_Clone(const char[] ability_name, int boss)
 				if(attributes[0] == '\0')
 					attributes = "68 ; -1";
 
-				weapon = FF2_SpawnWeapon(clone, classname, index, 101, 0, attributes);
+				weapon = FF2_SpawnWeapon(clone, classname, index, 101, 6, attributes);
 				if(StrEqual(classname, "tf_weapon_builder") && index!=735)  //PDA, normal sapper
 				{
 					SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -1335,7 +1352,8 @@ void Rage_Clone(const char[] ability_name, int boss)
 					SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", -1);
 				}
 
-				FF2_SetAmmo(clone, weapon, ammo, clip);
+				if(ammo || clip)
+					FF2_SetAmmo(clone, weapon, ammo, clip);
 			}
 		}
 
@@ -1354,7 +1372,6 @@ void Rage_Clone(const char[] ability_name, int boss)
 		FF2_GetBossName(boss, bossName, sizeof(bossName), 0, clone);
 		PrintHintText(clone, "%t", "seeldier_rage_message", bossName);
 
-		SetEntProp(clone, Prop_Data, "m_takedamage", 0);
 		SDKHook(clone, SDKHook_OnTakeDamage, SaveMinion);
 		CreateTimer(4.0, Timer_Enable_Damage, GetClientUserId(clone), TIMER_FLAG_NO_MAPCHANGE);
 
@@ -1397,7 +1414,7 @@ public Action Timer_EquipModel(Handle timer, any pack)
 	int client = GetClientOfUserId(ReadPackCell(pack));
 	if(client && IsClientInGame(client) && IsPlayerAlive(client))
 	{
-		char model[PLATFORM_MAX_PATH];
+		static char model[PLATFORM_MAX_PATH];
 		ReadPackString(pack, model, PLATFORM_MAX_PATH);
 		SetVariantString(model);
 		AcceptEntityInput(client, "SetCustomModel");
@@ -1410,23 +1427,21 @@ public Action Timer_Enable_Damage(Handle timer, any userid)
 	int client = GetClientOfUserId(userid);
 	if(client)
 	{
-		SetEntProp(client, Prop_Data, "m_takedamage", 2);
 		FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_ALLOWSPAWNINBOSSTEAM);
 		SDKUnhook(client, SDKHook_OnTakeDamage, SaveMinion);
 	}
 	return Plugin_Continue;
 }
 
-// TODO: Fix this
 public Action SaveMinion(int client, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
 	if(attacker > MaxClients)
 	{
-		char edict[64];
+		static char edict[64];
 		if(GetEntityClassname(attacker, edict, sizeof(edict)) && !strcmp(edict, "trigger_hurt", false))
 		{
 			int target;
-			float position[3];
+			static float position[3];
 			bool otherTeamIsAlive;
 			for(int clone=1; clone<=MaxClients; clone++)
 			{
@@ -1450,173 +1465,9 @@ public Action SaveMinion(int client, int &attacker, int &inflictor, float &damag
 			GetEntPropVector(target, Prop_Data, "m_vecOrigin", position);
 			TeleportEntity(client, position, NULL_VECTOR, NULL_VECTOR);
 			TF2_StunPlayer(client, 2.0, 0.0, TF_STUNFLAGS_GHOSTSCARE|TF_STUNFLAG_NOSOUNDOREFFECT, client);
-			return Plugin_Handled;
 		}
 	}
-	return Plugin_Continue;
-}
-
-stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
-{
-	float sum = GetArrayCell(sumArray, bracket);
-	switch(GetArrayCell(_operator, bracket))
-	{
-		case Operator_Add:
-		{
-			SetArrayCell(sumArray, bracket, sum+value);
-		}
-		case Operator_Subtract:
-		{
-			SetArrayCell(sumArray, bracket, sum-value);
-		}
-		case Operator_Multiply:
-		{
-			SetArrayCell(sumArray, bracket, sum*value);
-		}
-		case Operator_Divide:
-		{
-			if(!value)
-			{
-				FF2_LogError("[Boss] Detected a divide by 0 for rage_clone!");
-				bracket = 0;
-				return;
-			}
-			SetArrayCell(sumArray, bracket, sum/value);
-		}
-		case Operator_Exponent:
-		{
-			SetArrayCell(sumArray, bracket, Pow(sum, value));
-		}
-		default:
-		{
-			SetArrayCell(sumArray, bracket, value);  //This means we're dealing with a constant
-		}
-	}
-	SetArrayCell(_operator, bracket, Operator_None);
-}
-
-stock void OperateString(Handle sumArray, int &bracket, char[] value, int size, Handle _operator)
-{
-	if(!StrEqual(value, ""))  //Make sure 'value' isn't blank
-	{
-		Operate(sumArray, bracket, StringToFloat(value), _operator);
-		strcopy(value, size, "");
-	}
-}
-
-public int ParseFormula(int boss, const char[] key, int defaultValue, int playing)
-{
-	char formula[1024], bossName[64];
-	FF2_GetBossName(boss, bossName, sizeof(bossName));
-	strcopy(formula, sizeof(formula), key);
-	int size = 1;
-	int matchingBrackets;
-	for(int i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
-	{
-		if(formula[i] == '(')
-		{
-			if(!matchingBrackets)
-			{
-				size++;
-			}
-			else
-			{
-				matchingBrackets--;
-			}
-		}
-		else if(formula[i] == ')')
-		{
-			matchingBrackets++;
-		}
-	}
-
-	Handle sumArray=CreateArray(_, size), _operator=CreateArray(_, size);
-	int bracket;  //Each bracket denotes a separate sum (within parentheses).  At the end, they're all added together to achieve the actual sum
-	SetArrayCell(sumArray, 0, 0.0);  //TODO:  See if these can be placed naturally in the loop
-	SetArrayCell(_operator, bracket, Operator_None);
-
-	char character[2], value[16];
-	for(int i; i<=strlen(formula); i++)
-	{
-		character[0] = formula[i];  //Find out what the next char in the formula is
-		switch(character[0])
-		{
-			case ' ', '\t':  //Ignore whitespace
-			{
-				continue;
-			}
-			case '(':
-			{
-				bracket++;  //We've just entered a new parentheses so increment the bracket value
-				SetArrayCell(sumArray, bracket, 0.0);
-				SetArrayCell(_operator, bracket, Operator_None);
-			}
-			case ')':
-			{
-				OperateString(sumArray, bracket, value, sizeof(value), _operator);
-				if(GetArrayCell(_operator, bracket) != Operator_None)  //Something like (5*)
-				{
-					FF2_LogError("[Boss] %s's %s formula for rage_clone has an invalid operator at character %i", bossName, key, i+1);
-					CloseHandle(sumArray);
-					CloseHandle(_operator);
-					return defaultValue;
-				}
-
-				if(--bracket < 0)  //Something like (5))
-				{
-					FF2_LogError("[Boss] %s's %s formula for rage_clone has an unbalanced parentheses at character %i", bossName, key, i+1);
-					CloseHandle(sumArray);
-					CloseHandle(_operator);
-					return defaultValue;
-				}
-
-				Operate(sumArray, bracket, GetArrayCell(sumArray, bracket+1), _operator);
-			}
-			case '\0':  //End of formula
-			{
-				OperateString(sumArray, bracket, value, sizeof(value), _operator);
-			}
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
-			{
-				StrCat(value, sizeof(value), character);  //Constant?  Just add it to the current value
-			}
-			case 'n', 'x':  //n and x denote player variables
-			{
-				Operate(sumArray, bracket, float(playing), _operator);
-			}
-			case '+', '-', '*', '/', '^':
-			{
-				OperateString(sumArray, bracket, value, sizeof(value), _operator);
-				switch(character[0])
-				{
-					case '+':
-						SetArrayCell(_operator, bracket, Operator_Add);
-
-					case '-':
-						SetArrayCell(_operator, bracket, Operator_Subtract);
-
-					case '*':
-						SetArrayCell(_operator, bracket, Operator_Multiply);
-
-					case '/':
-						SetArrayCell(_operator, bracket, Operator_Divide);
-
-					case '^':
-						SetArrayCell(_operator, bracket, Operator_Exponent);
-				}
-			}
-		}
-	}
-
-	int result = RoundFloat(GetArrayCell(sumArray, 0));
-	CloseHandle(sumArray);
-	CloseHandle(_operator);
-	if(result <= 0)
-	{
-		FF2_LogError("[Boss] %s has an invalid %s formula for rage_clone, using default health!", bossName, key);
-		return defaultValue;
-	}
-	return result;
+	return Plugin_Handled;
 }
 
 
@@ -1630,7 +1481,7 @@ public Action Timer_Demopan_Rage(Handle timer, any count)	//TODO: Make this rage
 	}
 	else
 	{
-		char overlay[PLATFORM_MAX_PATH];
+		static char overlay[PLATFORM_MAX_PATH];
 		Format(overlay, sizeof(overlay), "r_screenoverlay \"freak_fortress_2/demopan/trade_%i\"", count);
 
 		SetCommandFlags("r_screenoverlay", GetCommandFlags("r_screenoverlay") & ~FCVAR_CHEAT);  //Allow normal players to use r_screenoverlay
@@ -1661,33 +1512,33 @@ void Rage_Bow(int boss)
 {
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 	TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
-	char attributes[64], classname[64];
+	static char attributes[64], classname[64];
 
 	FF2_GetArgS(boss, this_plugin_name, "rage_cbs_bowrage", "attributes", 1, attributes, sizeof(attributes));
 	if(!strlen(attributes))
 	{
 		if(GetConVarBool(cvarStrangeWep))
 		{
-			attributes="2 ; 3.0 ; 6 ; 0.5 ; 37 ; 0.0 ; 214 ; 333 ; 280 ; 19";
+			strcopy(attributes, sizeof(attributes), "6 ; 0.5 ; 37 ; 0.0 ; 214 ; 333 ; 280 ; 19");
 		}
 		else
 		{
-			attributes="2 ; 3.0 ; 6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19";
+			strcopy(attributes, sizeof(attributes), "6 ; 0.5 ; 37 ; 0.0 ; 280 ; 19");
 		}
 	}
 
-	int maximum = FF2_GetArgI(boss, this_plugin_name, "rage_cbs_bowrage", "max", 2, 9);
-	float ammo = FF2_GetArgF(boss, this_plugin_name, "rage_cbs_bowrage", "ammo", 3, 1.0);
-	int clip = FF2_GetArgI(boss, this_plugin_name, "rage_cbs_bowrage", "clip", 4, 1);
+	int maximum = RoundFloat(GetArgF(boss, "rage_cbs_bowrage", "max", 2, 9.0, 2));
+	float ammo = GetArgF(boss, "rage_cbs_bowrage", "ammo", 3, 1.0, 2);
+	int clip = RoundFloat(GetArgF(boss, "rage_cbs_bowrage", "clip", 4, 1.0, 1));
 	FF2_GetArgS(boss, this_plugin_name, "rage_cbs_bowrage", "classname", 5, classname, sizeof(classname));
 	if(!strlen(classname))
-		classname="tf_weapon_compound_bow";
+		strcopy(classname, sizeof(classname), "tf_weapon_compound_bow");
 
-	int index = FF2_GetArgI(boss, this_plugin_name, "rage_cbs_bowrage", "index", 6, 1005);
-	int level = FF2_GetArgI(boss, this_plugin_name, "rage_cbs_bowrage", "level", 7, 101);
-	int quality = FF2_GetArgI(boss, this_plugin_name, "rage_cbs_bowrage", "quality", 8, 5);
+	int index = RoundFloat(GetArgF(boss, "rage_cbs_bowrage", "index", 6, 1005.0, 1));
+	int level = RoundFloat(GetArgF(boss, "rage_cbs_bowrage", "level", 7, 101.0, 1));
+	int quality = RoundFloat(GetArgF(boss, "rage_cbs_bowrage", "quality", 8, 5.0, 1));
 	int weapon = FF2_SpawnWeapon(client, classname, index, level, quality, attributes);
-	if(FF2_GetArgI(boss, this_plugin_name, "rage_cbs_bowrage", "force switch", 9, 1))
+	if(GetArgF(boss, "rage_cbs_bowrage", "force switch", 9, 1.0, 0))
 		SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
 
 	TFTeam team = (TF2_GetClientTeam(client)==TFTeam_Blue ? TFTeam_Red : TFTeam_Blue);
@@ -1724,22 +1575,22 @@ public Action Timer_Prepare_Explosion_Rage(Handle timer, Handle data)
 	int boss = ReadPackCell(data);
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 
-	char ability_name[64];
+	static char ability_name[64];
 	ReadPackString(data, ability_name, sizeof(ability_name));
 
-	ExpCount[client] = FF2_GetArgI(boss, this_plugin_name, ability_name, "count", 3, 35);
-	ExpDamage[client] = FF2_GetArgF(boss, this_plugin_name, ability_name, "damage", 4, 180.0);
-	ExpRange[client] = FF2_GetArgI(boss, this_plugin_name, ability_name, "distance", 5, 350);
+	ExpCount[client] = RoundFloat(GetArgF(boss, ability_name, "count", 3, 35.0, 2));
+	ExpDamage[client] = GetArgF(boss, ability_name, "damage", 4, 180.0, 0);
+	ExpRange[client] = RoundFloat(GetArgF(boss, ability_name, "distance", 5, 350.0, 1));
 
-	if(FF2_GetArgI(boss, this_plugin_name, ability_name, "taunt", 6, 1))
+	if(GetArgF(boss, ability_name, "taunt", 6, 1.0, 0))
 		ClientCommand(client, "+taunt");
 
-	CreateTimer(FF2_GetArgF(boss, this_plugin_name, ability_name, "delay", 2, 0.12), Timer_Rage_Explosive_Dance, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(GetArgF(boss, ability_name, "delay", 2, 0.12, 1), Timer_Rage_Explosive_Dance, boss, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
-	float position[3];
+	static float position[3];
 	GetEntPropVector(client, Prop_Data, "m_vecOrigin", position);
 
-	char sound[PLATFORM_MAX_PATH];
+	static char sound[PLATFORM_MAX_PATH];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "sound", 1, sound, PLATFORM_MAX_PATH);
 	if(strlen(sound))
 	{
@@ -1765,7 +1616,7 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 	if(count<=ExpCount[client] && IsPlayerAlive(client))
 	{
 		SetEntityMoveType(client, MOVETYPE_NONE);
-		float bossPosition[3], explosionPosition[3];
+		static float bossPosition[3], explosionPosition[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", bossPosition);
 		explosionPosition[2] = bossPosition[2];
 		int range;
@@ -1809,44 +1660,47 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 
 /*	Matrix Attack	*/
 
-void Rage_Slowmo(int boss, const char[] ability_name)
+void Rage_Slowmo(int boss)
 {
-	float duration = FF2_GetArgF(boss, this_plugin_name, ability_name, "duration", 1, 1.0)+1.0;
-	if(duration <= 0)
-		return;
-
-	float timescale = FF2_GetArgF(boss, this_plugin_name, ability_name, "timescale", 2, 0.1);
-	if(timescale <= 0)
-		return;
+	float duration = GetArgF(boss, "rage_matrix_attack", "duration", 1, 1.0, 2)+1.0;
+	float timescale = GetArgF(boss, "rage_matrix_attack", "timescale", 2, 0.1, 2);
 
 	FF2_SetFF2flags(boss, FF2_GetFF2flags(boss)|FF2FLAG_CHANGECVAR);
-	SetConVarFloat(cvarTimeScale, timescale);
+	cvarTimeScale.FloatValue = timescale;
 	SlowMoTimer = CreateTimer(duration*timescale, Timer_StopSlowMo, boss, TIMER_FLAG_NO_MAPCHANGE);
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
-	FF2Flags[client] = FF2Flags[client]|FLAG_SLOWMOREADYCHANGE|FLAG_ONSLOWMO;
+	FF2Flags[client] |= FLAG_SLOWMOREADYCHANGE|FLAG_ONSLOWMO;
 	UpdateClientCheatValue(1);
 
 	if(client)
 		CreateTimer(duration*timescale, Timer_RemoveEntity, EntIndexToEntRef(AttachParticle(client, GetClientTeam(client)==view_as<int>(TFTeam_Blue) ? "scout_dodge_blue" : "scout_dodge_red", 75.0)), TIMER_FLAG_NO_MAPCHANGE);
 
-	EmitSoundToAll(SOUND_SLOW_MO_START, _, _, _, _, _, _, _, _, _, false);
-	EmitSoundToAll(SOUND_SLOW_MO_START, _, _, _, _, _, _, _, _, _, false);
+	if(timescale != 1)
+	{
+		EmitSoundToAll(SOUND_SLOW_MO_START, _, _, _, _, _, _, _, _, _, false);
+		EmitSoundToAll(SOUND_SLOW_MO_START, _, _, _, _, _, _, _, _, _, false);
+	}
 }
 
 public Action Timer_StopSlowMo(Handle timer, any boss)
 {
 	SlowMoTimer = INVALID_HANDLE;
 	oldTarget = 0;
-	SetConVarFloat(cvarTimeScale, 1.0);
+	float timescale = cvarTimeScale.FloatValue;
+	cvarTimeScale.FloatValue = 1.0;
 	UpdateClientCheatValue(0);
 	if(boss != -1)
 	{
 		FF2_SetFF2flags(boss, FF2_GetFF2flags(boss) & ~FF2FLAG_CHANGECVAR);
 		int client = GetClientOfUserId(FF2_GetBossUserId(boss));
-		FF2Flags[client]&=~FLAG_ONSLOWMO;
+		FF2Flags[client] &= ~FLAG_ONSLOWMO;
 	}
-	EmitSoundToAll(SOUND_SLOW_MO_END, _, _, _, _, _, _, _, _, _, false);
-	EmitSoundToAll(SOUND_SLOW_MO_END, _, _, _, _, _, _, _, _, _, false);
+
+	if(timescale != 1)
+	{
+		EmitSoundToAll(SOUND_SLOW_MO_END, _, _, _, _, _, _, _, _, _, false);
+		EmitSoundToAll(SOUND_SLOW_MO_END, _, _, _, _, _, _, _, _, _, false);
+	}
 	return Plugin_Continue;
 }
 
@@ -1858,10 +1712,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float veloc
 
 	if(buttons & IN_ATTACK)
 	{
-		FF2Flags[client]&=~FLAG_SLOWMOREADYCHANGE;
-		CreateTimer(FF2_GetArgF(boss, this_plugin_name, "rage_matrix_attack", "delay", 3, 0.2), Timer_SlowMoChange, boss, TIMER_FLAG_NO_MAPCHANGE);
+		FF2Flags[client] &= ~FLAG_SLOWMOREADYCHANGE;
+		CreateTimer(GetArgF(boss, "rage_matrix_attack", "delay", 3, 0.2, 1), Timer_SlowMoChange, boss, TIMER_FLAG_NO_MAPCHANGE);
 
-		float bossPosition[3], endPosition[3], eyeAngles[3];
+		static float bossPosition[3], endPosition[3], eyeAngles[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", bossPosition);
 		bossPosition[2] += 65;
 		GetClientEyeAngles(client, eyeAngles);
@@ -1893,7 +1747,7 @@ public Action Timer_Rage_SlowMo_Attack(Handle timer, Handle data)
 	int target = GetClientOfUserId(ReadPackCell(data));
 	if(client && target && IsClientInGame(client) && IsClientInGame(target))
 	{
-		float clientPosition[3], targetPosition[3];
+		static float clientPosition[3], targetPosition[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", clientPosition);
 		GetEntPropVector(target, Prop_Send, "m_vecOrigin", targetPosition);
 		if(GetVectorDistance(clientPosition, targetPosition)<=1500 && target!=oldTarget)
@@ -1930,28 +1784,212 @@ stock void UpdateClientCheatValue(int value)
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsClientInGame(client) && !IsFakeClient(client))
-			SendConVarValue(client, cvarCheats, value ? "1" : "0");
+			cvarCheats.ReplicateToClient(client, value ? "1" : "0");
 	}
 }
 
 
 /*	Extras	*/
 
+public float GetArgF(int boss, const char[] abilityName, const char[] argName, int argNumber, float defaultValue, int valueCheck)
+{
+	static char buffer[1024];
+	FF2_GetArgS(boss, this_plugin_name, abilityName, argName, argNumber, buffer, sizeof(buffer));
+
+	if(strlen(buffer))
+	{
+		return ParseFormula(boss, buffer, defaultValue, abilityName, argName, argNumber, valueCheck); 
+	}
+	else if((valueCheck==1 && defaultValue<0) || (valueCheck==2 && defaultValue<=0))
+	{
+		FF2_LogError("[Boss] Formula at arg%i/%s for %s is not allowed to be blank.", argNumber, argName, abilityName);
+		return 0.0;
+	}
+	return defaultValue;
+}
+
+stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
+{
+	float sum = GetArrayCell(sumArray, bracket);
+	switch(GetArrayCell(_operator, bracket))
+	{
+		case Operator_Add:
+		{
+			SetArrayCell(sumArray, bracket, sum+value);
+		}
+		case Operator_Subtract:
+		{
+			SetArrayCell(sumArray, bracket, sum-value);
+		}
+		case Operator_Multiply:
+		{
+			SetArrayCell(sumArray, bracket, sum*value);
+		}
+		case Operator_Divide:
+		{
+			if(!value)
+			{
+				FF2_LogError("[Boss] Detected a divide by 0 in a boss with %s!", this_plugin_name);
+				bracket = 0;
+				return;
+			}
+			SetArrayCell(sumArray, bracket, sum/value);
+		}
+		case Operator_Exponent:
+		{
+			SetArrayCell(sumArray, bracket, Pow(sum, value));
+		}
+		default:
+		{
+			SetArrayCell(sumArray, bracket, value);  //This means we're dealing with a constant
+		}
+	}
+	SetArrayCell(_operator, bracket, Operator_None);
+}
+
+stock void OperateString(Handle sumArray, int &bracket, char[] value, int size, Handle _operator)
+{
+	if(!StrEqual(value, ""))  //Make sure 'value' isn't blank
+	{
+		Operate(sumArray, bracket, StringToFloat(value), _operator);
+		strcopy(value, size, "");
+	}
+}
+
+public float ParseFormula(int boss, const char[] key, float defaultValue, const char[] abilityName, const char[] argName, int argNumber, int valueCheck)
+{
+	static char formula[1024];
+	strcopy(formula, sizeof(formula), key);
+	int size = 1;
+	int matchingBrackets;
+	for(int i; i<=strlen(formula); i++)  //Resize the arrays once so we don't have to worry about it later on
+	{
+		if(formula[i] == '(')
+		{
+			if(!matchingBrackets)
+			{
+				size++;
+			}
+			else
+			{
+				matchingBrackets--;
+			}
+		}
+		else if(formula[i] == ')')
+		{
+			matchingBrackets++;
+		}
+	}
+
+	ArrayList sumArray = CreateArray(_, size);
+	ArrayList _operator = CreateArray(_, size);
+	int bracket;
+	sumArray.Set(0, 0.0);
+	_operator.Set(bracket, Operator_None);
+
+	char character[2], value[16];
+	for(int i; i<=strlen(formula); i++)
+	{
+		character[0] = formula[i];
+		switch(character[0])
+		{
+			case ' ', '\t':
+			{
+				continue;
+			}
+			case '(':
+			{
+				bracket++;
+				sumArray.Set(bracket, 0.0);
+				_operator.Set(bracket, Operator_None);
+			}
+			case ')':
+			{
+				OperateString(sumArray, bracket, value, sizeof(value), _operator);
+				if(_operator.Get(bracket) != Operator_None)
+				{
+					FF2_LogError("[Boss] Formula at arg%i/%s for %s has an invalid operator at character %i", argNumber, argName, abilityName, i+1);
+					delete sumArray;
+					delete _operator;
+					return defaultValue;
+				}
+
+				if(--bracket < 0)
+				{
+					FF2_LogError("[Boss] Formula at arg%i/%s for %s has an unbalanced parentheses at character %i", argNumber, argName, abilityName, i+1);
+					delete sumArray;
+					delete _operator;
+					return defaultValue;
+				}
+
+				Operate(sumArray, bracket, sumArray.Get(bracket+1), _operator);
+			}
+			case '\0':
+			{
+				OperateString(sumArray, bracket, value, sizeof(value), _operator);
+			}
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
+			{
+				StrCat(value, sizeof(value), character);
+			}
+			case 'n', 'x':
+			{
+				Operate(sumArray, bracket, float(TotalPlayers), _operator);
+			}
+			case 'a', 'y':
+			{
+				Operate(sumArray, bracket, float(Players), _operator);
+			}
+			case '+', '-', '*', '/', '^':
+			{
+				OperateString(sumArray, bracket, value, sizeof(value), _operator);
+				switch(character[0])
+				{
+					case '+':
+						_operator.Set(bracket, Operator_Add);
+
+					case '-':
+						_operator.Set(bracket, Operator_Subtract);
+
+					case '*':
+						_operator.Set(bracket, Operator_Multiply);
+
+					case '/':
+						_operator.Set(bracket, Operator_Divide);
+
+					case '^':
+						_operator.Set(bracket, Operator_Exponent);
+				}
+			}
+		}
+	}
+
+	float result = sumArray.Get(0);
+	delete sumArray;
+	delete _operator;
+	if((valueCheck==1 && result<0) || (valueCheck==2 && result<=0))
+	{
+		FF2_LogError("[Boss] An invalid formula at arg%i/%s for %s!", argNumber, argName, abilityName);
+		return defaultValue;
+	}
+	return result;
+}
+
 public Action Timer_RemoveEntity(Handle timer, any entid)
 {
-	int entity=EntRefToEntIndex(entid);
+	int entity = EntRefToEntIndex(entid);
 	if(IsValidEntity(entity) && entity>MaxClients)
 		AcceptEntityInput(entity, "Kill");
 }
 
 stock int AttachParticle(int entity, char[] particleType, float offset=0.0, bool attach=true)
 {
-	int particle=CreateEntityByName("info_particle_system");
+	int particle = CreateEntityByName("info_particle_system");
 
-	char targetName[128];
-	float position[3];
+	static char targetName[128];
+	static float position[3];
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
-	position[2]+=offset;
+	position[2] += offset;
 	TeleportEntity(particle, position, NULL_VECTOR, NULL_VECTOR);
 
 	Format(targetName, sizeof(targetName), "target%i", entity);
