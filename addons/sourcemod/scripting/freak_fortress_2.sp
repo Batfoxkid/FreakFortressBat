@@ -7610,6 +7610,9 @@ void EquipBoss(int boss)
 			}
 
 			weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+			if(weapon == -1)
+				continue;
+
 			FF2_SetAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", -1), KvGetNum(BossKV[Special[boss]], "clip", -1));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
@@ -7630,7 +7633,6 @@ void EquipBoss(int boss)
 
 			if(KvGetNum(BossKV[Special[boss]], "show", 0))
 			{
-				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
 				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
 				if(strlen(wModel))
 					ConfigureWorldModelOverride(weapon, wModel);
@@ -7646,11 +7648,8 @@ void EquipBoss(int boss)
 			else
 			{
 				SetEntPropFloat(weapon, Prop_Send, "m_flModelScale", 0.001);
-				if(index==221 || index==572 || index==939 || index==999 || index==1013) // Workaround for jiggleboned weapons
-				{
-					SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", -1);
-					SetEntProp(weapon, Prop_Send, "m_nModelIndexOverrides", -1, _, 0);
-				}
+				SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", -1);
+				SetEntProp(weapon, Prop_Send, "m_nModelIndexOverrides", -1, _, 0);
 			}
 
 			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
@@ -8026,7 +8025,6 @@ void EquipBoss(int boss)
 
 				if(KvGetNum(BossKV[Special[boss]], "show", 1))
 				{
-					SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1);
 					KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
 					if(strlen(wModel))
 						ConfigureWorldModelOverride(weapon, wModel, true);
@@ -9400,7 +9398,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	SetEntityRenderColor(client, 255, 255, 255, 255);
 	hadshield[client] = false;
 	shield[client] = 0;
-	int[] civilianCheck = new int[MaxClients+1];
+	static int civilianCheck[MAXTF2PLAYERS];
 
 	int weapon = GetPlayerWeaponSlot(client, 4);
 	if(IsValidEntity(weapon) && GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")==60 && (kvWeaponMods == null || cvarHardcodeWep.IntValue>0))  //Cloak and Dagger
@@ -9426,7 +9424,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 		if(index==402 && (kvWeaponMods==null || cvarHardcodeWep.IntValue>0))
 		{
 			TF2_RemoveWeaponSlot(client, TFWeaponSlot_Primary);
-			FF2_SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8");
+			if(FF2_SpawnWeapon(client, "tf_weapon_sniperrifle", 402, 1, 6, "91 ; 0.5 ; 75 ; 3.75 ; 178 ; 0.8") == -1)
+				civilianCheck[client]++;
 		}
 
 		GetEntityClassname(weapon, classname, sizeof(classname));
@@ -14899,8 +14898,7 @@ stock TFClassType KvGetClass(Handle keyvalue, const char[] string)
 		if(class == TFClass_Unknown)
 			class = TFClass_Scout;
 	}
-
-	return result;
+	return class;
 }
 
 stock void AssignTeam(int client, int team)
