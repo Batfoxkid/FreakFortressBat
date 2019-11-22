@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."014"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."015"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -8054,7 +8054,7 @@ void EquipBoss(int boss)
 	}
 
 	KvGoBack(BossKV[Special[boss]]);
-	TFClassType class = view_as<TFClassType>(KvGetNum(BossKV[Special[boss]], "class", 1));
+	TFClassType class = KvGetClass(BossKV[Special[boss]], "class");
 	HasEquipped[boss] = true;
 	if(TF2_GetPlayerClass(client) != class)
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
@@ -8304,7 +8304,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
 	KvRewind(BossKV[Special[boss]]);
 	TF2_RemovePlayerDisguise(client);
-	TF2_SetPlayerClass(client, view_as<TFClassType>(KvGetNum(BossKV[Special[boss]], "class", 1)), _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
+	TF2_SetPlayerClass(client, KvGetClass(BossKV[Special[boss]], "class"), _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 	SDKHook(client, SDKHook_GetMaxHealth, OnGetMaxHealth);  //Temporary:  Used to prevent boss overheal
 
 	switch(KvGetNum(BossKV[Special[boss]], "pickups", 0))  //Check if the boss is allowed to pickup health/ammo
@@ -14887,6 +14887,22 @@ public Action Timer_DisguiseBackstab(Handle timer, any userid)
 	return Plugin_Continue;
 }
 
+stock TFClassType KvGetClass(Handle keyvalue, const char[] string)
+{
+	TFClassType class;
+	static char buffer[24];
+	KvGetString(keyvalue, string, buffer, sizeof(buffer));
+	class = view_as<TFClassType>(StringToInt(buffer));
+	if(class == TFClass_Unknown)
+	{
+		class = TF2_GetClass(buffer);
+		if(class == TFClass_Unknown)
+			class = TFClass_Scout;
+	}
+
+	return result;
+}
+
 stock void AssignTeam(int client, int team)
 {
 	if(!GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass"))  //Living spectator check: 0 means that no class is selected
@@ -14894,7 +14910,7 @@ stock void AssignTeam(int client, int team)
 		FF2Dbg("%N does not have a desired class", client);
 		if(IsBoss(client))
 		{
-			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", KvGetNum(BossKV[Special[Boss[client]]], "class", 1));  //So we assign one to prevent living spectators
+			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(KvGetClass(BossKV[Special[Boss[client]]], "class")));  //So we assign one to prevent living spectators
 		}
 		else
 		{
@@ -14911,7 +14927,7 @@ stock void AssignTeam(int client, int team)
 		FF2Dbg("%N is a living spectator", client);
 		if(IsBoss(client))
 		{
-			TF2_SetPlayerClass(client, view_as<TFClassType>(KvGetNum(BossKV[Special[Boss[client]]], "class", 1)));
+			TF2_SetPlayerClass(client, KvGetClass(BossKV[Special[Boss[client]]], "class"));
 		}
 		else
 		{
