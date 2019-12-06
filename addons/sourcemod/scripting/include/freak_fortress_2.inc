@@ -1,4 +1,3 @@
-//Freak Fortress 2 include file.
 #include <morecolors>
 #include <sdktools>
 #tryinclude <tf2items>
@@ -18,6 +17,7 @@
 #define FF2FLAG_ALLOW_HEALTH_PICKUPS		(1<<13)		//Used to prevent bosses from picking up health
 #define FF2FLAG_ALLOW_AMMO_PICKUPS		(1<<14)		//Used to prevent bosses from picking up ammo
 #define FF2FLAG_ROCKET_JUMPING			(1<<15)		//Used when a soldier is rocket jumping
+#define FF2FLAG_ALLOW_BOSS_WEARABLES		(1<<16)		//Used to allow boss having wearables (only for Official FF2)
 #define FF2FLAGS_SPAWN				~FF2FLAG_UBERREADY & ~FF2FLAG_ISBUFFED & ~FF2FLAG_TALKING & ~FF2FLAG_ALLOWSPAWNINBOSSTEAM & ~FF2FLAG_CHANGECVAR & ~FF2FLAG_ROCKET_JUMPING & FF2FLAG_USEBOSSTIMER & FF2FLAG_USINGABILITY
 
 #if defined _FF2_included
@@ -49,7 +49,8 @@ native bool FF2_GetFF2Version(int[] version=0);
 
 /**
  * Is Boss vs Boss mode enabled?
- * Note this is set on round end before the next round
+ *
+ * @note		This is set before the next round setup period
  *
  * @return		False if Boss vs Boss is disabled
  *			True if Boss vs Boss is enabled
@@ -59,8 +60,9 @@ native bool FF2_IsBossVsBoss();
 /**
  * Gets the version of the FF2 fork running on the server
  *
+ * @note		Official FF2 versions always return 0 for version numbers
+ *
  * @param version	An array of size 3 that will contain the major, minor, and stable version numbers respectively
- * 			(Official FF2 versions always return 0 for version numbers)
  *
  * @return		True if the server has a sub name defined, false otherwise
  */
@@ -109,9 +111,10 @@ native int FF2_GetBossTeam();
  * @param bossMeaning			0 - "boss" parameter means index of current Boss
  *					1 - "boss" parameter means number of Boss in characters.cfg
  *
+ * @error			Invalid boss index
+ *
  * @return			True if boss exists, false if not
  */
-#pragma deprecated Use FF2_GetBossName instead for Unofficial
 native bool FF2_GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int bossMeaning=0);
 
 /**
@@ -124,6 +127,8 @@ native bool FF2_GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int 
  *					1 - "boss" parameter means number of Boss in characters.cfg
  * @param client		Client to get language from (0 means server language)
  *
+ * @error			Invalid boss index, client index, or client not connected
+ *
  * @return			True if boss exists, false if not
  */
 native bool FF2_GetBossName(int boss=0, char[] buffer, int bufferLength, int bossMeaning=0, int client=0);
@@ -132,6 +137,8 @@ native bool FF2_GetBossName(int boss=0, char[] buffer, int bufferLength, int bos
  * Gets the current health value of the Boss
  *
  * @param boss		Boss's index
+ *
+ * @error		Invalid boss index
  *
  * @return		Current health of the Boss
  */
@@ -143,6 +150,8 @@ native int FF2_GetBossHealth(int boss=0);
  * @param boss		Boss's index
  * @param health	New health value
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_SetBossHealth(int boss, int health);
@@ -151,6 +160,8 @@ native void FF2_SetBossHealth(int boss, int health);
  * Gets the max health of the Boss
  *
  * @param boss		Boss's index
+ *
+ * @error		Invalid boss index
  *
  * @return		Max health of the Boss
  */
@@ -162,6 +173,8 @@ native int FF2_GetBossMaxHealth(int boss=0);
  * @param boss		Boss's index
  * @param health	New max health value
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_SetBossMaxHealth(int boss, int health);
@@ -170,6 +183,8 @@ native void FF2_SetBossMaxHealth(int boss, int health);
  * Gets the current number of lives of the Boss
  *
  * @param boss		Boss's index
+ *
+ * @error		Invalid boss index
  *
  * @return 		Number of lives the boss has remaining
  */
@@ -181,6 +196,8 @@ native int FF2_GetBossLives(int boss);
  * @param boss		Boss's index
  * @param lives		New number of lives
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_SetBossLives(int boss, int lives);
@@ -189,6 +206,8 @@ native void FF2_SetBossLives(int boss, int lives);
  * Gets the max number of lives of the Boss
  *
  * @param boss		Boss's index
+ *
+ * @error		Invalid boss index
  *
  * @return		Max number of lives of the Boss
  */
@@ -199,6 +218,8 @@ native int FF2_GetBossMaxLives(int boss);
  *
  * @param boss		Boss's index
  * @param lives		New max number of lives
+ *
+ * @error		Invalid boss index
  *
  * @noreturn
  */
@@ -212,6 +233,8 @@ native void FF2_SetBossMaxLives(int boss, int lives);
  *				0 - rage
  *				1 - as usual, used for brave jump or teleport
  *				2 - other charged abilities
+ *
+ * @error		Invalid boss index
  *
  * @return		Charge value of the Boss
  */
@@ -227,6 +250,8 @@ native float FF2_GetBossCharge(int boss, int slot);
  *				2 - other charged abilities
  * @param value		New value of charge
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_SetBossCharge(int boss, int slot, float value);
@@ -235,6 +260,8 @@ native void FF2_SetBossCharge(int boss, int slot, float value);
  * Gets how much damage is needed in order to activate the rage of the current boss
  *
  * @param boss		Boss index
+ *
+ * @error		Invalid boss index
  *
  * @return		Total damage needed
  */
@@ -245,6 +272,8 @@ native int FF2_GetBossRageDamage(int boss);
  *
  * @param boss		Boss index
  * @param damage	New damage value
+ *
+ * @error		Invalid boss index
  *
  * @noreturn
  */
@@ -266,6 +295,8 @@ native int FF2_GetClientDamage(int client);
  * @param pluginName	Name of plugin with this ability
  * @param abilityName	Name of ability (use null string if you want get boss's global "ragedist" value)
  *
+ * @error		Invalid boss index
+ *
  * @return		Ability's rage distance
  */
 native float FF2_GetRageDist(int boss=0, const char[] pluginName="", const char[] abilityName="");
@@ -276,6 +307,8 @@ native float FF2_GetRageDist(int boss=0, const char[] pluginName="", const char[
  * @param boss		Boss's index
  * @param pluginName	Name of plugin with this ability
  * @param abilityName 	Name of ability
+ *
+ * @error		Invalid boss index
  *
  * @return		True if the boss has this ability, false if it doesn't
  */
@@ -296,6 +329,8 @@ native bool FF2_HasAbility(int boss, const char[] pluginName, const char[] abili
  *				1 - by right mouse button or duck
  *				2 - by reload button
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_DoAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, int buttonMode=0);
@@ -309,6 +344,8 @@ native void FF2_DoAbility(int boss, const char[] pluginName, const char[] abilit
  * @param argument 	Number of argument
  * @param defValue 	Returns if argument is not defined
  *
+ * @error		Invalid boss index
+ *
  * @return		Value of argument
  */
 native int FF2_GetAbilityArgument(int boss, const char[] pluginName, const char[] abilityName, int argument, int defValue=0);
@@ -321,6 +358,8 @@ native int FF2_GetAbilityArgument(int boss, const char[] pluginName, const char[
  * @param abilityName 	Name of ability
  * @param argument 	Number of argument
  * @param defValue 	Returns if argument is not defined
+ *
+ * @error		Invalid boss index
  *
  * @return		Value of argument
  */
@@ -336,6 +375,8 @@ native float FF2_GetAbilityArgumentFloat(int boss, const char[] plugin_name, con
  * @param buffer 	Buffer for value of argument
  * @param bufferLength	Length of buffer string
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_GetAbilityArgumentString(int boss, const char[] pluginName, const char[] abilityName, int argument, char[] buffer, int bufferLength);
@@ -350,6 +391,8 @@ native void FF2_GetAbilityArgumentString(int boss, const char[] pluginName, cons
  * @param argument 	Argument name
  * @param defValue 	Returns if argument is not defined
  *
+ * @error		Invalid boss index
+ *
  * @return		Value of argument
  */
 native int FF2_GetArgNamedI(int boss, const char[] pluginName, const char[] abilityName, const char[] argument, int defValue=0);
@@ -362,6 +405,8 @@ native int FF2_GetArgNamedI(int boss, const char[] pluginName, const char[] abil
  * @param abilityName 	Name of ability
  * @param argument 	Argument name
  * @param defValue 	Returns if argument is not defined
+ *
+ * @error		Invalid boss index
  *
  * @return		Value of argument
  */
@@ -377,21 +422,26 @@ native float FF2_GetArgNamedF(int boss, const char[] plugin_name, const char[] a
  * @param buffer 	Buffer for value of argument
  * @param bufferLength	Length of buffer string
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_GetArgNamedS(int boss, const char[] pluginName, const char[] abilityName, const char[] argument, char[] buffer, int bufferLength);
 
 /**
  * Are named arguments used for this ability in the boss config?
- * Note: When compability with FF2 version older than 1.11.0 is wanted,
- * add this code in AskPluginLoad2 in your subplugin:
- * MarkNativeAsOptional("FF2_GetArgNamedI");
- * MarkNativeAsOptional("FF2_GetArgNamedF");
- * MarkNativeAsOptional("FF2_GetArgNamedS");
+ * 
+ * @note		When compability with FF2 version older than 1.11.0 is wanted,
+ * @note		add this code in AskPluginLoad2 in your subplugin:
+ * @note		MarkNativeAsOptional("FF2_GetArgNamedI");
+ * @note		MarkNativeAsOptional("FF2_GetArgNamedF");
+ * @note		MarkNativeAsOptional("FF2_GetArgNamedS");
  *
  * @param boss		Boss's index
  * @param pluginName	Name of plugin with this ability
  * @param abilityName 	Name of ability
+ *
+ * @error		Invalid boss index
  *
  * @return              True if named arguments are used. False if indexed arguments are used.
  */
@@ -432,6 +482,8 @@ native void FF2_EmitVoiceToAll(const char[] sample, int entity=SOUND_FROM_PLAYER
  * @param boss		Boss's index
  * @param slot		Only for "sound_ability" - slot of ability
  *
+ * @error		Invalid boss index
+ *
  * @return		True if sound has been found, false otherwise
  */
 native bool FF2_RandomSound(const char[] keyvalue, char[] buffer, int bufferLength, int boss=0, int slot=0);
@@ -440,6 +492,8 @@ native bool FF2_RandomSound(const char[] keyvalue, char[] buffer, int bufferLeng
  * Starts the Boss's music for the specified clients
  *
  * @param client	Client's index (0 for all clients)
+ *
+ * @error		Invalid client index
  *
  * @noreturn
  */
@@ -450,6 +504,8 @@ native void FF2_StartMusic(int client=0);
  *
  * @param client	Client's index (0 for all clients)
  *
+ * @error		Invalid client index
+ *
  * @noreturn
  */
 native void FF2_StopMusic(int client=0);
@@ -457,9 +513,14 @@ native void FF2_StopMusic(int client=0);
 /**
  * Gets a Boss's KV handle
  *
+ * @note		Don't not close or delete the handle.
+ * @note		Rewind before trying to check keyvalues.
+ *
  * @param boss		Boss's index
  * @param specialIndex		0 - 'boss' parameter refers to the index of the boss
  *				1 - 'boss' parameter refers to the index of the boss in characters.cfg
+ *
+ * @error		Invalid boss index
  *
  * @return		Handle of Boss's keyvalues
  */
@@ -469,6 +530,8 @@ native Handle FF2_GetSpecialKV(int boss, int specialIndex=0);
  * Gets a client's flags for FF2
  *
  * @param client	Client's index
+ *
+ * @error		Invalid client index
  *
  * @return		Client's FF2 flags
  */
@@ -480,6 +543,8 @@ native int FF2_GetFF2flags(int client);
  * @param client	Client's index
  * @param flags		New flag values
  *
+ * @error		Invalid client index
+ *
  * @noreturn
  */
 native void FF2_SetFF2flags(int client, int flags);
@@ -489,7 +554,9 @@ native void FF2_SetFF2flags(int client, int flags);
  *
  * @param client	Client's index
  *
- * @return			Client's queue points
+ * @error		Invalid client index
+ *
+ * @return		Client's queue points
  */
 native int FF2_GetQueuePoints(int client);
 
@@ -498,6 +565,8 @@ native int FF2_GetQueuePoints(int client);
  *
  * @param client	Client's index
  * @param value		New value of client's queue points
+ *
+ * @error		Invalid client index
  *
  * @noreturn
  */
@@ -593,6 +662,8 @@ native bool FF2_GetCheats();
  * @param special	Boss selection override
  * @param rival		Have boss on non-boss team
  *
+ * @error		Invalid boss index
+ *
  * @noreturn
  */
 native void FF2_MakeBoss(int client, int boss, int special=-1, bool rival=false);
@@ -602,7 +673,7 @@ native void FF2_MakeBoss(int client, int boss, int special=-1, bool rival=false)
  * Called when a Boss uses an ability (Rage, jump, teleport, etc)
  * Called every 0.2 seconds for charge abilities
  *
- * Use FF2_PreAbility with enabled=false ONLY to prevent FF2_OnAbility!
+ * @note		Use FF2_PreAbility with enabled=false ONLY to prevent FF2_OnAbility!
  *
  * @param boss	 	Boss's index
  * @param pluginName	Name of plugin with this ability
@@ -637,7 +708,6 @@ forward Action FF2_OnTriggerHurt(int boss, int triggerHurt, float &damage);
  *
  * @return		Plugin_Stop will prevent music, Plugin_Changed will change it.
  */
-#pragma deprecated Use FF2_OnMusic2 instead for Unofficial
 forward Action FF2_OnMusic(char[] path, float &time);
 
 /**
@@ -712,6 +782,8 @@ forward void FF2_OnAlivePlayersChanged(int players, int bosses);
  * @param ammo		Ammo (set to 1 for clipless weapons, then set the actual ammo using clip)
  * @param clip		Clip
  *
+ * @error		Invalid client index or client not in game
+ *
  * @noreturn
  */
 stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
@@ -761,18 +833,8 @@ stock void FF2_ShowHudText(int client, int channel, const char[] buffer, any ...
 	}
 }
 
-/**
- * Used to consolidate debug messages
- *
- * @param buffer	Debug string to display
- * @param any:...	Formatting rules
- *
- * @noreturn
- *
- *	Note: Don't use, due to possible name conflicts
- */
 #pragma deprecated Use FF2Dbg instead
-stock void Debug(char[] buffer, any ...)
+stock void Debug(const char[] buffer, any ...)
 {
 	if(FF2_Debug())
 	{
@@ -787,11 +849,11 @@ stock void Debug(char[] buffer, any ...)
  * Used to consolidate debug messages
  *
  * @param buffer	Debug string to display
- * @param any:...	Formatting rules
+ * @param ...		Formatting rules
  *
  * @noreturn
  */
-stock void FF2Dbg(char[] buffer, any ...)
+stock void FF2Dbg(const char[] buffer, any ...)
 {
 	if(FF2_Debug())
 	{
@@ -825,7 +887,6 @@ stock void FPrintToChat(int client, const char[] message, any ...)
 	CReplaceColorCodes(buffer2);
 	CSendMessage(client, buffer2);
 }
-
 stock void FPrintToChatAll(const char[] message, any ...)
 {
 	CCheckTrie();
@@ -844,7 +905,6 @@ stock void FPrintToChatAll(const char[] message, any ...)
 		CSendMessage(i, buffer2);
 	}
 }
-
 stock void FReplyToCommand(int client, const char[] message, any ...)
 {
 	char buffer[MAX_BUFFER_LENGTH];
@@ -872,9 +932,11 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
  * @param att		String, containing the attributes in the following format: attr ; val ; attr ; val ; ...
  * @param visible	Weapon will be visible?
  *
- * @return		Entity index of the weapon
+ * @error		Invalid item index, level, quality, client index, or client not in game
+ *
+ * @return		Entity index of the weapon, -1 on failure
  */
-stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qual, char[] att, bool visible=true)
+stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qual, const char[] att, bool visible=true)
 {
 	#if defined _tf2items_included
 	if(StrEqual(name, "saxxy", false))	// if "saxxy" is specified as the name, replace with appropiate name
@@ -942,6 +1004,9 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
 
 	int entity = TF2Items_GiveNamedItem(client, hWeapon);
 	delete hWeapon;
+	if(entity == -1)
+		return -1;
+
 	EquipPlayerWeapon(client, entity);
 
 	if(visible)
@@ -969,6 +1034,8 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
  * @param index         Argument number, used as fallback when the numbered arguments are used
  * @param defValue 	Returns if argument is not defined
  *
+ * @error		Invalid boss index
+ *
  * @return         	The value of the argument or default value
  */
 stock int FF2_GetArgI(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, int defValue=0)
@@ -987,6 +1054,8 @@ stock int FF2_GetArgI(int boss, const char[] plugin_name, const char[] ability_n
  * @param argument 	Argument name
  * @param index         Argument number, used as fallback when the numbered arguments are used
  * @param defValue 	Returns if argument is not defined
+ *
+ * @error		Invalid boss index
  *
  * @return         	The value of the argument or default value
  */
@@ -1008,6 +1077,8 @@ stock float FF2_GetArgF(int boss, const char[] plugin_name, const char[] ability
  * @param buffer 	Buffer for value of the argument
  * @param bufferLength 	Size of the buffer
  *
+ * @error		Invalid boss index
+ *
  * @return         	Number of characters stored in the provided buffer
  */
 stock int FF2_GetArgS(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, char[] buffer, int bufferLength)
@@ -1016,9 +1087,7 @@ stock int FF2_GetArgS(int boss, const char[] plugin_name, const char[] ability_n
 	{
 		FF2_GetArgNamedS(boss, plugin_name, ability_name, argument, buffer, bufferLength);
 		if(!strlen(buffer))
-		{
 			FF2_GetAbilityArgumentString(boss, plugin_name, ability_name, index, buffer, bufferLength);
-		}
 	}
 	else
 	{
