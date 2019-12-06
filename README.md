@@ -22,7 +22,7 @@ Marxvee for healing, look-based teammate stats HUD, spies disguising as bosses, 
 Naydef for newer versions of official Freak Fortress                                                                     
 [GitHub Profile](https://github.com/naydef "naydef") | [GitHub Repository](https://github.com/naydef/FF2-Official/tree/stable "naydef/FF2-Official at stable")
 
-Fire for various boss settings and feedback
+Fire for various boss settings and feedback                                                                 
 [GitHub Profile](https://github.com/fearts "fearts")
 
 MAGNAT2645 for Russian translations and pointing out errors                                                    
