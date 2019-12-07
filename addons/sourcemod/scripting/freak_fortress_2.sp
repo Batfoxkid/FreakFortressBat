@@ -2225,7 +2225,7 @@ void DisableSubPlugins(bool force=false)
 
 public void ProcessDirectory(const char[] directory, const char[] current, const char[] config)
 {
-	static char file[PLATFORM_MAX_PATH], current2[256];
+	char file[PLATFORM_MAX_PATH], current2[256];
 	strcopy(current2, PLATFORM_MAX_PATH, current);	//???????
 	Format(file, PLATFORM_MAX_PATH, "%s\\%s", directory, current2);
 	if(!DirExists(file))
