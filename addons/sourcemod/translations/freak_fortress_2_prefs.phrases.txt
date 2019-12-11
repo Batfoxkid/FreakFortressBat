@@ -36,13 +36,13 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Selection: {1}"
-		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n\nТекущий выбор: {1}"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n \nТекущий выбор: {1}"
 	}
 	"ff2_boss_selection_pack"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Boss Pack: {1}\nCurrent Selection: {2}"
-		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n\nТекущий выбор: {2}"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n \nТекущий набор: {1}\nТекущий выбор: {2}"
 	}
 	"boss_selection_overridden"
 	{
@@ -107,6 +107,7 @@
 	"to0_viewall"
 	{
 		"en"		"View All Bosses"
+		"ru"		"Посмотреть всех боссов"
 	}
 	"to0_confirm"
 	{
@@ -116,8 +117,9 @@
 	}
 	"to0_confirmpack"
 	{
-		"#format"	"{1:s}"
+		"#format"	"{1:s},{2:s}"
 		"en"		"Select {1} for {2}"
+		"ru"		"Выбрать {1} для {2}"
 	}
 	"to0_cancel"
 	{
@@ -127,16 +129,18 @@
 	"to0_nodesc"
 	{
 		"en"		"No Boss Description"
-		"ru"		"Нет описания босса"
+		"ru"		"Описание босса отсутствует"
 	}
 	"to0_packmenu"
 	{
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \n"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n \n"
 	}
 	"to0_viewpack"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \nBoss Pack: {1}\nSelection: {2}"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n \nНабор персонажей: {1}\nВыбор: {2}"
 	}
 	"to0_comfirmrandom"
 	{
@@ -466,6 +470,7 @@
 	"deny_map"
 	{
 		"en"		"This boss can't be played on this map!"
+		"ru"		"Этим боссом нельзя играть на текущей карте!"
 	}
 	"deny_recent"
 	{
