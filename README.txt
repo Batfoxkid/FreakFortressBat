@@ -4,7 +4,6 @@
 ### Installiton and Setup:
 To download Unofficial, download 'Source code' in releases, 'Resources' for boss models, materials, and sounds.
 This generates some new ConVars, so save a backup of cfg/sourcemod/FreakFortress2.cfg and delete it, it will generate new ConVars.
-All non-boss config (`characters.cfg`, `doors.cfg`, `maps.cfg`) need to go in `data/freak_fortress_2/`.
 If your upgrading from official verions or applying a major update, restart your server!
 
 -=- Fork Changes -=-
@@ -22,13 +21,16 @@ https://github.com/shadow93 | https://github.com/shadow93/FreakFortressBBG
 Marxvee for healing, look-based teammate stats HUD, spies disguising as bosses, and backstab animation fix
 https://steamcommunity.com/profiles/76561198299989625/
 
-naydef for newer versions of official Freak Fortress
+Naydef for newer versions of official Freak Fortress
 https://github.com/naydef | https://github.com/naydef/FF2-Official/tree/stable
+
+Fire for various boss settings and feedback
+https://github.com/fearts
 
 MAGNAT2645 for Russian translations and pointing out errors
 https://github.com/MAGNAT2645
 
-sarysa for the improved stun code
+Sarysa for the improved stun code
 https://github.com/sarysa | https://forums.alliedmods.net/showthread.php?t=309245
 
 Bacon Plague and M76030 for their boss self-knockback code

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>	
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="style.css" type="text/css">
+		<title>Freak Fortress 2 Version History</title>
+	</head>
+	<body>
+		<center><h1>Unofficial Freak Fortress Version History</h1></center>
+		<center><a href="https://50dkp.github.io/FF2-Official/changelog.html">Official Freak Fortress 2 Versions</a></center>
+
+		<div class="version_box">
+			<h3><a id="1.19.5">1.19.5 - December 9, 2019</a></h3>
+			<ol>
+				<li>(1.11.0) Changed changelog to a HTML MOTD</li>
+				<li>(1.11.0) Class key for bosses now accept words (eg. demo, demoman, soldier, heavy)</li>
+				<li>Added ff2_stats_database to use SQL instead of cookies (or both) for StatTrak</li>
+				<li>Added ff2_charge_angle to change the minimum angle to activate charge abilities</li>
+				<li>Added ff2_attributes to change boss's starting attributes (excludes capture rate)</li>
+				<li>Added ff2_uber_start to change the starting Ubercharge for Medics</li>
+				<li>Added partial Custom Weapons 3 compability</li>
+				<li>Added FF2_MakeBoss native to create bosses</li>
+				<li>Added support for both config and data filepaths for files</li>
+				<li>Added the ability to use wildcards for character config list</li>
+				<li>Added option to view all bosses in every pack (if the server has multiple non-hidden packs)</li>
+				<li>Added a line of text that shows the current pack (if the server has multiple non-hidden packs)</li>
+				<li>Added overlay option with sounds occured by bosses (From Fire)</li>
+				<li>Added the ability to check all bosses for abilities when the subplugin is now loaded mid-round</li>
+				<li>Added formula support for every non-string args in the subplugin</li>
+				<li>Added self precaching instead of erroring when a model isn't in the subplugin</li>
+				<li>Fixed bug with boss logging when the file is missing and can't be created</li>
+				<li>Fixed bots gaining more queue points than they should</li>
+				<li>Fixed not being able to use the boss selection menu while FF2 is disabled</li>
+				<li>Fixed boss health HUD and companions with multiple lives</li>
+				<li>Fixed a 'ghost pack' from occuring</li>
+				<li>Fixed issues with shields and being backstabbed</li>
+				<li>Fixed clones not teleporting to the boss if they fall into the hazard while invuln</li>
+				<li>Changed maximum bosses per a pack from 144 to 128</li>
+				<li>Changed ff2_cloak_damage and ff2_deadringer_damage to also include maximum damage taken</li>
+				<li>Changed chars to use static to slightly decrease delay</li>
+				<li>Changed the formatting and syntax a bit</li>
+				<li>Changed bosses that been excluded because of the map to still show up as an unselectable boss</li>
+				<li>Changed to always enable FF2, even if maps config is missing or unreadable</li>
+				<li>Changed slowmotion sound effect to only play when timescale is changed</li>
+				<li>Changed FF2_SetCheats native to default to true</li>
+				<li>Changed freak_fortress_2_subplugin.inc to full Transitional Syntax</li>
+				<li>Changed Battalion's Backup and Phlogistinator damage resistance a little bit lower</li>
+				<li>Removed the ability to reset someone selection due to permissions (excluding Boss vs Boss enforcement)</li>
+				<li>Removed having the triple effect occur even with other damage changing effects</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.19.4">1.19.4 - October 22, 2019</a></h3>
+			<ol>
+				<li>Added "wearable" item for bosses (requires gamedata provided)</li>
+				<li>Added ff2_bosspack_vote to shuffle the boss pack voting with a specific number of packs</li>
+				<li>Added "goomba" setting to change who can goomba</li>
+				<li>Fixed still having boss selection when access has been changed</li>
+				<li>Added "map_exclude" setting for bosses to exclude them on specific maps</li>
+				<li>Added ff2_kunai_health to control health gained on backstab using the Kunai</li>
+				<li>Added ff2_kunai_max to control the maximum overhealth using the Kunai</li>
+				<li>Added "crits" setting for weapons config to determine what's crit boosted</li>
+				<li>Added SteamWorks support</li>
+				<li>Added sm_setboss command alias</li>
+				<li>Added ff2_announce_ads for whether to block announcements not related to commands</li>
+				<li>Added ff2_broadcast for whether to block announcer/end of the round lines</li>
+				<li>Added ff2_cloak_damage to control damage taken while cloaked</li>
+				<li>Added ff2_cloak_stun to control amount of time before being able to cloak after a backstab</li>
+				<li>Added ff2_deadringer_damage to control damage taken while ringered</li>
+				<li>Added ff2_diamondback to control amount of revenge crits gained on a backstab</li>
+				<li>Added ff2_disguise to control whether disguises use the playermodel of the victim</li>
+				<li>Added ff2_market_garden to control Market Garden damage or to disable</li>
+				<li>Added "blockcap" setting to change who can capture the point</li>
+				<li>Added "command" setting for bosses to run server commands on round start</li>
+				<li>Added "music" setting for sounds to change the theme (also includes "name" & "artist")</li>
+				<li>Added boss pack support for saving boss selections for up to 8 packs</li>
+				<li>Added support for extended Ubercharge durations</li>
+				<li>Fixed telefrag assist damage resulting in a unexpected value</li>
+				<li>Fixed the error spam with pickups</li>
+				<li>Changed ff2_caber_detonations to have 0 for infinite</li>
+				<li>Changed "sound_lastman" to only play when there's atleast more than one player playing</li>
+				<li>Removed time limit on boss selection menu</li>
+				<li>Removed caber "stab" if the caber can explode more than 3 times</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.19.3">1.19.3 - September 27, 2019</a></h3>
+			<ol>
+				<li>Improved class info with showing stats of their current loadout</li>
+				<li>Shields when the type is set to 1 will block debuffs</li>
+				<li>FF2_SpawnWeapon stock now accepts saxxy and tf_weapon_shotgun</li>
+				<li>Improved FF2_SpawnWeapon's hiding weapons</li>
+				<li>(1.11.0) Renamed GetArgI, GetArgF, and GetArgS with FF2_ prefix</li>
+				<li>Removed ALT-FIRE and RELOAD HUD tips</li>
+				<li>Fixed issues with selecting a companion boss</li>
+				<li>Improved team balancing during Boss vs Boss rounds</li>
+				<li>Fixed rival bosses counting as companions with queue points</li>
+				<li>Fixed missing sound error anytime an annotation message appears</li>
+				<li>FF2FLAG_ALLOW_AMMO_PICKUPS and FF2FLAG_ALLOW_HEALTH_PICKUPScan be removed from non-bosses</li>
+				<li>Fixed outline, control point, timer starting too early in Boss vs Boss rounds</li>
+				<li>Forced bosses to stay on their correct team during the round</li>
+				<li>(1.11.0) Added buttonmodes 4 (Duck) and 5 (Scoreboard)</li>
+				<li>(1.11.0) Added args for default_abilities charges</li>
+				<li>Fixed snipers outlining the boss before the round starts</li>
+				<li>(1.11.0) Removed useless Uber duration increase on airblast</li>
+				<li>Allowed rage_new_weapon, rage_overlay, rage_uber, rage_stunsg, rage_instant_teleport, rage_cloneattack, rage_tradespam, and rage_matrix_attack to have custom suffixes</li>
+				<li>Fixed boss name translation with rage_cloneattack</li>
+				<li>(1.11.0) Renamed argument names with Official 1.11</li>
+				<li>Fixed rage_new_weapon not having a default quality and level</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.19.2">1.19.2 - August 31, 2019</a></h3>
+			<ol>
+				<li>Added ff2hud command to disable/enable certain HUD elements</li>
+				<li>Removed boss info timer because it was a bit useless</li>
+				<li>Added FF2_OnMusic2 for name/artist of songs</li>
+				<li>Fixed sound_stalemate only for rival bosses</li>
+				<li>Updated to current updates towards Official 1.11 Beta</li>
+				<li>HUD is hidden during the killcam</li>
+				<li>Glows on clients can now decay</li>
+				<li>Subplugin now fully supports new named args</li>
+				<li>Fixed some delay args in the subplugin at 0.0 still having a minor delay</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.19.1">1.19.1 - August 10, 2019</a></h3>
+			<ol>
+				<li>Converted MAXPLAYERS+1 with MAXTF2PLAYERS (66 to 36)</li>
+				<li>Fixed previous update saying August instead of July</li>
+				<li>Fixed doors always opening even when doors.cfg says otherwise</li>
+				<li>Fixed having multiple bosses sometimes cause issues when there's too little players</li>
+				<li>Adjusted the health formula for Boss vs Boss mode</li>
+				<li>Rivaling boss no longer keeps queue points in Boss vs Boss mode</li>
+				<li>StatTrak now always applies to bots even when there's not enough players</li>
+				<li>Fixed issues with ff2_hp and lastman displaying health in Boss vs Boss mode</li>
+				<li>Fixed timer and control point unlocks activating too early in Boss vs Boss mode</li>
+				<li>Fixed lives showing incorrectly in Boss vs Boss mode with health bar HUD</li>
+				<li>Bosses now count towards rage regeneration (similar to Scouts)</li>
+				<li>Added `"noversus"` option to abilities</li>
+				<li>Added ability slots 4-6 (will use 1.11 method in future update)</li>
+				<li>Killed players' sentries are destroyed even if there not Engineer</li>
+				<li>Balanced out backstab damage in Boss vs Boss mode</li>
+				<li>Fixed Merc vs Merc damage ConVar not working at all</li>
+				<li>Solo rage message no longer applies to non-rage activation</li>
+				<li>Added _FFBAT_included define for subplugin use</li>
+				<li>Fixed FF2_OnAlivePlayersChanged being an Action than void</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.19.0">1.19.0 - July 23, 2019</a></h3>
+			<ol>
+				<li>Fully stabilized Boss vs Boss gamemode and added new features, ConVars, and native to it</li>
+				<li>Fixed boss disguises if they disguise as a class no player is playing</li>
+				<li>Added a ConVar to adjust merc vs merc damage while each team as a alive boss during a Boss vs Boss round</li>
+				<li>Boss self knockback can now be set to also include self damage</li>
+				<li>Boss health HUD doesn't appear while the introduction message is displayed</li>
+				<li>Added admin command `ff2_makeboss` to force a player to become a boss</li>
+				<li>Fixed errors about incorrect boss version showing in SourceMod error log instead of FF2's error log</li>
+				<li>(1.11.0) Replaced Debug stock with FFDbg</li>
+				<li>Fixed FF2_HasAbility being a int instead of a bool</li>
+				<li>The boss no longer sees information about their queue position</li>
+				<li>Cheats being used no longer activates the boss log</li>
+				<li>Round end message is now synced with the server's mp_bonusroundtime</li>
+				<li>Fixed issue about hazards causing the boss to go into negative health and not die</li>
+				<li>(1.11.0) Infinite rage no longer as a 0.2 second delay until it refills</li>
+				<li>Fixed issue where the PrintCenterText version of the boss's health doesn't show until the countdown timer stopped</li>
+				<li>Improved Demoshields and Razorback only able to check initial damage dealt and not anything effected by conditions or some attributes (Credits to Marxvee)</li>
+				<li>Fixed animation upon Spies backstabbing a boss (Credits to Marxvee)</li>
+				<li>Melee attacks upon bosses now don't apply knockback</li>
+				<li>(1.11.0) Explosive Dance ability now works under SourceMod 1.10</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.18.6">1.18.6 - June 29, 2019</a></h3>
+			<ol>
+				<li>Added support for multiple boss name languages</li>
+				<li>Removed stuns upon Razorback or Demoshields being broken</li>
+				<li>Added native FF2_GetBossName</li>
+				<li>Added support for different tf_arena_preround_time values</li>
+				<li>Removed the ShowActivity2 for giving charge via ff2_setcharge</li>
+				<li>"owner" set bosses are hidden by default</li>
+				<li>Merged weapon model settings for boss weapons to use all forms of visuals</li>
+				<li>Fixed ff2_special menu showing current override gibberish</li>
+				<li>Added the ability for Spies to look (and sound) like the boss if disguised as them</li>
+				<li>Some nicer looks for StatTrak HUD</li>
+				<li>Fixed Telefrag messages</li>
+				<li>Fixed low stab damage</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.18.5">1.18.5 - June 12, 2019</a></h3>
+			<ol>
+				<li>Fixed Goombas causing an error</li>
+				<li>Added native FF2_EmitVoiceToAll to announce a sound if players have boss vocals enabled</li>
+				<li>Added ConVar for changing boss health and ragedamage when TF2x10 is running</li>
+				<li>FF2 no longer breaks if the cookie system breaks</li>
+				<li>Added ConVar for damage needed for first Sapper use (if there enabled)</li>
+				<li>Added ConVar to add an option to the boss menu to skip a turn (from JuegosPablo)</li>
+				<li>Added ConVar to be able to see teammate's stats (similar to spectating) by simply looking at them (from Marxvee)</li>
+				<li>Added ConVar for an highly experimental Boss vs Boss gamemode (not recommended turning this on)</li>
+				<li>Checks if there's enough players for companions upon requirement ConVar change</li>
+				<li>FF2 no longer self-disables if weapons.cfg is missing</li>
+				<li>Added new features from 1.10.15 Beta</li>
+				<li>Added fork variation of version boss settings</li>
+				<li>Boss selection resets if access changes and the player no longers have access to the boss</li>
+				<li>FF2FLAG_CHANGECVAR now blocks all ConVar violation from SMAC</li>
+				<li>Message about current queue point position and amount is now correct about their queue points</li>
+				<li>Bot's queue points are treated like players (except gain half the amount)</li>
+				<li>Healing done is more accurate towards players who are now over max health (also from Marxvee)</li>
+				<li>Annotations (if enabled) for messages are reduced from 5 seconds to 3 seconds</li>
+				<li>Backstabs, market gardens, and ullapool cabers damage increases with amount of companions</li>
+				<li>Players who have boss toggle disabled are hidden from the queue point panel</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.18.4">1.18.4 - July 2, 2019</a></h3>
+			<ol>
+				<li>Fixed serious issue with boss HUDs, class voicelines, etc.</li>
+				<li>Removed FF2FLAG_ALLOW_BOSS_ROCKETJUMPING</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.18.3">1.18.3 - June 1, 2019</a></h3>
+			<ol>
+				<li>Fixed serious issue with player alive based events</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.18.2">1.18.2 - May 31, 2019</a></h3>
+			<ol>
+				<li>Fixed Health HUD being multiplied by the client's index</li>
+				<li>Fixed not being able to heal bosses at all</li>
+				<li>Adjusted default ConVar values</li>
+				<li>Added option in ff2_enabled to bypass maps.cfg</li>
+				<li>ff2_point_alive, ff2_countdown_players, ff2_last_player_glow can set to be a players total to players alive ratio</li>
+				<li>Ullapool Caber detonations left message doesn't appear when only one explosion is available</li>
+				<li>Alias FF2FLAG_ALLOW_BOSS_ROCKETJUMPING for self knockback</li>
+				<li>Points earned from damage message is rounded down</li>
+				<li>sound_stabbed and sound_marketed don't infer with death or lifeloss sounds</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.18.1">1.18.1 - May 21, 2019</a></h3>
+			<ol>
+				<li>Made an admin menu example config</li>
+				<li>Gave ff2_special, ff2_charset, ff2_loadcharset a menu when args are undefined</li>
+				<li>Fixed boss healing and multiple lives</li>
+				<li>Removed Updater</li>
+				<li>Updated Saxton Hale's model and gave a theme</li>
+				<li>Added health HUD to see boss health and/or lives on the health bar</li>
+				<li>Boss health bar turns green for a few seconds upon backstab, market garden, ullapool caber, or goomba</li>
+				<li>FF2 no longer overrides game descriptions of other plugins while disabled</li>
+				<li>FF2 automatically adds "ff2", "vsh", and "hale" to sv_tags while active</li>
+				<li>Dead Ringers no longer count towards StatTrak boss kills but displays as a kill until the end of the round</li>
+				<li>Boss Selection stays after disconnecting and reconnecting (checks if the player still has permission to the boss)</li>
+				<li>Removed broken ShowActivity on rage/charge commands</li>
+				<li>Less breakage of reloading FF2</li>
+				<li>Added catch_replace to replace specific class voicelines with custom ones</li>
+				<li>Fixes and support for commands while FF2 is disabled</li>
+				<li>Now displays in chat the reason why StatTrak isn't saving (eg. low player count)</li>
+				<li>Fixed "ammo" and "clip" on boss weapons</li>
+				<li>Minor adjustments to the KGB and SVF</li>
+				<li>Can cancel reloading charset, FF2, etc. by executing the command again</li>
+				<li>Getting killed by a bot no longer counts as a boss death</li>
+				<li>Fixed self-bleeding on Wall Climb</li>
+				<li>Fixed error when shutting down the server with FF2 active</li>
+				<li>Fixed double [FF2] tag upon selecting a boss</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.18.0">1.18.0 - May 6, 2019</a></h3>
+			<ol>
+				<li>Code is fully in Transitional Syntax</li>
+				<li>Added the StatTrak but with anti-farming/cheating support and options keep them private to players</li>
+				<li>Added Teleport to Spawn, for bosses falling into hazards</li>
+				<li>Added the classic freaks/hales</li>
+				<li>Added subplugin containing all of default_abilities, 1st_set_of_abilities, easter_abilities, rage_overlay, and special_noanims</li>
+				<li>Buffed Kritzkrieg, Vaccinator</li>
+				<li>Nerfed Wrap Assassin, Flying Guillotine, and Boston Basher</li>
+				<li>Allowed Southern Hospitality stranges/killstreaks</li>
+				<li>Moved error logs to logs/freak_fortress_2/ff2_errors</li>
+				<li>Added natives for Demoshields and Razorbacks</li>
+				<li>Added option for ff2_hud_heal to always show healing done</li>
+				<li>Added sapper ConVar and boss setting to sap bosses or minions</li>
+				<li>Added healing ConVar and boss setting to allow bosses to heal themselves and/or by someone else</li>
+				<li>Added ConVar for bots to use their RAGE</li>
+				<li>Added ConVar to insult the boss for solo raging (through new stun ability)</li>
+				<li>Squashed Boss Toggle and Companion into FF2 cookies</li>
+				<li>Added set/add charge to boss command</li>
+				<li>Commands use ShowActivity rules</li>
+				<li>Removed DebugMsg stock and ConVar (Not the Debug stock in the include)</li>
+				<li>Some support for reloading FF2 or loading FF2 mid-map</li>
+				<li>Readded Caber detonations ConVar (nerfs damage higher value it is)</li>
+				<li>Fixed boss themes playing after the round?</li>
+				<li>Blocked Announcer round start message (Now that countdown...)</li>
+				<li>Added life setting for boss themes (Untested)</li>
+				<li>Bosses with admin and owner setting is visible in boss selection (Hide with below)</li>
+				<li>Changed if hidden setting is used in boss along with donator, admin, owner, or theme, it hides the boss if they don't have access</li>
+				<li>Added cosmetic setting for bosses to keep their current cosmetic loadout (from their last played class)</li>
+				<li>Replaced ghost setting with icon setting</li>
+				<li>Fixed bosses taking only 1 damage from falling type hazards if self knockback was enabled for them</li>
+				<li>Actually fixed ragemode boss setting when set to 1</li>
+				<li>Removed ducking for charging super jump (I don't want new player doing this because it's inefficient, you can re-enable with buttonmode being 1)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.10">1.17.10 - April 3, 2019</a></h3>
+			<ol>
+				<li>Fixed Goombas not affected by ff2_text_msg or ff2_text_names cvar</li>
+				<li>Fixed sound_lastman player again when a player connects or changes teams</li>
+				<li>Readded Jarate rage drain mechanic</li>
+				<li>Added support for Killstreak Preferences in boss menu</li>
+				<li>Added option to toggle FF2 using SteamTools</li>
+				<li>Improved when to block companion bosses being used</li>
+				<li>Reset extra Killstreaker and Airstrike damage on round end</li>
+				<li>Fixed players taking the selection of a disconnected player</li>
+				<li>Donator, Nofirst, and companion bosses are shown but unselectable in the boss menu when no access or blocked</li>
+				<li>Added 'theme' option for bosses controled by ff2_theme cvar</li>
+				<li>Weapons config are applied first instead of hardcoded weapons</li>
+				<li>Option to turn off using weapons config</li>
+				<li>Adjusted some weapon stats</li>
+				<li>Fixed boss RPS losses not working at all</li>
+				<li>Players alive is now checked when a player goes into spectator</li>
+				<li>Fixed random OVERTIME when the timer wasn't at zero</li>
+				<li>Boss preference menu is fully translated to Russian (Thanks MAGNAT2645 once again)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.9">1.17.9 - March 8, 2019</a></h3>
+			<ol>
+				<li>Fixed pickups when FF2 is disabled (Also in Official 1.10.15)</li>
+				<li>1 second stun when shields are broken (Was a accident, but I went with it)</li>
+				<li>Class info toggle doesn't show a menu when ff2_advanced_music is enabled</li>
+				<li>Added Boss Preference option in main FF2 menu</li>
+				<li>Updated some options in main FF2 menu</li>
+				<li>Fix companions getting infinite rage</li>
+				<li>Health packs dropped by the Candy Cane give healing credit to the Scout (Thanks Vee)</li>
+				<li>Improved how the Killstreaker and Airstrike gains their heads</li>
+				<li>Reworked some weapon stats</li>
+				<li>Fix Huntsmans doing no taunt damage when ff2_bow_non or ff2_bow_mini is disabled</li>
+				<li>Fixed shields against crit and mini-crit attacks</li>
+				<li>Added cvar ff2_hud_heal to let players see healing done towards teammates (Thanks Vee again)</li>
+				<li>Fixed airblasts causing errors</li>
+				<li>Improved when sound_hit, sound_kill_, and sound_first_blood plays</li>
+				<li>Added cvars for RPS queue point betting or limiting boss fails</li>
+				<li>Fixed bots keeping same selection of another player when ff2_keep_boss is enabled</li>
+				<li>Added ff2_boss_desc to see description of a boss before selecting through the boss menu</li>
+				<li>Improved when companions are disabled and enabled</li>
+				<li>Gave all player commands descriptions</li>
+				<li>Remove unnecessary cvar change hooks</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.8">1.17.8 - February 15, 2019</a></h3>
+			<ol>
+				<li>Readded updater support</li>
+				<li>Removed unnecessary gamedata</li>
+				<li>Fixed backstab issues</li>
+				<li>Added boss logging for a certain boss win, loss, player playing, time, and current map</li>
+				<li>Fixed infinite rage via ragedamage boss setting</li>
+				<li>Added countdownovertime boss setting</li>
+				<li>Added sound_intromusic, outtromusic, outtromusic_win, outtromusic_lose, outtromusic_stalemate</li>
+				<li>Readjusts health on round start and not remaking the whole boss</li>
+				<li>Fixes to players seeing other cilent's language occasionally (Official FF2)</li>
+				<li>Added russian translations (Thanks MAGNAT2645 again)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.7">1.17.7 - February 10, 2019</a></h3>
+			<ol>
+				<li>Added cvar for OVERTIME! to occur when the timer runs out and the control point is being captured</li>
+				<li>Added cvar for debug messages when ff2_debug is enabled</li>
+				<li>Added boss setting to choose their team</li>
+				<li>Improved team swapping support</li>
+				<li>Added cvar to determine Huntsman's crit boost and it's damage</li>
+				<li>Fixed ServerAd announcement never playing again</li>
+				<li>Changed infinite rage setting in ragedamage from 0 to 1</li>
+				<li>Fixed killstreak cvar not disabling when set to 0</li>
+				<li>Nerfed Caber and Backstabs when ff2_low_stab is enabled</li>
+				<li>Fixed Kunai not giving health on backstab</li>
+				<li>Removed the 'v' on DevAd translations</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.6">1.17.6 - February 5, 2019</a></h3>
+			<ol>
+				<li>Added cvar for game_text_tf entities as a replacement for FF2's HUD</li>
+				<li>Added cvar for game_text_tf entities or annotations as a replacement for FF2's hint messages</li>
+				<li>Added cvar for above to say the player or boss's name in messages</li>
+				<li>Added cvar to use the killstreak symbol or the ghost for game_text_tf HUD when there is no timer</li>
+				<li>Added ghost setting to bosses to toggle using the ghost icon</li>
+				<li>Added cvar to adjust different settings for Razorbacks and Demo-shields</li>
+				<li>Fixed market gardens and cabers damage outputs</li>
+				<li>Improved uber charge translation</li>
+				<li>Fixed ff2_point_type unable to do both correctly</li>
+				<li>Renamed the fork name from "Bat's Edit" to "Unofficial"</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.5">1.17.5 - January 29, 2019</a></h3>
+			<ol>
+				<li>ragedamage set to 0 gives infinite rage</li>
+				<li>ragedamage set to -1 disables HUD and raging</li>
+				<li>maxspeed set to 0 forces the boss into a stand-still</li>
+				<li>maxspeed set to -1 disables FF2's management</li>
+				<li>ragemin sets the required amount of rage</li>
+				<li>ragemax sets the max amount of rage stored</li>
+				<li>ragemode sets how the rage is used</li>
+				<li>Fixed ff2_setrage command not working</li>
+				<li>Removed ff2_first_round and dead ringer cvars</li>
+				<li>Added official 1.10.15 commits</li>
+				<li>Added override, ammo, clip, red, blue, green, alpha, worldmodel, pyrovision, halloweenvision, and romevision for weapons</li>
+				<li>Added pointtype, pointdelay, pointtime, pointalive, countdownhealth, countdownalive, and countdowntime settings for bosses</li>
+				<li>Added ff2_low_stab cvar to increase damage of backstabs, market gardens, and ullapool caber for low-player counts</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.4">1.17.4 - January 24, 2019</a></h3>
+			<ol>
+				<li>More fixed HUD mixed languages</li>
+				<li>Damage HUD is in translations files</li>
+				<li>Cvar to keep companion's queue points after their turn</li>
+				<li>Disable boss or companion toggle for a map duration</li>
+				<li>Added FF2_GetForkVersion native</li>
+				<li>Fixed boss toggle preventing gaining/losing queue points for those who selected off and ff2_boss_toggle was off</li>
+				<li>Allowed server owners to set ff2_companion_min under 3 players</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.3">1.17.3 - January 22, 2019</a></h3>
+			<ol>
+				<li>Changed ff2_last_player_glow to how many players left then on or off</li>
+				<li>Fixed HUD mixing languages</li>
+				<li>mod_download checks for phy files</li>
+				<li>Added 'sound_ability_serverwide' for global rage sounds</li>
+				<li>'version' allows number 99 to be played (for bosses who only work on this fork)</li>
+				<li>Queue points aren't reset if you toggle off</li>
+				<li>'ragedamage' can be done in a formula</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.2">1.17.2 - January 19, 2019</a></h3>
+			<ol>
+				<li>Cvar to determine to choose a random player or next in queue to be a companion</li>
+				<li>Spec Force Boss works with companions (except if above mentioned is set to random)</li>
+				<li>Cvar to determine the minimum amount of players on the server before allowing companions to be playable/selectable</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.1">1.17.1 - January 15, 2019</a></h3>
+			<ol>
+				<li>Skip command plays a different theme if there is another theme</li>
+				<li>Shuffle command plays a random theme</li>
+				<li>Track menu actually allows to select a theme</li>
+				<li>Solved issue with DMG_FALL hazards for bosses (still need to fix for Mantreads/Gunboats).</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.17.0">1.17.0 - January 13, 2019</a></h3>
+			<ol>
+				<li>Shows name and artist in chat when a theme is played</li>
+				<li>Music menu updated with options to skip, toggle, and view a list of tracks</li>
+				<li>Voice menu readded with improvements blocking all (not other subplugins) boss voicelines</li>
+				<li>Cvar to enable/disable the advanced music menu and showing the name/artist in chat</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.12">1.16.12 - January 9, 2019</a></h3>
+			<ol>
+				<li>Changed cvar ff2_points_bonus to determine what is the maximum number of queue points players can earn</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.11">1.16.11 - January 8, 2019</a></h3>
+			<ol>
+				<li>Cvars to adjust how queue point system is handled</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.10">1.16.10 - January 7, 2019</a></h3>
+			<ol>
+				<li>Cvars to enable or disable ff2boss, ff2toggle, or ff2companion commands</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.9">1.16.9 - January 5, 2019</a></h3>
+			<ol>
+				<li>"nofirst" setting for bosses to not be played during the first round of FF2</li>
+				<li>Cvar to allow players to keep the current boss selection instead of re-selecting each time</li>
+				<li>No Random Critical Hits attribute no longer appears when "attributes" of a boss's weapon is undefined</li>
+				<li>Turning off bosses set -15 queue points instead of -10</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.8">1.16.8 - January 3, 2019</a></h3>
+			<ol>
+				<li>Medi-Gun skins are now visible with them not overriding the whole weapon's attributes (Atleast Hard-coded side)</li>
+				<li>Fixed Vaccinator in weapons.cfg not overriding the weapon's attributes</li>
+				<li>Reworked Engi Pistol (For the infinite time)</li>
+				<li>Set rage command actually sets rage while add rage command, adds rage.</li>
+				<li>"crits" setting for bosses to control whether or not they can random crit with ff2_crits being what is default.</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.7">1.16.7 - December 25, 2018</a></h3>
+			<ol>
+				<li>Only block join team commands during a FF2 round (naydef)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.6">1.16.6 - December 24, 2018</a></h3>
+			<ol>
+				<li>Added set rage command and infinite rage command (SHADoW from Chdata)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.5">1.16.5 - December 23, 2018</a></h3>
+			<ol>
+				<li>Added self-knockback setting for bosses (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.4">1.16.4 - December 18, 2018</a></h3>
+			<ol>
+				<li>Dead Ringer HUD (Chdata/naydef)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.3">1.16.3 - December 16, 2018</a></h3>
+			<ol>
+				<li>Fixed owner marked bosses choosen by random (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.2">1.16.2 - December 13, 2018</a></h3>
+			<ol>
+				<li>Server name has the current boss name (Deathreus)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.1">1.16.1 - December 12, 2018</a></h3>
+			<ol>
+				<li>Details and more commands (Batfoxkid)</li>
+				<li>Fixed companion toggle (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.16.0">1.16.0 - December 11, 2018</a></h3>
+			<ol>
+				<li>Boss selection and toggle (Batfoxkid from SHADoW)</li>
+				<li>Added owner settings for bosses (Batfoxkid)</li>
+				<li>Added triple settings for bosses (Batfoxkid/SHADoW)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.15.3">1.15.3 - December 9, 2018</a></h3>
+			<ol>
+				<li>Bosses can take self-knockback (Bacon Plague/M76030)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.15.2">1.15.2 - December 8, 2018</a></h3>
+			<ol>
+				<li>Fixed boss health being short by one (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.15.1"1.15.1 - December 7, 2018></a></h3>
+			<ol>
+				<li>Weapons by config (SHADoW)</li>
+				<li>Fixed Razorback (naydef)</li>
+				<li>cvar to use hard-coded weapons (Batfoxkid)</li>
+				<li>Updated weapons stats (Batfoxkid)</li>
+				<li>Readded RTD support (for the last time) (Batfoxkid)</li>
+				<li>Boss health is reset on round start (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.15.0">1.15.0 - December 5, 2018</a></h3>
+			<ol>
+				<li>Non-character configs use data filepath (SHADoW)</li>
+				<li>Added several admin commands for FF2 (SHADoW)</li>
+				<li>Sandman is no longer normally crit-boosted (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.14.5">1.14.5 - December 4, 2018</a></h3>
+			<ol>
+				<li>Nerfed L'etranger (Batfoxkid)</li>
+				<li>Sniper can wall climb within FF2 (SHADoW)</li>
+				<li>Cvars for Sniper wall climbing (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.14.4">1.14.4 - December 2, 2018</a></h3>
+			<ol>
+				<li>Boss BGM can be adjusted by TF2's music slider (SHADoW)</li>
+				<li>Bosses can set custom quaility and level (SHADoW)</li>
+				<li>Bosses can set custom strange rank/randomize rank (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.14.3">1.14.3 - November 30, 2018</a></h3>
+			<ol>
+				<li>Fixed major issues with Huntsman and Sniper class (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.14.2">1.14.2 - November 30, 2018</a></h3>
+			<ol>
+				<li>Adjusted Sniper Rifle/Huntsman damage with cvars (Batfoxkid)</li>
+				<li>Fixed Cozy Camper's SMG unable to be crit boosted (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.14.1">1.14.1 - November 29, 2018</a></h3>
+			<ol>
+				<li>Killstreak system by damage done to the boss (shadow93)</li>
+				<li>Nerfed Sniper Rifle/Hunstman damage (Batfoxkid)</li>
+				<li>Buffed Sharpened Volcano Fragment (Batfoxkid)</li>
+				<li>Gave Huntsman faster charge rate (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.14.0">1.14.0 - November 24, 2018</a></h3>
+			<ol>
+				<li>Reworked various weapons stats (Batfoxkid)</li>
+				<li>Caber no longer is crit boosted when used (Batfoxkid)</li>
+				<li>SMG deals only mini-crits (Batfoxkid)</li>
+				<li>Pistol is no longer crit-boosted by both classes (Batfoxkid)</li>
+				<li>Crit-boosted weapons that already crit (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.8">1.13.8 - November 18, 2018</a></h3>
+			<ol>
+				<li>Ullapool Caber nerfed damage (Batfoxkid)</li>
+				<li>Forgot to mention Market Garden nerf like in VSH in 1.13.6 (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.7">1.13.7 - November 17, 2018</a></h3>
+			<ol>
+				<li>1) ''admin'' in boss configs also acts the same as ''blocked'' (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.6">1.13.6 - November 17, 2018</a></h3>
+			<ol>
+				<li>Pistol nerf reverted and Engineer's pistols mini-crit normally (Batfoxkid)</li>
+				<li>Buffed SMG's damage along too (Batfoxkid)</li>
+				<li>Ullapool Caber acts like a smaller Market Garden/Backstab (Batfoxkid)</li>
+				<li>Removed Ullapool Caber's multi-detonations (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.5">1.13.5 - November 16, 2018</a></h3>
+			<ol>
+				<li>Reverted Razorback to match Darwin's Danger Sheild (Batfoxkid)</li>
+				<li>''donator'' in boss configs acts the same as ''blocked'' (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.4">1.13.4 - November 15, 2018</a></h3>
+			<ol>
+				<li>Increased max amount of bosses in a pack from 64 to 150 (Batfoxkid/WakaFlocka)</li>
+				<li>Increased max amount of abilties in a boss from 14 to 64? (Batfoxkid/WakaFlocka)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.3">1.13.3 - November 15, 2018</a></h3>
+			<ol>
+				<li>Fixed FORK_STABLE_REVISION being STABLE_REVISION (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.2">1.13.2 - November 15, 2018</a></h3>
+			<ol>
+				<li>Made public version number the same while keeping fork version number for plugins using the FF2_GetFF2Version native. (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.1">1.13.1 - November 14, 2018</a></h3>
+			<ol>
+				<li>Fixed FF2 messages not looping correctly (Batfoxkid)</li>
+				<li>Reworked Bazaar Bargain (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.13.0">1.13.0 - November 11, 2018</a></h3>
+			<ol>
+				<li>Kritzkrieg gives only crits on Uber but faster Uber rate (Batfoxkid)</li>
+				<li>Quick-Fix gives no invulnerably but immunity to knockback with Uber (Batfoxkid)</li>
+				<li>Vaccinator gives a projectile sheild but weak Uber rate (Batfoxkid)</li>
+				<li>Nerfed Vita-Saw (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.12.4">1.12.4 - October 29, 2018</a></h3>
+			<ol>
+				<li>Buffed Gunboats (Batfoxkid)</li>
+				<li>Reworked Chargin' Targe and Homewrecker/Mual (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.12.3">1.12.3 - October 28, 2018</a></h3>
+			<ol>
+				<li>1) Buffed Rocket/Sticky Jumper (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.12.2">1.12.2 - October 27, 2018</a></h3>
+			<ol>
+				<li>Nerfed KGB and buffed Enforcer (Batfoxkid)</li>
+				<li>YER/Wanga Prick makes backstabs silent except critical sound (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.12.1">1.12.1 - October 21, 2018</a></h3>
+			<ol>
+				<li>DEV_REVISION adjusted to not get confused with official FF2 (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.12.0">1.12.0 - October 17, 2018</a></h3>
+			<ol>
+				<li>Bosses damage output no longer tripled if the damage is less than 160 (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.13">1.11.13 - October 15, 2018</a></h3>
+			<ol>
+				<li>Buffed Mantreads (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.12">1.11.12 - October 13, 2018</a></h3>
+			<ol>
+				<li>BGM looping fixes (naydef)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.11">1.11.11 - October 10, 2018</a></h3>
+			<ol>
+				<li>Fixed Detonator and Eviction Notice (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.10">1.11.10 - October 8, 2018</a></h3>
+			<ol>
+				<li>Buffed Short Circuit, Righteous Bison, and Pomson 6000 (Batfoxkid)</li>
+				<li>Added sound_marketed and sound_telefraged (Batfoxkid)</li>
+				<li>Removed ff2_voice, due to it only working for very little sounds (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.9">1.11.9 - October 7, 2018</a></h3>
+			<ol>
+				<li>Bosses no longer have fall damage sound effects (Batfoxkid)</li>
+				<li>Buffed Huo-Long Heater (Noobis)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.8">1.11.8 - October 7, 2018</a></h3>
+			<ol>
+				<li>Nerfed KGB and Razorback (Batfoxkid)</li>
+				<li>Buffed Rocket/Sticky Jumper (Batfoxkid)</li>
+				<li>Reworked Razorback (Batfoxkid)</li>
+				<li>and Huo-Long Heater (Noobis)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.7">1.11.7 - October 6, 2018</a></h3>
+			<ol>
+				<li>Nerfed KGB and Razorback (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.6">1.11.6 - October 5, 2018</a></h3>
+			<ol>
+				<li>Adjusted, added, and reworked alot of weapons, too much to list (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.5">1.11.5 - October 4, 2018</a></h3>
+			<ol>
+				<li>Battalion's Backup no longer gives full rage upon being hit (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.4">1.11.4 - October 3, 2018</a></h3>
+			<ol>
+				<li>[Server] Always says Freak Fortress in game name (Batfoxkid)</li>
+				<li>Actually blocked spectate command (Batfoxkid)</li>
+				<li>Updated killing spree, hit sounds, etc. (Batfoxkid)</li>
+				<li>No longer using TF2Items, hardcoded now (Batfoxkid)</li>
+			</ol>
+		</div>
+		<div class="version_box">
+			<h3><a id="1.11.3">1.11.3 - October 3, 2018</a></h3>
+			<ol>
+				<li>Spectate command is blocked as the boss (Batfoxkid)</li>
+				<li>Huo-Long Heater work-in-progress change (Noobis)</li>
+			</ol>
+		</div>
+		
+	</body>
+</html>

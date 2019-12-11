@@ -22,7 +22,6 @@ public int Native_VSHIsEnabled(Handle plugin, int numParams)
 	return (Enabled ? 2 : 0);
 }
 
-
 public int Native_VSHGetHale(Handle plugin, int numParams)
 {
 	return (IsValidClient(Boss[0]) ? GetClientUserId(Boss[0]) : -1);
@@ -55,6 +54,6 @@ public int Native_VSHGetRoundState(Handle plugin, int numParams)
 
 public int Native_VSHGetDamage(Handle plugin, int numParams)
 {
-	int client=GetNativeCell(1);
+	int client = GetNativeCell(1);
 	return (IsValidClient(client) ? Damage[client] : 0);
 }
