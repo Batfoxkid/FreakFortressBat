@@ -78,10 +78,10 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 6th, 2020"
+#define FORK_DEV_REVISION "development"
+#define FORK_DATE_REVISION "January 7th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -444,7 +444,6 @@ int changeGamemode;
 Handle kvWeaponMods = INVALID_HANDLE;
 Handle SDKEquipWearable = null;
 
-bool IsBossSelected[MAXTF2PLAYERS];
 bool dmgTriple[MAXTF2PLAYERS];
 bool randomCrits[MAXTF2PLAYERS];
 int SelfKnockback[MAXTF2PLAYERS];
@@ -552,7 +551,7 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	char plugin[PLATFORM_MAX_PATH];
-	GetPluginFilename(myself, plugin, PLATFORM_MAX_PATH);
+	GetPluginFilename(myself, plugin, sizeof(plugin));
 	if(!StrContains(plugin, "freaks/"))  //Prevent plugins/freaks/freak_fortress_2.ff2 from loading if it exists -.-
 	{
 		strcopy(error, err_max, "There is a duplicate copy of Freak Fortress 2 inside the /plugins/freaks folder.  Please remove it");
@@ -695,7 +694,7 @@ public void OnPluginStart()
 	LogMessage("===Freak Fortress 2 Initializing-%s===", BUILD_NUMBER);
 
 	// Logs
-	BuildPath(Path_SM, pLog, PLATFORM_MAX_PATH, BossLogPath);
+	BuildPath(Path_SM, pLog, sizeof(pLog), BossLogPath);
 	if(!DirExists(pLog))
 	{
 		CreateDirectory(pLog, 511);
@@ -704,7 +703,7 @@ public void OnPluginStart()
 			LogError("Failed to create directory at %s", pLog);
 	}
 
-	BuildPath(Path_SM, eLog, PLATFORM_MAX_PATH, "%s/%s", LogPath, ErrorLog);
+	BuildPath(Path_SM, eLog, sizeof(eLog), "%s/%s", LogPath, ErrorLog);
 	if(!FileExists(eLog))
 		OpenFile(eLog, "a+");
 
@@ -1097,7 +1096,7 @@ public Action Command_SetRage(int client, int args)
 			}
 
 			static char ragePCT[80];
-			GetCmdArg(1, ragePCT, 80);
+			GetCmdArg(1, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 
 			BossCharge[Boss[client]][0] = rageMeter;
@@ -1110,15 +1109,15 @@ public Action Command_SetRage(int client, int args)
 
 	static char ragePCT[80];
 	static char targetName[PLATFORM_MAX_PATH];
-	GetCmdArg(1, targetName, PLATFORM_MAX_PATH);
-	GetCmdArg(2, ragePCT, 80);
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, ragePCT, sizeof(ragePCT));
 	float rageMeter = StringToFloat(ragePCT);
 
 	static char target_name[MAX_TARGET_LENGTH];
 	int target_list[MAXPLAYERS], target_count;
 	bool tn_is_ml;
 
-	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, MAX_TARGET_LENGTH, tn_is_ml)) < 1)
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml)) < 1)
 	{
 		ReplyToTargetError(client, target_count);
 		return Plugin_Handled;
@@ -1166,7 +1165,7 @@ public Action Command_AddRage(int client, int args)
 			}
 
 			static char ragePCT[80];
-			GetCmdArg(1, ragePCT, 80);
+			GetCmdArg(1, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 
 			BossCharge[Boss[client]][0] += rageMeter;
@@ -1179,15 +1178,15 @@ public Action Command_AddRage(int client, int args)
 
 	static char ragePCT[80];
 	static char targetName[PLATFORM_MAX_PATH];
-	GetCmdArg(1, targetName, PLATFORM_MAX_PATH);
-	GetCmdArg(2, ragePCT, 80);
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, ragePCT, sizeof(ragePCT));
 	float rageMeter = StringToFloat(ragePCT);
 
 	static char target_name[MAX_TARGET_LENGTH];
 	int target_list[MAXPLAYERS], target_count;
 	bool tn_is_ml;
 
-	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, MAX_TARGET_LENGTH, tn_is_ml)) < 1)
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml)) < 1)
 	{
 		ReplyToTargetError(client, target_count);
 		return Plugin_Handled;
@@ -1254,13 +1253,13 @@ public Action Command_SetInfiniteRage(int client, int args)
 	}
 
 	static char targetName[PLATFORM_MAX_PATH];
-	GetCmdArg(1, targetName, PLATFORM_MAX_PATH);
+	GetCmdArg(1, targetName, sizeof(targetName));
 
 	static char target_name[MAX_TARGET_LENGTH];
 	int target_list[MAXPLAYERS], target_count;
 	bool tn_is_ml;
 
-	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, MAX_TARGET_LENGTH, tn_is_ml)) < 1)
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml)) < 1)
 	{
 		ReplyToTargetError(client, target_count);
 		return Plugin_Handled;
@@ -1333,8 +1332,8 @@ public Action Command_AddCharge(int client, int args)
 			}
 
 			static char ragePCT[80], slotCharge[10];
-			GetCmdArg(1, slotCharge, 10);
-			GetCmdArg(2, ragePCT, 80);
+			GetCmdArg(1, slotCharge, sizeof(slotCharge));
+			GetCmdArg(2, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 			int abilitySlot = StringToInt(slotCharge);
 
@@ -1355,9 +1354,9 @@ public Action Command_AddCharge(int client, int args)
 
 	static char ragePCT[80], slotCharge[10];
 	static char targetName[PLATFORM_MAX_PATH];
-	GetCmdArg(1, targetName, PLATFORM_MAX_PATH);
-	GetCmdArg(2, slotCharge, 10);
-	GetCmdArg(3, ragePCT, 80);
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, slotCharge, sizeof(slotCharge));
+	GetCmdArg(3, ragePCT, sizeof(ragePCT));
 	float rageMeter = StringToFloat(ragePCT);
 	int abilitySlot = StringToInt(slotCharge);
 
@@ -1365,7 +1364,7 @@ public Action Command_AddCharge(int client, int args)
 	int target_list[MAXPLAYERS], target_count;
 	bool tn_is_ml;
 
-	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, MAX_TARGET_LENGTH, tn_is_ml)) < 1)
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml)) < 1)
 	{
 		ReplyToTargetError(client, target_count);
 		return Plugin_Handled;
@@ -1420,8 +1419,8 @@ public Action Command_SetCharge(int client, int args)
 			}
 
 			static char ragePCT[80], slotCharge[10];
-			GetCmdArg(1, slotCharge, 10);
-			GetCmdArg(2, ragePCT, 80);
+			GetCmdArg(1, slotCharge, sizeof(slotCharge));
+			GetCmdArg(2, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 			int abilitySlot = StringToInt(slotCharge);
 
@@ -1442,9 +1441,9 @@ public Action Command_SetCharge(int client, int args)
 
 	static char ragePCT[80], slotCharge[10];
 	static char targetName[PLATFORM_MAX_PATH];
-	GetCmdArg(1, targetName, PLATFORM_MAX_PATH);
-	GetCmdArg(2, slotCharge, 10);
-	GetCmdArg(3, ragePCT, 80);
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, slotCharge, sizeof(slotCharge));
+	GetCmdArg(3, ragePCT, sizeof(ragePCT));
 	float rageMeter = StringToFloat(ragePCT);
 	int abilitySlot = StringToInt(slotCharge);
 
@@ -1452,7 +1451,7 @@ public Action Command_SetCharge(int client, int args)
 	int target_list[MAXPLAYERS], target_count;
 	bool tn_is_ml;
 
-	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, MAX_TARGET_LENGTH, tn_is_ml)) < 1)
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml)) < 1)
 	{
 		ReplyToTargetError(client, target_count);
 		return Plugin_Handled;
@@ -1493,21 +1492,21 @@ public Action Command_MakeBoss(int client, int args)
 	}
 
 	static char targetName[PLATFORM_MAX_PATH], teamString[4], specialString[4], indexString[4];
-	GetCmdArg(1, targetName, PLATFORM_MAX_PATH);
-	GetCmdArg(2, teamString, 4);
+	GetCmdArg(1, targetName, sizeof(targetName));
+	GetCmdArg(2, teamString, sizeof(teamString));
 	int team = StringToInt(teamString);
 
 	int special = -1;
 	if(args > 2)
 	{
-		GetCmdArg(3, specialString, 4);
+		GetCmdArg(3, specialString, sizeof(specialString));
 		special = StringToInt(specialString);
 	}
 
 	int index = -1;
 	if(args > 3)
 	{
-		GetCmdArg(4, indexString, 4);
+		GetCmdArg(4, indexString, sizeof(indexString));
 		index = StringToInt(indexString);
 		if(index < 0)
 		{
@@ -1525,7 +1524,7 @@ public Action Command_MakeBoss(int client, int args)
 	int target_list[MAXPLAYERS], target_count;
 	bool tn_is_ml;
 
-	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, MAX_TARGET_LENGTH, tn_is_ml)) < 1)
+	if((target_count=ProcessTargetString(targetName, client, target_list, MaxClients, 0, target_name, sizeof(target_name), tn_is_ml)) < 1)
 	{
 		ReplyToTargetError(client, target_count);
 		return Plugin_Handled;
@@ -1602,7 +1601,7 @@ public Action Command_MakeBoss(int client, int args)
 						}
 						else if(team > 0)
 						{
-							BossSwitched[boss] = view_as<bool>(GetRandomInt(0, 1));
+							BossSwitched[boss] = GetRandomInt(0, 1)==1;
 						}
 
 						if(special >= 0)
@@ -1743,8 +1742,8 @@ public void OnConfigsExecuted()
 	tf_arena_first_blood = GetConVarInt(FindConVar("tf_arena_first_blood"));
 	mp_forcecamera = GetConVarInt(FindConVar("mp_forcecamera"));
 	tf_dropped_weapon_lifetime = GetConVarBool(FindConVar("tf_dropped_weapon_lifetime"));
-	GetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team, 16);
-	GetConVarString(hostName=FindConVar("hostname"), oldName, 256);
+	GetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team, sizeof(mp_humans_must_join_team));
+	GetConVarString(hostName=FindConVar("hostname"), oldName, sizeof(oldName));
 
 	if(cvarEnabled.IntValue > 1)
 	{
@@ -1894,11 +1893,11 @@ public void EnableFF2()
 		char gameDesc[64];
 		if(TimesTen)
 		{
-			Format(gameDesc, 64, "Freak Fortress 2 x10 (%s)", PLUGIN_VERSION);
+			FormatEx(gameDesc, sizeof(gameDesc), "Freak Fortress 2 x10 (%s)", PLUGIN_VERSION);
 		}
 		else
 		{
-			Format(gameDesc, 64, "Freak Fortress 2 (%s)", PLUGIN_VERSION);
+			FormatEx(gameDesc, sizeof(gameDesc), "Freak Fortress 2 (%s)", PLUGIN_VERSION);
 		}
 
 		#if defined _SteamWorks_Included
@@ -1994,10 +1993,10 @@ public void CacheWeapons()
 	}
 
 	char config[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", DataPath, WeaponCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, WeaponCFG);
 	if(!FileExists(config))
 	{
-		BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", ConfigPath, WeaponCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, WeaponCFG);
 		if(!FileExists(config))
 		{
 			LogToFile(eLog, "[Weapons] Could not find '%s'!", WeaponCFG);
@@ -2045,18 +2044,18 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	Action action = Plugin_Continue;
 	Call_StartForward(OnLoadCharacterSet);
 	Call_PushCellRef(NumOfCharSet);
-	strcopy(charset, 42, FF2CharSetString);
-	Call_PushStringEx(charset, 42, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	strcopy(charset, sizeof(charset), FF2CharSetString);
+	Call_PushStringEx(charset, sizeof(charset), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_Finish(action);
 	if(action == Plugin_Changed)
 	{
 		int i = -1;
-		if(charset[0] != '\0')
+		if(charset[0])
 		{
 			KvRewind(Kv);
 			for(i=0; ; i++)
 			{
-				KvGetSectionName(Kv, config, PLATFORM_MAX_PATH);
+				KvGetSectionName(Kv, config, sizeof(config));
 				if(!strcmp(config, charset, false))
 				{
 					FF2CharSet = i;
@@ -2081,7 +2080,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 				KvGotoNextKey(Kv);
 			}
 			KvGotoFirstSubKey(Kv);
-			KvGetSectionName(Kv, FF2CharSetString, 42);
+			KvGetSectionName(Kv, FF2CharSetString, sizeof(FF2CharSetString));
 		}
 	}
 
@@ -2094,12 +2093,12 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	}
 
 	CurrentCharSet = i;
-	KvGetSectionName(Kv, CurrentCharSetString, 42);
+	KvGetSectionName(Kv, CurrentCharSetString, sizeof(CurrentCharSetString));
 
 	BuildPath(Path_SM, filepath, PLATFORM_MAX_PATH, ConfigPath);
 	for(i=1; Specials<MAXSPECIALS && i<=MAXSPECIALS; i++)
 	{
-		IntToString(i, key, 4);
+		IntToString(i, key, sizeof(key));
 		KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
 		if(!config[0])
 			continue;
@@ -2113,7 +2112,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 		LoadCharacter(config);
 	}
 
-	KvGetString(Kv, "chances", ChancesString, 512);
+	KvGetString(Kv, "chances", ChancesString, sizeof(ChancesString));
 
 	// Check if the current charset is not the first
 	// one or if there's a charset after this one
@@ -2131,7 +2130,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 		if(amount % 2)
 		{
 			LogToFile(eLog, "[Characters] Invalid chances string, disregarding chances");
-			strcopy(ChancesString, 512, "");
+			strcopy(ChancesString, sizeof(ChancesString), "");
 			amount = 0;
 		}
 
@@ -2144,7 +2143,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 				if(StringToInt(stringChances[chancesIndex]) < 1)
 				{
 					LogToFile(eLog, "[Characters] Character %i cannot have a zero or negative chance, disregarding chances", chancesIndex-1);
-					strcopy(ChancesString, 512, "");
+					strcopy(ChancesString, sizeof(ChancesString), "");
 					break;
 				}
 				chances[chancesIndex] = StringToInt(stringChances[chancesIndex])+chances[chancesIndex-2];
@@ -2183,23 +2182,23 @@ void EnableSubPlugins(bool force=false)
 
 	areSubPluginsEnabled = true;
 	char path[PLATFORM_MAX_PATH], filename[PLATFORM_MAX_PATH], filename_old[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, path, PLATFORM_MAX_PATH, "plugins/freaks");
+	BuildPath(Path_SM, path, sizeof(path), "plugins/freaks");
 	FileType filetype;
 	Handle directory = OpenDirectory(path);
-	while(ReadDirEntry(directory, filename, PLATFORM_MAX_PATH, filetype))
+	while(ReadDirEntry(directory, filename, sizeof(filename), filetype))
 	{
 		if(filetype==FileType_File && StrContains(filename, ".smx", false)!=-1)
 		{
-			Format(filename_old, PLATFORM_MAX_PATH, "%s/%s", path, filename);
-			ReplaceString(filename, PLATFORM_MAX_PATH, ".smx", ".ff2", false);
-			Format(filename, PLATFORM_MAX_PATH, "%s/%s", path, filename);
+			FormatEx(filename_old, sizeof(filename_old), "%s/%s", path, filename);
+			ReplaceString(filename, sizeof(filename), ".smx", ".ff2", false);
+			Format(filename, sizeof(filename), "%s/%s", path, filename);
 			DeleteFile(filename); // Just in case filename.ff2 also exists: delete it and replace it with the new .smx version
 			RenameFile(filename, filename_old);
 		}
 	}
 
 	directory = OpenDirectory(path);
-	while(ReadDirEntry(directory, filename, PLATFORM_MAX_PATH, filetype))
+	while(ReadDirEntry(directory, filename, sizeof(filename), filetype))
 	{
 		if(filetype==FileType_File && StrContains(filename, ".ff2", false)!=-1)
 			ServerCommand("sm plugins load freaks/%s", filename);
@@ -2215,7 +2214,7 @@ void DisableSubPlugins(bool force=false)
 	BuildPath(Path_SM, path, PLATFORM_MAX_PATH, "plugins/freaks");
 	FileType filetype;
 	Handle directory = OpenDirectory(path);
-	while(ReadDirEntry(directory, filename, PLATFORM_MAX_PATH, filetype))
+	while(ReadDirEntry(directory, filename, sizeof(filename), filetype))
 	{
 		if(filetype==FileType_File && StrContains(filename, ".ff2", false)!=-1)
 			InsertServerCommand("sm plugins unload freaks/%s", filename);  //ServerCommand will not work when switching maps
@@ -2226,9 +2225,8 @@ void DisableSubPlugins(bool force=false)
 
 public void ProcessDirectory(const char[] directory, const char[] current, const char[] config)
 {
-	char file[PLATFORM_MAX_PATH], current2[256];
-	strcopy(current2, PLATFORM_MAX_PATH, current);	//???????
-	Format(file, PLATFORM_MAX_PATH, "%s\\%s", directory, current2);
+	char file[PLATFORM_MAX_PATH];
+	FormatEx(file, PLATFORM_MAX_PATH, "%s\\%s", directory, current);
 	if(!DirExists(file))
 		return;
 
@@ -2244,9 +2242,9 @@ public void ProcessDirectory(const char[] directory, const char[] current, const
 			if(ReplaceString(file, PLATFORM_MAX_PATH, ".cfg", "", false) != 1)
 				continue;
 
-			if(current2[0] != '\0')
+			if(current2[0])
 			{
-				Format(file, PLATFORM_MAX_PATH, "%s\\%s", current2, file);
+				Format(file, PLATFORM_MAX_PATH, "%s\\%s", current, file);
 				ReplaceString(file, PLATFORM_MAX_PATH, "\\", "/");
 			}
 
@@ -2259,9 +2257,9 @@ public void ProcessDirectory(const char[] directory, const char[] current, const
 		if(type!=FileType_Directory || !StrContains(file, "."))
 			continue;
 
-		if(current2[0] != '\0')
+		if(current2[0])
 		{
-			Format(file, PLATFORM_MAX_PATH, "%s/%s", current2, file);
+			Format(file, PLATFORM_MAX_PATH, "%s/%s", current, file);
 			ProcessDirectory(directory, file, config);
 		}
 		else
@@ -2277,7 +2275,7 @@ public void LoadCharacter(const char[] character)
 	static char extensions[][] = {".mdl", ".dx80.vtx", ".dx90.vtx", ".sw.vtx", ".vvd", ".phy"};
 	static char config[PLATFORM_MAX_PATH];
 
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s.cfg", ConfigPath, character);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s.cfg", ConfigPath, character);
 	if(!FileExists(config))
 	{
 		LogToFile(eLog, "[Characters] Character %s does not exist!", character);
@@ -2289,15 +2287,15 @@ public void LoadCharacter(const char[] character)
 	MapBlocked[Specials] = false;
 	if(KvJumpToKey(BossKV[Specials], "map_exclude"))
 	{
-		static char item[6];
+		char item[6];
 		static char buffer[34];
 		int size = 1;
 
-		do
+		for(int size=1; ; size++)
 		{
-			Format(item, 8, "map%d", size);
-			KvGetString(BossKV[Specials], item, buffer, 34);
-			if(buffer[0] == '\0')
+			FormatEx(item, sizeof(item), "map%d", size);
+			KvGetString(BossKV[Specials], item, buffer, sizeof(buffer));
+			if(!buffer[0])
 				break;
 
 			if(!StrContains(currentmap, buffer))
@@ -2305,9 +2303,7 @@ public void LoadCharacter(const char[] character)
 				MapBlocked[Specials] = true;
 				break;
 			}
-
-			size++;
-		} while(size);
+		}
 	}
 	KvRewind(BossKV[Specials]);
 
@@ -2355,12 +2351,12 @@ public void LoadCharacter(const char[] character)
 
 	for(int i=1; ; i++)
 	{
-		Format(config, 10, "ability%i", i);
+		Format(config, sizeof(config), "ability%i", i);
 		if(KvJumpToKey(BossKV[Specials], config))
 		{
 			static char plugin_name[64];
 			KvGetString(BossKV[Specials], "plugin_name", plugin_name, 64);
-			BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "plugins/freaks/%s.ff2", plugin_name);
+			BuildPath(Path_SM, config, sizeof(config), "plugins/freaks/%s.ff2", plugin_name);
 			if(!FileExists(config))
 			{
 				LogToFile(eLog, "[Boss] Character %s needs plugin %s!", character, plugin_name);
@@ -2376,20 +2372,20 @@ public void LoadCharacter(const char[] character)
 
 	static char key[PLATFORM_MAX_PATH], section[64];
 	KvSetString(BossKV[Specials], "filename", character);
-	KvGetString(BossKV[Specials], "name", config, PLATFORM_MAX_PATH);
+	KvGetString(BossKV[Specials], "name", config, sizeof(config));
 	bBlockVoice[Specials] = view_as<bool>(KvGetNum(BossKV[Specials], "sound_block_vo", 0));
 	BossSpeed[Specials] = KvGetFloat(BossKV[Specials], "maxspeed", 340.0);
 	KvGotoFirstSubKey(BossKV[Specials]);
 
 	while(KvGotoNextKey(BossKV[Specials]))
 	{
-		KvGetSectionName(BossKV[Specials], section, 64);
+		KvGetSectionName(BossKV[Specials], section, sizeof(section));
 		if(!strcmp(section, "download"))
 		{
 			for(int i=1; ; i++)
 			{
-				IntToString(i, key, 4);
-				KvGetString(BossKV[Specials], key, config, PLATFORM_MAX_PATH);
+				IntToString(i, key, sizeof(key));
+				KvGetString(BossKV[Specials], key, config, sizeof(config));
 				if(!config[0])
 					break;
 
@@ -2407,8 +2403,8 @@ public void LoadCharacter(const char[] character)
 		{
 			for(int i=1; ; i++)
 			{
-				IntToString(i, key, 4);
-				KvGetString(BossKV[Specials], key, config, 64);
+				IntToString(i, key, sizeof(key));
+				KvGetString(BossKV[Specials], key, config, sizeof(config));
 				if(!config[0])
 					break;
 
@@ -2430,12 +2426,12 @@ public void LoadCharacter(const char[] character)
 		{
 			for(int i=1; ; i++)
 			{
-				IntToString(i, key, 4);
-				KvGetString(BossKV[Specials], key, config, PLATFORM_MAX_PATH);
+				IntToString(i, key, sizeof(key));
+				KvGetString(BossKV[Specials], key, config, sizeof(config));
 				if(!config[0])
 					break;
 
-				Format(key, 4, "%s.vtf", config);
+				Format(key, sizeof(key), "%s.vtf", config);
 				if(FileExists(key, true))
 				{
 					AddFileToDownloadsTable(key);
@@ -2445,7 +2441,7 @@ public void LoadCharacter(const char[] character)
 					LogToFile(eLog, "[Boss] Character %s is missing file '%s'!", character, key);
 				}
 
-				Format(key, 4, "%s.vmt", config);
+				Format(key, sizeof(key), "%s.vmt", config);
 				if(FileExists(key, true))
 				{
 					AddFileToDownloadsTable(key);
@@ -2462,23 +2458,24 @@ public void LoadCharacter(const char[] character)
 
 public void PrecacheCharacter(int characterIndex)
 {
-	static char file[PLATFORM_MAX_PATH], filePath[PLATFORM_MAX_PATH], key[8], section[16], bossName[64];
+	char filePath[PLATFORM_MAX_PATH], key[8];
+	static char file[PLATFORM_MAX_PATH], section[16], bossName[64];
 	KvRewind(BossKV[characterIndex]);
-	KvGetString(BossKV[characterIndex], "filename", bossName, 64);
+	KvGetString(BossKV[characterIndex], "filename", bossName, sizeof(bossName));
 	KvGotoFirstSubKey(BossKV[characterIndex]);
 	while(KvGotoNextKey(BossKV[characterIndex]))
 	{
-		KvGetSectionName(BossKV[characterIndex], section, 16);
+		KvGetSectionName(BossKV[characterIndex], section, sizeof(section));
 		if(StrEqual(section, "sound_bgm"))
 		{
 			for(int i=1; ; i++)
 			{
-				Format(key, 4, "path%d", i);
-				KvGetString(BossKV[characterIndex], key, file, PLATFORM_MAX_PATH);
+				FormatEx(key, sizeof(key), "path%d", i);
+				KvGetString(BossKV[characterIndex], key, file, sizeof(file));
 				if(!file[0])
 					break;
 
-				Format(filePath, PLATFORM_MAX_PATH, "sound/%s", file);  //Sounds doesn't include the sound/ prefix, so add that
+				FormatEx(filePath, sizeof(filePath), "sound/%s", file);  //Sounds doesn't include the sound/ prefix, so add that
 				if(FileExists(filePath, true))
 				{
 					PrecacheSound(file);
@@ -2493,8 +2490,8 @@ public void PrecacheCharacter(int characterIndex)
 		{
 			for(int i=1; ; i++)
 			{
-				IntToString(i, key, 4);
-				KvGetString(BossKV[characterIndex], key, file, PLATFORM_MAX_PATH);
+				IntToString(i, key, sizeof(key));
+				KvGetString(BossKV[characterIndex], key, file, sizeof(file));
 				if(!file[0])
 					break;
 
@@ -2511,7 +2508,7 @@ public void PrecacheCharacter(int characterIndex)
 				}
 				else
 				{
-					Format(filePath, PLATFORM_MAX_PATH, "sound/%s", file);  //Sounds doesn't include the sound/ prefix, so add that
+					FormatEx(filePath, sizeof(filePath), "sound/%s", file);  //Sounds doesn't include the sound/ prefix, so add that
 					if(FileExists(filePath, true))
 					{
 						PrecacheSound(file);
@@ -2643,7 +2640,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	}
 	else if(convar == cvarAttributes)
 	{
-		strcopy(Attributes, 128, newValue);
+		strcopy(Attributes, sizeof(Attributes), newValue);
 	}
 	else if(convar == cvarStartingUber)
 	{
@@ -2800,15 +2797,15 @@ public Action Timer_Announce(Handle timer)
 
 stock bool IsFF2Map()
 {
-	GetCurrentMap(currentmap, 99);
+	GetCurrentMap(currentmap, sizeof(currentmap));
 	if(FileExists("bNextMapToFF2"))
 		return true;
 
 	char config[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", DataPath, MapCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, MapCFG);
 	if(!FileExists(config))
 	{
-		BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", ConfigPath, MapCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, MapCFG);
 		if(!FileExists(config))
 		{
 			LogToFile(eLog, "[Maps] Unable to find '%s'", MapCFG);
@@ -2824,7 +2821,7 @@ stock bool IsFF2Map()
 	}
 
 	int tries;
-	while(ReadFileLine(file, config, PLATFORM_MAX_PATH))
+	while(ReadFileLine(file, config, sizeof(config)))
 	{
 		tries++;
 		if(tries >= 100)
@@ -2833,7 +2830,7 @@ stock bool IsFF2Map()
 			return true;
 		}
 
-		Format(config, strlen(config)-1, config);
+		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
 			continue;
 
@@ -2863,7 +2860,7 @@ stock bool MapHasMusic(bool forceRecalc=false)  //SAAAAAARGE
 		char name[64];
 		while((entity=FindEntityByClassname2(entity, "info_target")) != -1)
 		{
-			GetEntPropString(entity, Prop_Data, "m_iName", name, 64);
+			GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
 			if(!strcmp(name, "hale_no_music", false))
 			{
 				FF2Dbg("Detected Map Music");
@@ -2882,10 +2879,10 @@ stock void CheckToChangeMapDoors()
 
 	char config[PLATFORM_MAX_PATH];
 	checkDoors = false;
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", DataPath, DoorCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, DoorCFG);
 	if(!FileExists(config))
 	{
-		BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", ConfigPath, DoorCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, DoorCFG);
 		if(!FileExists(config))
 		{
 			LogToFile(eLog, "[Doors] Unable to find '%s'", DoorCFG);
@@ -2900,9 +2897,9 @@ stock void CheckToChangeMapDoors()
 		return;
 	}
 
-	while(!IsEndOfFile(file) && ReadFileLine(file, config, PLATFORM_MAX_PATH))
+	while(!IsEndOfFile(file) && ReadFileLine(file, config, sizeof(config)))
 	{
-		Format(config, strlen(config)-1, config);
+		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
 			continue;
 
@@ -2919,13 +2916,13 @@ stock void CheckToChangeMapDoors()
 void CheckToTeleportToSpawn()
 {
 	char config[PLATFORM_MAX_PATH];
-	GetCurrentMap(currentmap, 99);
+	GetCurrentMap(currentmap, sizeof(currentmap));
 	SpawnTeleOnTriggerHurt = false;
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", DataPath, SpawnTeleportCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportCFG);
 
 	if(!FileExists(config))
 	{
-		BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", ConfigPath, SpawnTeleportCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, SpawnTeleportCFG);
 		if(!FileExists(config))
 		{
 			LogToFile(eLog, "[TTS] Unable to find '%s'", SpawnTeleportCFG);
@@ -2940,9 +2937,9 @@ void CheckToTeleportToSpawn()
 		return;
 	}
 
-	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, PLATFORM_MAX_PATH))
+	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, sizeof(config)))
 	{
-		Format(config, strlen(config)-1, config);
+		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
 			continue;
 
@@ -2954,10 +2951,10 @@ void CheckToTeleportToSpawn()
 		}
 	}
 
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", DataPath, SpawnTeleportBlacklistCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportBlacklistCFG);
 	if(!FileExists(config))
 	{
-		BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", ConfigPath, SpawnTeleportBlacklistCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, SpawnTeleportBlacklistCFG);
 		if(!FileExists(config))
 		{
 			LogToFile(eLog, "[TTS] Unable to find '%s'", SpawnTeleportBlacklistCFG);
@@ -2972,9 +2969,9 @@ void CheckToTeleportToSpawn()
 		return;
 	}
 
-	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, PLATFORM_MAX_PATH))
+	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, sizeof(config)))
 	{
-		Format(config, strlen(config)-1, config);
+		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
 			continue;
 
@@ -3271,7 +3268,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 			continue;
 
 		static char classname[64];
-		GetEntityClassname(entity, classname, 64);
+		GetEntityClassname(entity, classname, sizeof(classname));
 		if(!strcmp(classname, "func_regenerate"))
 		{
 			AcceptEntityInput(entity, "Kill");
@@ -3303,7 +3300,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 			if(ToggleBoss[client] != Setting_On)
 			{
 				static char nick[64];
-				GetClientName(client, nick, 64);
+				GetClientName(client, nick, sizeof(nick));
 				if(ToggleBoss[client] == Setting_Off)
 				{
 					FPrintToChat(client, "%t", "FF2 Toggle Disabled Notification");
@@ -3422,8 +3419,8 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 				bosses++;
 				boss = GetBossIndex(client);
 				KvRewind(BossKV[Special[boss]]);
-				KvGetString(BossKV[Special[boss]], "command", command, 512);
-				if(command[0] != '\0')
+				KvGetString(BossKV[Special[boss]], "command", command, sizeof(command));
+				if(command[0])
 					ServerCommand(command);
 			}
 		}
@@ -3479,16 +3476,16 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 
 	if(cvarNameChange.BoolValue)
 	{
-		static char newName[256];
+		char newName[256];
 		if(cvarNameChange.IntValue == 1)
 		{
 			static char bossName[64];
 			GetBossSpecial(Special[0], bossName, 64);
-			Format(newName, 256, "%s | %s", oldName, bossName);
+			FormatEx(newName, 256, "%s | %s", oldName, bossName);
 		}
 		else
 		{
-			Format(newName, 256, "%s | %s", oldName, CurrentCharSetString);
+			FormatEx(newName, 256, "%s | %s", oldName, CurrentCharSetString);
 		}
 		hostName.SetString(newName);
 	}
@@ -3521,16 +3518,14 @@ public Action Timer_CheckDoors(Handle timer)
 {
 	if(!checkDoors)
 	{
-		doorCheckTimer=INVALID_HANDLE;
+		doorCheckTimer = INVALID_HANDLE;
 		return Plugin_Stop;
 	}
 
 	if((!Enabled && CheckRoundState()!=-1) || (Enabled && CheckRoundState()!=1))
-	{
 		return Plugin_Continue;
-	}
 
-	int entity=-1;
+	int entity = -1;
 	while((entity=FindEntityByClassname2(entity, "func_door"))!=-1)
 	{
 		AcceptEntityInput(entity, "Open");
@@ -3541,8 +3536,8 @@ public Action Timer_CheckDoors(Handle timer)
 
 public void CheckArena()
 {
-	float PointTotal=float(PointTime+PointDelay*(playing-1));
-	if(PointType==0 || PointTotal<0)
+	float PointTotal = float(PointTime+PointDelay*(playing-1));
+	if(!PointType || PointTotal<0)
 	{
 		SetArenaCapEnableTime(0.0);
 		SetControlPoint(false);
@@ -3579,7 +3574,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			int boss;
 
 			FormatTime(FormatedTime, 100, "%X", CurrentTime);
-			Format(Result, 64, GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+			strcopy(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
 			for(int client=1; client<=MaxClients; client++)
 			{
 				boss = GetBossIndex(client);
@@ -3587,17 +3582,17 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				{
 					if(IsFakeClient(client))
 					{
-						Format(PlayerName, 64, "Bot");
-						Format(Authid, 64, "Bot");
+						strcopy(PlayerName, sizeof(PlayerName), "Bot");
+						strcopy(Authid, sizeof(Authid), "Bot");
 					}
 					else
 					{
-						GetClientName(Boss[boss], PlayerName, 64);
-						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, 64, false);
+						GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
 					}
 					KvRewind(BossKV[Special[boss]]);
-					KvGetString(BossKV[Special[boss]], "filename", bossName, 64);
-					BuildPath(Path_SM, bLog, PLATFORM_MAX_PATH, "%s/%s.txt", BossLogPath, bossName);
+					KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+					BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
 				}
 			}
 
@@ -3615,14 +3610,14 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	if(GetEventInt(event, "team") == BossTeam)
 	{
 		bossWin = 1;
-		if(RandomSound("sound_win", sound, PLATFORM_MAX_PATH))
+		if(RandomSound("sound_win", sound, sizeof(sound)))
 			EmitSoundToAllExcept(sound);
 
-		if(RandomSound("sound_outtromusic_win", sound, PLATFORM_MAX_PATH))
+		if(RandomSound("sound_outtromusic_win", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound);
 		}
-		else if(RandomSound("sound_outtromusic", sound, PLATFORM_MAX_PATH))
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound);
 		}
@@ -3631,15 +3626,15 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	{
 		if(Enabled3)
 		{
-			if(RandomSound("sound_win", sound, PLATFORM_MAX_PATH, MAXBOSSES))
+			if(RandomSound("sound_win", sound, sizeof(sound), MAXBOSSES))
 				EmitSoundToAllExcept(sound);
 		}
 
-		if(RandomSound("sound_outtromusic_lose", sound, PLATFORM_MAX_PATH))
+		if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound);
 		}
-		else if(RandomSound("sound_outtromusic", sound, PLATFORM_MAX_PATH))
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound);
 		}
@@ -3647,18 +3642,18 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	else
 	{
 		bossWin = -1;
-		if(RandomSound("sound_stalemate", sound, PLATFORM_MAX_PATH))
+		if(RandomSound("sound_stalemate", sound, sizeof(sound)))
 			EmitSoundToAllExcept(sound);
 
-		if(RandomSound("sound_outtromusic_stalemate", sound, PLATFORM_MAX_PATH))
+		if(RandomSound("sound_outtromusic_stalemate", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound);
 		}
-		else if(RandomSound("sound_outtromusic_lose", sound, PLATFORM_MAX_PATH))
+		else if(RandomSound("sound_outtromusic_lose", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound);
 		}
-		else if(RandomSound("sound_outtromusic", sound, PLATFORM_MAX_PATH))
+		else if(RandomSound("sound_outtromusic", sound, sizeof(sound)))
 		{
 			EmitMusicToAllExcept(sound);
 		}
@@ -3669,7 +3664,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		int winningTeam = GetEventInt(event, "team");
 		int target;
 		char text[MAXTF2PLAYERS][128];
-		static char bossName[64], lives[8];
+		static char bossName[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			target = Boss[boss];
@@ -3677,14 +3672,16 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			{
 				if(GetClientTeam(target) == winningTeam)
 				{
-					strcopy(bossName, 64, "=Failed name=");
-					BossLives[boss]>1 ? Format(lives, 8, "x%i", BossLives[boss]) : strcopy(lives, 2, "");
+					char lives[8];
+					if(BossLives[boss] > 1)
+						FormatEx(lives, sizeof(lives), "x%i", BossLives[boss]);
+
 					for(int client=1; client<=MaxClients; client++)
 					{
 						if(IsValidClient(client))
 						{
-							GetBossSpecial(Special[boss], bossName, 64, client);
-							Format(text[client], 128, "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+							GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
+							Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 							FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						}
 					}
@@ -3763,7 +3760,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 					AddClientStats(boss, Cookie_BossWins, 1);
 					gainedPoint[boss] = true;
 				}
-				else if(bossWin == 0)
+				else if(!bossWin)
 				{
 					AddClientStats(boss, Cookie_BossLosses, 1);
 					gainedPoint[boss] = true;
@@ -3819,20 +3816,22 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	{
 		int target;
 		char text[MAXTF2PLAYERS][128];
-		static char bossName[64], lives[8];
+		static char bossName[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			target = Boss[boss];
 			if(IsValidClient(target))
 			{
-				strcopy(bossName, 64, "=Failed name=");
-				BossLives[boss]>1 ? Format(lives, 8, "x%i", BossLives[boss]) : strcopy(lives, 2, "");
+				char lives[8];
+				if(BossLives[boss] > 1)
+					FormatEx(lives, sizeof(lives), "x%i", BossLives[boss]);
+
 				for(int client=1; client<=MaxClients; client++)
 				{
 					if(IsValidClient(client))
 					{
-						GetBossSpecial(Special[boss], bossName, 64, client);
-						Format(text[client], 128, "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
+						Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 					}
 				}
@@ -3846,7 +3845,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				FF2_ShowHudText(client, -1, "%s", text[client]);
 		}
 
-		if(!bossWin && RandomSound("sound_fail", sound, PLATFORM_MAX_PATH))
+		if(!bossWin && RandomSound("sound_fail", sound, sizeof(sound)))
 			EmitSoundToAllExcept(sound);
 	}
 
@@ -4053,11 +4052,11 @@ public Action CompanionMenu(int client, int args)
 		SetMenuTitle(menu, "%t", "FF2 Companion Toggle Menu Title");
 
 		static char menuoption[128];
-		Format(menuoption, 128, "%t", "Enable Companion Selection");
+		Format(menuoption, sizeof(menuoption), "%t", "Enable Companion Selection");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
-		Format(menuoption, 128, "%t", "Disable Companion Selection");
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection");
 		AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
-		Format(menuoption, 128, "%t", "Disable Companion Selection For Map");
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection For Map");
 		if(Enabled2)
 		{
 			AddMenuItem(menu, "FF2 Companion Toggle Menu", menuoption);
@@ -4105,11 +4104,11 @@ public Action BossMenu(int client, int args)
 		SetMenuTitle(menu, "%t", "FF2 Toggle Menu Title");
 
 		static char menuoption[128];
-		Format(menuoption, 128, "%t", "Enable Queue Points");
+		Format(menuoption, sizeof(menuoption), "%t", "Enable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
-		Format(menuoption, 128, "%t", "Disable Queue Points");
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Queue Points");
 		AddMenuItem(menu, "Boss Toggle", menuoption);
-		Format(menuoption, 128, "%t", "Disable Queue Points For This Map");
+		Format(menuoption, sizeof(menuoption), "%t", "Disable Queue Points For This Map");
 		if(Enabled2)
 		{
 			AddMenuItem(menu, "Boss Toggle", menuoption);
@@ -4163,7 +4162,7 @@ public Action Command_HudMenu(int client, int args)
 	static char menuOption[64];
 	for(int i; i<HUDTYPES; i++)
 	{
-		Format(menuOption, 64, "%t [%t]", HudTypes[i], HudSettings[client][i] ? "Off" : "On");
+		Format(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], HudSettings[client][i] ? "Off" : "On");
 		AddMenuItem(menu, menuOption, menuOption);
 	}
 
@@ -4196,12 +4195,12 @@ public Action SkipBossPanel(int client)
 	Handle panel = CreatePanel();
 	static char text[128];
 	SetGlobalTransTarget(client);
-	Format(text, 128, "%t", "to0_resetpts");
+	Format(text, sizeof(text), "%t", "to0_resetpts");
 
 	SetPanelTitle(panel, text);
-	Format(text, 128, "%t", "Yes");
+	Format(text, sizeof(text), "%t", "Yes");
 	DrawPanelItem(panel, text);
-	Format(text, 128, "%t", "No");
+	Format(text, sizeof(text), "%t", "No");
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, SkipBossPanelH, MENU_TIME_FOREVER);
 	CloseHandle(panel);
@@ -4240,7 +4239,7 @@ public Action OnBroadcast(Handle event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 
 	static char sound[PLATFORM_MAX_PATH];
-	GetEventString(event, "sound", sound, PLATFORM_MAX_PATH);
+	GetEventString(event, "sound", sound, sizeof(sound));
 	if(!StrContains(sound, "Game.Your", false) || StrEqual(sound, "Game.Stalemate", false) || !StrContains(sound, "Announcer.AM_RoundStartRandom", false))
 		return Plugin_Handled;
 
@@ -4282,7 +4281,7 @@ public Action Timer_CalcQueuePoints(Handle timer)
 
 			if(IsBoss(client))
 			{
-				if(((GetBossIndex(client)==0 || GetBossIndex(client)==MAXBOSSES) && cvarDuoRestore.BoolValue) || !cvarDuoRestore.BoolValue)
+				if(((!GetBossIndex(client) || GetBossIndex(client)==MAXBOSSES) && cvarDuoRestore.BoolValue) || !cvarDuoRestore.BoolValue)
 				{
 					add_points[client] = -QueuePoints[client];
 					add_points2[client] = add_points[client];
@@ -4366,8 +4365,8 @@ public Action StartResponseTimer(Handle timer)
 	if(Enabled3)
 	{
 		static char sound2[PLATFORM_MAX_PATH];
-		bool isIntro = RandomSound("sound_begin", sound, PLATFORM_MAX_PATH);
-		bool isIntro2 = RandomSound("sound_begin", sound2, PLATFORM_MAX_PATH, MAXBOSSES);
+		bool isIntro = RandomSound("sound_begin", sound, sizeof(sound));
+		bool isIntro2 = RandomSound("sound_begin", sound2, sizeof(sound2), MAXBOSSES);
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(!IsValidClient(client) || !ToggleVoice[client])
@@ -4385,7 +4384,7 @@ public Action StartResponseTimer(Handle timer)
 		return Plugin_Continue;
 	}
 
-	if(RandomSound("sound_begin", sound, PLATFORM_MAX_PATH))
+	if(RandomSound("sound_begin", sound, sizeof(sound)))
 		EmitSoundToAllExcept(sound);
 
 	return Plugin_Continue;
@@ -4394,7 +4393,7 @@ public Action StartResponseTimer(Handle timer)
 public Action StartIntroMusicTimer(Handle timer)
 {
 	static char sound[PLATFORM_MAX_PATH];
-	if(RandomSound("sound_intromusic", sound, PLATFORM_MAX_PATH))
+	if(RandomSound("sound_intromusic", sound, sizeof(sound)))
 		EmitMusicToAllExcept(sound);
 
 	return Plugin_Continue;
@@ -4417,7 +4416,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		do
 		{
 			index++;
-			Format(music, PLATFORM_MAX_PATH, "time%i", index);
+			Format(music, 10, "time%i", index);
 		}
 		while(KvGetFloat(BossKV[Special[0]], music)>1);
 
@@ -4425,8 +4424,8 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		for(int i; i<19; i++)
 		{
 			index = GetRandomInt(1, index-1);
-			Format(lives, 256, "life%i", index);
-			KvGetString(BossKV[Special[0]], lives, lives, 256);
+			Format(lives, sizeof(lives), "life%i", index);
+			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(StringToInt(lives))
 			{
 				if(StringToInt(lives) != BossLives[Special[0]])
@@ -4434,22 +4433,22 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			}
 			break;
 		}
-		Format(music, PLATFORM_MAX_PATH, "time%i", index);
+		Format(music, 10, "time%i", index);
 		float time = KvGetFloat(BossKV[Special[0]], music);
-		Format(music, PLATFORM_MAX_PATH, "path%i", index);
-		KvGetString(BossKV[Special[0]], music, music, PLATFORM_MAX_PATH);
+		Format(music, 10, "path%i", index);
+		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
 
 		cursongId[client]=index;
 
 		// manual song ID
 		static char id3[4][256];
-		Format(id3[0], 256, "name%i", index);
-		KvGetString(BossKV[Special[0]], id3[0], id3[2], 256);
-		Format(id3[1], 256, "artist%i", index);
-		KvGetString(BossKV[Special[0]], id3[1], id3[3], 256);
+		Format(id3[0], sizeof(id3[]), "name%i", index);
+		KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+		Format(id3[1], sizeof(id3[]), "artist%i", index);
+		KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
 
 		static char temp[PLATFORM_MAX_PATH];
-		Format(temp, PLATFORM_MAX_PATH, "sound/%s", music);
+		Format(temp, sizeof(temp), "sound/%s", music);
 		if(FileExists(temp, true))
 		{
 			PlayBGM(client, music, time, id3[2], id3[3]);
@@ -4458,7 +4457,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		{
 			static char bossName[64];
 			KvRewind(BossKV[Special[0]]);
-			KvGetString(BossKV[Special[0]], "filename", bossName, 64);
+			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			FF2Dbg("{red}MALFUNCTION! NEED INPUT!");
 			if(MusicTimer[client]!=INVALID_HANDLE)
@@ -4475,13 +4474,13 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 	Call_StartForward(OnMusic2);
 	static char temp[3][PLATFORM_MAX_PATH];
 	float time2 = time;
-	strcopy(temp[0], PLATFORM_MAX_PATH, music);
-	strcopy(temp[1], PLATFORM_MAX_PATH, name);
-	strcopy(temp[2], PLATFORM_MAX_PATH, artist);
-	Call_PushStringEx(temp[0], PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	strcopy(temp[0], sizeof(temp[]), music);
+	strcopy(temp[1], sizeof(temp[]), name);
+	strcopy(temp[2], sizeof(temp[]), artist);
+	Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushFloatRef(time2);
-	Call_PushStringEx(temp[1], PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
-	Call_PushStringEx(temp[2], PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushStringEx(temp[1], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushStringEx(temp[2], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_Finish(action);
 	switch(action)
 	{
@@ -4503,8 +4502,8 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 			Action action2;
 			Call_StartForward(OnMusic);
 			time2 = time;
-			strcopy(temp[0], PLATFORM_MAX_PATH, music);
-			Call_PushStringEx(temp[0], PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			strcopy(temp[0], sizeof(temp[]), music);
+			Call_PushStringEx(temp[0], sizeof(temp[]), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 			Call_PushFloatRef(time2);
 			Call_Finish(action2);
 			switch(action2)
@@ -4524,7 +4523,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 		}
 	}
 
-	Format(temp[0], PLATFORM_MAX_PATH, "sound/%s", music);
+	Format(temp[0], sizeof(temp[]), "sound/%s", music);
 	if(FileExists(temp[0], true))
 	{
 		bool unknown1 = true;
@@ -4555,7 +4554,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 			unknown2 = false;
 		}
 
-		if(cvarSongInfo.IntValue==1 || ((unknown1 || unknown2) && cvarSongInfo.IntValue==0))
+		if(cvarSongInfo.IntValue==1 || ((unknown1 || unknown2) && !cvarSongInfo.IntValue))
 		{
 			FPrintToChat(client, "%t", "track_info", artist, name);
 		}
@@ -4564,7 +4563,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 	{
 		char bossName[64];
 		KvRewind(BossKV[Special[0]]);
-		KvGetString(BossKV[Special[0]], "filename", bossName, 64);
+		KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 		LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, music);
 	}
 }
@@ -4676,7 +4675,7 @@ stock void EmitMusicToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYE
 void SetupDatabase()
 {
 	char query[256];
-	StatDatabase = SQL_Connect(DATATABLE, true, query, 256);
+	StatDatabase = SQL_Connect(DATATABLE, true, query, sizeof(query));
 	if(StatDatabase == INVALID_HANDLE)
 	{
 		LogToFile(eLog, "[Database] %s", query);
@@ -4684,11 +4683,11 @@ void SetupDatabase()
 		return;
 	}
 
-	Format(query, 256, "CREATE TABLE IF NOT EXISTS %s (steamid INT, win INT, lose INT, kill INT, death INT, slain INT, mvp INT)", DATATABLE);
+	Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS %s (steamid INT, win INT, lose INT, kill INT, death INT, slain INT, mvp INT)", DATATABLE);
 	SQL_LockDatabase(StatDatabase);
 	if(!SQL_FastQuery(StatDatabase, query))
 	{
-		SQL_GetError(StatDatabase, query, 256);
+		SQL_GetError(StatDatabase, query, sizeof(query));
 		LogToFile(eLog, "[Database] %s", query);
 		SQL_UnlockDatabase(StatDatabase);
 		EnabledD = 0;
@@ -4768,9 +4767,9 @@ void SetupClientCookies(int client)
 			HudSettings[client][i] = view_as<bool>(StringToInt(cookieValues[i]));
 		}
 
-		GetClientCookie(client, SelectionCookie, cookies, 454);
+		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, 8, 64);
-		strcopy(xIncoming[client], 700, cookieValues[CurrentCharSet]);
+		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
 	}
 	else
 	{
@@ -4803,7 +4802,7 @@ void SetupClientCookies(int client)
 		return;
 
 	static char query[256];
-	Format(query, 256, "SELECT win, lose, kill, death, slain, mvp FROM %s WHERE steamid=%d;", DATATABLE, steamid);
+	Format(query, sizeof(query), "SELECT win, lose, kill, death, slain, mvp FROM %s WHERE steamid=%d;", DATATABLE, steamid);
 
 	SQL_LockDatabase(StatDatabase);
 	DBResultSet result;
@@ -4853,16 +4852,16 @@ void SaveClientPreferences(int client)
 
 	static char cookies[24];
 	char cookieValues[8][5];
-	GetClientCookie(client, FF2Cookies, cookies, 24);
+	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
 	ExplodeString(cookies, " ", cookieValues, 8, 5);
 
-	Format(cookies, 24, "%i %i %i %i %i %i 3 3", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(ToggleBoss[client]));
+	Format(cookies, sizeof(cookies), "%i %i %i %i %i %i 3 3", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(ToggleBoss[client]));
 	SetClientCookie(client, FF2Cookies, cookies);
 
-	Format(cookies, 24, "%i", HudSettings[client][0] ? 1 : 0);
+	Format(cookies, sizeof(cookies), "%i", HudSettings[client][0] ? 1 : 0);
 	for(int i=1; i<5; i++)
 	{
-		Format(cookies, 24, "%s %i", cookies, i>=HUDTYPES ? 0 : HudSettings[client][i] ? 1 : 0);
+		Format(cookies, sizeof(cookies), "%s %i", cookies, i>=HUDTYPES ? 0 : HudSettings[client][i] ? 1 : 0);
 	}
 	SetClientCookie(client, HudCookies, cookies);
 }
@@ -4909,7 +4908,7 @@ void SaveClientStats(int client)
 	if(AreClientCookiesCached(client) && cvarDatabase.IntValue<2)
 	{
 		static char cookies[48];
-		Format(cookies, 48, "%i %i %i %i %i %i 0 0", BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], PlayerKills[client], PlayerMVPs[client]);
+		Format(cookies, sizeof(cookies), "%i %i %i %i %i %i 0 0", BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], PlayerKills[client], PlayerMVPs[client]);
 		SetClientCookie(client, StatCookies, cookies);
 	}
 
@@ -4921,12 +4920,12 @@ void SaveClientStats(int client)
 		return;
 
 	static char query[256];
-	Format(query, 256, "UPDATE %s SET win=%d, lose=%d, kill=%d, death=%d, slain=%d, mvp=%d WHERE steamid=%d);", DATATABLE, BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], PlayerKills[client], PlayerMVPs[client], steamid);
+	Format(query, sizeof(query), "UPDATE %s SET win=%d, lose=%d, kill=%d, death=%d, slain=%d, mvp=%d WHERE steamid=%d);", DATATABLE, BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], PlayerKills[client], PlayerMVPs[client], steamid);
 
 	SQL_LockDatabase(StatDatabase);
 	if(!SQL_FastQuery(StatDatabase, query))
 	{
-		SQL_GetError(StatDatabase, query, 256);
+		SQL_GetError(StatDatabase, query, sizeof(query));
 		LogToFile(eLog, "[Database] %s", query);
 	}
 	SQL_UnlockDatabase(StatDatabase);
@@ -4995,7 +4994,7 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 
 		static char name[64], boss[64], bossName[64], fileName[64], companionName[64];
-		GetCmdArgString(name, 64);
+		GetCmdArgString(name, sizeof(name));
 
 		for(int config; config<Specials; config++)
 		{
@@ -5010,13 +5009,13 @@ public Action Command_SetMyBoss(int client, int args)
 				continue;
 			}
 
-			GetBossSpecial(config, bossName, 64, client);
-			KvGetString(BossKV[config], "name", boss, 64);
+			GetBossSpecial(config, bossName, sizeof(bossName), client);
+			KvGetString(BossKV[config], "name", boss, sizeof(boss));
 			if(StrContains(bossName, name, false))
 			{
 				if(StrContains(boss, name, false))
 				{
-					KvGetString(BossKV[config], "filename", fileName, 64);
+					KvGetString(BossKV[config], "filename", fileName, sizeof(fileName));
 					if(StrContains(fileName, name, false))
 					{
 						if(config == Specials-1)
@@ -5079,14 +5078,14 @@ public Action Command_SetMyBoss(int client, int args)
 				return Plugin_Handled;
 			}
 
-			KvGetString(BossKV[config], "companion", companionName, 64);
-			if(companionName[0]!='\0' && !DuoMin)
+			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
+			if(companionName[0] && !DuoMin)
 			{
 				FReplyToCommand(client, "%t", "deny_duo_short");
 				return Plugin_Handled;
 			}
 
-			if(companionName[0]!='\0' && cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1)
+			if(companionName[0] && cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1)
 			{
 				FReplyToCommand(client, "%t", "deny_duo_off");
 				return Plugin_Handled;
@@ -5095,16 +5094,15 @@ public Action Command_SetMyBoss(int client, int args)
 			if(AreClientCookiesCached(client) && cvarKeepBoss.IntValue<0)
 			{
 				static char cookie1[64], cookie2[64];
-				KvGetString(BossKV[config], "name", cookie1, 64);
-				GetClientCookie(client, LastPlayedCookie, cookie2, 64);
+				KvGetString(BossKV[config], "name", cookie1, sizeof(cookie1));
+				GetClientCookie(client, LastPlayedCookie, cookie2, sizeof(cookie2));
 				if(StrEqual(cookie1, cookie2, false))
 				{
 					FReplyToCommand(client, "%t", "deny_recent");
 					return Plugin_Handled;
 				}
 			}
-			IsBossSelected[client] = true;
-			strcopy(xIncoming[client], 700, boss);
+			strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
 			CanBossVs[client] = KvGetNum(BossKV[config], "noversus", 0);
 			CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam", 0);
 			SaveKeepBossCookie(client);
@@ -5113,26 +5111,30 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 	}
 
-	static char boss[64], bossName[64];
+	char boss[64];
+	static char bossName[64];
 	Handle dMenu = CreateMenu(Command_SetMyBossH);
 	SetGlobalTransTarget(client);
 	if(ToggleBoss[client] == Setting_On)
-		Format(bossName, 64, "%t", "to0_random");
+		FormatEx(boss, sizeof(boss), "%t", "to0_random");
 
 	for(int config; config<=Specials; config++)
 	{
 		if(config == Specials)
-			strcopy(bossName, 64, "");
+		{
+			strcopy(boss, sizeof(boss), "");
+			break;
+		}
 
 		KvRewind(BossKV[config]);
 		if(KvGetNum(BossKV[config], "blocked", 0))
 			continue;
 
-		KvGetString(BossKV[config], "name", boss, 64);
+		KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
 		if(StrEqual(boss, xIncoming[client], false))
 		{
 			if(CheckValidBoss(client, xIncoming[client], !DuoMin))
-				GetBossSpecial(config, bossName, 64, client);
+				GetBossSpecial(config, bossName, sizeof(bossName), client);
 
 			break;
 		}
@@ -5140,14 +5142,14 @@ public Action Command_SetMyBoss(int client, int args)
 
 	if(HasCharSets)
 	{
-		SetMenuTitle(dMenu, "%t", "ff2_boss_selection_pack", CurrentCharSetString, bossName);
+		SetMenuTitle(dMenu, "%t", "ff2_boss_selection_pack", CurrentCharSetString, boss);
 	}
 	else
 	{
-		SetMenuTitle(dMenu, "%t", "ff2_boss_selection", bossName);
+		SetMenuTitle(dMenu, "%t", "ff2_boss_selection", boss);
 	}
 
-	Format(boss, 64, "%t", "to0_random");
+	FormatEx(boss, sizeof(boss), "%t", "to0_random");
 	if(!Enabled2)
 	{
 		AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
@@ -5161,11 +5163,11 @@ public Action Command_SetMyBoss(int client, int args)
 	{
 		if(view_as<int>(ToggleBoss[client]) < 2)
 		{
-			Format(boss, 64, "%t", "to0_disablepts");
+			FormatEx(boss, sizeof(boss), "%t", "to0_disablepts");
 		}
 		else
 		{
-			Format(boss, 64, "%t", "to0_enablepts");
+			FormatEx(boss, sizeof(boss), "%t", "to0_enablepts");
 		}
 		AddMenuItem(dMenu, boss, boss);
 	}
@@ -5174,11 +5176,11 @@ public Action Command_SetMyBoss(int client, int args)
 	{
 		if(view_as<int>(ToggleDuo[client]) < 2)
 		{
-			Format(boss, 64, "%t", "to0_disableduo");
+			FormatEx(boss, sizeof(boss), "%t", "to0_disableduo");
 		}
 		else
 		{
-			Format(boss, 64, "%t", "to0_enableduo");
+			FormatEx(boss, sizeof(boss), "%t", "to0_enableduo");
 		}
 		AddMenuItem(dMenu, boss, boss);
 	}
@@ -5188,15 +5190,15 @@ public Action Command_SetMyBoss(int client, int args)
 	{
 		if(FF2_KStreak_GetCookies(client, 0) == 1)
 		{
-			Format(boss, 64, "%t", "to0_disablekstreak");
+			FormatEx(boss, sizeof(boss), "%t", "to0_disablekstreak");
 		}
 		else if(FF2_KStreak_GetCookies(client, 0) < 1)
 		{
-			Format(boss, 64, "%t", "to0_enablekstreak");
+			FormatEx(boss, sizeof(boss), "%t", "to0_enablekstreak");
 		}
 		else
 		{
-			Format(boss, 64, "%t", "to0_togglekstreak");
+			FormatEx(boss, sizeof(boss), "%t", "to0_togglekstreak");
 		}
 		AddMenuItem(dMenu, boss, boss);
 	}
@@ -5204,7 +5206,7 @@ public Action Command_SetMyBoss(int client, int args)
 
 	if(cvarSkipBoss.BoolValue)
 	{
-		Format(boss, 64, "%t", "to0_resetpts");
+		FormatEx(boss, sizeof(boss), "%t", "to0_resetpts");
 		if(QueuePoints[client]<10 || !Enabled2)
 		{
 			AddMenuItem(dMenu, boss, boss, ITEMDRAW_DISABLED);
@@ -5217,7 +5219,7 @@ public Action Command_SetMyBoss(int client, int args)
 
 	if(HasCharSets)
 	{
-		Format(boss, 64, "%t", "to0_viewall");
+		FormatEx(boss, sizeof(boss), "%t", "to0_viewall");
 		AddMenuItem(dMenu, boss, boss);
 	}
 
@@ -5235,9 +5237,9 @@ public Action Command_SetMyBoss(int client, int args)
 		if(KvGetNum(BossKV[config], "blocked", 0))
 			continue;
 
-		KvGetString(BossKV[config], "name", boss, 64);
-		GetBossSpecial(config, bossName, 64, client);
-		KvGetString(BossKV[config], "companion", companionName, 64);
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		GetBossSpecial(config, bossName, sizeof(bossName), client);
+		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
 		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 		   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
 		   (BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true)))
@@ -5266,7 +5268,7 @@ public Action Command_SetMyBoss(int client, int args)
 		{
 			AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(companionName[0]!='\0' && ((cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1) || !DuoMin))
+		else if(companionName[0] && ((cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1) || !DuoMin))
 		{
 			AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
@@ -5274,10 +5276,8 @@ public Action Command_SetMyBoss(int client, int args)
 		{
 			if(AreClientCookiesCached(client) && cvarKeepBoss.IntValue<0 && !CheckCommandAccess(client, "ff2_replay_bosses", ADMFLAG_CHEATS, true))
 			{
-				static char cookie1[64], cookie2[64];
-				KvGetString(BossKV[config], "name", cookie1, 64);
-				GetClientCookie(client, LastPlayedCookie, cookie2, 64);
-				if(StrEqual(cookie1, cookie2, false))
+				GetClientCookie(client, LastPlayedCookie, companionName, sizeof(companionName));
+				if(StrEqual(boss, companionName, false))
 				{
 					AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 					continue;
@@ -5303,8 +5303,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 		{
 			if(!param2)
 			{
-				IsBossSelected[param1] = true;
-				xIncoming[param1][0] = '\0';
+				xIncoming[param1][0] = 0;
 				CanBossVs[param1] = 0;
 				CanBossTeam[param1] = 0;
 				SaveKeepBossCookie(param1);
@@ -5347,43 +5346,32 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 			if(param2 == option[0])
 			{
 				BossMenu(param1, 0);
-				return;
 			}
-
-			if(param2 == option[1])
+			else if(param2 == option[1])
 			{
 				CompanionMenu(param1, 0);
-				return;
 			}
-
 			#if defined _freak_fortress_2_kstreak_included
-			if(param2 == option[2])
+			else if(param2 == option[2])
 			{
 				FF2_KStreak_Menu(param1, 0);
-				return;
 			}
 			#endif
-
-			if(param2 == option[3])
+			else if(param2 == option[3])
 			{
 				SkipBossPanel(param1);
-				return;
 			}
-
-			if(param2 == option[4])
+			else if(param2 == option[4])
 			{
 				PackMenu(param1);
-				return;
 			}
-
-			if(!cvarBossDesc.BoolValue || !ToggleInfo[param1])
+			else if(!cvarBossDesc.BoolValue || !ToggleInfo[param1])
 			{
 				static char name[64], bossName[64];
-				GetMenuItem(menu, param2, name, 64, _, bossName, 64);
+				GetMenuItem(menu, param2, name, sizeof(name), _, bossName, sizeof(bossName));
 				if(CheckValidBoss(param1, name))
 				{
-					IsBossSelected[param1] = true;
-					strcopy(xIncoming[param1], 700, name);
+					strcopy(xIncoming[param1], sizeof(xIncoming[]), name);
 					SaveKeepBossCookie(param1);
 					FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
 				}
@@ -5394,7 +5382,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 			}
 			else
 			{
-				GetMenuItem(menu, param2, cIncoming[param1], 700);
+				GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
 				ConfirmBoss(param1);
 			}
 		}
@@ -5405,25 +5393,25 @@ public Action ConfirmBoss(int client)
 {
 	static char text[512], language[20], boss[64];
 	GetLanguageInfo(GetClientLanguage(client), language, 8, text, 8);
-	Format(language, 20, "description_%s", language);
+	Format(language, sizeof(language), "description_%s", language);
 	SetGlobalTransTarget(client);
 
 	for(int config; config<Specials; config++)
 	{
 		KvRewind(BossKV[config]);
-		KvGetString(BossKV[config], "name", boss, 64);
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		if(StrEqual(boss, cIncoming[client], false))
 		{
 			KvRewind(BossKV[config]);
-			KvGetString(BossKV[config], language, text, 512);
+			KvGetString(BossKV[config], language, text, sizeof(text));
 			if(!text[0])
 			{
-				KvGetString(BossKV[config], "description_en", text, 512);  //Default to English if their language isn't available
+				KvGetString(BossKV[config], "description_en", text, sizeof(text));  //Default to English if their language isn't available
 				if(!text[0])
-					Format(text, 512, "%t", "to0_nodesc");
+					Format(text, sizeof(text), "%t", "to0_nodesc");
 			}
-			ReplaceString(text, 512, "\\n", "\n");
-			GetBossSpecial(config, boss, 64, client);
+			ReplaceString(text, sizeof(text), "\\n", "\n");
+			GetBossSpecial(config, boss, sizeof(boss), client);
 			break;
 		}
 	}
@@ -5431,10 +5419,10 @@ public Action ConfirmBoss(int client)
 	Handle dMenu = CreateMenu(ConfirmBossH);
 	SetMenuTitle(dMenu, text);
 
-	Format(text, 512, "%t", "to0_confirm", boss);
+	Format(text, sizeof(text), "%t", "to0_confirm", boss);
 	AddMenuItem(dMenu, boss, text);
 
-	Format(text, 512, "%t", "to0_cancel");
+	Format(text, sizeof(text), "%t", "to0_cancel");
 	AddMenuItem(dMenu, text, text);
 
 	SetMenuExitButton(dMenu, false);
@@ -5455,9 +5443,8 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 			if(!param2 && CheckValidBoss(param1, cIncoming[param1]))
 			{
 				static char bossName[64];
-				GetMenuItem(menu, param2, bossName, 64);
-				IsBossSelected[param1] = true;
-				strcopy(xIncoming[param1], 700, cIncoming[param1]);
+				GetMenuItem(menu, param2, bossName, sizeof(bossName));
+				strcopy(xIncoming[param1], sizeof(xIncoming[]), cIncoming[param1]);
 				SaveKeepBossCookie(param1);
 				FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
 			}
@@ -5474,10 +5461,10 @@ public void PackMenu(int client)
 	static char pack[128], num[6], config[PLATFORM_MAX_PATH];
 	Handle dMenu = CreateMenu(PackMenuH);
 	SetGlobalTransTarget(client);
-	Format(pack, 128, "%t", "to0_packmenu");
+	Format(pack, sizeof(pack), "%t", "to0_packmenu");
 	SetMenuTitle(dMenu, pack);
 
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
@@ -5486,7 +5473,7 @@ public void PackMenu(int client)
 	char cookieValues[8][64];
 	if(AreClientCookiesCached(client))
 	{
-		GetClientCookie(client, SelectionCookie, cookies, 454);
+		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, 8, 64);
 	}
 
@@ -5496,10 +5483,10 @@ public void PackMenu(int client)
 		if(KvGetNum(Kv, "hidden", 0))
 			continue;
 
-		KvGetSectionName(Kv, pack, 128);
-		IntToString(total, num, 6);
+		KvGetSectionName(Kv, pack, sizeof(pack));
+		IntToString(total, num, sizeof(num));
 		if(AreClientCookiesCached(client) && total<8)
-			Format(pack, 128, "%s: %s", pack, cookieValues[total-1]);
+			Format(pack, sizeof(pack), "%s: %s", pack, cookieValues[total-1]);
 
 		AddMenuItem(dMenu, num, pack, CurrentCharSet==total-1 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 	}
@@ -5522,7 +5509,7 @@ public int PackMenuH(Handle menu, MenuAction action, int param1, int param2)
 		case MenuAction_Select:
 		{
 			static char pack[4];
-			GetMenuItem(menu, param2, pack, 4);
+			GetMenuItem(menu, param2, pack, sizeof(pack));
 			PackBoss(param1, StringToInt(pack)-1);
 		}
 		case MenuAction_Cancel:
@@ -5535,7 +5522,7 @@ public int PackMenuH(Handle menu, MenuAction action, int param1, int param2)
 
 public void PackBoss(int client, int pack)
 {
-	static char key[4], boss[64], bossName[64], character[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH];
+	static char key[4], boss[66], bossName[64], character[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH];
 	Handle dMenu = CreateMenu(PackBossH);
 	SetGlobalTransTarget(client);
 
@@ -5543,13 +5530,13 @@ public void PackBoss(int client, int pack)
 	{
 		static char cookies[454];
 		char cookieValues[8][64];
-		GetClientCookie(client, SelectionCookie, cookies, 454);
+		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, 8, 64);
-		if(cookieValues[pack][0] != '\0')
-			strcopy(boss, 64, cookieValues[pack]);
+		if(cookieValues[pack][0])
+			strcopy(boss, sizeof(boss), cookieValues[pack]);
 	}
 
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	for(int i; i<pack; i++)
@@ -5557,20 +5544,20 @@ public void PackBoss(int client, int pack)
 		KvGotoNextKey(Kv);
 	}
 
-	KvGetSectionName(Kv, bossName, 64);
+	KvGetSectionName(Kv, bossName, sizeof(bossName));
 	SetMenuTitle(dMenu, "%t", "to0_viewpack", bossName, boss);
 
-	Format(boss, 64, "%t", "to0_random");
+	Format(boss, sizeof(boss), "%t", "to0_random");
 	AddMenuItem(dMenu, "", boss);
 
 	for(int i=1; i<MAXSPECIALS; i++)
 	{
-		IntToString(i, key, 4);
+		IntToString(i, key, sizeof(key));
 		KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
 		if(!config[0])	// No more bosses
 			break;
 
-		BuildPath(Path_SM, character, PLATFORM_MAX_PATH, "%s/%s.cfg", ConfigPath, config);
+		BuildPath(Path_SM, character, sizeof(character), "%s/%s.cfg", ConfigPath, config);
 		if(!FileExists(character))	// Boss doesn't exist?
 			continue;
 
@@ -5582,7 +5569,7 @@ public void PackBoss(int client, int pack)
 			continue;
 		}
 
-		KvGetString(bossKV, "name", bossName, 64);
+		KvGetString(bossKV, "name", bossName, sizeof(bossName));
 		if((KvGetNum(bossKV, "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
 		   (KvGetNum(bossKV, "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
 		{
@@ -5601,7 +5588,7 @@ public void PackBoss(int client, int pack)
 			continue;
 		}
 
-		Format(boss, 64, "%s;%i", bossName, pack);
+		Format(boss, sizeof(boss), "%s;%i", bossName, pack);
 		AddMenuItem(dMenu, boss, bossName);
 		CloseHandle(bossKV);
 	}
@@ -5629,20 +5616,20 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 
 			static char name[2][64];
 			static char cookies[454];
-			GetMenuItem(menu, param2, cookies, 454);
+			GetMenuItem(menu, param2, cookies, sizeof(cookies));
 			ExplodeString(cookies, ";", name, 2, 64);
 			int pack = StringToInt(name[1]);
 			if(pack < 8)
 			{
 				char cookieValues[8][64];
-				GetClientCookie(param1, SelectionCookie, cookies, 454);
+				GetClientCookie(param1, SelectionCookie, cookies, sizeof(cookies));
 				ExplodeString(cookies, ";", cookieValues, 8, 64);
 				strcopy(cookieValues[pack], 64, name[0]);
 
-				strcopy(cookies, 454, cookieValues[0]);
+				strcopy(cookies, sizeof(cookies), cookieValues[0]);
 				for(int i=1; i<8; i++)
 				{
-					Format(cookies, 454, "%s;%s", cookies, cookieValues[i]);
+					Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 				}
 				SetClientCookie(param1, SelectionCookie, cookies);
 			}
@@ -5756,14 +5743,14 @@ void SaveKeepBossCookie(int client)
 
 	static char cookies[454];
 	char cookieValues[8][64];
-	GetClientCookie(client, SelectionCookie, cookies, 454);
+	GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
 	ExplodeString(cookies, ";", cookieValues, 8, 64);
 	strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
 
-	strcopy(cookies, 454, cookieValues[0]);
+	strcopy(cookies, sizeof(cookies), cookieValues[0]);
 	for(int i=1; i<8; i++)
 	{
-		Format(cookies, 454, "%s;%s", cookies, cookieValues[i]);
+		Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 	}
 	SetClientCookie(client, SelectionCookie, cookies);
 }
@@ -5780,11 +5767,11 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 		if(KvGetNum(BossKV[config], "blocked", 0))
 			continue;
 
-		KvGetString(BossKV[config], "companion", companionName, 64);
-		KvGetString(BossKV[config], "name", boss, 64);
+		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		if(StrEqual(boss, SpecialName, false))
 		{
-			if(companionName[0]!='\0' && CompanionCheck)
+			if(companionName[0] && CompanionCheck)
 				return false;
 
 			if(client)
@@ -5824,10 +5811,10 @@ public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialNam
 		}
 		else
 		{
-			strcopy(SpecialName, 700, xIncoming[client]);
+			strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
 			if(cvarKeepBoss.IntValue<1 || !cvarSelectBoss.BoolValue || IsFakeClient(client))
 			{
-				xIncoming[client][0] = '\0';
+				xIncoming[client][0] = 0;
 				CanBossVs[client] = 0;
 				CanBossTeam[client] = 0;
 				SaveKeepBossCookie(client);
@@ -5842,8 +5829,8 @@ stock int CreateAttachedAnnotation(int client, int entity, bool effect=true, flo
 {
 	static char message[512];
 	SetGlobalTransTarget(client);
-	VFormat(message, 512, buffer, 6);
-	ReplaceString(message, 512, "\n", "");  //Get rid of newlines
+	VFormat(message, sizeof(message), buffer, 6);
+	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
 
 	Handle event = CreateEvent("show_annotation");
 	if(event == INVALID_HANDLE)
@@ -5877,8 +5864,8 @@ stock bool ShowGameText(int client, const char[] icon="leaderboard_streak", int 
 
 	static char message[512];
 	SetGlobalTransTarget(client);
-	VFormat(message, 512, buffer, 5);
-	ReplaceString(message, 512, "\n", "");
+	VFormat(message, sizeof(message), buffer, 5);
+	ReplaceString(message, sizeof(message), "\n", "");
 
 	BfWriteString(bf, message);
 	BfWriteString(bf, icon);
@@ -5913,7 +5900,7 @@ public Action Timer_NextBossPanel(Handle timer)
 		if(!IsValidClient(client))  //No more players left on the server
 			break;
 
-		if(!IsBoss(client) && xIncoming[client][0]=='\0')
+		if(!IsBoss(client) && !xIncoming[client][0])
 		{
 			FPrintToChat(client, "%t", "to0_near");  //"You will become the Boss soon. Type {olive}/ff2next{default} to make sure."
 			clients++;
@@ -5938,7 +5925,7 @@ public Action MessageTimer(Handle timer)
 	}
 
 	char text[MAXTF2PLAYERS][512];
-	static char textChat[512], lives[8], name[64];
+	static char textChat[512], name[64];
 	if(Enabled3)
 	{
 		char text2[MAXTF2PLAYERS][512];
@@ -5946,31 +5933,25 @@ public Action MessageTimer(Handle timer)
 		{
 			if(IsValidClient(Boss[boss]))
 			{
-				strcopy(name, 64, "=Failed name=");
+				char lives[8];
 				if(BossLives[boss] > 1)
-				{
-					Format(lives, 8, "x%i", BossLives[boss]);
-				}
-				else
-				{
-					lives[0] = '\0';
-				}
+					FormatEx(lives, sizeof(lives), "x%i", BossLives[boss]);
 
 				for(int client=1; client<=MaxClients; client++)
 				{
 					if(IsValidClient(client))
 					{
-						GetBossSpecial(Special[boss], name, 64);
+						GetBossSpecial(Special[boss], name, sizeof(name));
 						if(BossSwitched[boss])
 						{
-							Format(text2[client], 512, "%s\n%t", text2[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+							Format(text2[client], sizeof(text2[]), "%s\n%t", text2[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 						}
 						else
 						{
-							Format(text[client], 512, "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+							Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 						}
-						Format(textChat, 512, "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-						ReplaceString(textChat, 512, "\n", "");  //Get rid of newlines
+						Format(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+						ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
 						FPrintToChat(client, "%s", textChat);
 					}
 				}
@@ -5998,24 +5979,18 @@ public Action MessageTimer(Handle timer)
 	{
 		if(IsValidClient(Boss[boss]))
 		{
-			strcopy(name, 64, "=Failed name=");
+			char lives[8];
 			if(BossLives[boss] > 1)
-			{
-				Format(lives, 8, "x%i", BossLives[boss]);
-			}
-			else
-			{
-				lives[0] = '\0';
-			}
+				FormatEx(lives, sizeof(lives), "x%i", BossLives[boss]);
 
 			for(int client=1; client<=MaxClients; client++)
 			{
 				if(IsValidClient(client))
 				{
-					GetBossSpecial(Special[boss], name, 64);
-					Format(text[client], 512, "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-					Format(textChat, 512, "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-					ReplaceString(textChat, 512, "\n", "");  //Get rid of newlines
+					GetBossSpecial(Special[boss], name, sizeof(name));
+					Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+					Format(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+					ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
 					FPrintToChat(client, "%s", textChat);
 				}
 			}
@@ -6029,7 +6004,7 @@ public Action MessageTimer(Handle timer)
 		{
 			if(bosses<2 && cvarGameText.IntValue>1)
 			{
-				if(BossIcon[0] != '\0')
+				if(BossIcon[0])
 				{
 					ShowGameText(client, BossIcon, _, text[client]);
 				}
@@ -6075,18 +6050,19 @@ void EquipBoss(int boss)
 	int client = Boss[boss];
 	DoOverlay(client, "");
 	TF2_RemoveAllWeapons(client);
-	static char key[10], classname[64], attributes[256], wModel[PLATFORM_MAX_PATH];
+	char attributes[256];
+	static char key[10], classname[64], wModel[PLATFORM_MAX_PATH];
 	int weapon, strangerank, weaponlevel, index, strangekills;
 	bool strangewep, overridewep;
 	static int rgba[4];
 	for(int i=1; ; i++)
 	{
 		KvRewind(BossKV[Special[boss]]);
-		Format(key, 10, "weapon%i", i);
+		Format(key, sizeof(key), "weapon%i", i);
 		if(KvJumpToKey(BossKV[Special[boss]], key))
 		{
-			KvGetString(BossKV[Special[boss]], "name", classname, 64);
-			KvGetString(BossKV[Special[boss]], "attributes", attributes, 128);
+			KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
+			KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
 			strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
 			weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
 			index = KvGetNum(BossKV[Special[boss]], "index");
@@ -6227,52 +6203,38 @@ void EquipBoss(int boss)
 
 			if(strangewep)
 			{
-				if(attributes[0] != '\0')
+				if(attributes[0])
 				{
 					if(overridewep)
 					{
-						Format(attributes, 128, "214 ; %d ; %s", strangekills, attributes);
+						Format(attributes, sizeof(attributes), "214 ; %d ; %s", strangekills, attributes);
 					}
 					else
 					{
-						Format(attributes, 128, "%s ; 68 ; %i ; 214 ; %d ; %s", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
+						Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d ; %s", attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
 					}
 				}
 				else
 				{
 					if(overridewep)
 					{
-						Format(attributes, 128, "214 ; %d", strangekills);
+						FormatEx(attributes, sizeof(attributes), "214 ; %d", strangekills);
 					}
 					else
 					{
-						Format(attributes, 128, "%s ; 68 ; %i ; 214 ; %d", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
+						FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
 					}
 				}
 			}
-			else
+			else if(!overridewep)
 			{
-				if(attributes[0] != '\0')
+				if(attributes[0])
 				{
-					if(overridewep)
-					{
-						Format(attributes, 128, "%s", attributes);
-					}
-					else
-					{
-						Format(attributes, 128, "%s ; 68 ; %i ; %s", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
-					}
+					Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; %s", attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
 				}
 				else
 				{
-					if(overridewep)
-					{
-						attributes[0] = '\0';
-					}
-					else
-					{
-						Format(attributes, 128, "%s ; 68 ; %i", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
-					}
+					FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i", attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
 				}
 			}
 
@@ -6300,8 +6262,8 @@ void EquipBoss(int boss)
 
 			if(KvGetNum(BossKV[Special[boss]], "show", 0))
 			{
-				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, PLATFORM_MAX_PATH);
-				if(wModel[0] != '\0')
+				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
+				if(wModel[0])
 					ConfigureWorldModelOverride(weapon, wModel);
 
 				rgba[0] = KvGetNum(BossKV[Special[boss]], "alpha", 255);
@@ -6332,11 +6294,11 @@ void EquipBoss(int boss)
 		for(int i=1; ; i++)
 		{
 			KvRewind(BossKV[Special[boss]]);
-			Format(key, 10, "wearable%i", i);
+			Format(key, sizeof(key), "wearable%i", i);
 			if(KvJumpToKey(BossKV[Special[boss]], key))
 			{
-				KvGetString(BossKV[Special[boss]], "name", classname, 64);
-				KvGetString(BossKV[Special[boss]], "attributes", attributes, 128);
+				KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
+				KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
 				strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
 				weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
 				index = KvGetNum(BossKV[Special[boss]], "index");
@@ -6676,13 +6638,13 @@ void EquipBoss(int boss)
 
 				if(strangewep)
 				{
-					if(attributes[0] != '\0')
+					if(attributes[0])
 					{
-						Format(attributes, 128, "214 ; %d ; %s", strangekills, attributes);
+						Format(attributes, sizeof(attributes), "214 ; %d ; %s", strangekills, attributes);
 					}
 					else
 					{
-						Format(attributes, 128, "214 ; %d", strangekills);
+						FormatEx(attributes, sizeof(attributes), "214 ; %d", strangekills);
 					}
 				}
 
@@ -6692,8 +6654,8 @@ void EquipBoss(int boss)
 
 				if(KvGetNum(BossKV[Special[boss]], "show", 1))
 				{
-					KvGetString(BossKV[Special[boss]], "worldmodel", wModel, PLATFORM_MAX_PATH);
-					if(wModel[0] != '\0')
+					KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
+					if(wModel[0])
 						ConfigureWorldModelOverride(weapon, wModel, true);
 
 					rgba[0] = KvGetNum(BossKV[Special[boss]], "alpha", 255);
@@ -6742,7 +6704,7 @@ stock bool ConfigureWorldModelOverride(int entity, const char[] model, bool wear
 stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int index, int level, int quality, char[] attributes)
 {
 	int wearable;
-	if(classname[0] == 0)
+	if(!classname[0])
 	{
 		wearable = CreateEntityByName("tf_wearable");
 	}
@@ -6759,7 +6721,7 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int ind
 		
 	// Allow quality / level override by updating through the offset.
 	static char netClass[64];
-	GetEntityNetClass(wearable, netClass, 64);
+	GetEntityNetClass(wearable, netClass, sizeof(netClass));
 	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityQuality"), quality);
 	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityLevel"), level);
 
@@ -6767,7 +6729,7 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int ind
 	SetEntProp(wearable, Prop_Send, "m_iEntityLevel", level);
 
 	#if defined _tf2attributes_included
-	if(attributes[0]!='\0' && tf2attributes)
+	if(attributes[0] && tf2attributes)
 	{
 		char atts[32][32];
 		int count = ExplodeString(attributes, " ; ", atts, 32, 32);
@@ -6823,7 +6785,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	if(BossLivesMax[boss] < 1)
 	{
 		char bossName[64];
-		KvGetString(BossKV[Special[boss]], "filename", bossName, 64);
+		KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
 		LogToFile(eLog, "[Boss] Warning: Boss %s has an invalid amount of lives, setting to 1", bossName);
 		BossLivesMax[boss] = 1;
 	}
@@ -6875,7 +6837,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	LifeHealing[client] = KvGetFloat(BossKV[Special[boss]], "healing_lives", 0.0);
 	OverHealing[client] = KvGetFloat(BossKV[Special[boss]], "healing_over", 0.0);
 	rageMode[client] = KvGetNum(BossKV[Special[boss]], "ragemode", 0);
-	KvGetString(BossKV[Special[boss]], "icon", BossIcon, 64);
+	KvGetString(BossKV[Special[boss]], "icon", BossIcon, sizeof(BossIcon));
 	rageMax[client] = KvGetFloat(BossKV[Special[boss]], "ragemax", 100.0);
 	rageMin[client] = KvGetFloat(BossKV[Special[boss]], "ragemin", 100.0);
 	GoombaMode = KvGetNum(BossKV[Special[boss]], "goomba", GOOMBA_ALL);
@@ -7052,13 +7014,13 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	HazardDamage[client] = 0.0;
 	BossKillsF[client] = BossKills[client];
 	HealthBarModeC[client] = false;
-	if(((GetBossIndex(client)==0 || GetBossIndex(client)==MAXBOSSES) && cvarDuoRestore.BoolValue) || !cvarDuoRestore.BoolValue)
+	if(((!GetBossIndex(client) || GetBossIndex(client)==MAXBOSSES) && cvarDuoRestore.BoolValue) || !cvarDuoRestore.BoolValue)
 		QueuePoints[client] = 0;
 
 	if(AreClientCookiesCached(client))
 	{
 		static char cookie[64];
-		KvGetString(BossKV[Special[boss]], "name", cookie, 64);
+		KvGetString(BossKV[Special[boss]], "name", cookie, sizeof(cookie));
 		SetClientCookie(client, LastPlayedCookie, cookie);
 	}
 	return Plugin_Continue;
@@ -7240,17 +7202,19 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 	}
 	else
 	{
-		static char weapon[64], wepIndexStr[768], attributes[768];
+		int wepIdx, wepIndex, weaponIdxcount, isOverride;
 		for(int i=1; ; i++)
 		{
+			static char weapon[64];
 			KvRewind(kvWeaponMods);
-			Format(weapon, 10, "weapon%i", i);
+			Format(weapon, sizeof(weapon), "weapon%i", i);
 			if(KvJumpToKey(kvWeaponMods, weapon))
 			{
-				int isOverride = KvGetNum(kvWeaponMods, "mode");
-				KvGetString(kvWeaponMods, "classname", weapon, 64);
-				KvGetString(kvWeaponMods, "index", wepIndexStr, 768);
-				KvGetString(kvWeaponMods, "attributes", attributes, 128);
+				static char wepIndexStr[768], attributes[768];
+				isOverride = KvGetNum(kvWeaponMods, "mode");
+				KvGetString(kvWeaponMods, "classname", weapon, sizeof(weapon));
+				KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
+				KvGetString(kvWeaponMods, "attributes", attributes, sizeof(attributes));
 
 				if(isOverride)
 				{
@@ -7258,7 +7222,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 					{
 						if(isOverride != 3)
 						{
-							Handle itemOverride = PrepareItemHandle(item, _, _, attributes, isOverride==1 ? false : true);
+							Handle itemOverride = PrepareItemHandle(item, _, _, attributes, isOverride!=1);
 							if(itemOverride != null)
 							{
 								item = itemOverride;
@@ -7270,14 +7234,14 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 							return Plugin_Stop;
 						}
 					}
+
 					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
 					{
-						int wepIndex;
 						static char wepIndexes[768][32];
-						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, 768, 32);
-						for(int wepIdx; wepIdx<=weaponIdxcount; wepIdx++)
+						weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for(wepIdx=0; wepIdx<=weaponIdxcount; wepIdx++)
 						{
-							if(wepIndexes[wepIdx][0] == '\0')
+							if(!wepIndexes[wepIdx][0])
 								continue;
 
 							wepIndex = StringToInt(wepIndexes[wepIdx]);
@@ -7292,7 +7256,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 								}
 								case 2, 1:
 								{
-									Handle itemOverride = PrepareItemHandle(item, _, _, attributes, isOverride==1 ? false : true);
+									Handle itemOverride = PrepareItemHandle(item, _, _, attributes, isOverride!=1);
 									if(itemOverride != null)
 									{
 										item = itemOverride;
@@ -7318,37 +7282,37 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 		{
 			case 39, 1081:  //Flaregun
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "6 ; 0.67");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "6 ; 0.67");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 40, 1146:  //Backburner, Festive Backburner
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "170 ; 1.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "170 ; 1.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 41:  //Natascha
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "32 ; 0 ; 75 ; 1.34");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "32 ; 0 ; 75 ; 1.34");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 43:  //Killing Gloves of Boxing
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.2 ; 77 ; 0 ; 109 ; 0.5 ; 177 ; 2 ; 205 ; 0.7 ; 206 ; 0.7 ; 239 ; 0.6 ; 442 ; 1.35 ; 443 ; 1.1 ; 800 ; 0");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "16 ; 50 ; 69 ; 0.2 ; 77 ; 0 ; 109 ; 0.5 ; 177 ; 2 ; 205 ; 0.7 ; 206 ; 0.7 ; 239 ; 0.6 ; 442 ; 1.35 ; 443 ; 1.1 ; 800 ; 0");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -7372,299 +7336,298 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 127:  //Direct Hit
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "179 ; 1.0");
-					//179: Crit instead of mini-critting
+				Handle itemOverride = PrepareItemHandle(item, _, _, "179 ; 1.0");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 128:  //Equalizer
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "740 ; 0 ; 239 ; 0.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "740 ; 0 ; 239 ; 0.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 129:  //Buff Banner
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "319 ; 1.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "319 ; 1.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 131, 1144:  //Chargin' Targe
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "396 ; 0.95", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "396 ; 0.95", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 140, 1086, 30668:  //Wrangler
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "54 ; 0.75 ; 128 ; 1 ; 206 ; 1.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "54 ; 0.75 ; 128 ; 1 ; 206 ; 1.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 153, 466:  //Homewrecker
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "394 ; 3 ; 215 ; 10 ; 522 ; 1 ; 216 ; 10");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "394 ; 3 ; 215 ; 10 ; 522 ; 1 ; 216 ; 10");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 154:  //Pain Train
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 149 ; 6 ; 204 ; 1 ; 408 ; 1", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "20 ; 1 ; 149 ; 6 ; 204 ; 1 ; 408 ; 1", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 155:  //Southern Hospitality
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.6 ; 20 ; 1 ; 61 ; 1 ; 408 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.6 ; 20 ; 1 ; 61 ; 1 ; 408 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 171:  //Tribalman's Shiv
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 408 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "20 ; 1 ; 408 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 173:  //Vita-Saw
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "125 ; -10 ; 17 ; 0.15 ; 737 ; 1.25", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "125 ; -10 ; 17 ; 0.15 ; 737 ; 1.25", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 220:  //Shortstop
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "868 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "868 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 224:  //L'etranger
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "166 ; 5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "166 ; 5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 231:  //Darwin's Danger Shield
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "26 ; 85 ; 800 ; 0.19 ; 69 ; 0.6 ; 109 ; 0.6", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "26 ; 85 ; 800 ; 0.19 ; 69 ; 0.6 ; 109 ; 0.6", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 232:  //Bushwacka
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "58 ; 1.35");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "58 ; 1.35");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 237:  //Rocket Jumper
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 135 ; 0.5 ; 206 ; 2 ; 400 ; 1", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 135 ; 0.5 ; 206 ; 2 ; 400 ; 1", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 239, 1084, 1100:  //GRU, Festive GRU, Bread Bite
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.5 ; 107 ; 1.5 ; 128 ; 1 ; 191 ; -7 ; 772 ; 1.5", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.5 ; 107 ; 1.5 ; 128 ; 1 ; 191 ; -7 ; 772 ; 1.5", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 265:  //Sticky Jumper
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2 ; 280 ; 14 ; 400 ; 1", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.3 ; 15 ; 0 ; 89 ; -6 ; 135 ; 0.5 ; 206 ; 2 ; 280 ; 14 ; 400 ; 1", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 305, 1079:  //Crusader's Crossbow, Festive Crusader's Crossbow
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.2");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "17 ; 0.2");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 312:  //Brass Beast
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "206 ; 1.35");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "206 ; 1.35");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 317:  //Candy Cane
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "740 ; 0.5 ; 239 ; 0.75", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "740 ; 0.5 ; 239 ; 0.75", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 325, 452, 812, 833:  //Boston Basher, Three-Rune Blade, Flying Guillotine(s)
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "20 ; 1 ; 138 ; 0.67 ; 408 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "20 ; 1 ; 138 ; 0.67 ; 408 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 327:  //Claidheamh Mor
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "412 ; 1.2");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "412 ; 1.2");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 329:  //Jag
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "92 ; 1.3 ; 6 ; 0.85 ; 95 ; 0.6 ; 1 ; 0.5 ; 137 ; 1.34", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "92 ; 1.3 ; 6 ; 0.85 ; 95 ; 0.6 ; 1 ; 0.5 ; 137 ; 1.34", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 331:  //Fists of Steel
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "205 ; 0.65 ; 206 ; 0.65 ; 772 ; 2.0 ; 800 ; 0.6 ; 854 ; 0.6", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "205 ; 0.65 ; 206 ; 0.65 ; 772 ; 2.0 ; 800 ; 0.6 ; 854 ; 0.6", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 348:  //Sharpened Volcano Fragment
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "16 ; 30 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.67 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "16 ; 30 ; 69 ; 0.34 ; 77 ; 0 ; 109 ; 0.5 ; 773 ; 1.5 ; 205 ; 0.8 ; 206 ; 0.6 ; 239 ; 0.67 ; 442 ; 1.15 ; 443 ; 1.15 ; 800 ; 0.34");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 349:  //Sun-on-a-Stick
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.75 ; 795 ; 2", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.75 ; 795 ; 2", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 351:  //Detonator
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "25 ; 0.5 ; 58 ; 3.2 ; 79 ; 0.75 ; 144 ; 1.0 ; 207 ; 1.33", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "25 ; 0.5 ; 58 ; 3.2 ; 79 ; 0.75 ; 144 ; 1.0 ; 207 ; 1.33", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 355:  //Fan O'War
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.25 ; 6 ; 0.5 ; 49 ; 1 ; 137 ; 4 ; 107 ; 1.1 ; 201 ; 1.1 ; 77 ; 0.38", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.25 ; 6 ; 0.5 ; 49 ; 1 ; 137 ; 4 ; 107 ; 1.1 ; 201 ; 1.1 ; 77 ; 0.38", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 404:  //Persian Persuader
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "772 ; 1.15 ; 249 ; 0.6 ; 781 ; 1 ; 778 ; 0.5 ; 782 ; 1", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "772 ; 1.15 ; 249 ; 0.6 ; 781 ; 1 ; 778 ; 0.5 ; 782 ; 1", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 405, 608:  //Ali Baba's Wee Booties, Bootlegger
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "26 ; 25 ; 246 ; 3 ; 107 ; 1.10", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "26 ; 25 ; 246 ; 3 ; 107 ; 1.10", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 406:  //Splendid Screen
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "248 ; 2.6", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "248 ; 2.6", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 414:  //Liberty Launcher
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.65 ; 206 ; 1.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.65 ; 206 ; 1.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 415:  //Reserve Shooter
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "2 ; 1.1 ; 3 ; 0.5 ; 114 ; 1 ; 179 ; 1 ; 547 ; 0.6", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "2 ; 1.1 ; 3 ; 0.5 ; 114 ; 1 ; 179 ; 1 ; 547 ; 0.6", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -7716,7 +7679,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 					Handle itemOverride = PrepareItemHandle(item, _, _, "58 ; 1.5");
 					if(itemOverride != INVALID_HANDLE)
 					{
-						item=itemOverride;
+						item = itemOverride;
 						return Plugin_Changed;
 					}
 				}
@@ -7751,38 +7714,38 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			{
 				if(!cvarEnableEurekaEffect.BoolValue)  //Disabled
 				{
-					Handle itemOverride=PrepareItemHandle(item, _, _, "93 ; 0.25 ; 276 ; 1 ; 790 ; 0.5 ; 732 ; 0.9", true);
+					Handle itemOverride = PrepareItemHandle(item, _, _, "93 ; 0.25 ; 276 ; 1 ; 790 ; 0.5 ; 732 ; 0.9", true);
 					if(itemOverride != INVALID_HANDLE)
 					{
-						item=itemOverride;
+						item = itemOverride;
 						return Plugin_Changed;
 					}
 				}
 			}
 			case 593:  //Third Degree
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "853 ; 0.8 ; 854 ; 0.8");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "853 ; 0.8 ; 854 ; 0.8");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 595:  //Manmelter
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "6 ; 0.35");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "6 ; 0.35");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 648:  //Wrap Assassin
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.53 ; 20 ; 1 ; 138 ; 0.67 ; 408 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.53 ; 20 ; 1 ; 138 ; 0.67 ; 408 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -7797,109 +7760,109 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 730:  //Beggar's Bazooka
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "76 ; 1.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "76 ; 1.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 740:  //Scorch Shot
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "79 ; 0.75");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "79 ; 0.75");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 772:  //Baby Face's Blaster
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "532 ; 1.2");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "532 ; 1.2");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 775:  //Escape Plan
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "740 ; 0 ; 206 ; 1.5 ; 239 ; 0.5");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "740 ; 0 ; 206 ; 1.5 ; 239 ; 0.5");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 811, 832:  //Huo-Long Heater
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "71 ; 2.75");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "71 ; 2.75");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 813, 834:  //Neon Annihilator
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "182 ; 2");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "182 ; 2");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 1099:  //Tide Turner
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "639 ; 50", true);
+				Handle itemOverride = PrepareItemHandle(item, _, _, "639 ; 50", true);
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 1103:  //Back Scatter
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "179 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "179 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 1104:  //Air Strike
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "1 ; 0.82 ; 206 ; 1.25");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "1 ; 0.82 ; 206 ; 1.25");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 1179:  //Thermal Thruster
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "872 ; 1");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "872 ; 1");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 1180:  //Gas Passer
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "875 ; 1 ; 2059 ; 3000");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "875 ; 1 ; 2059 ; 3000");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
 			case 1181:  //Hot Hand
 			{
-				Handle itemOverride=PrepareItemHandle(item, _, _, "877 ; 2");
+				Handle itemOverride = PrepareItemHandle(item, _, _, "877 ; 2");
 				if(itemOverride != INVALID_HANDLE)
 				{
-					item=itemOverride;
+					item = itemOverride;
 					return Plugin_Changed;
 				}
 			}
@@ -7907,10 +7870,10 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 
 		if(!StrContains(classname, "tf_weapon_syringegun_medic"))  //Syringe guns
 		{
-			Handle itemOverride=PrepareItemHandle(item, _, _, "17 ; 0.05");
+			Handle itemOverride = PrepareItemHandle(item, _, _, "17 ; 0.05");
 			if(itemOverride != INVALID_HANDLE)
 			{
-				item=itemOverride;
+				item = itemOverride;
 				return Plugin_Changed;
 			}
 		}
@@ -7920,10 +7883,10 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			switch(iItemDefinitionIndex)
 			{
 				case 35:
-					itemOverride=PrepareItemHandle(item, _, _, "10 ; 2.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 314 ; 3 ; 547 ; 0.75");
+					itemOverride = PrepareItemHandle(item, _, _, "10 ; 2.25 ; 11 ; 1.5 ; 18 ; 1 ; 199 ; 0.75 ; 314 ; 3 ; 547 ; 0.75");
 
 				case 411:  //Quick-Fix
-					itemOverride=PrepareItemHandle(item, _, _, "8 ; 1.0 ; 10 ; 2 ; 105 ; 1 ; 144 ; 2 ; 199 ; 0.75 ; 231 ; 2 ; 493 ; 2 ; 547 ; 0.75");
+					itemOverride = PrepareItemHandle(item, _, _, "8 ; 1.0 ; 10 ; 2 ; 105 ; 1 ; 144 ; 2 ; 199 ; 0.75 ; 231 ; 2 ; 493 ; 2 ; 547 ; 0.75");
 
 				case 998:  //Vaccinator
 					itemOverride = PrepareItemHandle(item, _, _, "10 ; 2.5 ; 11 ; 1.5 ; 199 ; 0.75 ; 314 ; -3 ; 479 ; 0.34 ; 499 ; 1 ; 547 ; 0.75 ; 739 ; 0.34", true);
@@ -7999,7 +7962,7 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 			CloseHandle(item);  //probably returns false but whatever (rswallen-apparently not)
 	}
 
-	if(name[0] != '\0')
+	if(name[0])
 	{
 		flags |= OVERRIDE_CLASSNAME;
 		TF2Items_SetClassname(weapon, name);
@@ -8082,8 +8045,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	if(bMedieval)
 		return Plugin_Continue;
 
-	int slot, index;
-	static char classname[32], format[64], wepIndexStr[768];
+	int slot, index, wepIdx, wepIndex, weaponIdxcount;
+	static char classname[32], format[64], wepIndexStr[768], wepIndexes[768][32];
 	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 	if(IsValidEntity(weapon))
 	{
@@ -8095,17 +8058,17 @@ public Action Timer_CheckItems(Handle timer, any userid)
 				civilianCheck[client]++;
 		}
 
-		GetEntityClassname(weapon, classname, 32);
+		GetEntityClassname(weapon, classname, sizeof(classname));
 		if(kvWeaponMods!=null && ConfigWeapons)
 		{
 			for(int i=1; ; i++)
 			{
 				KvRewind(kvWeaponMods);
-				Format(format, 10, "weapon%i", i);
+				Format(format, sizeof(format), "weapon%i", i);
 				if(KvJumpToKey(kvWeaponMods, format))
 				{
-					KvGetString(kvWeaponMods, "classname", format, 64);
-					KvGetString(kvWeaponMods, "index", wepIndexStr, 768);
+					KvGetString(kvWeaponMods, "classname", format, sizeof(format));
+					KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
 					slot = KvGetNum(kvWeaponMods, "slot", -1);
 					if(slot<0 || slot>2)
 						slot = 0;
@@ -8118,12 +8081,10 @@ public Action Timer_CheckItems(Handle timer, any userid)
 
 					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
 					{
-						int wepIndex;
-						static char wepIndexes[768][32];
-						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, 768, 32);
-						for(int wepIdx; wepIdx<=weaponIdxcount ; wepIdx++)
+						weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for(wepIdx=0; wepIdx<=weaponIdxcount ; wepIdx++)
 						{
-							if(wepIndexes[wepIdx][0] == '\0')
+							if(!wepIndexes[wepIdx][0])
 								continue;
 
 							wepIndex = StringToInt(wepIndexes[wepIdx]);
@@ -8161,17 +8122,17 @@ public Action Timer_CheckItems(Handle timer, any userid)
 		}
 
 		index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-		GetEntityClassname(weapon, classname, 32);
+		GetEntityClassname(weapon, classname, sizeof(classname));
 		if(kvWeaponMods!=null && ConfigWeapons)
 		{
 			for(int i=1; ; i++)
 			{
 				KvRewind(kvWeaponMods);
-				Format(format, 10, "weapon%i", i);
+				Format(format, sizeof(format), "weapon%i", i);
 				if(KvJumpToKey(kvWeaponMods, format))
 				{
-					KvGetString(kvWeaponMods, "classname", format, 64);
-					KvGetString(kvWeaponMods, "index", wepIndexStr, 768);
+					KvGetString(kvWeaponMods, "classname", format, sizeof(format));
+					KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
 					slot = KvGetNum(kvWeaponMods, "slot", -1);
 					if(slot<0 || slot>2)
 						slot = 1;
@@ -8184,12 +8145,10 @@ public Action Timer_CheckItems(Handle timer, any userid)
 
 					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
 					{
-						int wepIndex;
-						static char wepIndexes[768][32];
-						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, 768, 32);
-						for(int wepIdx; wepIdx<=weaponIdxcount ; wepIdx++)
+						weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for(wepIdx=0; wepIdx<=weaponIdxcount ; wepIdx++)
 						{
-							if(strlen(wepIndexes[wepIdx]) < 1)
+							if(!wepIndexes[wepIdx][0])
 								continue;
 
 							wepIndex = StringToInt(wepIndexes[wepIdx]);
@@ -8254,7 +8213,7 @@ public Action Timer_CheckItems(Handle timer, any userid)
 	if(IsValidEntity(weapon))
 	{
 		index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-		GetEntityClassname(weapon, classname, 32);
+		GetEntityClassname(weapon, classname, sizeof(classname));
 		if(kvWeaponMods!=null && ConfigWeapons)
 		{
 			for(int i=1; ; i++)
@@ -8263,8 +8222,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 				Format(format, 10, "weapon%i", i);
 				if(KvJumpToKey(kvWeaponMods, format))
 				{
-					KvGetString(kvWeaponMods, "classname", format, 64);
-					KvGetString(kvWeaponMods, "index", wepIndexStr, 768);
+					KvGetString(kvWeaponMods, "classname", format, sizeof(format));
+					KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
 					slot = KvGetNum(kvWeaponMods, "slot", -1);
 					if(slot<0 || slot>2)
 						slot = 2;
@@ -8279,10 +8238,10 @@ public Action Timer_CheckItems(Handle timer, any userid)
 					{
 						int wepIndex;
 						static char wepIndexes[768][32];
-						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, 768, 32);
+						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
 						for(int wepIdx; wepIdx<=weaponIdxcount ; wepIdx++)
 						{
-							if(strlen(wepIndexes[wepIdx]) < 1)
+							if(!wepIndexes[wepIdx][0])
 								continue;
 
 							wepIndex = StringToInt(wepIndexes[wepIdx]);
@@ -8339,7 +8298,7 @@ stock int RemovePlayerBack(int client, int[] indices, int length)
 	while((entity=FindEntityByClassname2(entity, "tf_wearable"))!=-1)
 	{
 		static char netclass[32];
-		if(GetEntityNetClass(entity, netclass, 32) && StrEqual(netclass, "CTFWearable"))
+		if(GetEntityNetClass(entity, netclass, sizeof(netclass)) && StrEqual(netclass, "CTFWearable"))
 		{
 			int index = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
@@ -8360,7 +8319,7 @@ stock int FindPlayerBack(int client, int index)
 	while((entity=FindEntityByClassname2(entity, "tf_wearable*"))!=-1)
 	{
 		static char netclass[32];
-		if(GetEntityNetClass(entity, netclass, 32) && StrContains(netclass, "CTFWearable")>-1 && GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex")==index && GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
+		if(GetEntityNetClass(entity, netclass, sizeof(netclass)) && StrContains(netclass, "CTFWearable")>-1 && GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex")==index && GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")==client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 			return entity;
 	}
 	return -1;
@@ -8376,7 +8335,7 @@ public Action OnObjectDestroyed(Handle event, const char[] name, bool dontBroadc
 		return Plugin_Continue;
 
 	static char sound[PLATFORM_MAX_PATH];
-	if(RandomSound("sound_kill_buildable", sound, PLATFORM_MAX_PATH, GetBossIndex(attacker)))
+	if(RandomSound("sound_kill_buildable", sound, sizeof(sound), GetBossIndex(attacker)))
 		EmitSoundToAllExcept(sound);
 
 	return Plugin_Continue;
@@ -8391,15 +8350,15 @@ public Action OnUberDeployed(Handle event, const char[] name, bool dontBroadcast
 		if(IsValidEntity(medigun))
 		{
 			static char classname[64];
-			GetEntityClassname(medigun, classname, 64);
+			GetEntityClassname(medigun, classname, sizeof(classname));
 			if(StrEqual(classname, "tf_weapon_medigun"))
 			{
-				//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+				TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
 				int target = GetHealingTarget(client);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
-					//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+					TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
 					uberTarget[client] = target;
 				}
@@ -8426,11 +8385,11 @@ public Action Timer_Uber(Handle timer, any medigunid)
 			int target = GetHealingTarget(client);
 			if(charge > 0.05)
 			{
-				//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+				TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
-					//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+					TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5);
 					uberTarget[client] = target;
 				}
@@ -8482,27 +8441,21 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 	if(IsBoss(client) || GetGameTime()>=HPTime)
 	{
 		char text[MAXTF2PLAYERS][512];
-		static char lives[8], name[64];
+		static char name[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]))
 			{
-				strcopy(name, 64, "=Failed name=");
+				char lives[8];
 				if(BossLives[boss] > 1)
-				{
-					Format(lives, 8, "x%i", BossLives[boss]);
-				}
-				else
-				{
-					lives[0] = '\0';
-				}
+					Format(lives, sizeof(lives), "x%i", BossLives[boss]);
 
 				for(int target; target<=MaxClients; target++)
 				{
 					if(IsValidClient(target))
 					{
-						GetBossSpecial(Special[boss], name, 64, target);
-						Format(text[target], 512, "%s\n%t", text[target], "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						GetBossSpecial(Special[boss], name, sizeof(name), target);
+						Format(text[target], sizeof(text[]), "%s\n%t", text[target], "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						FPrintToChat(target, "%t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 					}
 				}
@@ -8516,7 +8469,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 			{
 				if(bosses<2 && cvarGameText.IntValue>0)
 				{
-					if(BossIcon[0] != '\0')
+					if(BossIcon[0])
 					{
 						ShowGameText(target, BossIcon, _, text[client]);
 					}
@@ -8544,7 +8497,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 	for(int target; target<=MaxClients; target++)
 	{
 		if(IsBoss(target))
-			Format(waitTime, 128, "%s %i,", waitTime, BossHealthLast[Boss[target]]);
+			Format(waitTime, sizeof(waitTime), "%s %i,", waitTime, BossHealthLast[Boss[target]]);
 	}
 	FPrintToChat(client, "%t", "wait_hp", RoundFloat(HPTime-GetGameTime()), waitTime);
 	return Plugin_Continue;
@@ -8561,17 +8514,17 @@ public Action Command_SetNextBoss(int client, int args)
 			return Plugin_Handled;
 		}
 
-		GetBossSpecial(Incoming[0], boss, 64, client);
+		GetBossSpecial(Incoming[0], boss, sizeof(boss), client);
 
 		Handle dMenu = CreateMenu(Command_SetNextBossH);
 		SetMenuTitle(dMenu, "Override Next Boss\n  Current Selection: %s", boss);
 
-		Format(boss, 64, "No Override");
+		Format(boss, sizeof(boss), "No Override");
 		AddMenuItem(dMenu, boss, boss);
 
 		for(int config; config<Specials; config++)
 		{
-			GetBossSpecial(config, boss, 64, client);
+			GetBossSpecial(config, boss, sizeof(boss), client);
 			AddMenuItem(dMenu, boss, boss);
 		}
 
@@ -8581,11 +8534,11 @@ public Action Command_SetNextBoss(int client, int args)
 	}
 
 	static char name[64];
-	GetCmdArgString(name, 64);
+	GetCmdArgString(name, sizeof(name));
 
 	for(int config; config<Specials; config++)
 	{
-		GetBossSpecial(config, boss, 64, client);
+		GetBossSpecial(config, boss, sizeof(boss), client);
 		if(StrContains(boss, name, false) != -1)
 		{
 			Incoming[0] = config;
@@ -8594,20 +8547,20 @@ public Action Command_SetNextBoss(int client, int args)
 		}
 
 		KvRewind(BossKV[config]);
-		KvGetString(BossKV[config], "name", boss, 64);
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		if(StrContains(boss, name, false) != -1)
 		{
 			Incoming[0] = config;
-			GetBossSpecial(config, boss, 64, client);
+			GetBossSpecial(config, boss, sizeof(boss), client);
 			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
 		}
 
-		KvGetString(BossKV[config], "filename", boss, 64);
+		KvGetString(BossKV[config], "filename", boss, sizeof(boss));
 		if(StrContains(boss, name, false) != -1)
 		{
 			Incoming[0] = config;
-			GetBossSpecial(config, boss, 64, client);
+			GetBossSpecial(config, boss, sizeof(boss), client);
 			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
 		}
@@ -8630,7 +8583,7 @@ public int Command_SetNextBossH(Handle menu, MenuAction action, int client, int 
 			{
 				case 0:
 				{
-					Incoming[0] = '\0';
+					Incoming[0] = 0;
 					FReplyToCommand(client, "No override to the next boss");
 				}
 				default:
@@ -8638,7 +8591,7 @@ public int Command_SetNextBossH(Handle menu, MenuAction action, int client, int 
 					int choice2 = choice-1;
 					Incoming[0] = choice2;
 					static char boss[64];
-					GetBossSpecial(choice2, boss, 64, client);
+					GetBossSpecial(choice2, boss, sizeof(boss), client);
 					FReplyToCommand(client, "Set the next boss to %s", boss);
 				}
 			}
@@ -8655,15 +8608,15 @@ public Action Command_Points(int client, int args)
 	}
 
 	static char stringPoints[8], pattern[PLATFORM_MAX_PATH];
-	GetCmdArg(1, pattern, PLATFORM_MAX_PATH);
-	GetCmdArg(2, stringPoints, 8);
+	GetCmdArg(1, pattern, sizeof(pattern));
+	GetCmdArg(2, stringPoints, sizeof(stringPoints));
 	int points = StringToInt(stringPoints);
 
 	static char targetName[MAX_TARGET_LENGTH];
 	int targets[MAXPLAYERS], matches;
 	bool targetNounIsMultiLanguage;
 
-	if((matches=ProcessTargetString(pattern, client, targets, MAXPLAYERS, 0, targetName, MAX_TARGET_LENGTH, targetNounIsMultiLanguage)) < 1)
+	if((matches=ProcessTargetString(pattern, client, targets, sizeof(targets), 0, targetName, sizeof(targetName), targetNounIsMultiLanguage)) < 1)
 	{
 		ReplyToTargetError(client, matches);
 		return Plugin_Handled;
@@ -8696,11 +8649,11 @@ public Action Command_StartMusic(int client, int args)
 		if(args)
 		{
 			static char pattern[MAX_TARGET_LENGTH];
-			GetCmdArg(1, pattern, MAX_TARGET_LENGTH);
+			GetCmdArg(1, pattern, sizeof(pattern));
 			static char targetName[MAX_TARGET_LENGTH];
 			int targets[MAXPLAYERS], matches;
 			bool targetNounIsMultiLanguage;
-			if((matches=ProcessTargetString(pattern, client, targets, MAXPLAYERS, COMMAND_FILTER_NO_BOTS, targetName, MAX_TARGET_LENGTH, targetNounIsMultiLanguage)) < 1)
+			if((matches=ProcessTargetString(pattern, client, targets, sizeof(targets), COMMAND_FILTER_NO_BOTS, targetName, sizeof(targetName), targetNounIsMultiLanguage)) < 1)
 			{
 				ReplyToTargetError(client, matches);
 				return Plugin_Handled;
@@ -8737,11 +8690,11 @@ public Action Command_StopMusic(int client, int args)
 	if(args)
 	{
 		static char pattern[MAX_TARGET_LENGTH];
-		GetCmdArg(1, pattern, MAX_TARGET_LENGTH);
+		GetCmdArg(1, pattern, sizeof(pattern));
 		static char targetName[MAX_TARGET_LENGTH];
 		int targets[MAXPLAYERS], matches;
 		bool targetNounIsMultiLanguage;
-		if((matches=ProcessTargetString(pattern, client, targets, MAXPLAYERS, COMMAND_FILTER_NO_BOTS, targetName, MAX_TARGET_LENGTH, targetNounIsMultiLanguage)) < 1)
+		if((matches=ProcessTargetString(pattern, client, targets, sizeof(targets), COMMAND_FILTER_NO_BOTS, targetName, sizeof(targetName), targetNounIsMultiLanguage)) < 1)
 		{
 			ReplyToTargetError(client, matches);
 			return Plugin_Handled;
@@ -8786,7 +8739,7 @@ public Action Command_Charset(int client, int args)
 		SetMenuTitle(menu, "Charset");
 
 		static char config[PLATFORM_MAX_PATH], charset[64];
-		BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 
 		Handle Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
@@ -8794,7 +8747,7 @@ public Action Command_Charset(int client, int args)
 		do
 		{
 			total++;
-			KvGetSectionName(Kv, charset, 64);
+			KvGetSectionName(Kv, charset, sizeof(charset));
 			AddMenuItem(menu, charset, charset);
 		}
 		while(KvGotoNextKey(Kv));
@@ -8806,22 +8759,22 @@ public Action Command_Charset(int client, int args)
 	}
 
 	static char charset[32], rawText[16][16];
-	GetCmdArgString(charset, 32);
+	GetCmdArgString(charset, sizeof(charset));
 	int amount = ExplodeString(charset, " ", rawText, 16, 16);
 	for(int i; i<amount; i++)
 	{
 		StripQuotes(rawText[i]);
 	}
-	ImplodeStrings(rawText, amount, " ", charset, 32);
+	ImplodeStrings(rawText, amount, " ", charset, sizeof(charset));
 
 	static char config[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	for(int i; ; i++)
 	{
-		KvGetSectionName(Kv, config, PLATFORM_MAX_PATH);
+		KvGetSectionName(Kv, config, sizeof(config));
 		if(StrContains(config, charset, false) >= 0)
 		{
 			FReplyToCommand(client, "Charset for nextmap is %s", config);
@@ -8853,8 +8806,8 @@ public int Command_CharsetH(Handle menu, MenuAction action, int client, int choi
 			cvarCharset.IntValue = choice;
 
 			static char nextmap[32];
-			cvarNextmap.GetString(nextmap, 32);
-			GetMenuItem(menu, choice, FF2CharSetString, 42);
+			cvarNextmap.GetString(nextmap, sizeof(nextmap));
+			GetMenuItem(menu, choice, FF2CharSetString, sizeof(FF2CharSetString));
 			FPrintToChat(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
 			isCharSetSelected = true;
 		}
@@ -8880,7 +8833,7 @@ public Action Command_LoadCharset(int client, int args)
 		SetMenuTitle(menu, "Charset");
 
 		static char config[PLATFORM_MAX_PATH], charset[64];
-		BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 
 		Handle Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
@@ -8888,7 +8841,7 @@ public Action Command_LoadCharset(int client, int args)
 		do
 		{
 			total++;
-			KvGetSectionName(Kv, charset, 64);
+			KvGetSectionName(Kv, charset, sizeof(charset));
 			AddMenuItem(menu, charset, charset);
 		}
 		while(KvGotoNextKey(Kv));
@@ -8900,27 +8853,27 @@ public Action Command_LoadCharset(int client, int args)
 	}
 
 	static char charset[32], rawText[16][16];
-	GetCmdArgString(charset, 32);
+	GetCmdArgString(charset, sizeof(charset));
 	int amount=ExplodeString(charset, " ", rawText, 16, 16);
 	for(int i; i<amount; i++)
 	{
 		StripQuotes(rawText[i]);
 	}
-	ImplodeStrings(rawText, amount, " ", charset, 32);
+	ImplodeStrings(rawText, amount, " ", charset, sizeof(charset));
 
 	static char config[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
 	for(int i; ; i++)
 	{
-		KvGetSectionName(Kv, config, PLATFORM_MAX_PATH);
+		KvGetSectionName(Kv, config, sizeof(config));
 		if(StrContains(config, charset, false) >= 0)
 		{
 			cvarCharset.IntValue = i;
 			LoadCharset = true;
-			if(CheckRoundState()==0 || CheckRoundState()==1)
+			if(!CheckRoundState() || CheckRoundState()==1)
 			{
 				FReplyToCommand(client, "The current character set is set to be switched to %s!", config);
 				return Plugin_Handled;
@@ -8955,7 +8908,7 @@ public int Command_LoadCharsetH(Handle menu, MenuAction action, int client, int 
 		{
 			cvarCharset.IntValue = choice;
 			LoadCharset = true;
-			if(CheckRoundState()==0 || CheckRoundState()==1)
+			if(!CheckRoundState() || CheckRoundState()==1)
 			{
 				FReplyToCommand(client, "The current character set is set to be switched!");
 			}
@@ -8979,7 +8932,7 @@ public Action Command_ReloadFF2(int client, int args)
 		return Plugin_Handled;
 	}
 	ReloadFF2 = true;
-	if(CheckRoundState()==0 || CheckRoundState()==1)
+	if(!CheckRoundState() || CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "The plugin is set to reload.");
 		return Plugin_Handled;
@@ -8999,7 +8952,7 @@ public Action Command_ReloadCharset(int client, int args)
 		return Plugin_Handled;
 	}
 	LoadCharset = true;
-	if(CheckRoundState()==0 || CheckRoundState()==1)
+	if(!CheckRoundState() || CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "Current character set is set to reload!");
 		return Plugin_Handled;
@@ -9019,7 +8972,7 @@ public Action Command_ReloadFF2Weapons(int client, int args)
 		return Plugin_Handled;
 	}
 	ReloadWeapons = true;
-	if(CheckRoundState()==0 || CheckRoundState()==1)
+	if(!CheckRoundState() || CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "%s is set to reload!", WeaponCFG);
 		return Plugin_Handled;
@@ -9039,7 +8992,7 @@ public Action Command_ReloadFF2Configs(int client, int args)
 		return Plugin_Handled;
 	}
 	ReloadConfigs = true;
-	if(CheckRoundState()==0 || CheckRoundState()==1)
+	if(!CheckRoundState() || CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "All configs are set to be reloaded!");
 		return Plugin_Handled;
@@ -9069,17 +9022,17 @@ public Action Command_ReloadSubPlugins(int client, int args)
 	}
 
 	static char pluginName[PLATFORM_MAX_PATH];
-	GetCmdArg(1, pluginName, PLATFORM_MAX_PATH);
-	BuildPath(Path_SM, pluginName, PLATFORM_MAX_PATH, "plugins/freaks/%s.ff2", pluginName);
+	GetCmdArg(1, pluginName, sizeof(pluginName));
+	BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/freaks/%s.ff2", pluginName);
 	if(!FileExists(pluginName))
 	{
 		FReplyToCommand(client, "Subplugin %s does not exist!", pluginName);
 		return Plugin_Handled;
 	}
-	ReplaceString(pluginName, PLATFORM_MAX_PATH, "addons/sourcemod/plugins/freaks/", "freaks/", false);
+	ReplaceString(pluginName, sizeof(pluginName), "addons/sourcemod/plugins/freaks/", "freaks/", false);
 	ServerCommand("sm plugins unload %s", pluginName);
 	ServerCommand("sm plugins load %s", pluginName);
-	ReplaceString(pluginName, PLATFORM_MAX_PATH, "freaks/", " ", false);
+	ReplaceString(pluginName, sizeof(pluginName), "freaks/", " ", false);
 	FReplyToCommand(client, "Reloaded subplugin %s!", pluginName);
 	return Plugin_Handled;
 }
@@ -9126,7 +9079,7 @@ stock void SetArenaCapEnableTime(float time)
 	if((entity=FindEntityByClassname2(-1, "tf_logic_arena"))!=-1 && IsValidEntity(entity))
 	{
 		static char timeString[32];
-		FloatToString(time, timeString, 32);
+		FloatToString(time, timeString, sizeof(timeString));
 		DispatchKeyValue(entity, "CapEnableDelay", timeString);
 	}
 }
@@ -9150,29 +9103,29 @@ public void OnClientPostAdminCheck(int client)
 	FF2flags[client] = 0;
 	Damage[client] = 0;
 	uberTarget[client] = -1;
-	xIncoming[client][0] = '\0';
+	xIncoming[client][0] = 0;
 	CanBossVs[client] = 0;
 	CanBossTeam[client] = 0;
 
 	if(AreClientCookiesCached(client))
 	{
 		static char buffer[24];
-		GetClientCookie(client, FF2Cookies, buffer, 24);
+		GetClientCookie(client, FF2Cookies, buffer, sizeof(buffer));
 		if(!buffer[0])
 			SetClientCookie(client, FF2Cookies, "0 1 1 1 0 0 3");
 			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | UNUSED
 
-		GetClientCookie(client, StatCookies, buffer, 24);
+		GetClientCookie(client, StatCookies, buffer, sizeof(buffer));
 		if(!buffer[0])
 			SetClientCookie(client, StatCookies, "0 0 0 0 0 0 0");
 			//Boss wins | boss losses | boss kills | boss deaths | player kills | player MVPs | UNUSED
 
-		GetClientCookie(client, HudCookies, buffer, 24);
+		GetClientCookie(client, HudCookies, buffer, sizeof(buffer));
 		if(!buffer[0])
 			SetClientCookie(client, HudCookies, "0 0 0 0 0 0 0");
 			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED
 
-		GetClientCookie(client, SelectionCookie, buffer, 24);
+		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
 		if(!buffer[0])
 			SetClientCookie(client, SelectionCookie, ";;;;;;");
 
@@ -9214,7 +9167,7 @@ public void OnClientDisconnect(int client)
 		}
 	}
 
-	if(IsBoss(client) && (CheckRoundState()==0 || CheckRoundState()==1))
+	if(IsBoss(client) && (!CheckRoundState() || CheckRoundState()==1))
 		AddClientStats(client, Cookie_BossLosses, 1);
 
 	if(Enabled && IsClientInGame(client) && IsPlayerAlive(client) && CheckRoundState()==1)
@@ -9223,7 +9176,7 @@ public void OnClientDisconnect(int client)
 	FF2flags[client] = 0;
 	Damage[client] = 0;
 	uberTarget[client] = -1;
-	xIncoming[client][0] = '\0';
+	xIncoming[client][0] = 0;
 	CanBossVs[client] = 0;
 	SaveClientStats(client);
 	SaveClientPreferences(client);
@@ -9399,22 +9352,22 @@ public Action ClientTimer(Handle timer)
 					{
 						if((Healing[client]>0 && HealHud==1) || HealHud>1)
 						{
-							Format(top, 64, "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
+							Format(top, sizeof(top), "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 						else
 						{
-							Format(top, 64, "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
+							Format(top, sizeof(top), "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 					}
 					else
 					{
 						if((Healing[client]>0 && HealHud==1) || HealHud>1)
 						{
-							Format(top, 64, "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
+							Format(top, sizeof(top), "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 						else
 						{
-							Format(top, 64, "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
+							Format(top, sizeof(top), "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 						}
 					}
 				}
@@ -9424,22 +9377,22 @@ public Action ClientTimer(Handle timer)
 					{
 						if((Healing[client]>0 && HealHud==1) || HealHud>1)
 						{
-							Format(top, 64, "%t %t | ", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+							Format(top, sizeof(top), "%t %t | ", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
 						}
 						else
 						{
-							Format(top, 64, "%t | ", "Your Damage Dealt", Damage[client]);
+							Format(top, sizeof(top), "%t | ", "Your Damage Dealt", Damage[client]);
 						}
 					}
 					else
 					{
 						if((Healing[client]>0 && HealHud==1) || HealHud>1)
 						{
-							Format(top, 64, "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
+							Format(top, sizeof(top), "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
 						}
 						else
 						{
-							Format(top, 64, "%t", "Your Damage Dealt", Damage[client]);
+							Format(top, sizeof(top), "%t", "Your Damage Dealt", Damage[client]);
 						}
 					}
 				}
@@ -9488,8 +9441,8 @@ public Action ClientTimer(Handle timer)
 
 			TFClassType class=TF2_GetPlayerClass(client);
 			int weapon=GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-			if(weapon<=MaxClients || !IsValidEntity(weapon) || !GetEntityClassname(weapon, classname, 32))
-				strcopy(classname, 32, "");
+			if(weapon<=MaxClients || !IsValidEntity(weapon) || !GetEntityClassname(weapon, classname, sizeof(classname)))
+				strcopy(classname, sizeof(classname), "");
 
 			bool validwep=!StrContains(classname, "tf_weapon", false);
 
@@ -9503,7 +9456,7 @@ public Action ClientTimer(Handle timer)
 					char mediclassname[64];
 					if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 					{
-						if(GetEntityClassname(medigun, mediclassname, 64) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+						if(GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
 							if(!HudSettings[client][1])
 							{
@@ -9520,7 +9473,7 @@ public Action ClientTimer(Handle timer)
 					}
 					else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
 					{
-						if(GetEntityClassname(medigun, mediclassname, 64) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+						if(GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 								FF2flags[client] |= FF2FLAG_UBERREADY;
@@ -9559,17 +9512,17 @@ public Action ClientTimer(Handle timer)
 						case 1:
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 90, 255, 90, 255, 0, 0.0, 0.0, 0.0);
-							Format(s, 64, "%t", "Dead Ringer Ready");
+							Format(s, sizeof(s), "%t", "Dead Ringer Ready");
 						}
 						case 2:
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 255, 64, 64, 255, 0, 0.0, 0.0, 0.0);
-							Format(s, 64, "%t", "Dead Ringer Active");
+							Format(s, sizeof(s), "%t", "Dead Ringer Active");
 						}
 						default:
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.0, 0.0, 0.0);
-							Format(s, 64, "%t", "Dead Ringer Inactive");
+							Format(s, sizeof(s), "%t", "Dead Ringer Inactive");
 						}
 					}
 
@@ -9684,7 +9637,7 @@ public Action ClientTimer(Handle timer)
 					{
 						if(!StrContains(classname, "tf_weapon_smg"))  //SMGs
 						{
-							if(index!=16 || !IsValidEntity(FindPlayerBack(client, 642)) || SniperClimbDelay==0)	//Nerf Cozy Camper SMGs if Wall Climb is on
+							if(index!=16 || !IsValidEntity(FindPlayerBack(client, 642)) || SniperClimbDelay<=0)	//Nerf Cozy Camper SMGs if Wall Climb is on
 							{
 								addthecrit = true;
 								if(cond == TFCond_HalloweenCritCandy)
@@ -9761,14 +9714,14 @@ public Action ClientTimer(Handle timer)
 			{
 				case TFClass_Medic:
 				{
-					int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+					int medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 					if(IsValidEntity(medigun))
 					{
-						int charge = RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
+						int charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
 						char mediclassname[64];
-						if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
+						if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 						{
-							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, 64) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 							{
 								if(!HudSettings[client][1])
 								{
@@ -9783,9 +9736,9 @@ public Action ClientTimer(Handle timer)
 								}
 							}
 						}
-						else if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
+						else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
 						{
-							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, 64) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 							{
 								if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 									FF2flags[client] |= FF2FLAG_UBERREADY;
@@ -9875,9 +9828,9 @@ void ModelOverrides_Think(int client, int iDisguisedTarget)
 	int iEnemyTeam = (iTeam == 2) ? 3 : 2;
 
 	static char strPlayerModel[128];
-	GetEntPropString(client, Prop_Data, "m_ModelName", strPlayerModel, 128);
+	GetEntPropString(client, Prop_Data, "m_ModelName", strPlayerModel, sizeof(strPlayerModel));
 	static char strEnemyModel[128];
-	GetEntPropString(iDisguisedTarget, Prop_Data, "m_ModelName", strEnemyModel, 128);
+	GetEntPropString(iDisguisedTarget, Prop_Data, "m_ModelName", strEnemyModel, sizeof(strEnemyModel));
 
 	int iPlayerModel = PrecacheModel(strPlayerModel, true);
 	int iEnemyModel = PrecacheModel(strEnemyModel, true);
@@ -10000,7 +9953,7 @@ public Action BossTimer(Handle timer)
 		{
 			SetEntPropFloat(client, Prop_Data, "m_flMaxspeed", BossSpeed[Special[boss]]+0.7*(100-BossHealth[boss]*100/BossLivesMax[boss]/BossHealthMax[boss]));
 		}
-		else if(BossSpeed[Special[boss]]==0 && GetEntityMoveType(client)!=MOVETYPE_NONE) // Is 0, freeze movement (some uses)
+		else if(!BossSpeed[Special[boss]] && GetEntityMoveType(client)!=MOVETYPE_NONE) // Is 0, freeze movement (some uses)
 		{
 			SetEntityMoveType(client, MOVETYPE_NONE);
 		}
@@ -10037,7 +9990,7 @@ public Action BossTimer(Handle timer)
 				FF2_ShowSyncHudText(client, rageHUD, "%t", "do_rage");
 
 				char sound[PLATFORM_MAX_PATH];
-				if(RandomSound("sound_full_rage", sound, PLATFORM_MAX_PATH, boss) && emitRageSound[boss])
+				if(RandomSound("sound_full_rage", sound, sizeof(sound), boss) && emitRageSound[boss])
 				{
 					float position[3];
 					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
@@ -10092,22 +10045,16 @@ public Action BossTimer(Handle timer)
 			{
 				if(IsValidClient(Boss[boss2]))
 				{
-					strcopy(name, 64, "=Failed name=");
-					char bossLives[10];
+					char bossLives[8];
 					if(BossLives[boss2] > 1)
-					{
-						Format(bossLives, 10, "x%i", BossLives[boss2]);
-					}
-					else
-					{
-						Format(bossLives, 10, "");
-					}
+						FormatEx(bossLives, sizeof(bossLives), "x%i", BossLives[boss2]);
+
 					for(int clients; clients<=MaxClients; clients++)
 					{
 						if(IsValidClient(clients))
 						{
-							GetBossSpecial(Special[boss2], name, 64, clients);
-							Format(message[clients], 512, "%s\n%t", message[clients], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+							GetBossSpecial(Special[boss2], name, sizeof(name), clients);
+							Format(message[clients], sizeof(message[]), "%s\n%t", message[clients], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 						}
 					}
 				}
@@ -10119,7 +10066,7 @@ public Action BossTimer(Handle timer)
 				{
 					if(bosses<2 && cvarGameText.IntValue>0)
 					{
-						if(BossIcon[0] != '\0')
+						if(BossIcon[0])
 						{
 							ShowGameText(target, BossIcon, _, message[target]);
 						}
@@ -10192,11 +10139,11 @@ public Action GlobalTimer(Handle timer)
 
 			if(lives > 1)
 			{
-				Format(healthString, 64, "%ix%i", current, lives);
+				Format(healthString, sizeof(healthString), "%ix%i", current, lives);
 			}
 			else
 			{
-				Format(healthString, 64, "%i", current);
+				Format(healthString, sizeof(healthString), "%i", current);
 			}
 		}
 		else
@@ -10215,7 +10162,7 @@ public Action GlobalTimer(Handle timer)
 
 			if(lives > 1)
 			{
-				Format(healthString, 64, "x%i", lives);
+				Format(healthString, sizeof(healthString), "x%i", lives);
 			}
 		}
 
@@ -10239,11 +10186,11 @@ public Action GlobalTimer(Handle timer)
 
 			if(lives > 1)
 			{
-				Format(healthString2, 64, "%ix%i", current, lives);
+				Format(healthString2, sizeof(healthString2), "%ix%i", current, lives);
 			}
 			else
 			{
-				Format(healthString2, 64, "%i", current);
+				Format(healthString2, sizeof(healthString2), "%i", current);
 			}
 		}
 		else
@@ -10262,7 +10209,7 @@ public Action GlobalTimer(Handle timer)
 
 			if(lives > 1)
 			{
-				Format(healthString2, 64, "x%i", lives);
+				Format(healthString2, sizeof(healthString2), "x%i", lives);
 			}
 		}
 
@@ -10344,11 +10291,11 @@ public Action GlobalTimer(Handle timer)
 
 			if(lives > 1)
 			{
-				Format(healthString, 64, "%i / %ix%i", current, max, lives);
+				Format(healthString, sizeof(healthString), "%i / %ix%i", current, max, lives);
 			}
 			else
 			{
-				Format(healthString, 64, "%i / %i", current, max);
+				Format(healthString, sizeof(healthString), "%i / %i", current, max);
 			}
 		}
 		else
@@ -10365,7 +10312,7 @@ public Action GlobalTimer(Handle timer)
 
 			if(lives > 1)
 			{
-				Format(healthString, 64, "%t", "Boss Lives Left", lives, max);
+				Format(healthString, sizeof(healthString), "%t", "Boss Lives Left", lives, max);
 			}
 		}
 
@@ -10523,8 +10470,8 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 		return Plugin_Continue;
 
 	static char arg1[4], arg2[4];
-	GetCmdArg(1, arg1, 4);
-	GetCmdArg(2, arg2, 4);
+	GetCmdArg(1, arg1, sizeof(arg1));
+	GetCmdArg(2, arg2, sizeof(arg2));
 	if(StringToInt(arg1) || StringToInt(arg2))  //We only want "voicemenu 0 0"-thanks friagram for pointing out edge cases
 		return Plugin_Continue;
 
@@ -10536,10 +10483,10 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 		static char sound[PLATFORM_MAX_PATH];
-		if(RandomSound("sound_ability_serverwide", sound, PLATFORM_MAX_PATH, boss))
+		if(RandomSound("sound_ability_serverwide", sound, sizeof(sound), boss))
 			EmitSoundToAllExcept(sound);
 
-		if(RandomSoundAbility("sound_ability", sound, PLATFORM_MAX_PATH, boss))
+		if(RandomSoundAbility("sound_ability", sound, sizeof(sound), boss))
 		{
 			FF2flags[Boss[boss]] |= FF2FLAG_TALKING;
 			EmitSoundToAllExcept(sound);
@@ -10562,47 +10509,45 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 
 void ActivateAbilitySlot(int boss, int slot, bool buttonmodeactive=false)
 {
-	static char ability[12], lives[MAXRANDOMS][3];
+	int ability_slot, buttonmode, count, j;
+	char ability[12];
+	static char lives[MAXRANDOMS][3];
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(ability, 12, "ability%i", i);
+		FormatEx(ability, sizeof(ability), "ability%i", i);
 		KvRewind(BossKV[Special[boss]]);
 		if(KvJumpToKey(BossKV[Special[boss]], ability))
 		{
 			if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
 				continue;
 
-			int ability_slot = KvGetNum(BossKV[Special[boss]], "slot", -2);
+			ability_slot = KvGetNum(BossKV[Special[boss]], "slot", -2);
 			if(ability_slot == -2)
-			{
-				ability_slot = KvGetNum(BossKV[Special[boss]], "arg0", -2);
-				if(ability_slot == -2)
-					ability_slot = 0;
-			}
+				ability_slot = KvGetNum(BossKV[Special[boss]], "arg0");
 
 			if(ability_slot != slot)
 				continue;
 	
-			int buttonmode = (buttonmodeactive) ? (KvGetNum(BossKV[Special[boss]], "buttonmode", 0)) : 0;
+			buttonmode = (buttonmodeactive) ? (KvGetNum(BossKV[Special[boss]], "buttonmode", 0)) : 0;
 
-			KvGetString(BossKV[Special[boss]], "life", ability, 12);
+			KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
 			static char abilityName[64], pluginName[64];
 			if(!ability[0])
 			{
-				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, 64);
-				KvGetString(BossKV[Special[boss]], "name", abilityName, 64);
+				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
+				KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
 				if(!UseAbility(abilityName, pluginName, boss, slot, buttonmode))
 					return;
 			}
 			else
 			{
-				int count = ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
-				for(int j; j<count; j++)
+				count = ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
+				for(j=0; j<count; j++)
 				{
 					if(StringToInt(lives[j]) == BossLives[boss])
 					{
-						KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, 64);
-						KvGetString(BossKV[Special[boss]], "name", abilityName, 64);
+						KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
+						KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
 						if(!UseAbility(abilityName, pluginName, boss, slot, buttonmode))
 							return;
 
@@ -10632,7 +10577,7 @@ public Action OnChangeClass(int client, const char[] command, int args)
 
 	//Don't allow the boss to switch classes but instead set their *desired* class (for the next round)
 	static char class[16];
-	GetCmdArg(1, class, 16);
+	GetCmdArg(1, class, sizeof(class));
 	if(TF2_GetClass(class) != TFClass_Unknown)  //Ignore cases where the client chooses an invalid class through the console
 		SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", TF2_GetClass(class));
 
@@ -10679,7 +10624,7 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	int team = view_as<int>(TFTeam_Unassigned);
 	int oldTeam = GetClientTeam(client);
 	static char teamString[10];
-	GetCmdArg(1, teamString, 10);
+	GetCmdArg(1, teamString, sizeof(teamString));
 
 	if(StrEqual(teamString, "red", false))
 	{
@@ -10801,7 +10746,7 @@ public Action OverTimeAlert(Handle timer)
 	if(OTCount > 0)
 	{
 		static char OTAlerting[PLATFORM_MAX_PATH];
-		strcopy(OTAlerting, PLATFORM_MAX_PATH, OTVoice[GetRandomInt(0, sizeof(OTVoice)-1)]);
+		strcopy(OTAlerting, sizeof(OTAlerting), OTVoice[GetRandomInt(0, sizeof(OTVoice)-1)]);
 		EmitSoundToAll(OTAlerting);
 		if(GetConVarInt(FindConVar("tf_overtime_nag")))
 			OTCount = GetRandomInt(-3, 0);
@@ -10874,7 +10819,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 			bool firstBloodSound = true;
 			if(firstBlood)	//TF_DEATHFLAG_FIRSTBLOOD is broken
 			{
-				if(RandomSound("sound_first_blood", sound, PLATFORM_MAX_PATH, boss))
+				if(RandomSound("sound_first_blood", sound, sizeof(sound), boss))
 				{
 					EmitSoundToAllExcept(sound);
 					firstBloodSound = false;
@@ -10887,19 +10832,19 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 			{
 				if(GetRandomInt(0, 1))
 				{
+					char class[32];
 					static char classnames[][] = {"custom", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
-					static char class[32];
-					Format(class, 32, "sound_kill_%s", classnames[TF2_GetPlayerClass(client)]);
-					if(RandomSound(class, sound, PLATFORM_MAX_PATH, boss))
+					FormatEx(class, sizeof(class), "sound_kill_%s", classnames[TF2_GetPlayerClass(client)]);
+					if(RandomSound(class, sound, sizeof(sound), boss))
 					{
 						EmitSoundToAllExcept(sound);
 					}
-					else if(RandomSound("sound_hit", sound, PLATFORM_MAX_PATH, boss))
+					else if(RandomSound("sound_hit", sound, sizeof(sound), boss))
 					{
 						EmitSoundToAllExcept(sound);
 					}
 				}
-				else if(RandomSound("sound_hit", sound, PLATFORM_MAX_PATH, boss))
+				else if(RandomSound("sound_hit", sound, sizeof(sound), boss))
 				{
 					EmitSoundToAllExcept(sound);
 				}
@@ -10916,7 +10861,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 
 			if(alivePlayers>2 && KSpreeCount[boss]==3)
 			{
-				if(RandomSound("sound_kspree", sound, PLATFORM_MAX_PATH, boss))
+				if(RandomSound("sound_kspree", sound, sizeof(sound), boss))
 					EmitSoundToAllExcept(sound);
 
 				KSpreeCount[boss] = 0;
@@ -10942,7 +10887,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		if(boss==-1 || (GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
 			return Plugin_Continue;
 
-		if(RandomSound("sound_death", sound, PLATFORM_MAX_PATH, boss))
+		if(RandomSound("sound_death", sound, sizeof(sound), boss))
 			EmitSoundToAllExcept(sound);
 
 		if(!IsFakeClient(client) || IsFakeClient(attacker))
@@ -10968,7 +10913,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		{
 			if(IsValidEntity(entity))
 			{
-				GetEntityClassname(entity, name, PLATFORM_MAX_PATH);
+				GetEntityClassname(entity, name, sizeof(name));
 				if(!StrContains(name, "obj_sentrygun") && (GetEntPropEnt(entity, Prop_Send, "m_hBuilder")==client))
 				{
 					SetVariantInt(GetEntPropEnt(entity, Prop_Send, "m_iMaxHealth")+1);
@@ -11136,7 +11081,7 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 	if(MercAlivePlayers==1 && BossAlivePlayers && Boss[0] && playingmerc>1 && !DrawGameTimer && LastMan && !Enabled3)
 	{
 		static char sound[PLATFORM_MAX_PATH];
-		if(RandomSound("sound_lastman", sound, PLATFORM_MAX_PATH))
+		if(RandomSound("sound_lastman", sound, sizeof(sound)))
 			EmitSoundToAllExcept(sound);
 
 		LastMan=false;
@@ -11201,14 +11146,14 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 				}
 			}
 
-			static char sound[64];
+			char sound[64];
 			if(GetRandomInt(0, 2))
 			{
-				Format(sound, PLATFORM_MAX_PATH, "vo/announcer_am_capenabled0%i.mp3", GetRandomInt(1, 4));
+				FormatEx(sound, sizeof(sound), "vo/announcer_am_capenabled0%i.mp3", GetRandomInt(1, 4));
 			}
 			else
 			{
-				Format(sound, PLATFORM_MAX_PATH, "vo/announcer_am_capincite0%i.mp3", GetRandomInt(0, 1) ? 1 : 3);
+				FormatEx(sound, sizeof(sound), "vo/announcer_am_capincite0%i.mp3", GetRandomInt(0, 1) ? 1 : 3);
 			}
 			EmitSoundToAll(sound);
 		}
@@ -11244,58 +11189,54 @@ public Action Timer_DrawGame(Handle timer)
 
 	int time = timeleft;
 	timeleft--;
-	static char timeDisplay[6];
+	char timeDisplay[6];
 	if(time/60 > 9)
 	{
-		IntToString(time/60, timeDisplay, 6);
+		IntToString(time/60, timeDisplay, sizeof(timeDisplay));
 	}
 	else
 	{
-		Format(timeDisplay, 6, "0%i", time/60);
+		FormatEx(timeDisplay, sizeof(timeDisplay), "0%i", time/60);
 	}
 
 	if(time%60 > 9)
 	{
-		Format(timeDisplay, 6, "%s:%i", timeDisplay, time%60);
+		FormatEx(timeDisplay, sizeof(timeDisplay), "%s:%i", timeDisplay, time%60);
 	}
 	else
 	{
-		Format(timeDisplay, 6, "%s:0%i", timeDisplay, time%60);
+		FormatEx(timeDisplay, sizeof(timeDisplay), "%s:0%i", timeDisplay, time%60);
 	}
 
 	SetHudTextParams(-1.0, 0.17, 1.1, 255, 255, 255, 255);
 
+	int client;
 	static char message[MAXTF2PLAYERS][512], name[64];
 	if(bosses<2 && cvarGameText.IntValue>0 && alivePlayers==1 && cvarHealthHud.IntValue<2)
 	{
-		for(int client=1; client<=MaxClients; client++)
+		int boss2, clients;
+		for(client=1; client<=MaxClients; client++)
 		{
 			if(IsBoss(client))
 			{
-				int boss2 = GetBossIndex(client);
-				strcopy(name, 64, "=Failed name=");
-				static char bossLives[10];
+				boss2 = GetBossIndex(client);
+				char bossLives[8];
 				if(BossLives[boss2] > 1)
-				{
-					Format(bossLives, 10, "x%i", BossLives[boss2]);
-				}
-				else
-				{
-					Format(bossLives, 10, "");
-				}
+					FormatEx(bossLives, sizeof(bossLives), "x%i", BossLives[boss2]);
 
-				for(int clients; clients<=MaxClients; clients++)
+				for(clients=1; clients<=MaxClients; clients++)
 				{
 					if(IsValidClient(client))
 					{
-						GetBossSpecial(Special[boss2], name, 64, client);
-						Format(message[clients], 512, "%s\n%t", message[clients], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
+						GetBossSpecial(Special[boss2], name, sizeof(name), client);
+						Format(message[clients], sizeof(message[]), "%s\n%t", message[clients], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 					}
 				}
 			}
 		}
 	}
-	for(int client=1; client<=MaxClients; client++)
+
+	for(client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client) && (IsPlayerAlive(client) || IsClientObserver(client)))
 		{
@@ -11317,7 +11258,7 @@ public Action Timer_DrawGame(Handle timer)
 				{
 					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%s | %t", message[client], "Overtime");
 				}
-				else if(BossIcon[0] != '\0')
+				else if(BossIcon[0])
 				{
 					ShowGameText(client, BossIcon, _, "%s | %s", message[client], timeDisplay);
 				}
@@ -11347,7 +11288,7 @@ public Action Timer_DrawGame(Handle timer)
 				{
 					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
 				}
-				else if(BossIcon[0] != '\0')
+				else if(BossIcon[0])
 				{
 					ShowGameText(client, BossIcon, _, timeDisplay);
 				}
@@ -11391,8 +11332,8 @@ public Action Timer_DrawGame(Handle timer)
 		}
 		case 1, 2, 3, 4, 5:
 		{
-			static char sound[PLATFORM_MAX_PATH];
-			Format(sound, PLATFORM_MAX_PATH, "vo/announcer_ends_%isec.mp3", time);
+			char sound[PLATFORM_MAX_PATH];
+			FormatEx(sound, PLATFORM_MAX_PATH, "vo/announcer_ends_%isec.mp3", time);
 			EmitSoundToAll(sound);
 		}
 		case 0:
@@ -11450,7 +11391,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 					if(shieldHP[client] > 0.0)
 					{
 						static char ric[PLATFORM_MAX_PATH];
-						Format(ric, PLATFORM_MAX_PATH, "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
+						Format(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
 						EmitSoundToClient(client, ric, _, _, _, _, 0.7, _, _, _, _, false);
 						EmitSoundToClient(attacker, ric, _, _, _, _, 0.7, _, _, _, _, false);
 						SetEventInt(event, "damageamount", damage-damageresist);
@@ -11480,7 +11421,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 				}
 
 				static char ric[PLATFORM_MAX_PATH];
-				Format(ric, PLATFORM_MAX_PATH, "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
+				Format(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
 				EmitSoundToClient(client, ric, _, _, _, _, 0.7, _, _, _, _, false);
 				EmitSoundToClient(attacker, ric, _, _, _, _, 0.7, _, _, _, _, false);
 				SetEventInt(event, "damageamount", damage-damageresist);
@@ -11516,7 +11457,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 			SetEntityHealth(client, (BossHealth[boss]-damage)-BossHealthMax[boss]*(lives-1)); //Set the health early to avoid the boss dying from fire, etc.
 
 			Action action = Plugin_Continue;  //Used for the forward
-			int bossLives=BossLives[boss];
+			int bossLives = BossLives[boss];
 			Call_StartForward(OnLoseLife);
 			Call_PushCell(boss);
 			Call_PushCellRef(bossLives);
@@ -11539,33 +11480,30 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 
 			BossLives[boss] = lives;
 
-			static char bossName[64];
-			strcopy(bossName, 64, "=Failed name=");
-
-			static char ability[PLATFORM_MAX_PATH];
-			strcopy(ability, PLATFORM_MAX_PATH, BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
+			static char bossName[64], ability[PLATFORM_MAX_PATH];
+			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(int target=1; target<=MaxClients; target++)
 			{
 				if(IsValidClient(target) && (IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
 					if(cvarGameText.IntValue > 0)
 					{
-						GetBossSpecial(Special[boss], bossName, 64, target);
+						GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
 						ShowGameText(target, "ico_notify_flag_moving_alt", Enabled3 ? GetClientTeam(client) : 0, "%t", ability, bossName, BossLives[boss]);
 					}
 					else
 					{
-						GetBossSpecial(Special[boss], bossName, 64, target);
+						GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
 						PrintCenterText(target, "%t", ability, bossName, BossLives[boss]);
 					}
 				}
 			}
 
-			if(BossLives[boss]==1 && RandomSound("sound_last_life", ability, PLATFORM_MAX_PATH, boss))
+			if(BossLives[boss]==1 && RandomSound("sound_last_life", ability, sizeof(ability), boss))
 			{
 				EmitSoundToAllExcept(ability, _, _, _, _, _, _, _, _, _, false);
 			}
-			else if(RandomSound("sound_nextlife", ability, PLATFORM_MAX_PATH, boss))
+			else if(RandomSound("sound_nextlife", ability, sizeof(ability), boss))
 			{
 				EmitSoundToAllExcept(ability, _, _, _, _, _, _, _, _, _, false);
 			}
@@ -11874,7 +11812,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			else if(weapon!=4095 && IsValidEntity(weapon) && weapon==GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee) && damage>1000.0)
 			{
 				static char classname[32];
-				if(GetEntityClassname(weapon, classname, 32) && !StrContains(classname, "tf_weapon_knife", false))
+				if(GetEntityClassname(weapon, classname, sizeof(classname)) && !StrContains(classname, "tf_weapon_knife", false))
 					bIsBackstab = true;
 			}
 			else if(!IsValidEntity(weapon) && (damagetype & DMG_CRUSH)==DMG_CRUSH && damage==1000.0)
@@ -11926,7 +11864,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(TellName)
 					{
 						char spcl[768];
-						GetBossSpecial(Special[boss], spcl, 768, attacker);
+						GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 						switch(Annotations)
 						{
 							case 1:
@@ -11997,7 +11935,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(TellName)
 						{
 							char spcl[768];
-							GetBossSpecial(Special[GetBossIndex(attacker)], spcl, 768, attacker);
+							GetBossSpecial(Special[GetBossIndex(attacker)], spcl, sizeof(spcl), attacker);
 							switch(Annotations)
 							{
 								case 1:
@@ -12029,11 +11967,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 					{
 						static char sound[PLATFORM_MAX_PATH];
-						if(RandomSound("sound_stabbed_boss", sound, PLATFORM_MAX_PATH, boss))
+						if(RandomSound("sound_stabbed_boss", sound, sizeof(sound), boss))
 						{
 							EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
 						}
-						else if(RandomSound("sound_stabbed", sound, PLATFORM_MAX_PATH, boss))
+						else if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
 						{
 							EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
 						}
@@ -12109,7 +12047,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(TellName)
 					{
 						static char spcl[768];
-						GetBossSpecial(Special[boss], spcl, 768, attacker);
+						GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 						switch(Annotations)
 						{
 							case 1:
@@ -12143,7 +12081,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(TellName)
 					{
 						static char spcl[768];
-						GetBossSpecial(Special[GetBossIndex(attacker)], spcl, 768, client);
+						GetBossSpecial(Special[GetBossIndex(attacker)], spcl, sizeof(spcl), client);
 						switch(Annotations)
 						{
 							case 1:
@@ -12173,7 +12111,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				}
 
 				static char sound[PLATFORM_MAX_PATH];
-				if(RandomSound("sound_telefraged", sound, PLATFORM_MAX_PATH))
+				if(RandomSound("sound_telefraged", sound, sizeof(sound)))
 					EmitSoundToAllExcept(sound);
 
 				HealthBarMode = true;
@@ -12233,7 +12171,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				else if(weapon!=4095 && IsValidEntity(weapon) && weapon==GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee) && damage>1000.0)
 				{
 					static char classname[32];
-					if(GetEntityClassname(weapon, classname, 32) && !StrContains(classname, "tf_weapon_knife", false))
+					if(GetEntityClassname(weapon, classname, sizeof(classname)) && !StrContains(classname, "tf_weapon_knife", false))
 						bIsBackstab = true;
 				}
 				else if(!IsValidEntity(weapon) && (damagetype & DMG_CRUSH) && damage==1000.0)
@@ -12245,11 +12183,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				static char classname[64];
 				if(IsValidEntity(weapon) && weapon>MaxClients && attacker<=MaxClients)
 				{
-					GetEntityClassname(weapon, classname, 64);
+					GetEntityClassname(weapon, classname, sizeof(classname));
 					if(!StrContains(classname, "eyeball_boss"))  //Dang spell Monoculuses
 					{
 						index = -1;
-						classname[0] = '\0';
+						Format(classname, sizeof(classname), "");
 					}
 					else
 					{
@@ -12259,7 +12197,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				else
 				{
 					index = -1;
-					classname[0] = '\0';
+					Format(classname, sizeof(classname), "");
 				}
 
 				//Sniper rifles aren't handled by the switch/case because of the amount of reskins there are
@@ -12358,7 +12296,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 307:  //Ullapool Caber
 					{
-						if(GetEntProp(weapon, Prop_Send, "m_iDetonated")==0 && allowedDetonations<4)	// If using ullapool caber, only trigger if bomb hasn't been detonated
+						if(!GetEntProp(weapon, Prop_Send, "m_iDetonated") && allowedDetonations<4)	// If using ullapool caber, only trigger if bomb hasn't been detonated
                         			{
 							if(TimesTen)
 							{
@@ -12384,7 +12322,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									if(TellName)
 									{
 										static char spcl[768];
-										GetBossSpecial(Special[boss], spcl, 768, attacker);
+										GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 										switch(Annotations)
 										{
 											case 1:
@@ -12450,7 +12388,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 								{
 									static char sound[PLATFORM_MAX_PATH];
-									if(RandomSound("sound_cabered", sound, PLATFORM_MAX_PATH))
+									if(RandomSound("sound_cabered", sound, sizeof(sound)))
 										EmitSoundToAllExcept(sound);
 								}
 
@@ -12569,7 +12507,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								if(TellName)
 								{
 									static char spcl[768];
-									GetBossSpecial(Special[boss], spcl, 768, attacker);
+									GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 									switch(Annotations)
 									{
 										case 1:
@@ -12636,7 +12574,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 							{
 								static char sound[PLATFORM_MAX_PATH];
-								if(RandomSound("sound_marketed", sound, PLATFORM_MAX_PATH))
+								if(RandomSound("sound_marketed", sound, sizeof(sound)))
 									EmitSoundToAllExcept(sound);
 							}
 
@@ -12687,7 +12625,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								if(IsValidEntity(medigun))
 								{
 									static char medigunClassname[64];
-									GetEntityClassname(medigun, medigunClassname, 64);
+									GetEntityClassname(medigun, medigunClassname, sizeof(medigunClassname));
 									if(StrEqual(medigunClassname, "tf_weapon_medigun", false))
 									{
 										float uber = GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+(0.1/healerCount);
@@ -12772,7 +12710,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(TellName)
 						{
 							static char spcl[768];
-							GetBossSpecial(Special[boss], spcl, 768, attacker);
+							GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 							switch(Annotations)
 							{
 								case 1:
@@ -12811,7 +12749,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							if(TellName)
 							{
 								static char spcl[768];
-								GetClientName(attacker, spcl, 768);
+								GetClientName(attacker, spcl, sizeof(spcl));
 								switch(Annotations)
 								{
 									case 1:
@@ -12844,7 +12782,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 						{
 							static char sound[PLATFORM_MAX_PATH];
-							if(RandomSound("sound_stabbed", sound, PLATFORM_MAX_PATH, boss))
+							if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
 								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss]);
 						}
 
@@ -12944,7 +12882,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(TellName)
 						{
 							static char spcl[768];
-							GetBossSpecial(Special[boss], spcl, 768, attacker);
+							GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 							switch(Annotations)
 							{
 								case 1:
@@ -12978,7 +12916,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(TellName)
 						{
 							char spcl[768];
-							GetClientName(attacker, spcl, 768);
+							GetClientName(attacker, spcl, sizeof(spcl));
 							switch(Annotations)
 							{
 								case 1:
@@ -13008,7 +12946,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 
 					char sound[PLATFORM_MAX_PATH];
-					if(RandomSound("sound_telefraged", sound, PLATFORM_MAX_PATH))
+					if(RandomSound("sound_telefraged", sound, sizeof(sound)))
 						EmitSoundToAllExcept(sound);
 
 					HealthBarMode = true;
@@ -13028,8 +12966,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			}
 			else
 			{
-				static char classname[64];
-				if(GetEntityClassname(attacker, classname, 64) && !strcmp(classname, "trigger_hurt", false))
+				char classname[64];
+				if(GetEntityClassname(attacker, classname, sizeof(classname)) && !strcmp(classname, "trigger_hurt", false))
 				{
 					if(SpawnTeleOnTriggerHurt && IsBoss(client) && CheckRoundState()==1)
 					{
@@ -13051,7 +12989,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(action!=Plugin_Stop && action!=Plugin_Handled)
 					{
 						if(action == Plugin_Changed)
-							damage = damage2;
+							damage=damage2;
 
 						if(damage > 600.0)
 							damage = 600.0;
@@ -13257,7 +13195,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			if(TellName)
 			{
 				boss = GetBossIndex(victim);
-				GetBossSpecial(Special[boss], spcl, 64, attacker);
+				GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 				switch(Annotations)
 				{
 					case 1:
@@ -13293,11 +13231,11 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				if(IsBoss(attacker))
 				{
 					boss = GetBossIndex(attacker);
-					GetBossSpecial(Special[boss], spcl, 64, victim);
+					GetBossSpecial(Special[boss], spcl, sizeof(spcl), victim);
 				}
 				else
 				{
-					GetClientName(attacker, spcl, 64);
+					GetClientName(attacker, spcl, sizeof(spcl));
 				}
 				switch(Annotations)
 				{
@@ -13339,11 +13277,11 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				if(IsBoss(victim))
 				{
 					boss = GetBossIndex(victim);
-					GetBossSpecial(Special[boss], spcl, 64, attacker);
+					GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 				}
 				else
 				{
-					GetClientName(victim, spcl, 64);
+					GetClientName(victim, spcl, sizeof(spcl));
 				}
 				switch(Annotations)
 				{
@@ -13378,7 +13316,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			if(TellName)
 			{
 				boss = GetBossIndex(attacker);
-				GetBossSpecial(Special[boss], spcl, 64, victim);
+				GetBossSpecial(Special[boss], spcl, sizeof(spcl), victim);
 				switch(Annotations)
 				{
 					case 1:
@@ -13446,8 +13384,8 @@ void GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int client=0)
 		return;
 
 	static char name[64], language[20];
-	GetLanguageInfo(IsValidClient(client) ? GetClientLanguage(client) : GetServerLanguage(), language, 20, name, 64);
-	Format(language, 20, "name_%s", language);
+	GetLanguageInfo(IsValidClient(client) ? GetClientLanguage(client) : GetServerLanguage(), language, sizeof(language), name, sizeof(name));
+	Format(language, sizeof(language), "name_%s", language);
 
 	KvRewind(BossKV[boss]);
 	KvGetString(BossKV[boss], language, name, bufferLength);
@@ -13455,15 +13393,16 @@ void GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int client=0)
 	{
 		if(IsValidClient(client))	// Don't check server's lanuage twice
 		{
-			GetLanguageInfo(GetServerLanguage(), language, 20, name, 64);
-			Format(language, 20, "name_%s", language);
+			GetLanguageInfo(GetServerLanguage(), language, 8, name, 8);
+			Format(language, sizeof(language), "name_%s", language);
 			KvGetString(BossKV[boss], language, name, bufferLength);
 		}
+
 		if(!name[0])
 		{
 			KvGetString(BossKV[boss], "name", name, bufferLength);
 			if(!name[0])
-				return;
+				strcopy(buffer, bufferLength, "=Failed name=");
 		}
 	}
 	strcopy(buffer, bufferLength, name);
@@ -13479,7 +13418,7 @@ stock int GetClientCloakIndex(int client)
 		return -1;
 
 	static char classname[64];
-	GetEntityClassname(weapon, classname, 64);
+	GetEntityClassname(weapon, classname, sizeof(classname));
 	if(strncmp(classname, "tf_wea", 6, false))
 		return -1;
 
@@ -13529,7 +13468,7 @@ stock int FindTeleOwner(int client)
 
 	int teleporter = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
 	static char classname[32];
-	if(IsValidEntity(teleporter) && GetEntityClassname(teleporter, classname, 32) && !strcmp(classname, "obj_teleporter", false))
+	if(IsValidEntity(teleporter) && GetEntityClassname(teleporter, classname, sizeof(classname)) && !strcmp(classname, "obj_teleporter", false))
 	{
 		int owner = GetEntPropEnt(teleporter, Prop_Send, "m_hBuilder");
 		if(IsValidClient(owner, false))
@@ -13556,7 +13495,7 @@ stock TFClassType KvGetClass(Handle keyvalue, const char[] string)
 {
 	TFClassType class;
 	static char buffer[24];
-	KvGetString(keyvalue, string, buffer, 24);
+	KvGetString(keyvalue, string, buffer, sizeof(buffer));
 	class = view_as<TFClassType>(StringToInt(buffer));
 	if(class == TFClass_Unknown)
 	{
@@ -13680,7 +13619,7 @@ public int SickleClimbWalls(int client, int weapon)	 //Credit to Mecha the Slag
 		return;
 
 	int TRIndex = TR_GetEntityIndex(INVALID_HANDLE);
-	GetEdictClassname(TRIndex, classname, 64);
+	GetEdictClassname(TRIndex, classname, sizeof(classname));
 	if(!StrEqual(classname, "worldspawn"))
 		return;
 
@@ -13781,7 +13720,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
+					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
 					winner = client;
@@ -13799,7 +13738,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
+					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
 					winner = client;
@@ -13849,7 +13788,7 @@ stock int GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
+					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
 					winner = client;
@@ -13867,7 +13806,7 @@ stock int GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
-					xIncoming[client][0] = '\0';
+					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
 					winner = client;
@@ -13883,7 +13822,7 @@ stock int GetRandomValidClient(bool[] omit)
 	int companion;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && GetRandomInt(0, RoundToCeil(MaxClients/5.0))==0)))
+		if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
 		{
 			if(cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1)	// Skip clients who have disabled being able to be selected as a companion
 				continue;
@@ -13900,7 +13839,7 @@ stock int GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && GetRandomInt(0, RoundToCeil(MaxClients/5.0))==0)))
+			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
 			{
 				if(cvarToggleBoss.BoolValue && view_as<int>(ToggleBoss[client])>1) // Skip clients who have disabled being able to be a boss
 					continue;
@@ -13915,7 +13854,7 @@ stock int GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && GetRandomInt(0, RoundToCeil(MaxClients/5.0))==0)))
+			if(IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
 			{
 				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					companion=client;
@@ -14000,8 +13939,8 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 {
 	static char formula[1024], bossName[64];
 	KvRewind(BossKV[Special[boss]]);
-	KvGetString(BossKV[Special[boss]], "filename", bossName, 64);
-	KvGetString(BossKV[Special[boss]], key, formula, 1024, defaultFormula);
+	KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
 	float players = 1.0;
 	if(Enabled3)
@@ -14064,7 +14003,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 			}
 			case ')':
 			{
-				OperateString(sumArray, bracket, value, 16, _operator);
+				OperateString(sumArray, bracket, value, sizeof(value), _operator);
 				if(GetArrayCell(_operator, bracket) != Operator_None)  //Something like (5*)
 				{
 					LogToFile(eLog, "[Boss] %s's %s formula has an invalid operator at character %i", bossName, key, i+1);
@@ -14085,11 +14024,11 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 			}
 			case '\0':  //End of formula
 			{
-				OperateString(sumArray, bracket, value, 16, _operator);
+				OperateString(sumArray, bracket, value, sizeof(value), _operator);
 			}
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 			{
-				StrCat(value, 16, character);  //Constant?  Just add it to the current value
+				StrCat(value, sizeof(value), character);  //Constant?  Just add it to the current value
 			}
 			case 'n', 'x':  //n and x denote player variables
 			{
@@ -14097,7 +14036,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 			}
 			case '+', '-', '*', '/', '^':
 			{
-				OperateString(sumArray, bracket, value, 16, _operator);
+				OperateString(sumArray, bracket, value, sizeof(value), _operator);
 				switch(character[0])
 				{
 					case '+':
@@ -14155,21 +14094,21 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 stock int GetAbilityArgument(int index, const char[] plugin_name, const char[] ability_name, int arg, int defvalue=0)
 {
 	static char str[10];
-	Format(str, 10, "arg%i", arg);
+	Format(str, sizeof(str), "arg%i", arg);
 	return GetArgumentI(index, plugin_name, ability_name, str, defvalue);
 }
 
 stock float GetAbilityArgumentFloat(int index, const char[] plugin_name, const char[] ability_name, int arg, float defvalue=0.0)
 {
 	static char str[10];
-	Format(str, 10, "arg%i", arg);
+	Format(str, sizeof(str), "arg%i", arg);
 	return GetArgumentF(index, plugin_name, ability_name, str, defvalue);
 }
 
 stock void GetAbilityArgumentString(int index, const char[] plugin_name, const char[] ability_name, int arg, char[] buffer, int buflen, const char[] defvalue="")
 {
 	static char str[10];
-	Format(str, 10, "arg%i", arg);
+	Format(str, sizeof(str), "arg%i", arg);
 	GetArgumentS(index, plugin_name, ability_name, str, buffer, buflen, defvalue);
 }
 
@@ -14182,11 +14121,11 @@ stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability
 	static char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s, 10, "ability%i", i);
+		Format(s, sizeof(s), "ability%i", i);
 		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			static char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
 			if(strcmp(ability_name, ability_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
@@ -14194,7 +14133,7 @@ stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability
 			}
 
 			static char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, 64);
+			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
 			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
@@ -14215,11 +14154,11 @@ stock float GetArgumentF(int index, const char[] plugin_name, const char[] abili
 	static char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s, 10, "ability%i", i);
+		Format(s, sizeof(s), "ability%i", i);
 		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			static char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
 			if(strcmp(ability_name, ability_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
@@ -14227,7 +14166,7 @@ stock float GetArgumentF(int index, const char[] plugin_name, const char[] abili
 			}
 
 			static char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, 64);
+			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
 			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
@@ -14253,11 +14192,11 @@ stock void GetArgumentS(int index, const char[] plugin_name, const char[] abilit
 	static char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s, 10, "ability%i", i);
+		Format(s, sizeof(s), "ability%i", i);
 		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			static char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
 			if(strcmp(ability_name, ability_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
@@ -14265,7 +14204,7 @@ stock void GetArgumentS(int index, const char[] plugin_name, const char[] abilit
 			}
 
 			static char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, 64);
+			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
 			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
 			{
 				KvGoBack(BossKV[Special[index]]);
@@ -14292,7 +14231,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	int sounds;
 	while(++sounds)  // Just keep looping until there's no keys left
 	{
-		IntToString(sounds, key, 10);
+		IntToString(sounds, key, sizeof(key));
 		KvGetString(BossKV[Special[boss]], key, file, length);
 		if(!file[0])
 		{
@@ -14306,9 +14245,9 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 
 	static char path[PLATFORM_MAX_PATH], temp[6];
 	int choosen = GetRandomInt(1, sounds);
-	Format(key, 10, "%i_overlay", choosen);	// Don't ask me why this format just go with it
-	KvGetString(BossKV[Special[boss]], key, path, PLATFORM_MAX_PATH);
-	if(path[0] != '\0')
+	Format(key, sizeof(key), "%i_overlay", choosen);	// Don't ask me why this format just go with it
+	KvGetString(BossKV[Special[boss]], key, path, sizeof(path));
+	if(path[0])
 	{
 		TFTeam team = TF2_GetClientTeam(Boss[boss]);
 		for(int client=1; client<=MaxClients; client++)
@@ -14317,7 +14256,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 				DoOverlay(client, path);
 		}
 
-		Format(path, PLATFORM_MAX_PATH, "%i_overlay_time", choosen);
+		Format(path, sizeof(path), "%i_overlay_time", choosen);
 		float time = KvGetFloat(BossKV[Special[boss]], path, 0.0);
 		if(time > 0)
 			CreateTimer(time, Timer_RemoveOverlay, team, TIMER_FLAG_NO_MAPCHANGE);
@@ -14325,36 +14264,36 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		FF2Dbg("%s | %i | %f", path, view_as<int>(team), time);
 	}
 
-	Format(key, 10, "%imusic", choosen);	// And this...
-	KvGetString(BossKV[Special[boss]], key, temp, 6);
-	if(temp[0] != '\0')
+	Format(key, sizeof(key), "%imusic", choosen);	// And this...
+	KvGetString(BossKV[Special[boss]], key, temp, sizeof(temp));
+	if(temp[0])
 	{
 		float time = KvGetFloat(BossKV[Special[boss]], key, 0.0);
 
 		static char name[64], artist[64];
 
-		IntToString(choosen, key, 10);
-		KvGetString(BossKV[Special[boss]], key, path, PLATFORM_MAX_PATH);
+		IntToString(choosen, key, sizeof(key));
+		KvGetString(BossKV[Special[boss]], key, path, sizeof(path));
 
-		Format(key, 10, "%iname", choosen);
-		KvGetString(BossKV[Special[boss]], key, name, 64);
+		Format(key, sizeof(key), "%iname", choosen);
+		KvGetString(BossKV[Special[boss]], key, name, sizeof(name));
 
-		Format(key, 10, "%iartist", choosen);
-		KvGetString(BossKV[Special[boss]], key, artist, 64);
+		Format(key, sizeof(key), "%iartist", choosen);
+		KvGetString(BossKV[Special[boss]], key, artist, sizeof(artist));
 
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsValidClient(client))
 			{
 				StopMusic(client);
-				strcopy(currentBGM[client], PLATFORM_MAX_PATH, path);
+				strcopy(currentBGM[client], sizeof(currentBGM[]), path);
 				PlayBGM(client, path, time, name, artist);
 			}
 		}
 		return false; // Don't return to play sound
 	}
 
-	IntToString(choosen, key, 10);
+	IntToString(choosen, key, sizeof(key));
 	KvGetString(BossKV[Special[boss]], key, file, length);  // Populate file
 	return true;
 }
@@ -14377,7 +14316,7 @@ stock bool RandomSoundAbility(const char[] sound, char[] file, int length, int b
 		if(!file[0])
 			break;  //Assume that there's no more sounds
 
-		Format(key, 10, "slot%i", sounds);
+		Format(key, sizeof(key), "slot%i", sounds);
 		if(KvGetNum(BossKV[Special[boss]], key, 0)==slot)
 		{
 			match[matches] = sounds;  //Found a match: let's store it in the array
@@ -14411,8 +14350,8 @@ stock bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0
 		if(!file[0])
 			break;  //Assume that there's no more sounds
 
-		Format(key, 10, "vo%i", sounds);
-		KvGetString(BossKV[Special[boss]], key, replacement, PLATFORM_MAX_PATH);
+		Format(key, sizeof(key), "vo%i", sounds);
+		KvGetString(BossKV[Special[boss]], key, replacement, sizeof(replacement));
 		if(!StrContains(replacement, oldFile, false))
 		{
 			match[matches] = sounds;  //Found a match: let's store it in the array
@@ -14431,8 +14370,8 @@ stock bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0
 void ForceTeamWin(int team)
 {
 	static char temp[PLATFORM_MAX_PATH];
-	GetCurrentMap(temp, PLATFORM_MAX_PATH);
-	if(temp[0] == '\0')
+	GetCurrentMap(temp, sizeof(temp));
+	if(!temp[0])
 		return;
 
 	int entity = FindEntityByClassname2(-1, "team_control_point_master");
@@ -14461,8 +14400,8 @@ public bool PickCharacter(int boss, int companion)
 			Call_PushCellRef(characterIndex);
 			static char newName[64];
 			KvRewind(BossKV[Special[boss]]);
-			KvGetString(BossKV[Special[boss]], "name", newName, 64);
-			Call_PushStringEx(newName, 64, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			KvGetString(BossKV[Special[boss]], "name", newName, sizeof(newName));
+			Call_PushStringEx(newName, sizeof(newName), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 			Call_PushCell(true);  //Preset
 			Call_Finish(action);
 			if(action == Plugin_Changed)
@@ -14475,7 +14414,7 @@ public bool PickCharacter(int boss, int companion)
 					for(int character; BossKV[character] && character<MAXSPECIALS; character++)
 					{
 						KvRewind(BossKV[character]);
-						KvGetString(BossKV[character], "name", characterName, 64);
+						KvGetString(BossKV[character], "name", characterName, sizeof(characterName));
 						if(StrEqual(newName, characterName, false))
 						{
 							foundExactMatch = character;
@@ -14487,7 +14426,7 @@ public bool PickCharacter(int boss, int companion)
 						}
 
 						//Do the same thing as above here, but look at the filename instead of the boss name
-						KvGetString(BossKV[character], "filename", characterName, 64);
+						KvGetString(BossKV[character], "filename", characterName, sizeof(characterName));
 						if(StrEqual(newName, characterName, false))
 						{
 							foundExactMatch = character;
@@ -14528,7 +14467,7 @@ public bool PickCharacter(int boss, int companion)
 					for(int character; BossKV[character] && character<MAXSPECIALS; character++)
 					{
 						KvRewind(BossKV[character]);
-						KvGetString(BossKV[character], "name", characterName, 64);
+						KvGetString(BossKV[character], "name", characterName, sizeof(characterName));
 						if(StrEqual(xIncoming[client], characterName, false))
 						{
 							foundExactMatch = character;
@@ -14540,7 +14479,7 @@ public bool PickCharacter(int boss, int companion)
 						}
 
 						//Do the same thing as above here, but look at the filename instead of the boss name
-						KvGetString(BossKV[character], "filename", characterName, 64);
+						KvGetString(BossKV[character], "filename", characterName, sizeof(characterName));
 						if(StrEqual(xIncoming[client], characterName, false))
 						{
 							foundExactMatch = character;
@@ -14595,14 +14534,14 @@ public bool PickCharacter(int boss, int companion)
 
 			static char companionName[64];
 			KvRewind(BossKV[Special[boss]]);
-			KvGetString(BossKV[Special[boss]], "companion", companionName, 64);
+			KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
 			if(KvGetNum(BossKV[Special[boss]], "blocked") ||
 			   KvGetNum(BossKV[Special[boss]], "donator") ||
 			   KvGetNum(BossKV[Special[boss]], "admin") ||
 			   KvGetNum(BossKV[Special[boss]], "owner") ||
 			   KvGetNum(BossKV[Special[boss]], "theme") ||
 			  (KvGetNum(BossKV[Special[boss]], "nofirst") && RoundCount<=arenaRounds) ||
-			  (companionName[0]!='\0' && !DuoMin) ||
+			  (companionName[0] && !DuoMin) ||
 			  (Enabled3 && (KvGetNum(BossKV[Special[boss]], "noversus")==2 ||
 			  (KvGetNum(BossKV[Special[boss]], "noversus")==1 && BossSwitched[boss]) ||
 			  (KvGetNum(BossKV[Special[boss]], "bossteam")==BossTeam && BossSwitched[boss]) ||
@@ -14618,20 +14557,20 @@ public bool PickCharacter(int boss, int companion)
 	{
 		static char bossName[64], companionName[64];
 		KvRewind(BossKV[Special[boss]]);
-		KvGetString(BossKV[Special[boss]], "companion", companionName, 64, "=Failed companion name=");
+		KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName), "=Failed companion name=");
 
 		int character;
 		while(character < Specials)  //Loop through all the bosses to find the companion we're looking for
 		{
 			KvRewind(BossKV[character]);
-			KvGetString(BossKV[character], "name", bossName, 64, "=Failed name=");
+			KvGetString(BossKV[character], "name", bossName, sizeof(bossName), "=Failed name=");
 			if(StrEqual(bossName, companionName, false))
 			{
 				Special[companion] = character;
 				break;
 			}
 
-			KvGetString(BossKV[character], "filename", bossName, 64, "=Failed name=");
+			KvGetString(BossKV[character], "filename", bossName, sizeof(bossName), "=Failed name=");
 			if(StrEqual(bossName, companionName, false))
 			{
 				Special[companion] = character;
@@ -14640,7 +14579,7 @@ public bool PickCharacter(int boss, int companion)
 			character++;
 		}
 
-		if(character==Specials)  //Companion not found
+		if(character == Specials)  //Companion not found
 			return false;
 	}
 
@@ -14648,12 +14587,12 @@ public bool PickCharacter(int boss, int companion)
 	Action action;
 	Call_StartForward(OnSpecialSelected);
 	Call_PushCell(companion);
-	int characterIndex=Special[companion];
+	int characterIndex = Special[companion];
 	Call_PushCellRef(characterIndex);
 	static char newName[64];
 	KvRewind(BossKV[Special[companion]]);
-	KvGetString(BossKV[Special[companion]], "name", newName, 64);
-	Call_PushStringEx(newName, 64, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	KvGetString(BossKV[Special[companion]], "name", newName, sizeof(newName));
+	Call_PushStringEx(newName, sizeof(newName), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCell(false);  //Not preset
 	Call_Finish(action);
 	if(action == Plugin_Changed)
@@ -14666,7 +14605,7 @@ public bool PickCharacter(int boss, int companion)
 			for(int character; BossKV[character] && character<MAXSPECIALS; character++)
 			{
 				KvRewind(BossKV[character]);
-				KvGetString(BossKV[character], "name", characterName, 64);
+				KvGetString(BossKV[character], "name", characterName, sizeof(characterName));
 				if(StrEqual(newName, characterName, false))
 				{
 					foundExactMatch = character;
@@ -14678,7 +14617,7 @@ public bool PickCharacter(int boss, int companion)
 				}
 
 				//Do the same thing as above here, but look at the filename instead of the boss name
-				KvGetString(BossKV[character], "filename", characterName, 64);
+				KvGetString(BossKV[character], "filename", characterName, sizeof(characterName));
 				if(StrEqual(newName, characterName, false))
 				{
 					foundExactMatch = character;
@@ -14718,8 +14657,8 @@ void FindCompanion(int boss, int players, bool[] omit)
 	static int playersNeeded = 2;
 	static char companionName[64];
 	KvRewind(BossKV[Special[boss]]);
-	KvGetString(BossKV[Special[boss]], "companion", companionName, 64);
-	if(playersNeeded<players && companionName[0]!='\0')  //Only continue if we have enough players and if the boss has a companion
+	KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
+	if(playersNeeded<players && companionName[0])  //Only continue if we have enough players and if the boss has a companion
 	{
 		int companion = GetRandomValidClient(omit);
 		Boss[companion] = companion;
@@ -14778,14 +14717,14 @@ public Action QueuePanelCmd(int client, int args)
 	bool[] added = new bool[MaxClients+1];
 
 	Handle panel = CreatePanel();
-	Format(text, 64, "%T", "thequeue", client);  //"Boss Queue"
+	Format(text, sizeof(text), "%T", "thequeue", client);  //"Boss Queue"
 	SetPanelTitle(panel, text);
 	for(int boss; boss<=MaxClients; boss++)  //Add the current bosses to the top of the list
 	{
 		if(IsBoss(boss))
 		{
 			added[boss] = true;  //Don't want the bosses to show up again in the actual queue list
-			Format(text, 64, "%N-%i", boss, QueuePoints[boss]);
+			Format(text, sizeof(text), "%N-%i", boss, QueuePoints[boss]);
 			DrawPanelItem(panel, text);
 			items++;
 		}
@@ -14802,7 +14741,7 @@ public Action QueuePanelCmd(int client, int args)
 			continue;
 		}
 
-		Format(text, 64, "%N-%i", target, QueuePoints[target]);
+		Format(text, sizeof(text), "%N-%i", target, QueuePoints[target]);
 		if(client != target)
 		{
 			DrawPanelItem(panel, text);
@@ -14816,7 +14755,7 @@ public Action QueuePanelCmd(int client, int args)
 	}
 	while(items < 9);
 
-	Format(text, 64, "%T (%T)", "your_points", client, QueuePoints[client], "to0", client);  //"Your queue point(s) is {1} (set to 0)"
+	Format(text, sizeof(text), "%T (%T)", "your_points", client, QueuePoints[client], "to0", client);  //"Your queue point(s) is {1} (set to 0)"
 	DrawPanelItem(panel, text);
 
 	SendPanelToClient(panel, client, QueuePanelH, MENU_TIME_FOREVER);
@@ -14838,26 +14777,26 @@ public Action ResetQueuePointsCmd(int client, int args)
 		return Plugin_Handled;
 	}
 
-	AdminId admin=GetUserAdmin(client);	 //Normal players
+	AdminId admin = GetUserAdmin(client);	 //Normal players
 	if((admin==INVALID_ADMIN_ID) || !GetAdminFlag(admin, Admin_Cheats))
 	{
 		TurnToZeroPanel(client, client);
 		return Plugin_Handled;
 	}
 
-	if(args!=1)  //Admins
+	if(args != 1)  //Admins
 	{
 		FReplyToCommand(client, "Usage: ff2_resetqueuepoints <target>");
 		return Plugin_Handled;
 	}
 
 	static char pattern[MAX_TARGET_LENGTH];
-	GetCmdArg(1, pattern, MAX_TARGET_LENGTH);
+	GetCmdArg(1, pattern, sizeof(pattern));
 	static char targetName[MAX_TARGET_LENGTH];
 	int targets[MAXPLAYERS], matches;
 	bool targetNounIsMultiLanguage;
 
-	if((matches=ProcessTargetString(pattern, client, targets, 1, 0, targetName, MAX_TARGET_LENGTH, targetNounIsMultiLanguage)) < 1)
+	if((matches=ProcessTargetString(pattern, client, targets, 1, 0, targetName, sizeof(targetName), targetNounIsMultiLanguage)) < 1)
 	{
 		ReplyToTargetError(client, matches);
 		return Plugin_Handled;
@@ -14911,20 +14850,20 @@ public Action TurnToZeroPanel(int client, int target)
 
 	Handle panel = CreatePanel();
 	static char text[128];
-	if(client==target)
+	if(client == target)
 	{
-		Format(text, 128, "%T", "to0_title", client);  //Do you really want to set your queue points to 0?
+		Format(text, sizeof(text), "%T", "to0_title", client);  //Do you really want to set your queue points to 0?
 	}
 	else
 	{
-		Format(text, 128, "%T", "to0_title_admin", client, target);  //Do you really want to set {1}'s queue points to 0?
+		Format(text, sizeof(text), "%T", "to0_title_admin", client, target);  //Do you really want to set {1}'s queue points to 0?
 	}
 
 	PrintToChat(client, text);
 	SetPanelTitle(panel, text);
-	Format(text, 128, "%T", "Yes", client);
+	Format(text, sizeof(text), "%T", "Yes", client);
 	DrawPanelItem(panel, text);
-	Format(text, 128, "%T", "No", client);
+	Format(text, sizeof(text), "%T", "No", client);
 	DrawPanelItem(panel, text);
 	shortname[client] = target;
 	SendPanelToClient(panel, client, TurnToZeroPanelH, MENU_TIME_FOREVER);
@@ -14962,13 +14901,13 @@ void DoOverlay(int client, const char[] overlay)
 {
 	int flags = GetCommandFlags("r_screenoverlay");
 	SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
-	if(overlay[0] == '\0')
+	if(overlay[0])
 	{
-		ClientCommand(client, "r_screenoverlay off");
+		ClientCommand(client, "r_screenoverlay \"%s\"", overlay);
 	}
 	else
 	{
-		ClientCommand(client, "r_screenoverlay \"%s\"", overlay);
+		ClientCommand(client, "r_screenoverlay off");
 	}
 	SetCommandFlags("r_screenoverlay", flags);
 }
@@ -15038,27 +14977,27 @@ public Action FF2Panel(int client, int args)  //._.
 	Handle panel = CreatePanel();
 	char text[256];
 	SetGlobalTransTarget(client);
-	Format(text, 256, "%t", "menu_1");  //What's up?
+	Format(text, sizeof(text), "%t", "menu_1");  //What's up?
 	SetPanelTitle(panel, text);
-	Format(text, 256, "%t", "menu_2");  //Investigate the boss's current health level (/ff2hp)
+	Format(text, sizeof(text), "%t", "menu_2");  //Investigate the boss's current health level (/ff2hp)
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_3");  //Boss Preferences (/ff2boss)
+	Format(text, sizeof(text), "%t", "menu_3");  //Boss Preferences (/ff2boss)
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_7");  //Changes to my class in FF2 (/ff2classinfo)
+	Format(text, sizeof(text), "%t", "menu_7");  //Changes to my class in FF2 (/ff2classinfo)
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_4");  //What's new? (/ff2new).
+	Format(text, sizeof(text), "%t", "menu_4");  //What's new? (/ff2new).
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_5");  //Queue points
+	Format(text, sizeof(text), "%t", "menu_5");  //Queue points
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_0");  //Toggle HUDs (/ff2hud)
+	Format(text, sizeof(text), "%t", "menu_0");  //Toggle HUDs (/ff2hud)
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_8");  //Toggle music (/ff2music)
+	Format(text, sizeof(text), "%t", "menu_8");  //Toggle music (/ff2music)
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_9");  //Toggle monologues (/ff2voice)
+	Format(text, sizeof(text), "%t", "menu_9");  //Toggle monologues (/ff2voice)
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_9a");  //Toggle info about changes of classes in FF2
+	Format(text, sizeof(text), "%t", "menu_9a");  //Toggle info about changes of classes in FF2
 	DrawPanelItem(panel, text);
-	Format(text, 256, "%t", "menu_6");  //Exit
+	Format(text, sizeof(text), "%t", "menu_6");  //Exit
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, FF2PanelH, MENU_TIME_FOREVER);
 	CloseHandle(panel);
@@ -15074,8 +15013,8 @@ public Action NewPanelCmd(int client, int args)
 	}
 
 	static char url[192];
-	cvarChangelog.GetString(url, 192);
-	Format(url, 192, "%s#%s.%s.%s", url, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, FORK_STABLE_REVISION);
+	cvarChangelog.GetString(url, sizeof(url));
+	Format(url, sizeof(url), "%s#%s.%s.%s", url, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, FORK_STABLE_REVISION);
 	ShowMOTDPanel(client, "Unofficial FF2 Version Info", url, MOTDPANEL_TYPE_URL);
 	return Plugin_Handled;
 }
@@ -15173,142 +15112,135 @@ public Action HelpPanelClass(int client)
 		return Plugin_Continue;
 	}
 
-	static char text[512];
+	char text[512];
 	TFClassType class = TF2_GetPlayerClass(client);
 	SetGlobalTransTarget(client);
 	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=8
 	switch(class)
 	{
 		case TFClass_Scout:
-			Format(text, 512, "%t", "help_scout");
+			FormatEx(text, sizeof(text), "%t", "help_scout");
 
 		case TFClass_Soldier:
-			Format(text, 512, "%t", "help_soldier");
+			FormatEx(text, sizeof(text), "%t", "help_soldier");
 
 		case TFClass_Pyro:
-			Format(text, 512, "%t", "help_pyro");
+			FormatEx(text, sizeof(text), "%t", "help_pyro");
 
 		case TFClass_DemoMan:
-			Format(text, 512, "%t", "help_demo");
+			FormatEx(text, sizeof(text), "%t", "help_demo");
 
 		case TFClass_Heavy:
-			Format(text, 512, "%t", "help_heavy");
+			FormatEx(text, sizeof(text), "%t", "help_heavy");
 
 		case TFClass_Engineer:
-			Format(text, 512, "%t", "help_eggineer");
+			FormatEx(text, sizeof(text), "%t", "help_eggineer");
 
 		case TFClass_Medic:
-			Format(text, 512, "%t", "help_medic");
+			FormatEx(text, sizeof(text), "%t", "help_medic");
 
 		case TFClass_Sniper:
-			Format(text, 512, "%t", "help_sniper");
+			FormatEx(text, sizeof(text), "%t", "help_sniper");
 
 		case TFClass_Spy:
-			Format(text, 512, "%t", "help_spie");
-
-		default:
-			Format(text, 512, "");
+			FormatEx(text, sizeof(text), "%t", "help_spie");
 	}
 
-	Format(text, 512, "%t\n%s", "help_melee", text);
+	Format(text, sizeof(text), "%t\n%s", "help_melee", text);
 	Handle panel = CreatePanel();
 	SetPanelTitle(panel, text);
-	Format(text, 512, "%t", "Exit");
+	FormatEx(text, sizeof(text), "%t", "Exit");
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, HintPanelH, 20);
 	CloseHandle(panel);
 	#else
-	static char translation[64];
+	char translation[64];
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 	if(IsValidEntity(weapon))
 	{
-		Format(translation, 64, "primary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		FormatEx(translation, sizeof(translation), "primary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
 		if(TranslationPhraseExists(translation))
 		{
-			Format(text, 512, "%t\n", translation);
+			FormatEx(text, sizeof(text), "%t\n", translation);
 		}
 		else
 		{
 			switch(class)
 			{
 				case TFClass_Scout:
-					Format(text, 512, "%t\n", "primary_scout");
+					FormatEx(text, sizeof(text), "%t\n", "primary_scout");
 
 				case TFClass_Soldier:
-					Format(text, 512, "%t\n", "primary_soldier");
+					FormatEx(text, sizeof(text), "%t\n", "primary_soldier");
 
 				case TFClass_Pyro:
-					Format(text, 512, "%t\n", "primary_pyro");
+					FormatEx(text, sizeof(text), "%t\n", "primary_pyro");
 
 				case TFClass_DemoMan:
-					Format(text, 512, "%t\n", "primary_demo");
+					FormatEx(text, sizeof(text), "%t\n", "primary_demo");
 
 				case TFClass_Heavy:
-					Format(text, 512, "%t\n", "primary_heavy");
+					FormatEx(text, sizeof(text), "%t\n", "primary_heavy");
 
 				case TFClass_Engineer:
-					Format(text, 512, "%t\n", "primary_engineer");
+					FormatEx(text, sizeof(text), "%t\n", "primary_engineer");
 
 				case TFClass_Medic:
-					Format(text, 512, "%t\n", "primary_medic");
+					FormatEx(text, sizeof(text), "%t\n", "primary_medic");
 
 				case TFClass_Sniper:
-					Format(text, 512, "%t\n", "primary_sniper");
+					FormatEx(text, sizeof(text), "%t\n", "primary_sniper");
 
 				case TFClass_Spy:
-					Format(text, 512, "%t\n", "primary_spy");
+					FormatEx(text, sizeof(text), "%t\n", "primary_spy");
 
 				default:
-					Format(text, 512, "%t\n", "primary_merc");
+					FormatEx(text, sizeof(text), "%t\n", "primary_merc");
 			}
 		}
-	}
-	else
-	{	
-		strcopy(text, 512, "");
 	}
 
 	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 	if(IsValidEntity(weapon))
 	{
-		Format(translation, 64, "secondary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		FormatEx(translation, sizeof(translation), "secondary_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
 		if(TranslationPhraseExists(translation))
 		{
-			Format(text, 512, "%s%t\n", text, translation);
+			Format(text, sizeof(text), "%s%t\n", text, translation);
 		}
 		else
 		{
 			switch(class)
 			{
 				case TFClass_Scout:
-					Format(text, 512, "%s%t\n", text, "secondary_scout");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_scout");
 
 				case TFClass_Soldier:
-					Format(text, 512, "%s%t\n", text, "secondary_soldier");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_soldier");
 
 				case TFClass_Pyro:
-					Format(text, 512, "%s%t\n", text, "secondary_pyro");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_pyro");
 
 				case TFClass_DemoMan:
-					Format(text, 512, "%s%t\n", text, "secondary_demo");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_demo");
 
 				case TFClass_Heavy:
-					Format(text, 512, "%s%t\n", text, "secondary_heavy");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_heavy");
 
 				case TFClass_Engineer:
-					Format(text, 512, "%s%t\n", text, "secondary_engineer");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_engineer");
 
 				case TFClass_Medic:
-					Format(text, 512, "%s%t\n", text, "secondary_medic");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_medic");
 
 				case TFClass_Sniper:
-					Format(text, 512, "%s%t\n", text, "secondary_sniper");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_sniper");
 
 				case TFClass_Spy:
-					Format(text, 512, "%s%t\n", text, "secondary_spy");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_spy");
 
 				default:
-					Format(text, 512, "%s%t\n", text, "secondary_merc");
+					Format(text, sizeof(text), "%s%t\n", text, "secondary_merc");
 			}
 		}
 	}
@@ -15316,44 +15248,44 @@ public Action HelpPanelClass(int client)
 	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
 	if(IsValidEntity(weapon))
 	{
-		Format(translation, 64, "melee_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		FormatEx(translation, sizeof(translation), "melee_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
 		if(TranslationPhraseExists(translation))
 		{
-			Format(text, 512, "%s%t\n", text, translation);
+			Format(text, sizeof(text), "%s%t\n", text, translation);
 		}
 		else
 		{
 			switch(class)
 			{
 				case TFClass_Scout:
-					Format(text, 512, "%s%t\n", text, "melee_scout");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_scout");
 
 				case TFClass_Soldier:
-					Format(text, 512, "%s%t\n", text, "melee_soldier");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_soldier");
 
 				case TFClass_Pyro:
-					Format(text, 512, "%s%t\n", text, "melee_pyro");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_pyro");
 
 				case TFClass_DemoMan:
-					Format(text, 512, "%s%t\n", text, "melee_demo");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_demo");
 
 				case TFClass_Heavy:
-					Format(text, 512, "%s%t\n", text, "melee_heavy");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_heavy");
 
 				case TFClass_Engineer:
-					Format(text, 512, "%s%t\n", text, "melee_engineer");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_engineer");
 
 				case TFClass_Medic:
-					Format(text, 512, "%s%t\n", text, "melee_medic");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_medic");
 
 				case TFClass_Sniper:
-					Format(text, 512, "%s%t\n", text, "melee_sniper");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_sniper");
 
 				case TFClass_Spy:
-					Format(text, 512, "%s%t\n", text, "melee_spy");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_spy");
 
 				default:
-					Format(text, 512, "%s%t\n", text, "melee_merc");
+					Format(text, sizeof(text), "%s%t\n", text, "melee_merc");
 			}
 		}
 	}
@@ -15361,30 +15293,30 @@ public Action HelpPanelClass(int client)
 	weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Building);
 	if(IsValidEntity(weapon))
 	{
-		Format(translation, 64, "pda_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
+		FormatEx(translation, sizeof(translation), "pda_%i", GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"));
 		if(TranslationPhraseExists(translation))
 		{
-			Format(text, 512, "%s%t\n", text, translation);
+			Format(text, sizeof(text), "%s%t\n", text, translation);
 		}
 		else
 		{
 			switch(class)
 			{
 				case TFClass_Engineer:
-					Format(text, 512, "%s%t\n", text, "pda_engineer");
+					Format(text, sizeof(text), "%s%t\n", text, "pda_engineer");
 
 				case TFClass_Spy:
-					Format(text, 512, "%s%t\n", text, "pda_spy");
+					Format(text, sizeof(text), "%s%t\n", text, "pda_spy");
 			}
 		}
 	}
 
-	if(text[0] != '\0')
+	if(text[0])
 	{
-		Format(text, 512, "%t\n\n%s", "info_title", text);
+		Format(text, sizeof(text), "%t\n\n%s", "info_title", text);
 		Handle panel = CreatePanel();
 		SetPanelTitle(panel, text);
-		Format(text, 512, "%t", "Exit");
+		FormatEx(text, sizeof(text), "%t", "Exit");
 		DrawPanelItem(panel, text);
 		SendPanelToClient(panel, client, HintPanelH, 20);
 		CloseHandle(panel);
@@ -15400,21 +15332,21 @@ void HelpPanelBoss(int boss)
 
 	char text[512], language[20];
 	GetLanguageInfo(GetClientLanguage(Boss[boss]), language, 8, text, 8);
-	Format(language, 20, "description_%s", language);
+	FormatEx(language, sizeof(language), "description_%s", language);
 
 	KvRewind(BossKV[Special[boss]]);
-	KvGetString(BossKV[Special[boss]], language, text, 512);
+	KvGetString(BossKV[Special[boss]], language, text, sizeof(text));
 	if(!text[0])
 	{
-		KvGetString(BossKV[Special[boss]], "description_en", text, 512);  //Default to English if their language isn't available
+		KvGetString(BossKV[Special[boss]], "description_en", text, sizeof(text));  //Default to English if their language isn't available
 		if(!text[0])
 			return;
 	}
-	ReplaceString(text, 512, "\\n", "\n");
+	ReplaceString(text, sizeof(text), "\\n", "\n");
 
 	Handle panel = CreatePanel();
 	SetPanelTitle(panel, text);
-	Format(text, 512, "%T", "Exit", Boss[boss]);
+	FormatEx(text, sizeof(text), "%T", "Exit", Boss[boss]);
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, Boss[boss], HintPanelH, 20);
 	CloseHandle(panel);
@@ -15431,7 +15363,7 @@ public Action MusicTogglePanelCmd(int client, int args)
 	if(args)
 	{
 		static char cmd[64];
-		GetCmdArgString(cmd, 64);
+		GetCmdArgString(cmd, sizeof(cmd));
 		if(StrContains(cmd, "off", false)!=-1 || StrContains(cmd, "disable", false)!=-1 || StrContains(cmd, "0", false)!=-1)
 		{
 			ToggleBGM(client, false);
@@ -15466,28 +15398,28 @@ public Action MusicTogglePanel(int client)
 	}
 	else
 	{
-		static char title[128];
+		char title[128];
 		Handle togglemusic = CreateMenu(MusicTogglePanelH);
 		SetGlobalTransTarget(client);
-		Format(title, 128, "%t", "theme_menu");
+		FormatEx(title, sizeof(title), "%t", "theme_menu");
 		SetMenuTitle(togglemusic, title, title);
 		if(ToggleMusic[client])
 		{
-			Format(title, 128, "%t", "themes_disable");
+			FormatEx(title, sizeof(title), "%t", "themes_disable");
 			AddMenuItem(togglemusic, title, title);
-			Format(title, 128, "%t", "theme_skip");
+			FormatEx(title, sizeof(title), "%t", "theme_skip");
 			AddMenuItem(togglemusic, title, title);
-			Format(title, 128, "%t", "theme_shuffle");
+			FormatEx(title, sizeof(title), "%t", "theme_shuffle");
 			AddMenuItem(togglemusic, title, title);
 			if(cvarSongInfo.IntValue >= 0)
 			{
-				Format(title, 128, "%t", "theme_select");
+				FormatEx(title, sizeof(title), "%t", "theme_select");
 				AddMenuItem(togglemusic, title, title);
 			}
 		}
 		else
 		{
-			Format(title, 128, "%t", "themes_enable");
+			FormatEx(title, sizeof(title), "%t", "themes_enable");
 			AddMenuItem(togglemusic, title, title);
 		}
 		SetMenuExitButton(togglemusic, true);
@@ -15591,16 +15523,15 @@ public Action Command_SkipSong(int client, int args)
 
 	StopMusic(client, true);
 
-	static char id3[6][256];
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 	{
-		static char music[PLATFORM_MAX_PATH];
+		char music[PLATFORM_MAX_PATH], id3[6][256];
 		int index;
 		do
 		{
 			index++;
-			Format(music, 10, "time%i", index);
+			FormatEx(music, 10, "time%i", index);
 		}
 		while(KvGetFloat(BossKV[Special[0]], music) > 1);
 
@@ -15614,10 +15545,10 @@ public Action Command_SkipSong(int client, int args)
 		if(cursongId[client] >= index)
 			cursongId[client] = 1;
 
-		static char lives[256];
-		Format(lives, 256, "life%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], lives, lives, 256);
-		if(lives[0] != '\0')
+		char lives[256];
+		FormatEx(lives, sizeof(lives), "life%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+		if(lives[0])
 		{
 			if(StringToInt(lives) != BossLives[Special[0]])
 			{
@@ -15633,27 +15564,26 @@ public Action Command_SkipSong(int client, int args)
 			}
 		}
 
-		Format(music, 10, "time%i", cursongId[client]);
+		FormatEx(music, 10, "time%i", cursongId[client]);
 		float time = KvGetFloat(BossKV[Special[0]], music);
-		Format(music, 10, "path%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], music, music, PLATFORM_MAX_PATH);
+		FormatEx(music, 10, "path%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
 
-		Format(id3[0], 256, "name%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], id3[0], id3[2], 256);
-		Format(id3[1], 256, "artist%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], id3[1], id3[3], 256);
+		FormatEx(id3[0], sizeof(id3[]), "name%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+		FormatEx(id3[1], sizeof(id3[]), "artist%i", cursongId[client]);
+		KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
 
-		static char temp[PLATFORM_MAX_PATH];
-		Format(temp, PLATFORM_MAX_PATH, "sound/%s", music);
+		char temp[PLATFORM_MAX_PATH];
+		FormatEx(temp, sizeof(temp), "sound/%s", music);
 		if(FileExists(temp, true))
 		{
 			PlayBGM(client, music, time, id3[2], id3[3]);
 		}
 		else
 		{
-			char bossName[64];
-			KvGetString(BossKV[Special[0]], "filename", bossName, 64);
-			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
+			KvGetString(BossKV[Special[0]], "filename", lives, sizeof(lives));
+			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", lives, temp);
 			if(MusicTimer[client] != INVALID_HANDLE)
 				KillTimer(MusicTimer[client]);
 		}
@@ -15724,19 +15654,18 @@ public Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	static char id3[6][256];
 	Handle trackList = CreateMenu(Command_TrackListH);
 	SetGlobalTransTarget(client);
 	SetMenuTitle(trackList, "%t", "track_select");
 	KvRewind(BossKV[Special[0]]);
 	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 	{
-		static char music[PLATFORM_MAX_PATH];
+		char music[PLATFORM_MAX_PATH], id3[6][256];
 		int index;
 		do
 		{
 			index++;
-			Format(music, 10, "time%i", index);
+			FormatEx(music, 10, "time%i", index);
 		}
 		while(KvGetFloat(BossKV[Special[0]], music) > 1);
 
@@ -15746,29 +15675,29 @@ public Action Command_Tracklist(int client, int args)
 			return Plugin_Handled;
 		}
 
-		static char lives[256];
+		char lives[256];
 		for(int trackIdx=1; trackIdx<=index-1; trackIdx++)
 		{
-			Format(lives, 256, "life%i", trackIdx);
-			KvGetString(BossKV[Special[0]], lives, lives, 256);
-			if(lives[0] != '\0')
+			FormatEx(lives, sizeof(lives), "life%i", trackIdx);
+			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+			if(lives[0])
 			{
 				if(StringToInt(lives) != BossLives[Special[0]])
 					continue;
 			}
-			Format(id3[0], 256, "name%i", trackIdx);
-			KvGetString(BossKV[Special[0]], id3[0], id3[2], 256);
-			Format(id3[1], 256, "artist%i", trackIdx);
-			KvGetString(BossKV[Special[0]], id3[1], id3[3], 256);
-			GetSongTime(trackIdx, id3[5], 256);
+			FormatEx(id3[0], sizeof(id3[]), "name%i", trackIdx);
+			KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+			FormatEx(id3[1], sizeof(id3[]), "artist%i", trackIdx);
+			KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+			GetSongTime(trackIdx, id3[5], sizeof(id3[]));
 			if(!id3[3])
-				Format(id3[3], 256, "%t", "unknown_artist");
+				FormatEx(id3[3], sizeof(id3[]), "%t", "unknown_artist");
 
 			if(!id3[2])
-				Format(id3[2], 256, "%t", "unknown_song");
+				FormatEx(id3[2], sizeof(id3[]), "%t", "unknown_song");
 
-			Format(id3[4], 256, "%s - %s (%s)", id3[3], id3[2], id3[5]);
-			CRemoveTags(id3[4], 256);
+			FormatEx(id3[4], sizeof(id3[]), "%s - %s (%s)", id3[3], id3[2], id3[5]);
+			CRemoveTags(id3[4], sizeof(id3[]));
 			AddMenuItem(trackList, id3[4], id3[4]);
 		}
 	}
@@ -15782,20 +15711,20 @@ stock float GetSongLength(char[] trackIdx)
 {
 	float duration;
 	static char bgmTime[128];
-	KvGetString(BossKV[Special[0]], trackIdx, bgmTime, 128);
+	KvGetString(BossKV[Special[0]], trackIdx, bgmTime, sizeof(bgmTime));
 	if(StrContains(bgmTime, ":", false)!=-1) // new-style MM:SS:MSMS
 	{
 		static char time2[32][32];
-		int count = ExplodeString(bgmTime, ":", time2, 32, 32);
+		int count = ExplodeString(bgmTime, ":", time2, sizeof(time2), sizeof(time2));
 		if(count > 0)
 		{
+			char newTime[64];
 			for(int i; i<count; i+=3)
 			{
-				static char newTime[64];
 				int mins = StringToInt(time2[i])*60;
 				int secs = StringToInt(time2[i+1]);
 				int milsecs = StringToInt(time2[i+2]);
-				Format(newTime, 64, "%i.%i", mins+secs, milsecs);
+				FormatEx(newTime, sizeof(newTime), "%i.%i", mins+secs, milsecs);
 				duration = StringToFloat(newTime);
 			}
 		}
@@ -15809,8 +15738,8 @@ stock float GetSongLength(char[] trackIdx)
 
 stock void GetSongTime(int trackIdx, char[] timeStr, int length)
 {
-	static char songIdx[32];
-	Format(songIdx, 32, "time%i", trackIdx);
+	char songIdx[32];
+	FormatEx(songIdx, sizeof(songIdx), "time%i", trackIdx);
 	int time = RoundToFloor(GetSongLength(songIdx));
 	if(time/60 > 9)
 	{
@@ -15845,27 +15774,27 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 			KvRewind(BossKV[Special[0]]);
 			if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
 			{
-				static char music[PLATFORM_MAX_PATH];
+				char music[PLATFORM_MAX_PATH];
 				int track = param2+1;
-				Format(music, 10, "time%i", track);
+				FormatEx(music, 10, "time%i", track);
 
 				float time = GetSongLength(music);
-				Format(music, 10, "path%i", track);
-				KvGetString(BossKV[Special[0]], music, music, PLATFORM_MAX_PATH);
+				FormatEx(music, 10, "path%i", track);
+				KvGetString(BossKV[Special[0]], music, music, sizeof(music));
 
-				static char id3[4][256];
-				Format(id3[0], 256, "name%i", track);
-				KvGetString(BossKV[Special[0]], id3[0], id3[2], 256);
-				Format(id3[1], 256, "artist%i", track);
-				KvGetString(BossKV[Special[0]], id3[1], id3[3], 256);
+				char id3[4][256];
+				FormatEx(id3[0], sizeof(id3[]), "name%i", track);
+				KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+				FormatEx(id3[1], sizeof(id3[]), "artist%i", track);
+				KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
 
-				static char temp[PLATFORM_MAX_PATH], lives[256];
-				Format(temp, PLATFORM_MAX_PATH, "sound/%s", music);
+				char temp[PLATFORM_MAX_PATH], lives[256];
+				FormatEx(temp, sizeof(temp), "sound/%s", music);
 				if(FileExists(temp, true))
 				{
-					Format(lives, 256, "life%i", track);
-					KvGetString(BossKV[Special[0]], lives, lives, 256);
-					if(lives[0] != '\0')
+					FormatEx(lives, sizeof(lives), "life%i", track);
+					KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+					if(lives[0])
 					{
 						if(StringToInt(lives) != BossLives[Special[0]])
 						{
@@ -15880,9 +15809,9 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 				else
 				{
 					char bossName[64];
-					KvGetString(BossKV[Special[0]], "filename", bossName, 64);
+					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 					LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
-					if(MusicTimer[param1]!=INVALID_HANDLE)
+					if(MusicTimer[param1] != INVALID_HANDLE)
 						KillTimer(MusicTimer[param1]);
 				}
 			}
@@ -15921,7 +15850,7 @@ public Action VoiceTogglePanelCmd(int client, int args)
 
 public Action VoiceTogglePanel(int client)
 {
-	Handle panel=CreatePanel();
+	Handle panel = CreatePanel();
 	SetPanelTitle(panel, "Turn the Freak Fortress 2 voices...");
 	DrawPanelItem(panel, "On");
 	DrawPanelItem(panel, "Off");
@@ -15934,7 +15863,7 @@ public int VoiceTogglePanelH(Handle menu, MenuAction action, int client, int sel
 {
 	if(IsValidClient(client) && action==MenuAction_Select)
 	{
-		if(selection==2)
+		if(selection == 2)
 		{
 			ToggleVoice[client] = false;
 		}
@@ -15944,7 +15873,7 @@ public int VoiceTogglePanelH(Handle menu, MenuAction action, int client, int sel
 		}
 
 		FPrintToChat(client, "%t", "ff2_voice", selection==2 ? "off" : "on");	// TODO: Make this more multi-language friendly
-		if(selection==2)
+		if(selection == 2)
 			FPrintToChat(client, "%t", "ff2_voice2");
 	}
 }
@@ -16021,7 +15950,7 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 
 stock int GetHealingTarget(int client, bool checkgun=false)
 {
-	int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+	int medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 	if(!checkgun)
 	{
 		if(GetEntProp(medigun, Prop_Send, "m_bHealing"))
@@ -16033,7 +15962,7 @@ stock int GetHealingTarget(int client, bool checkgun=false)
 	if(IsValidEntity(medigun))
 	{
 		static char classname[64];
-		GetEntityClassname(medigun, classname, 64);
+		GetEntityClassname(medigun, classname, sizeof(classname));
 		if(!strcmp(classname, "tf_weapon_medigun", false))
 		{
 			if(GetEntProp(medigun, Prop_Send, "m_bHealing"))
@@ -16082,7 +16011,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	SetMenuTitle(menu, "%t", "select_charset");
 
 	char config[PLATFORM_MAX_PATH], charset[16][64], index[8];
-	BuildPath(Path_SM, config, PLATFORM_MAX_PATH, "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
@@ -16100,10 +16029,10 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		charsets++;
 		validCharsets[charsets] = total;
 
-		KvGetSectionName(Kv, charset[total-1], 64);
+		KvGetSectionName(Kv, charset[total-1], sizeof(charset[]));
 		if(!shuffle)
 		{
-			IntToString(total, index, 8);
+			IntToString(total, index, sizeof(index));
 			AddMenuItem(menu, index, charset[total-1]);
 		}
 	}
@@ -16123,7 +16052,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 
 			packs++;
 			choosen[current] = true;
-			IntToString(current+1, index, 8);
+			IntToString(current+1, index, sizeof(index));
 			AddMenuItem(menu, index, charset[current]);
 		}
 	}
@@ -16150,10 +16079,10 @@ public int Handler_VoteCharset(Handle menu, MenuAction action, int param1, int p
 		case MenuAction_VoteEnd:
 		{
 			char index[8], nextmap[32];
-			GetMenuItem(menu, param1, index, 8, _, FF2CharSetString, 42);
+			GetMenuItem(menu, param1, index, sizeof(index), _, FF2CharSetString, sizeof(FF2CharSetString));
 			cvarCharset.IntValue = StringToInt(index) ? StringToInt(index)-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;  //If param1 is 0 then we need to find a random charset
 
-			cvarNextmap.GetString(nextmap, 32);
+			cvarNextmap.GetString(nextmap, sizeof(nextmap));
 			FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);  //"The character set for {1} will be {2}."
 			isCharSetSelected = true;
 		}
@@ -16165,7 +16094,7 @@ public Action Command_Nextmap(int client, int args)
 	if(FF2CharSetString[0])
 	{
 		static char nextmap[42];
-		cvarNextmap.GetString(nextmap, 42);
+		cvarNextmap.GetString(nextmap, sizeof(nextmap));
 		FReplyToCommand(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
 	}
 	return Plugin_Handled;
@@ -16174,7 +16103,7 @@ public Action Command_Nextmap(int client, int args)
 public Action Command_Say(int client, int args)
 {
 	static char chat[128];
-	if(GetCmdArgString(chat, 128)<1 || !client)
+	if(GetCmdArgString(chat, sizeof(chat))<1 || !client)
 		return Plugin_Continue;
 
 	if(!strcmp(chat, "\"nextmap\"") && FF2CharSetString[0])
@@ -16231,7 +16160,7 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 			{
 				BossCharge[boss][slot] -= rageMin[client];
 			}
-			else if(rageMode[client] == 0)
+			else if(!rageMode[client])
 			{
 				BossCharge[boss][slot] = 0.0;
 			}
@@ -16417,7 +16346,7 @@ public int Native_FF2Version(Handle plugin, int numParams)
 	version[0] = StringToInt(MAJOR_REVISION);
 	version[1] = StringToInt(MINOR_REVISION);
 	version[2] = StringToInt(STABLE_REVISION);
-	SetNativeArray(1, version, 3);
+	SetNativeArray(1, version, sizeof(version));
 	#if defined DEV_REVISION
 	return true;
 	#else
@@ -16436,7 +16365,7 @@ public int Native_ForkVersion(Handle plugin, int numParams)
 	fversion[0] = StringToInt(FORK_MAJOR_REVISION);
 	fversion[1] = StringToInt(FORK_MINOR_REVISION);
 	fversion[2] = StringToInt(FORK_STABLE_REVISION);
-	SetNativeArray(1, fversion, 3);
+	SetNativeArray(1, fversion, sizeof(fversion));
 	#if defined FORK_DEV_REVISION
 	return true;
 	#else
@@ -16502,8 +16431,8 @@ public int Native_GetName(Handle plugin, int numParams)
 	char[] s = new char[dstrlen];
 
 	static char language[20];
-	GetLanguageInfo(client ? GetClientLanguage(client) : GetServerLanguage(), language, 20, s, 8);
-	Format(language, 20, "name_%s", language);
+	GetLanguageInfo(client ? GetClientLanguage(client) : GetServerLanguage(), language, sizeof(language), s, 8);
+	Format(language, sizeof(language), "name_%s", language);
 
 	if(see)
 	{
@@ -16519,8 +16448,8 @@ public int Native_GetName(Handle plugin, int numParams)
 		{
 			if(client)
 			{
-				GetLanguageInfo(GetServerLanguage(), language, 20, s, 8);
-				Format(language, 20, "name_%s", language);
+				GetLanguageInfo(GetServerLanguage(), language, 8, s, 8);
+				Format(language, sizeof(language), "name_%s", language);
 				KvGetString(BossKV[index], language, s, dstrlen);
 			}
 
@@ -16545,8 +16474,8 @@ public int Native_GetName(Handle plugin, int numParams)
 		{
 			if(client)
 			{
-				GetLanguageInfo(GetServerLanguage(), language, 20, s, 8);
-				Format(language, 20, "name_%s", language);
+				GetLanguageInfo(GetServerLanguage(), language, 8, s, 8);
+				Format(language, sizeof(language), "name_%s", language);
 				KvGetString(BossKV[Special[index]], language, s, dstrlen);
 			}
 
@@ -16646,10 +16575,10 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 	if(!ability_name[0])
 		return view_as<int>(KvGetFloat(BossKV[Special[index]],"ragedist",400.0));
 
-	static char s[10];
+	char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(s, 10, "ability%i", i);
+		FormatEx(s, sizeof(s), "ability%i", i);
 		if(KvJumpToKey(BossKV[Special[index]], s))
 		{
 			static char ability_name2[64];
@@ -16675,9 +16604,9 @@ public int Native_HasAbility(Handle plugin, int numParams)
 {
 	static char pluginName[64], abilityName[64];
 
-	int boss = GetNativeCell(1);
-	GetNativeString(2, pluginName, 64);
-	GetNativeString(3, abilityName, 64);
+	int boss=GetNativeCell(1);
+	GetNativeString(2, pluginName, sizeof(pluginName));
+	GetNativeString(3, abilityName, sizeof(abilityName));
 	if(boss==-1 || Special[boss]==-1 || !BossKV[Special[boss]])
 		return false;
 
@@ -16688,18 +16617,18 @@ public int Native_HasAbility(Handle plugin, int numParams)
 		return false;
 	}
 
-	static char ability[12];
+	char ability[12];
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
-		Format(ability, 12, "ability%i", i);
+		FormatEx(ability, sizeof(ability), "ability%i", i);
 		if(KvJumpToKey(BossKV[Special[boss]], ability))  //Does this ability number exist?
 		{
 			static char abilityName2[64];
-			KvGetString(BossKV[Special[boss]], "name", abilityName2, 64);
+			KvGetString(BossKV[Special[boss]], "name", abilityName2, sizeof(abilityName2));
 			if(StrEqual(abilityName, abilityName2))  //Make sure the ability names are equal
 			{
 				static char pluginName2[64];
-				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName2, 64);
+				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName2, sizeof(pluginName2));
 				if(!pluginName[0] || !pluginName2[0] || StrEqual(pluginName, pluginName2))  //Make sure the plugin names are equal
 					return true;
 			}
@@ -16713,17 +16642,17 @@ public int Native_DoAbility(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
-	UseAbility(ability_name, plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
+	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
 public int Native_GetAbilityArgument(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
 	return GetAbilityArgument(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
@@ -16731,17 +16660,17 @@ public int Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
 	return view_as<int>(GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5)));
 }
 
 public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
-	GetNativeString(2, plugin_name, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	static char ability_name[64];
-	GetNativeString(3, ability_name, 64);
+	GetNativeString(3, ability_name, sizeof(ability_name));
 	int dstrlen = GetNativeCell(6);
 	char[] s = new char[dstrlen+1];
 	GetAbilityArgumentString(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), s, dstrlen);
@@ -16753,9 +16682,9 @@ public int Native_GetArgNamedI(Handle plugin, int numParams)
 	static char plugin_name[64];
 	static char ability_name[64];
 	static char argument[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
-	GetNativeString(4, argument, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
+	GetNativeString(4, argument, sizeof(argument));
 	return GetArgumentI(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
@@ -16764,9 +16693,9 @@ public int Native_GetArgNamedF(Handle plugin, int numParams)
 	static char plugin_name[64];
 	static char ability_name[64];
 	static char argument[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
-	GetNativeString(4, argument, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
+	GetNativeString(4, argument, sizeof(argument));
 	return view_as<int>(GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5)));
 }
 
@@ -16775,9 +16704,9 @@ public int Native_GetArgNamedS(Handle plugin, int numParams)
 	static char plugin_name[64];
 	static char ability_name[64];
 	static char argument[64];
-	GetNativeString(2, plugin_name, 64);
-	GetNativeString(3, ability_name, 64);
-	GetNativeString(4, argument, 64);
+	GetNativeString(2, plugin_name, sizeof(plugin_name));
+	GetNativeString(3, ability_name, sizeof(ability_name));
+	GetNativeString(4, argument, sizeof(argument));
 	int dstrlen = GetNativeCell(6);
 	char[] s = new char[dstrlen+1];
 	GetArgumentS(GetNativeCell(1), plugin_name, ability_name, argument, s, dstrlen);
@@ -16800,7 +16729,7 @@ public int Native_GetFF2flags(Handle plugin, int numParams)
 
 public int Native_SetFF2flags(Handle plugin, int numParams)
 {
-	FF2flags[GetNativeCell(1)] = GetNativeCell(2);
+	FF2flags[GetNativeCell(1)]=GetNativeCell(2);
 }
 
 public int Native_GetQueuePoints(Handle plugin, int numParams)
@@ -16815,13 +16744,13 @@ public int Native_SetQueuePoints(Handle plugin, int numParams)
 
 public int Native_GetSpecialKV(Handle plugin, int numParams)
 {
-	int index = GetNativeCell(1);
-	bool isNumOfSpecial = view_as<bool>(GetNativeCell(2));
+	int index=GetNativeCell(1);
+	bool isNumOfSpecial=view_as<bool>(GetNativeCell(2));
 	if(isNumOfSpecial)
 	{
 		if(index!=-1 && index<Specials)
 		{
-			if(BossKV[index] != INVALID_HANDLE)
+			if(BossKV[index]!=INVALID_HANDLE)
 				KvRewind(BossKV[index]);
 
 			return view_as<int>(BossKV[index]);
@@ -16831,7 +16760,7 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 	{
 		if(index!=-1 && index<=MaxClients && Special[index]!=-1 && Special[index]<MAXSPECIALS)
 		{
-			if(BossKV[Special[index]] != INVALID_HANDLE)
+			if(BossKV[Special[index]]!=INVALID_HANDLE)
 				KvRewind(BossKV[Special[index]]);
 
 			return view_as<int>(BossKV[Special[index]]);
@@ -16966,12 +16895,10 @@ public int Native_RemoveClientShield(Handle plugin, int numParams)
 
 public int Native_LogError(Handle plugin, int numParams)
 {
-	static char message[192];
-	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
-	SetNativeString(1, message, 192);
-	Format(buffer, MAX_BUFFER_LENGTH, "%s", message);
-	VFormat(buffer2, MAX_BUFFER_LENGTH, buffer, 2);
-	LogToFile(eLog, buffer2);
+	static char buffer[MAX_BUFFER_LENGTH], message[256];
+	SetNativeString(1, buffer, sizeof(buffer));
+	VFormat(message, sizeof(message), buffer, 4);
+	LogToFile(eLog, message);
 }
 
 public int Native_Debug(Handle plugin, int numParams)
@@ -17118,14 +17045,15 @@ stock void MyAddServerTag(const char[] tag)
 		return;
 
 	static char currtags[128];
-	cvarTags.GetString(currtags, 128);
+	cvarTags.GetString(currtags, sizeof(currtags));
 	if(StrContains(currtags, tag) > -1)
 		return;
 
-	Format(currtags, 128, "%s%s%s", currtags, (currtags[0]!=0) ? "," : "", tag);
+	char newtags[128];
+	FormatEx(newtags, sizeof(newtags), "%s%s%s", currtags, currtags[0] ? "," : "", tag);
 	int flags = GetConVarFlags(cvarTags);
 	SetConVarFlags(cvarTags, flags & ~FCVAR_NOTIFY);
-	cvarTags.SetString(currtags);
+	cvarTags.SetString(newtags);
 	SetConVarFlags(cvarTags, flags);
 }
 
@@ -17135,12 +17063,12 @@ stock void MyRemoveServerTag(const char[] tag)
 		return;
 
 	static char newtags[128];
-	cvarTags.GetString(newtags, 128);
+	cvarTags.GetString(newtags, sizeof(newtags));
 	if(StrContains(newtags, tag) == -1)
 		return;
 
-	ReplaceString(newtags, 128, tag, "");
-	ReplaceString(newtags, 128, ",,", "");
+	ReplaceString(newtags, sizeof(newtags), tag, "");
+	ReplaceString(newtags, sizeof(newtags), ",,", "");
 	int flags = GetConVarFlags(cvarTags);
 	SetConVarFlags(cvarTags, flags & ~FCVAR_NOTIFY);
 	cvarTags.SetString(newtags);
@@ -17198,7 +17126,7 @@ public Action OnPickup(int entity, int client)  //Thanks friagram!
 	if(Enabled && IsValidClient(client))
 	{
 		static char classname[32];
-		GetEntityClassname(entity, classname, 32);
+		GetEntityClassname(entity, classname, sizeof(classname));
 		if(!StrContains(classname, "item_healthkit") && !(FF2flags[client] & FF2FLAG_ALLOW_HEALTH_PICKUPS))
 		{
 			return Plugin_Handled;
