@@ -2289,8 +2289,6 @@ public void LoadCharacter(const char[] character)
 	{
 		char item[6];
 		static char buffer[34];
-		int size = 1;
-
 		for(int size=1; ; size++)
 		{
 			FormatEx(item, sizeof(item), "map%d", size);
@@ -2370,7 +2368,7 @@ public void LoadCharacter(const char[] character)
 	}
 	KvRewind(BossKV[Specials]);
 
-	char key[PLATFORM_MAX_PATH]
+	char key[PLATFORM_MAX_PATH];
 	static char section[64];
 	KvSetString(BossKV[Specials], "filename", character);
 	KvGetString(BossKV[Specials], "name", config, sizeof(config));
@@ -5390,7 +5388,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 
 public Action ConfirmBoss(int client)
 {
-	char text[512]
+	char text[512];
 	static char language[20], boss[64];
 	GetLanguageInfo(GetClientLanguage(client), language, sizeof(language), text, sizeof(text));
 	Format(language, sizeof(language), "description_%s", language);
@@ -8237,10 +8235,8 @@ public Action Timer_CheckItems(Handle timer, any userid)
 
 					if(StrContains(wepIndexStr, "-1")==-1 && StrContains(wepIndexStr, "-2")==-1)
 					{
-						int wepIndex;
-						static char wepIndexes[768][32];
-						int weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
-						for(int wepIdx; wepIdx<=weaponIdxcount ; wepIdx++)
+						weaponIdxcount = ExplodeString(wepIndexStr, " ; ", wepIndexes, sizeof(wepIndexes), 32);
+						for(wepIdx=0; wepIdx<=weaponIdxcount ; wepIdx++)
 						{
 							if(!wepIndexes[wepIdx][0])
 								continue;
@@ -14219,7 +14215,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		return false;  // Requested sound not implemented for this boss
 	}
 
-	static char key[10];
+	char key[10];
 	int sounds;
 	while(++sounds)  // Just keep looping until there's no keys left
 	{
@@ -14235,9 +14231,10 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	if(!sounds)
 		return false;  //Found sound, but no sounds inside of it
 
-	static char path[PLATFORM_MAX_PATH], temp[6];
+	char path[PLATFORM_MAX_PATH]
+	static char temp[6];
 	int choosen = GetRandomInt(1, sounds);
-	Format(key, sizeof(key), "%i_overlay", choosen);	// Don't ask me why this format just go with it
+	FormatEx(key, sizeof(key), "%i_overlay", choosen);	// Don't ask me why this format just go with it
 	KvGetString(BossKV[Special[boss]], key, path, sizeof(path));
 	if(path[0])
 	{
@@ -14248,7 +14245,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 				DoOverlay(client, path);
 		}
 
-		Format(path, sizeof(path), "%i_overlay_time", choosen);
+		FormatEx(path, sizeof(path), "%i_overlay_time", choosen);
 		float time = KvGetFloat(BossKV[Special[boss]], path, 0.0);
 		if(time > 0)
 			CreateTimer(time, Timer_RemoveOverlay, team, TIMER_FLAG_NO_MAPCHANGE);
@@ -14256,7 +14253,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		FF2Dbg("%s | %i | %f", path, view_as<int>(team), time);
 	}
 
-	Format(key, sizeof(key), "%imusic", choosen);	// And this...
+	FormatEx(key, sizeof(key), "%imusic", choosen);	// And this...
 	KvGetString(BossKV[Special[boss]], key, temp, sizeof(temp));
 	if(temp[0])
 	{
@@ -14267,10 +14264,10 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		IntToString(choosen, key, sizeof(key));
 		KvGetString(BossKV[Special[boss]], key, path, sizeof(path));
 
-		Format(key, sizeof(key), "%iname", choosen);
+		FormatEx(key, sizeof(key), "%iname", choosen);
 		KvGetString(BossKV[Special[boss]], key, name, sizeof(name));
 
-		Format(key, sizeof(key), "%iartist", choosen);
+		FormatEx(key, sizeof(key), "%iartist", choosen);
 		KvGetString(BossKV[Special[boss]], key, artist, sizeof(artist));
 
 		for(int client=1; client<=MaxClients; client++)
@@ -14299,7 +14296,7 @@ stock bool RandomSoundAbility(const char[] sound, char[] file, int length, int b
 	if(!KvJumpToKey(BossKV[Special[boss]], sound))
 		return false;  //Sound doesn't exist
 
-	static char key[10];
+	char key[10];
 	int sounds, matches, match[MAXRANDOMS];
 	while(++sounds)
 	{
@@ -14308,7 +14305,7 @@ stock bool RandomSoundAbility(const char[] sound, char[] file, int length, int b
 		if(!file[0])
 			break;  //Assume that there's no more sounds
 
-		Format(key, sizeof(key), "slot%i", sounds);
+		FormatEx(key, sizeof(key), "slot%i", sounds);
 		if(KvGetNum(BossKV[Special[boss]], key, 0)==slot)
 		{
 			match[matches] = sounds;  //Found a match: let's store it in the array
@@ -14333,7 +14330,8 @@ stock bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0
 	if(!KvJumpToKey(BossKV[Special[boss]], sound))
 		return false;  //Sound doesn't exist
 
-	static char key[10], replacement[PLATFORM_MAX_PATH];
+	char key[10];
+	static char replacement[PLATFORM_MAX_PATH];
 	int sounds, matches, match[MAXRANDOMS];
 	while(++sounds)
 	{
@@ -14342,7 +14340,7 @@ stock bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0
 		if(!file[0])
 			break;  //Assume that there's no more sounds
 
-		Format(key, sizeof(key), "vo%i", sounds);
+		FormatEx(key, sizeof(key), "vo%i", sounds);
 		KvGetString(BossKV[Special[boss]], key, replacement, sizeof(replacement));
 		if(!StrContains(replacement, oldFile, false))
 		{
@@ -14704,19 +14702,19 @@ public int QueuePanelH(Handle menu, MenuAction action, int client, int selection
 
 public Action QueuePanelCmd(int client, int args)
 {
-	static char text[64];
+	char text[64];
 	int items;
 	bool[] added = new bool[MaxClients+1];
 
 	Handle panel = CreatePanel();
-	Format(text, sizeof(text), "%T", "thequeue", client);  //"Boss Queue"
+	FormatEx(text, sizeof(text), "%T", "thequeue", client);  //"Boss Queue"
 	SetPanelTitle(panel, text);
 	for(int boss; boss<=MaxClients; boss++)  //Add the current bosses to the top of the list
 	{
 		if(IsBoss(boss))
 		{
 			added[boss] = true;  //Don't want the bosses to show up again in the actual queue list
-			Format(text, sizeof(text), "%N-%i", boss, QueuePoints[boss]);
+			FormatEx(text, sizeof(text), "%N-%i", boss, QueuePoints[boss]);
 			DrawPanelItem(panel, text);
 			items++;
 		}
@@ -14733,7 +14731,7 @@ public Action QueuePanelCmd(int client, int args)
 			continue;
 		}
 
-		Format(text, sizeof(text), "%N-%i", target, QueuePoints[target]);
+		FormatEx(text, sizeof(text), "%N-%i", target, QueuePoints[target]);
 		if(client != target)
 		{
 			DrawPanelItem(panel, text);
@@ -14747,7 +14745,7 @@ public Action QueuePanelCmd(int client, int args)
 	}
 	while(items < 9);
 
-	Format(text, sizeof(text), "%T (%T)", "your_points", client, QueuePoints[client], "to0", client);  //"Your queue point(s) is {1} (set to 0)"
+	FormatEx(text, sizeof(text), "%T (%T)", "your_points", client, QueuePoints[client], "to0", client);  //"Your queue point(s) is {1} (set to 0)"
 	DrawPanelItem(panel, text);
 
 	SendPanelToClient(panel, client, QueuePanelH, MENU_TIME_FOREVER);
@@ -14841,21 +14839,21 @@ public Action TurnToZeroPanel(int client, int target)
 	}
 
 	Handle panel = CreatePanel();
-	static char text[128];
+	char text[128];
 	if(client == target)
 	{
-		Format(text, sizeof(text), "%T", "to0_title", client);  //Do you really want to set your queue points to 0?
+		FormatEx(text, sizeof(text), "%T", "to0_title", client);  //Do you really want to set your queue points to 0?
 	}
 	else
 	{
-		Format(text, sizeof(text), "%T", "to0_title_admin", client, target);  //Do you really want to set {1}'s queue points to 0?
+		FormatEx(text, sizeof(text), "%T", "to0_title_admin", client, target);  //Do you really want to set {1}'s queue points to 0?
 	}
 
 	PrintToChat(client, text);
 	SetPanelTitle(panel, text);
-	Format(text, sizeof(text), "%T", "Yes", client);
+	FormatEx(text, sizeof(text), "%T", "Yes", client);
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%T", "No", client);
+	FormatEx(text, sizeof(text), "%T", "No", client);
 	DrawPanelItem(panel, text);
 	shortname[client] = target;
 	SendPanelToClient(panel, client, TurnToZeroPanelH, MENU_TIME_FOREVER);
@@ -14969,27 +14967,27 @@ public Action FF2Panel(int client, int args)  //._.
 	Handle panel = CreatePanel();
 	char text[256];
 	SetGlobalTransTarget(client);
-	Format(text, sizeof(text), "%t", "menu_1");  //What's up?
+	FormatEx(text, sizeof(text), "%t", "menu_1");  //What's up?
 	SetPanelTitle(panel, text);
-	Format(text, sizeof(text), "%t", "menu_2");  //Investigate the boss's current health level (/ff2hp)
+	FormatEx(text, sizeof(text), "%t", "menu_2");  //Investigate the boss's current health level (/ff2hp)
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_3");  //Boss Preferences (/ff2boss)
+	FormatEx(text, sizeof(text), "%t", "menu_3");  //Boss Preferences (/ff2boss)
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_7");  //Changes to my class in FF2 (/ff2classinfo)
+	FormatEx(text, sizeof(text), "%t", "menu_7");  //Changes to my class in FF2 (/ff2classinfo)
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_4");  //What's new? (/ff2new).
+	FormatEx(text, sizeof(text), "%t", "menu_4");  //What's new? (/ff2new).
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_5");  //Queue points
+	FormatEx(text, sizeof(text), "%t", "menu_5");  //Queue points
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_0");  //Toggle HUDs (/ff2hud)
+	FormatEx(text, sizeof(text), "%t", "menu_0");  //Toggle HUDs (/ff2hud)
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_8");  //Toggle music (/ff2music)
+	FormatEx(text, sizeof(text), "%t", "menu_8");  //Toggle music (/ff2music)
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_9");  //Toggle monologues (/ff2voice)
+	FormatEx(text, sizeof(text), "%t", "menu_9");  //Toggle monologues (/ff2voice)
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_9a");  //Toggle info about changes of classes in FF2
+	FormatEx(text, sizeof(text), "%t", "menu_9a");  //Toggle info about changes of classes in FF2
 	DrawPanelItem(panel, text);
-	Format(text, sizeof(text), "%t", "menu_6");  //Exit
+	FormatEx(text, sizeof(text), "%t", "menu_6");  //Exit
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, FF2PanelH, MENU_TIME_FOREVER);
 	CloseHandle(panel);
@@ -16423,7 +16421,7 @@ public int Native_GetName(Handle plugin, int numParams)
 	char[] s = new char[dstrlen];
 
 	static char language[20];
-	GetLanguageInfo(client ? GetClientLanguage(client) : GetServerLanguage(), language, sizeof(language), s, 8);
+	GetLanguageInfo(client ? GetClientLanguage(client) : GetServerLanguage(), language, sizeof(language), s, dstrlen);
 	Format(language, sizeof(language), "name_%s", language);
 
 	if(see)
@@ -16440,7 +16438,7 @@ public int Native_GetName(Handle plugin, int numParams)
 		{
 			if(client)
 			{
-				GetLanguageInfo(GetServerLanguage(), language, 8, s, 8);
+				GetLanguageInfo(GetServerLanguage(), language, sizeof(language), s, dstrlen);
 				Format(language, sizeof(language), "name_%s", language);
 				KvGetString(BossKV[index], language, s, dstrlen);
 			}
@@ -16466,7 +16464,7 @@ public int Native_GetName(Handle plugin, int numParams)
 		{
 			if(client)
 			{
-				GetLanguageInfo(GetServerLanguage(), language, 8, s, 8);
+				GetLanguageInfo(GetServerLanguage(), language, sizeof(language), s, dstrlen);
 				Format(language, sizeof(language), "name_%s", language);
 				KvGetString(BossKV[Special[index]], language, s, dstrlen);
 			}
