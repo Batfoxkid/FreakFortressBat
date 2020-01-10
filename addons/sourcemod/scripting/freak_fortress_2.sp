@@ -339,7 +339,6 @@ ConVar cvarChargeAngle;
 ConVar cvarAttributes;
 ConVar cvarStartingUber;
 ConVar cvarDamageHud;
-ConVar cvarMeleeKnock;
 ConVar cvarTelefrag;
 ConVar cvarHealth;
 ConVar cvarRageDamage;
@@ -826,7 +825,6 @@ public void OnPluginStart()
 	cvarAttributes = CreateConVar("ff2_attributes", "2 ; 3.1 ; 275 ; 1", "Default attributes assigned to bosses without 'override' setting");
 	cvarStartingUber = CreateConVar("ff2_uber_start", "40.0", "Starting Ubercharge precentage on round start", _, true, 0.0, true, 100.0);
 	cvarDamageHud = CreateConVar("ff2_damage_tracker", "0", "Default Damage Tracker value for players", _, true, 0.0, true, 9.0);
-	cvarMeleeKnock = CreateConVar("ff2_melee_kncoback", "0", "0-No knockback, 1-Only non-stab attacks, 2-All can knockback", _, true, 0.0, true, 2.0);
 	cvarTelefrag = CreateConVar("ff2_telefrag_damage", "5000.0", "Damage dealt upon a Telefrag", _, true, 0.0);
 	cvarHealth = CreateConVar("ff2_health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", "Default boss health formula");
 	cvarRageDamage = CreateConVar("ff2_health_formula", "1900.0", "Default boss ragedamage formula");
