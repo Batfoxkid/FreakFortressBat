@@ -9592,7 +9592,7 @@ public Action ClientTimer(Handle timer)
 				if(shield[client] && shieldHP[client]>0 && cvarShieldType.IntValue>2)
 				{
 					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
-					FF2_ShowHudText(client, jumpHUD, "%t", "Shield HP", RoundToFloor(shieldHP[client]/cvarShieldHealth.FloatValue*100.0));
+					FF2_ShowSyncHudText(client, jumpHUD, "%t", "Shield HP", RoundToFloor(shieldHP[client]/cvarShieldHealth.FloatValue*100.0));
 				}
 			}
 			else if(!HudSettings[client][1] && SapperEnabled && SapperCooldown[client]>0.0 && class==TFClass_Spy)
@@ -9602,7 +9602,7 @@ public Action ClientTimer(Handle timer)
 					SapperAmount = 0;
 
 				SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
-				FF2_ShowHudText(client, jumpHUD, "%t", "Sapper Cooldown", SapperAmount);
+				FF2_ShowSyncHudText(client, jumpHUD, "%t", "Sapper Cooldown", SapperAmount);
 			}
 			// Chdata's Deadringer Notifier
 			else if(!HudSettings[client][1] && cvarDeadRingerHud.BoolValue && class==TFClass_Spy)
@@ -9815,12 +9815,12 @@ public Action ClientTimer(Handle timer)
 			{
 				case TFClass_Medic:
 				{
-					int medigun=GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+					int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 					if(IsValidEntity(medigun))
 					{
-						int charge=RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
+						int charge = RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
 						char mediclassname[64];
-						if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
+						if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 						{
 							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 							{
@@ -9837,7 +9837,7 @@ public Action ClientTimer(Handle timer)
 								}
 							}
 						}
-						else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
+						else if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
 						{
 							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 							{
@@ -12093,7 +12093,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					damage = 1.0;
 					return Plugin_Changed;
 				}
-				damage = BossHealth[boss]*1.001;
+				damage = BossHealth[boss]*1.005;
 
 				for(int all=1; all<=MaxClients; all++)
 				{
@@ -12926,7 +12926,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						damage = 1.0;
 						return Plugin_Changed;
 					}
-					damage = (TimesTen ? 5000.0*cvarTimesTen.FloatValue : 9001.0);
+					damage = (TimesTen ? cvarTelefrag.FloatValue*cvarTimesTen.FloatValue : cvarTelefrag.FloatValue);
 
 					for(int all=1; all<=MaxClients; all++)
 					{
