@@ -79,9 +79,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 7th, 2020"
+#define FORK_DATE_REVISION "January 10th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -484,14 +484,15 @@ enum CookieStats
 	Cookie_PlayerMvps	// Player MVPs
 };
 
-#define HUDTYPES 5
+#define HUDTYPES 6
 static const char HudTypes[][] =	// Names used in translation files
 {
 	"Hud Damage",
 	"Hud Extra",
 	"Hud Message",
 	"Hud Countdown",
-	"Hud Health"
+	"Hud Health",
+	"Hud Ranking"
 };
 
 enum
@@ -918,6 +919,8 @@ public void OnPluginStart()
 	RegConsoleCmd("ff2tracklist", Command_Tracklist, "View list of songs");
 	RegConsoleCmd("ff2_hud", Command_HudMenu, "Toggle specific HUD settings");
 	RegConsoleCmd("ff2hud", Command_HudMenu, "Toggle specific HUD settings");
+	RegConsoleCmd("ff2_dmg", Command_HudMenu, "Toggle specific HUD settings");
+	RegConsoleCmd("ff2dmg", Command_HudMenu, "Toggle specific HUD settings");
 
 	RegConsoleCmd("hale", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("hale_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -950,6 +953,8 @@ public void OnPluginStart()
 	RegConsoleCmd("haletracklist", Command_Tracklist, "View list of songs");
 	RegConsoleCmd("hale_hud", Command_HudMenu, "Toggle specific HUD settings");
 	RegConsoleCmd("halehud", Command_HudMenu, "Toggle specific HUD settings");
+	RegConsoleCmd("hale_dmg", Command_HudMenu, "Toggle specific HUD settings");
+	RegConsoleCmd("haledmg", Command_HudMenu, "Toggle specific HUD settings");
 
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
@@ -4159,11 +4164,13 @@ public Action Command_HudMenu(int client, int args)
 	SetMenuTitle(menu, "%t", "FF2 Hud Menu Title");
 
 	char menuOption[64];
-	for(int i; i<HUDTYPES; i++)
+	for(int i; i<(HUDTYPES-1); i++)
 	{
 		FormatEx(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], HudSettings[client][i] ? "Off" : "On");
 		AddMenuItem(menu, menuOption, menuOption);
 	}
+	FormatEx(menuOption, sizeof(menuOption), "%t [%i]", HudTypes[i], HudSettings[client][i]);
+	AddMenuItem(menu, menuOption, menuOption);
 
 	SetMenuExitButton(menu, true);
 	DisplayMenu(menu, client, 20);
@@ -4180,6 +4187,15 @@ public int Command_HudMenuH(Handle menu, MenuAction action, int param1, int para
 		}
 		case MenuAction_Select:
 		{
+			if(param2 == HUDTYPES-1)
+			{
+				if(++HudSettings[param1][param2] < 3)
+					HudSettings[param1][param2] = 3;
+
+				if(HudSettings[param1][param2] > 6)
+					HudSettings[param1][param2] = 0;
+			}
+
 			HudSettings[param1][param2] = !HudSettings[param1][param2];
 			Command_HudMenu(param1, 0);
 		}
@@ -9256,17 +9272,19 @@ public Action ClientTimer(Handle timer)
 	if(!Enabled)
 		return Plugin_Stop;
 
+	int client = 1;
 	#if defined _tf2attributes_included
 	if(tf2attributes && cvarDisguise.BoolValue)
 	{
-		for(int client=1; client<=MaxClients; client++)
+		int iDisguisedTarget;
+		for(; client<=MaxClients; client++)
 		{
 			//custom model disguise code sorta taken from stop that tank, let's see how well this goes!
 			//this will actually let spies disguise as the boss, and bosses should have the same disguise
 			//model as the players they potentially disguise as if they have a custom model (tf2attributes required)
 			if(IsValidClient(client))
 			{
-				int iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
+				iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
 				VisionFlags_Update(client);
 
 				if(TF2_IsPlayerInCondition(client, TFCond_Disguised) && IsValidClient(iDisguisedTarget) && TF2_GetPlayerClass(iDisguisedTarget)==view_as<TFClassType>(GetEntProp(client, Prop_Send, "m_nDisguiseClass")))
@@ -9285,28 +9303,48 @@ public Action ClientTimer(Handle timer)
 	if(CheckRoundState()==2 || CheckRoundState()==-1)
 		return Plugin_Stop;
 
-	char top[64];
-	static char classname[32];
-	TFCond cond;
-	bool alive;
-	int StatHud = cvarStatHud.IntValue;
-	int HealHud = cvarHealingHud.IntValue;
-	float LookHud = cvarLookHud.FloatValue;
+	int observer, index;
+	int best[6];
 	int SapperAmount;
 	bool SapperEnabled = SapperMinion;
-	if(!SapperEnabled)
+	for(int client=1; client<=MaxClients; client++)
 	{
-		for(int boss=1; boss<=MaxClients; boss++)
+		if(!IsValidClient(client))
+			continue;
+
+		if(IsBoss(client))
 		{
-			if(IsBoss(boss))
+			if(!SapperEnabled)
+				SapperEnabled = SapperBoss[client];
+
+			continue;
+		}
+
+		if(Damage[client] < 1)
+			continue;
+
+		for(observer=0; observer<6; observer++)
+		{
+			if(Damage[client] < Damage[best[observer]])
+				continue;
+			
+			index = 5;
+			while(index > observer)
 			{
-				SapperEnabled = SapperBoss[boss];
-				if(SapperEnabled)
-					break;
+				best[index] = best[--index];
 			}
+			best[observer] = client;
 		}
 	}
 
+	char top[64];
+	static char classname[32];
+	TFCond cond;
+	bool alive, validwep;
+	int weapon;
+	int StatHud = cvarStatHud.IntValue;
+	int HealHud = cvarHealingHud.IntValue;
+	float LookHud = cvarLookHud.FloatValue;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
@@ -9316,7 +9354,6 @@ public Action ClientTimer(Handle timer)
 			if((alive || IsClientObserver(client)) && !HudSettings[client][0])
 			{
 				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
-				int observer;
 				if(alive && LookHud!=0)
 				{
 					observer = GetClientAimTarget(client, true);
@@ -9439,13 +9476,13 @@ public Action ClientTimer(Handle timer)
 				continue;
 
 			TFClassType class = TF2_GetPlayerClass(client);
-			int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+			weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 			if(weapon<=MaxClients || !IsValidEntity(weapon) || !GetEntityClassname(weapon, classname, sizeof(classname)))
 				classname[0] = 0;
 
-			bool validwep = !StrContains(classname, "tf_weapon", false);
+			validwep = !StrContains(classname, "tf_weapon", false);
 
-			int index = (validwep ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
+			index = (validwep ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
 			if(class == TFClass_Medic)
 			{
 				int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
@@ -14231,7 +14268,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	if(!sounds)
 		return false;  //Found sound, but no sounds inside of it
 
-	char path[PLATFORM_MAX_PATH]
+	char path[PLATFORM_MAX_PATH];
 	static char temp[6];
 	int choosen = GetRandomInt(1, sounds);
 	FormatEx(key, sizeof(key), "%i_overlay", choosen);	// Don't ask me why this format just go with it
