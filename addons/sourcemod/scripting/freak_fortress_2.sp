@@ -9314,7 +9314,7 @@ public Action ClientTimer(Handle timer)
 	int best[10];
 	int SapperAmount;
 	bool SapperEnabled = SapperMinion;
-	for(int client=1; client<=MaxClients; client++)
+	for(client=1; client<=MaxClients; client++)
 	{
 		if(!IsValidClient(client))
 			continue;
@@ -9352,7 +9352,7 @@ public Action ClientTimer(Handle timer)
 			if(!best[index])
 				break;
 
-			FormatEx(bestHud[index], sizeof(buestHud[]), "[%i] %N: %i", index+1, best[index], Damage[best[index]]);
+			FormatEx(bestHud[index], sizeof(bestHud[]), "[%i] %N: %i", index+1, best[index], Damage[best[index]]);
 		}
 	}
 
