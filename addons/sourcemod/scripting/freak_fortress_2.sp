@@ -81,7 +81,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 10th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -339,6 +339,10 @@ ConVar cvarChargeAngle;
 ConVar cvarAttributes;
 ConVar cvarStartingUber;
 ConVar cvarDamageHud;
+ConVar cvarMeleeKnock;
+ConVar cvarTelefrag;
+ConVar cvarHealth;
+ConVar cvarRageDamage;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -372,7 +376,7 @@ int countdownHealth = 2000;
 bool countdownOvertime = false;
 bool SpecForceBoss;
 float lastPlayerGlow = 1.0;
-bool bossTeleportation = true;
+int bossTeleportation = 0;
 int shieldCrits;
 int allowedDetonations;
 float GoombaDamage = 0.05;
@@ -397,6 +401,8 @@ int Annotations = 0;
 float ChargeAngle = 30.0;
 char Attributes[128] = "2 ; 3.1 ; 275 ; 1";
 float StartingUber = 40.0;
+char HealthFormula[1024] = "(((760.8+n)*(n-1))^1.0341)+2046";
+char RageDamage[1024] = "1900";
 
 Handle MusicTimer[MAXTF2PLAYERS];
 Handle DrawGameTimer;
@@ -820,6 +826,10 @@ public void OnPluginStart()
 	cvarAttributes = CreateConVar("ff2_attributes", "2 ; 3.1 ; 275 ; 1", "Default attributes assigned to bosses without 'override' setting");
 	cvarStartingUber = CreateConVar("ff2_uber_start", "40.0", "Starting Ubercharge precentage on round start", _, true, 0.0, true, 100.0);
 	cvarDamageHud = CreateConVar("ff2_damage_tracker", "0", "Default Damage Tracker value for players", _, true, 0.0, true, 9.0);
+	cvarMeleeKnock = CreateConVar("ff2_melee_kncoback", "0", "0-No knockback, 1-Only non-stab attacks, 2-All can knockback", _, true, 0.0, true, 2.0);
+	cvarTelefrag = CreateConVar("ff2_telefrag_damage", "5000.0", "Damage dealt upon a Telefrag", _, true, 0.0);
+	cvarHealth = CreateConVar("ff2_health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", "Default boss health formula");
+	cvarRageDamage = CreateConVar("ff2_health_formula", "1900.0", "Default boss ragedamage formula");
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -889,6 +899,7 @@ public void OnPluginStart()
 	HookConVarChange(cvarChargeAngle, CvarChange);
 	HookConVarChange(cvarAttributes, CvarChange);
 	HookConVarChange(cvarStartingUber, CvarChange);
+	HookConVarChange(cvarHealth, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -1846,7 +1857,7 @@ public void EnableFF2()
 	countdownTime = cvarCountdownTime.IntValue;
 	countdownOvertime = cvarCountdownOvertime.BoolValue;
 	lastPlayerGlow = cvarLastPlayerGlow.FloatValue;
-	bossTeleportation = cvarBossTeleporter.BoolValue;
+	bossTeleportation = cvarBossTeleporter.IntValue;
 	shieldCrits = cvarShieldCrits.IntValue;
 	allowedDetonations = cvarCaberDetonations.IntValue;
 	Annotations = cvarAnnotations.IntValue;
@@ -2558,7 +2569,7 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	}
 	else if(convar == cvarBossTeleporter)
 	{
-		bossTeleportation = view_as<bool>(StringToInt(newValue));
+		bossTeleportation = StringToInt(newValue);
 	}
 	else if(convar == cvarShieldCrits)
 	{
@@ -2652,6 +2663,14 @@ public void CvarChange(Handle convar, const char[] oldValue, const char[] newVal
 	else if(convar == cvarStartingUber)
 	{
 		StartingUber = StringToFloat(newValue);
+	}
+	else if(convar == cvarHealth)
+	{
+		strcopy(HealthFormula, sizeof(HealthFormula), newValue);
+	}
+	else if(convar == cvarRageDamage)
+	{
+		strcopy(RageDamage, sizeof(RageDamage), newValue);
 	}
 	else if(convar == cvarDatabase)
 	{
@@ -3444,11 +3463,11 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 			{
 				if(BossSwitched[boss])
 				{
-					BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+players2)*(players2-1.0), 1.0341)+2046.0));
+					BossHealthMax[boss] = ParseFormula(boss, "health_formula", HealthFormula, RoundFloat(Pow((760.8+players2)*(players2-1.0), 1.0341)+2046.0));
 				}
 				else
 				{
-					BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
+					BossHealthMax[boss] = ParseFormula(boss, "health_formula", HealthFormula, RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
 				}
 				if(BossHealthMax[boss]*BossLivesMax[boss] < 350)
 					BossHealthMax[boss] = RoundToFloor(350.0/BossLivesMax[boss]);
@@ -3465,7 +3484,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		{
 			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 			{
-				BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
+				BossHealthMax[boss] = ParseFormula(boss, "health_formula", HealthFormula, RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
 				BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
 				BossHealthLast[boss] = BossHealth[boss];
 			}
@@ -6232,7 +6251,7 @@ void EquipBoss(int boss)
 					}
 					else
 					{
-						Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d ; %s", attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
+						Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d ; %s", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
 					}
 				}
 				else
@@ -6251,11 +6270,11 @@ void EquipBoss(int boss)
 			{
 				if(attributes[0])
 				{
-					Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; %s", attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
+					Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; %s", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
 				}
 				else
 				{
-					FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i", attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
+					FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
 				}
 			}
 
@@ -6798,7 +6817,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	if(GetClientTeam(client) != ForcedTeam)
 		AssignTeam(client, ForcedTeam);
 
-	BossRageDamage[boss] = ParseFormula(boss, "ragedamage", "1900", 1900);
+	BossRageDamage[boss] = ParseFormula(boss, "ragedamage", RageDamage, 1900);
 	if(BossRageDamage[boss] < 1)	// 0 or below, disable RAGE
 		BossRageDamage[boss] = 99999;
 
@@ -6810,7 +6829,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		LogToFile(eLog, "[Boss] Warning: Boss %s has an invalid amount of lives, setting to 1", bossName);
 		BossLivesMax[boss] = 1;
 	}
-	BossHealthMax[boss] = ParseFormula(boss, "health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", RoundFloat(Pow((760.8+float(playing))*(float(playing)-1.0), 1.0341)+2046.0));
+	BossHealthMax[boss] = ParseFormula(boss, "health_formula", HealthFormula, RoundFloat(Pow((760.8+float(playing))*(float(playing)-1.0), 1.0341)+2046.0));
 	BossLives[boss] = BossLivesMax[boss];
 	BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
 	BossHealthLast[boss] = BossHealth[boss];
@@ -9364,7 +9383,7 @@ public Action ClientTimer(Handle timer)
 	int StatHud = cvarStatHud.IntValue;
 	int HealHud = cvarHealingHud.IntValue;
 	float LookHud = cvarLookHud.FloatValue;
-	for(int client=1; client<=MaxClients; client++)
+	for(client=1; client<=MaxClients; client++)
 	{
 		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
 		{
@@ -9570,7 +9589,7 @@ public Action ClientTimer(Handle timer)
 			}
 			else if(!HudSettings[client][1] && (class==TFClass_Sniper || class==TFClass_DemoMan) && (cvarShieldType.IntValue==3 || cvarShieldType.IntValue==4))
 			{
-				if(shield[client] && shieldHP[client]>0.0 && cvarShieldType.IntValue>2)
+				if(shield[client] && shieldHP[client]>0 && cvarShieldType.IntValue>2)
 				{
 					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
 					FF2_ShowHudText(client, jumpHUD, "%t", "Shield HP", RoundToFloor(shieldHP[client]/cvarShieldHealth.FloatValue*100.0));
@@ -10732,10 +10751,10 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	{
 		switch(team)
 		{
-			case TFTeam_Red:
+			case view_as<int>(TFTeam_Red):
 				ShowVGUIPanel(client, "class_red");
 
-			case TFTeam_Blue:
+			case view_as<int>(TFTeam_Blue):
 				ShowVGUIPanel(client, "class_blue");
 		}
 	}
@@ -14758,7 +14777,7 @@ void FindCompanion(int boss, int players, bool[] omit)
 			}
 			else	// Use formula or straight value
 			{
-				BossRageDamage[companion] = ParseFormula(companion, "ragedamage", "1900", 1900);
+				BossRageDamage[companion] = ParseFormula(companion, "ragedamage", RageDamage, 1900);
 			}
 			BossLivesMax[companion] = KvGetNum(BossKV[Special[companion]], "lives", 1);
 			if(BossLivesMax[companion] < 1)
