@@ -526,6 +526,8 @@ enum
 
 int Specials;
 Handle BossKV[MAXSPECIALS];
+int PackSpecials;
+Handle PackKV[MAXSPECIALS];
 Handle PreAbility;
 Handle OnAbility;
 Handle OnMusic;
@@ -1795,10 +1797,19 @@ public void OnMapStart()
 
 	for(int specials; specials<MAXSPECIALS; specials++)
 	{
+		for(int i; i<7; i++)
+		{
+			if(PackKV[specials][i] == INVALID_HANDLE)
+				continue;
+
+			delete PackKV[specials][i];
+			PackKV[specials][i] = INVALID_HANDLE;
+		}
+
 		if(BossKV[specials] == INVALID_HANDLE)
 			continue;
 
-		CloseHandle(BossKV[specials]);
+		delete BossKV[specials];
 		BossKV[specials] = INVALID_HANDLE;
 	}
 }
@@ -2036,6 +2047,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 {
 	char filepath[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH], key[4], charset[42];
 	Specials = 0;
+	PackSpecials = 0;
 	BuildPath(Path_SM, filepath, PLATFORM_MAX_PATH, "%s/%s", DataPath, CharsetCFG);
 
 	if(!FileExists(filepath))
@@ -2123,7 +2135,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 		if(StrContains(config, "*") >= 0)
 		{
 			ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
-			ProcessDirectory(filepath, "", config);
+			ProcessDirectory(filepath, "", config, -1);
 			continue;
 		}
 		LoadCharacter(config);
@@ -2137,17 +2149,48 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	if(!HasCharSets)
 		HasCharSets = KvGotoNextKey(Kv);
 
-	CloseHandle(Kv);
+	// Get side characters (up to 7 packs)
+	int amount;
+	if(HasCharSets)
+	{
+		KvRewind(Kv);
+		for(; amount<7; amount++)
+		{
+			if(!KvGotoNextKey(Kv))
+				break;
+
+			if(amount == CurrentCharSet)	// Skip the current pack
+				continue;
+
+			for(i=1; PackSpecials[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
+			{
+				IntToString(i, key, sizeof(key));
+				KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
+				if(!config[0])
+					continue;
+
+				if(StrContains(config, "*") >= 0)
+				{
+					ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
+					ProcessDirectory(filepath, "", config, amount);
+					continue;
+				}
+				LoadSideCharacter(config, amount);
+			}
+		}
+	}
+
+	delete Kv;
 
 	if(ChancesString[0])
 	{
 		char stringChances[MAXSPECIALS*2][8];
 
-		int amount = ExplodeString(ChancesString, ";", stringChances, MAXSPECIALS*2, 8);
+		amount = ExplodeString(ChancesString, ";", stringChances, MAXSPECIALS*2, 8);
 		if(amount % 2)
 		{
 			LogToFile(eLog, "[Characters] Invalid chances string, disregarding chances");
-			strcopy(ChancesString, sizeof(ChancesString), "");
+			ChancesString[0] = 0;
 			amount = 0;
 		}
 
@@ -2240,7 +2283,7 @@ void DisableSubPlugins(bool force=false)
 	areSubPluginsEnabled = false;
 }
 
-public void ProcessDirectory(const char[] directory, const char[] current, const char[] config)
+public void ProcessDirectory(const char[] directory, const char[] current, const char[] config, int pack)
 {
 	char file[PLATFORM_MAX_PATH];
 	FormatEx(file, PLATFORM_MAX_PATH, "%s\\%s", directory, current);
@@ -2252,7 +2295,7 @@ public void ProcessDirectory(const char[] directory, const char[] current, const
 		return;
 
 	FileType type;
-	while(Specials<MAXSPECIALS && listing.GetNext(file, PLATFORM_MAX_PATH, type))
+	while(((pack>=0 && Specials<MAXSPECIALS) || (pack<0 && PackSpecials[pack])) && listing.GetNext(file, PLATFORM_MAX_PATH, type))
 	{
 		if(type == FileType_File)
 		{
@@ -2266,8 +2309,16 @@ public void ProcessDirectory(const char[] directory, const char[] current, const
 			}
 
 			if(!StrContains(file, config))
-				LoadCharacter(file);
-
+			{
+				if(pack < 0)
+				{
+					LoadCharacter(file);
+				}
+				else
+				{
+					LoadSideCharacter(file, pack);
+				}
+			}
 			continue;
 		}
 
@@ -2277,11 +2328,11 @@ public void ProcessDirectory(const char[] directory, const char[] current, const
 		if(current[0])
 		{
 			Format(file, PLATFORM_MAX_PATH, "%s/%s", current, file);
-			ProcessDirectory(directory, file, config);
+			ProcessDirectory(directory, file, config, pack);
 		}
 		else
 		{
-			ProcessDirectory(directory, file, config);
+			ProcessDirectory(directory, file, config, pack);
 		}
 	}
 	delete listing;
@@ -2330,16 +2381,10 @@ public void LoadCharacter(const char[] character)
 	}
 
 	version = KvGetNum(BossKV[Specials], "version_minor", StringToInt(MINOR_REVISION));
-	if(version > StringToInt(MINOR_REVISION))
+	int version2 = KvGetNum(BossKV[Specials], "version_stable", StringToInt(STABLE_REVISION));
+	if(version>StringToInt(MINOR_REVISION) || (version2>StringToInt(STABLE_REVISION) && version==StringToInt(MINOR_REVISION)))
 	{
-		LogToFile(eLog, "[Boss] Character %s requires newer version of FF2 (at least %s.%i.x)!", character, MAJOR_REVISION, version);
-		return;
-	}
-
-	version = KvGetNum(BossKV[Specials], "version_stable", StringToInt(STABLE_REVISION));
-	if(version > StringToInt(STABLE_REVISION))
-	{
-		LogToFile(eLog, "[Boss] Character %s requires newer version of FF2 (at least %s.%s.%i)!", character, MAJOR_REVISION, MINOR_REVISION, version);
+		LogToFile(eLog, "[Boss] Character %s requires newer version of FF2 (at least %s.%i.%i)!", character, MAJOR_REVISION, version, version2);
 		return;
 	}
 
@@ -2351,16 +2396,10 @@ public void LoadCharacter(const char[] character)
 	}
 
 	version = KvGetNum(BossKV[Specials], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
-	if(version > StringToInt(FORK_MINOR_REVISION))
+	version2 = KvGetNum(BossKV[Specials], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
+	if(version>StringToInt(FORK_MINOR_REVISION) || (version2>StringToInt(FORK_STABLE_REVISION) && version==StringToInt(FORK_MINOR_REVISION)))
 	{
-		LogToFile(eLog, "[Boss] Character %s requires newer version of %s FF2 (at least %s.%i.x)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version);
-		return;
-	}
-
-	version = KvGetNum(BossKV[Specials], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
-	if(version > StringToInt(FORK_STABLE_REVISION))
-	{
-		LogToFile(eLog, "[Boss] Character %s requires newer version of %s FF2 (at least %s.%s.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, version);
+		LogToFile(eLog, "[Boss] Character %s requires newer version of %s FF2 (at least %s.%i.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version, version2);
 		return;
 	}
 
@@ -2537,6 +2576,44 @@ public void PrecacheCharacter(int characterIndex)
 			}
 		}
 	}
+}
+
+public void LoadSideCharacter(const char[] character, int pack)
+{
+	static char config[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s.cfg", ConfigPath, character);
+	if(!FileExists(config))
+		return;
+
+	PackKV[PackSpecials[pack]][pack] = CreateKeyValues("character");
+	FileToKeyValues(PackKV[PackSpecials[pack]][pack], config);
+	KvSetString(PackKV[PackSpecials[pack]][pack], "filename", character);
+
+	int version = KvGetNum(PackKV[PackSpecials[pack]][pack], "version", StringToInt(MAJOR_REVISION));
+	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
+		return;
+
+	version = KvGetNum(PackKV[PackSpecials[pack]][pack], "version_minor", StringToInt(MINOR_REVISION));
+	if(version > StringToInt(MINOR_REVISION))
+		return;
+
+	int version2 = KvGetNum(PackKV[PackSpecials[pack]][pack], "version_stable", StringToInt(STABLE_REVISION));
+	if(version2>StringToInt(STABLE_REVISION) && version==StringToInt(MINOR_REVISION))
+		return;
+
+	version = KvGetNum(PackKV[PackSpecials[pack]][pack], "fversion", StringToInt(FORK_MAJOR_REVISION));
+	if(version != StringToInt(FORK_MAJOR_REVISION))
+		return;
+
+	version = KvGetNum(PackKV[PackSpecials[pack]][pack], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
+	if(version > StringToInt(FORK_MINOR_REVISION))
+		return;
+
+	version2 = KvGetNum(PackKV[PackSpecials[pack]][pack], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
+	if(version2>StringToInt(FORK_STABLE_REVISION) && version==StringToInt(FORK_MINOR_REVISION))
+		return;
+
+	PackSpecials[pack]++;
 }
 
 public void CvarChange(Handle convar, const char[] oldValue, const char[] newValue)
@@ -5561,12 +5638,12 @@ public int PackMenuH(Handle menu, MenuAction action, int param1, int param2)
 
 public void PackBoss(int client, int pack)
 {
-	char boss[66];
-	static char key[4], bossName[64], character[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH];
+	char boss[66], bossName[64];
+	static char , character[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH];
 	Handle dMenu = CreateMenu(PackBossH);
 	SetGlobalTransTarget(client);
 
-	if(AreClientCookiesCached(client) && pack<8)
+	if(AreClientCookiesCached(client) && pack<7)
 	{
 		static char cookies[454];
 		char cookieValues[8][64];
@@ -5576,38 +5653,48 @@ public void PackBoss(int client, int pack)
 			strcopy(boss, sizeof(boss), cookieValues[pack]);
 	}
 
-	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
-	Handle Kv = CreateKeyValues("");
-	FileToKeyValues(Kv, config);
-	for(int i; i<pack; i++)
-	{
-		KvGotoNextKey(Kv);
-	}
-
 	KvGetSectionName(Kv, bossName, sizeof(bossName));
 	SetMenuTitle(dMenu, "%t", "to0_viewpack", bossName, boss);
 
-	FormatEx(boss, sizeof(boss), "%t", "to0_random");
-	AddMenuItem(dMenu, "", boss);
+	FormatEx(boss, sizeof(boss), ";%i", pack);
+	FormatEx(bossName, sizeof(bossName), "%t", "to0_random");
+	AddMenuItem(dMenu, boss, bossName);
 
-	for(int i=1; i<MAXSPECIALS; i++)
+	for(int i=1; i<PackSpecials[pack]; i++)
 	{
-		IntToString(i, key, sizeof(key));
-		KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
-		if(!config[0])	// No more bosses
-			break;
-
-		BuildPath(Path_SM, character, sizeof(character), "%s/%s.cfg", ConfigPath, config);
-		if(!FileExists(character))	// Boss doesn't exist?
+		KvRewind(BossKV[config]);
+		if(KvGetNum(BossKV[config], "blocked", 0))
 			continue;
 
-		Handle bossKV = CreateKeyValues("character");
-		FileToKeyValues(bossKV, character);
-		if(KvGetNum(bossKV, "blocked", 0))
+		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		GetBossSpecial(config, bossName, sizeof(bossName), client);
+		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
+		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
 		{
-			CloseHandle(bossKV);
-			continue;
+			if(!KvGetNum(BossKV[config], "hidden", 0))
+				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
+		else if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+		{
+			if(!KvGetNum(BossKV[config], "hidden", 1))
+				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
+		}
+		else if(KvGetNum(BossKV[config], "hidden", 0) &&
+		      !(KvGetNum(BossKV[config], "donator", 0) ||
+			KvGetNum(BossKV[config], "admin", 0) ||
+			KvGetNum(BossKV[config], "owner", 0)))
+		{
+			// Don't show
+		}
+		else
+		{
+			Format(boss, sizeof(boss), "%s;%i", boss, pack);
+			AddMenuItem(dMenu, boss, bossName);
+		}
+
+		if(KvGetNum(bossKV, "blocked", 0))
+			continue;
 
 		KvGetString(bossKV, "name", bossName, sizeof(bossName));
 		if((KvGetNum(bossKV, "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
@@ -5628,7 +5715,6 @@ public void PackBoss(int client, int pack)
 			continue;
 		}
 
-		FormatEx(boss, sizeof(boss), "%s;%i", bossName, pack);
 		AddMenuItem(dMenu, boss, bossName);
 		CloseHandle(bossKV);
 	}
@@ -5657,9 +5743,15 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 			static char name[2][64];
 			static char cookies[454];
 			GetMenuItem(menu, param2, cookies, sizeof(cookies));
-			ExplodeString(cookies, ";", name, 2, 64);
-			int pack = StringToInt(name[1]);
-			if(pack < 8)
+			int pack = ExplodeString(cookies, ";", name, 2, 64);
+			if(pack < 1)
+			{
+				PackMenu(param1);
+				return;
+			}
+
+			pack = StringToInt(name[1]);
+			if(pack < 7)
 			{
 				char cookieValues[8][64];
 				GetClientCookie(param1, SelectionCookie, cookies, sizeof(cookies));
@@ -5667,7 +5759,7 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 				strcopy(cookieValues[pack], 64, name[0]);
 
 				strcopy(cookies, sizeof(cookies), cookieValues[0]);
-				for(int i=1; i<8; i++)
+				for(int i=1; i<7; i++)
 				{
 					Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 				}
