@@ -7374,6 +7374,18 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 					return Plugin_Changed;
 				}
 			}
+			case 57:  //Razorback
+			{
+				if(cvarShieldType.IntValue > 1)
+				{
+					Handle itemOverride = PrepareItemHandle(item, _, _, _, true);
+					if(itemOverride != INVALID_HANDLE)
+					{
+						item = itemOverride;
+						return Plugin_Changed;
+					}
+				}
+			}
 			case 127:  //Direct Hit
 			{
 				Handle itemOverride = PrepareItemHandle(item, _, _, "179 ; 1.0");
@@ -7754,7 +7766,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			{
 				if(!cvarEnableEurekaEffect.BoolValue)  //Disabled
 				{
-					Handle itemOverride = PrepareItemHandle(item, _, _, "93 ; 0.25 ; 276 ; 1 ; 790 ; 0.5 ; 732 ; 0.9", true);
+					Handle itemOverride = PrepareItemHandle(item, _, _, "93 ; 0.75 ; 276 ; 1 ; 790 ; 0.5 ; 732 ; 0.9", true);
 					if(itemOverride != INVALID_HANDLE)
 					{
 						item = itemOverride;
@@ -10485,7 +10497,7 @@ public Action Timer_RPS(Handle timer, int client)
 
 public Action Timer_BotRage(Handle timer, any bot)
 {
-	if(IsValidClient(Boss[bot], false) && cvarBotRage.BoolValue)
+	if(IsValidClient(Boss[bot], false))
 		FakeClientCommandEx(Boss[bot], "voicemenu 0 0");
 }
 
@@ -10511,8 +10523,8 @@ stock int OnlyScoutsLeft(int team)
 
 stock int GetIndexOfWeaponSlot(int client, int slot)
 {
-	int weapon=GetPlayerWeaponSlot(client, slot);
-	return (weapon>MaxClients && IsValidEntity(weapon) ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	return (weapon>MaxClients && IsValidEntity(weapon)) ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1;
 }
 
 public void TF2_OnConditionAdded(int client, TFCond condition)
@@ -10568,11 +10580,11 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 	if(StringToInt(arg1) || StringToInt(arg2))  //We only want "voicemenu 0 0"-thanks friagram for pointing out edge cases
 		return Plugin_Continue;
 
-	if(RoundFloat(BossCharge[boss][0])>=rageMin[client])
+	if(RoundFloat(BossCharge[boss][0]) >= rageMin[client])
 	{
 		ActivateAbilitySlot(boss, 0);
 
-		float position[3];
+		static float position[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 		static char sound[PLATFORM_MAX_PATH];
@@ -10695,7 +10707,7 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 			return Plugin_Continue;
 		}
 
-		int team=view_as<int>(TFTeam_Unassigned), oldTeam=GetClientTeam(client);
+		int team = view_as<int>(TFTeam_Unassigned), oldTeam=GetClientTeam(client);
 		if(IsBoss(client) && !BossSwitched[boss])
 		{
 			team = BossTeam;
@@ -11046,9 +11058,9 @@ public Action OnObjectDeflected(Handle event, const char[] name, bool dontBroadc
 	int boss = GetBossIndex(client);
 	if(boss!=-1 && BossCharge[boss][0]<rageMax[client])
 	{
-		BossCharge[boss][0]+=rageMax[client]*7.0/rageMin[client];  //TODO: Allow this to be customizable
-		if(BossCharge[boss][0]>rageMax[client])
-			BossCharge[boss][0]=rageMax[client];
+		BossCharge[boss][0] += rageMax[client]*7.0/rageMin[client];  //TODO: Allow this to be customizable
+		if(BossCharge[boss][0] > rageMax[client])
+			BossCharge[boss][0] = rageMax[client];
 	}
 	return Plugin_Continue;
 }
@@ -11284,8 +11296,7 @@ public Action Timer_DrawGame(Handle timer)
 		return Plugin_Stop;
 	}
 
-	int time = timeleft;
-	timeleft--;
+	int time = timeleft--;
 	char timeDisplay[6];
 	if(time/60 > 9)
 	{
