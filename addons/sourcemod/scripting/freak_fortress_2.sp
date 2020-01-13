@@ -107,6 +107,7 @@ last time or to encourage others to do the same.
 #define MAXRANDOMS 64				// Maximum abilites in a boss
 #define MAXTF2PLAYERS 36			// Maximum TF2 players + bots
 #define MAXBOSSES RoundToFloor(MaxClients/2.0)	// Maximum number of bosses per a team
+#define MAXCHARSETS 7				// Maximum number of charsets to save selection/view
 
 #define HEALTHBAR_CLASS "monster_resource"
 #define HEALTHBAR_PROPERTY "m_iBossHealthPercentageByte"
@@ -526,8 +527,8 @@ enum
 
 int Specials;
 Handle BossKV[MAXSPECIALS];
-int PackSpecials;
-Handle PackKV[MAXSPECIALS];
+int PackSpecials[MAXCHARSETS];
+Handle PackKV[MAXSPECIALS][MAXCHARSETS];
 Handle PreAbility;
 Handle OnAbility;
 Handle OnMusic;
@@ -920,7 +921,6 @@ public void OnPluginStart()
 	RegConsoleCmd("ff2resetpoints", ResetQueuePointsCmd, "Reset your queue points");
 	RegConsoleCmd("ff2_boss", Command_SetMyBoss, "View FF2 Boss Preferences");
 	RegConsoleCmd("ff2boss", Command_SetMyBoss, "View FF2 Boss Preferences");
-	RegConsoleCmd("sm_setboss", Command_SetMyBoss, "View FF2 Boss Preferences");
 	RegConsoleCmd("ff2toggle", BossMenu, "Toggle being a FF2 boss");
 	RegConsoleCmd("ff2_toggle", BossMenu, "Toggle being a FF2 boss");
 	RegConsoleCmd("ff2companion", CompanionMenu, "Toggle being a FF2 companion");
@@ -970,6 +970,8 @@ public void OnPluginStart()
 	RegConsoleCmd("hale_dmg", Command_HudMenu, "Toggle specific HUD settings");
 	RegConsoleCmd("haledmg", Command_HudMenu, "Toggle specific HUD settings");
 
+	RegConsoleCmd("sm_setboss", Command_SetMyBoss, "View FF2 Boss Preferences");
+	RegConsoleCmd("sm_boss", Command_SetMyBoss, "View FF2 Boss Preferences");
 	RegConsoleCmd("nextmap", Command_Nextmap);
 	RegConsoleCmd("say", Command_Say);
 	RegConsoleCmd("say_team", Command_Say);
@@ -979,20 +981,20 @@ public void OnPluginStart()
 	ReloadConfigs = false;
 
 	RegAdminCmd("ff2_loadcharset", Command_LoadCharset, ADMFLAG_RCON, "Usage: ff2_loadcharset <charset>.  Forces FF2 to switch to a given character set without changing maps");
-	RegAdminCmd("ff2_reloadcharset", Command_ReloadCharset, ADMFLAG_RCON, "Usage:  ff2_reloadcharset.  Forces FF2 to reload the current character set");
-	RegAdminCmd("ff2_reload", Command_ReloadFF2, ADMFLAG_ROOT, "Reloads FF2 safely and quietly?");
+	RegAdminCmd("ff2_reloadcharset", Command_ReloadCharset, ADMFLAG_RCON, "Forces FF2 to reload the current character set");
+	RegAdminCmd("ff2_reload", Command_ReloadFF2, ADMFLAG_ROOT, "Reloads FF2 safely and quietly");
 	RegAdminCmd("ff2_reloadweapons", Command_ReloadFF2Weapons, ADMFLAG_RCON, "Reloads FF2 weapon configuration safely and quietly");
 	RegAdminCmd("ff2_reloadconfigs", Command_ReloadFF2Configs, ADMFLAG_RCON, "Reloads ALL FF2 configs safely and quietly");
 
-	RegAdminCmd("ff2_special", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  ff2_special <boss>.  Forces next round to use that boss");
-	RegAdminCmd("ff2_addpoints", Command_Points, ADMFLAG_CHEATS, "Usage:  ff2_addpoints <target> <points>.  Adds queue points to any player");
+	RegAdminCmd("ff2_special", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage: ff2_special <boss>.  Forces next round to use that boss");
+	RegAdminCmd("ff2_addpoints", Command_Points, ADMFLAG_CHEATS, "Usage: ff2_addpoints <target> <points>.  Adds queue points to any player");
 	RegAdminCmd("ff2_point_enable", Command_Point_Enable, ADMFLAG_CHEATS, "Enable the control point if ff2_point_type is 0");
 	RegAdminCmd("ff2_point_disable", Command_Point_Disable, ADMFLAG_CHEATS, "Disable the control point if ff2_point_type is 0");
 	RegAdminCmd("ff2_start_music", Command_StartMusic, ADMFLAG_CHEATS, "Start the Boss's music");
 	RegAdminCmd("ff2_stop_music", Command_StopMusic, ADMFLAG_CHEATS, "Stop any currently playing Boss music");
 	RegAdminCmd("ff2_resetqueuepoints", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
 	RegAdminCmd("ff2_resetq", ResetQueuePointsCmd, ADMFLAG_CHEATS, "Reset a player's queue points");
-	RegAdminCmd("ff2_charset", Command_Charset, ADMFLAG_CHEATS, "Usage:  ff2_charset <charset>.  Forces FF2 to use a given character set");
+	RegAdminCmd("ff2_charset", Command_Charset, ADMFLAG_CHEATS, "Usage: ff2_charset <charset>.  Forces FF2 to use a given character set");
 	RegAdminCmd("ff2_reload_subplugins", Command_ReloadSubPlugins, ADMFLAG_RCON, "Reload FF2's subplugins.");
 	RegAdminCmd("ff2_setrage", Command_SetRage, ADMFLAG_CHEATS, "Usage: ff2_setrage <target> <percent>. Sets the RAGE to a boss player");
 	RegAdminCmd("ff2_addrage", Command_AddRage, ADMFLAG_CHEATS, "Usage: ff2_addrage <target> <percent>. Gives RAGE to a boss player");
@@ -1001,9 +1003,9 @@ public void OnPluginStart()
 	RegAdminCmd("ff2_addcharge", Command_AddCharge, ADMFLAG_CHEATS, "Usage: ff2_addcharge <target> <slot> <percent>. Adds a boss's charge");
 	RegAdminCmd("ff2_makeboss", Command_MakeBoss, ADMFLAG_CHEATS, "Usage: ff2_makeboss <target> [team]. Makes a player a boss.");
 
-	RegAdminCmd("hale_select", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  hale_select <boss>.  Forces next round to use that boss");
-	RegAdminCmd("hale_special", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage:  hale_select <boss>.  Forces next round to use that boss");
-	RegAdminCmd("hale_addpoints", Command_Points, ADMFLAG_CHEATS, "Usage:  hale_addpoints <target> <points>.  Adds queue points to any player");
+	RegAdminCmd("hale_select", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage: hale_select <boss>.  Forces next round to use that boss");
+	RegAdminCmd("hale_special", Command_SetNextBoss, ADMFLAG_CHEATS, "Usage: hale_select <boss>.  Forces next round to use that boss");
+	RegAdminCmd("hale_addpoints", Command_Points, ADMFLAG_CHEATS, "Usage: hale_addpoints <target> <points>.  Adds queue points to any player");
 	RegAdminCmd("hale_point_enable", Command_Point_Enable, ADMFLAG_CHEATS, "Enable the control point if ff2_point_type is 0");
 	RegAdminCmd("hale_point_disable", Command_Point_Disable, ADMFLAG_CHEATS, "Disable the control point if ff2_point_type is 0");
 	RegAdminCmd("hale_start_music", Command_StartMusic, ADMFLAG_CHEATS, "Start the Boss's music");
@@ -1668,42 +1670,42 @@ public bool BossTargetFilter(const char[] pattern, Handle clients)
 
 public void OnLibraryAdded(const char[] name)
 {
-	if(!strcmp(name, "tf2x10", false))
+	if(StrEqual(name, "tf2x10", false))
 	{
 		TimesTen = true;
 	}
 	#if defined _steamtools_included
-	else if(!strcmp(name, "SteamTools", false))
+	else if(StrEqual(name, "SteamTools", false))
 	{
 		steamtools = true;
 	}
 	#endif
 	#if defined _SteamWorks_Included
-	else if(!strcmp(name, "SteamWorks", false))
+	else if(StrEqual(name, "SteamWorks", false))
 	{
 		steamworks = true;
 	}
 	#endif
 	#if defined _tf2attributes_included
-	else if(!strcmp(name, "tf2attributes", false))
+	else if(StrEqual(name, "tf2attributes", false))
 	{
 		tf2attributes = true;
 	}
 	#endif
 	#if defined _goomba_included
-	else if(!strcmp(name, "goomba", false))
+	else if(StrEqual(name, "goomba", false))
 	{
 		goomba = true;
 	}
 	#endif
 	#if !defined _smac_included
-	else if(!strcmp(name, "smac", false))
+	else if(StrEqual(name, "smac", false))
 	{
 		smac = true;
 	}
 	#endif
 	#if defined _freak_fortress_2_kstreak_included
-	else if(!strcmp(name, "ff2_kstreak_pref", false))
+	else if(StrEqual(name, "ff2_kstreak_pref", false))
 	{
 		kmerge = view_as<bool>(FF2_KStreak_Merge());
 	}
@@ -1712,42 +1714,42 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnLibraryRemoved(const char[] name)
 {
-	if(!strcmp(name, "tf2x10", false))
+	if(StrEqual(name, "tf2x10", false))
 	{
 		TimesTen = false;
 	}
 	#if defined _steamtools_included
-	else if(!strcmp(name, "SteamTools", false))
+	else if(StrEqual(name, "SteamTools", false))
 	{
 		steamtools = false;
 	}
 	#endif
 	#if defined _SteamWorks_Included
-	else if(!strcmp(name, "SteamWorks", false))
+	else if(StrEqual(name, "SteamWorks", false))
 	{
 		steamworks = false;
 	}
 	#endif
 	#if defined _tf2attributes_included
-	else if(!strcmp(name, "tf2attributes", false))
+	else if(StrEqual(name, "tf2attributes", false))
 	{
 		tf2attributes = false;
 	}
 	#endif
 	#if defined _goomba_included
-	else if(!strcmp(name, "goomba", false))
+	else if(StrEqual(name, "goomba", false))
 	{
 		goomba = false;
 	}
 	#endif
 	#if !defined _smac_included
-	else if(!strcmp(name, "smac", false))
+	else if(StrEqual(name, "smac", false))
 	{
 		smac = false;
 	}
 	#endif
 	#if defined _freak_fortress_2_kstreak_included
-	else if(!strcmp(name, "ff2_kstreak_pref", false))
+	else if(StrEqual(name, "ff2_kstreak_pref", false))
 	{
 		kmerge = false;
 	}
@@ -1797,7 +1799,7 @@ public void OnMapStart()
 
 	for(int specials; specials<MAXSPECIALS; specials++)
 	{
-		for(int i; i<7; i++)
+		for(int i; i<MAXCHARSETS; i++)
 		{
 			if(PackKV[specials][i] == INVALID_HANDLE)
 				continue;
@@ -2085,7 +2087,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 			for(i=0; ; i++)
 			{
 				KvGetSectionName(Kv, config, sizeof(config));
-				if(!strcmp(config, charset, false))
+				if(StrEqual(config, charset, false))
 				{
 					FF2CharSet = i;
 					strcopy(FF2CharSetString, PLATFORM_MAX_PATH, charset);
@@ -2435,7 +2437,7 @@ public void LoadCharacter(const char[] character)
 	while(KvGotoNextKey(BossKV[Specials]))
 	{
 		KvGetSectionName(BossKV[Specials], section, sizeof(section));
-		if(!strcmp(section, "download"))
+		if(StrEqual(section, "download"))
 		{
 			for(int i=1; ; i++)
 			{
@@ -2454,7 +2456,7 @@ public void LoadCharacter(const char[] character)
 				}
 			}
 		}
-		else if(!strcmp(section, "mod_download"))
+		else if(StrEqual(section, "mod_download"))
 		{
 			for(int i=1; ; i++)
 			{
@@ -2477,7 +2479,7 @@ public void LoadCharacter(const char[] character)
 				}
 			}
 		}
-		else if(!strcmp(section, "mat_download"))
+		else if(StrEqual(section, "mat_download"))
 		{
 			for(int i=1; ; i++)
 			{
@@ -2962,7 +2964,7 @@ stock bool MapHasMusic(bool forceRecalc=false)  //SAAAAAARGE
 		while((entity=FindEntityByClassname2(entity, "info_target")) != -1)
 		{
 			GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
-			if(!strcmp(name, "hale_no_music", false))
+			if(StrEqual(name, "hale_no_music", false))
 			{
 				FF2Dbg("Detected Map Music");
 				hasMusic = true;
@@ -3370,11 +3372,11 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 
 		static char classname[64];
 		GetEntityClassname(entity, classname, sizeof(classname));
-		if(!strcmp(classname, "func_regenerate"))
+		if(StrEqual(classname, "func_regenerate"))
 		{
 			AcceptEntityInput(entity, "Kill");
 		}
-		else if(!strcmp(classname, "func_respawnroomvisualizer"))
+		else if(StrEqual(classname, "func_respawnroomvisualizer"))
 		{
 			AcceptEntityInput(entity, "Disable");
 		}
@@ -4844,9 +4846,9 @@ void SetupClientCookies(int client)
 	if(AreClientCookiesCached(client))
 	{
 		static char cookies[454];
-		char cookieValues[8][64];
+		char cookieValues[MAXCHARSETS][64];
 		GetClientCookie(client, FF2Cookies, cookies, 48);
-		ExplodeString(cookies, " ", cookieValues, 8, 6);
+		ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 
 		QueuePoints[client] = StringToInt(cookieValues[0][0]);
 		ToggleMusic[client] = view_as<bool>(StringToInt(cookieValues[1][0]));
@@ -4864,7 +4866,7 @@ void SetupClientCookies(int client)
 		if(cvarDatabase.IntValue < 2)
 		{
 			GetClientCookie(client, StatCookies, cookies, 48);
-			ExplodeString(cookies, " ", cookieValues, 8, 6);
+			ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 
 			BossWins[client] = StringToInt(cookieValues[0][0]);
 			BossLosses[client] = StringToInt(cookieValues[1][0]);
@@ -4876,14 +4878,14 @@ void SetupClientCookies(int client)
 		}
 
 		GetClientCookie(client, HudCookies, cookies, 48);
-		ExplodeString(cookies, " ", cookieValues, 8, 6);
+		ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 		for(int i=0; i<HUDTYPES; i++)
 		{
 			HudSettings[client][i] = StringToInt(cookieValues[i]);
 		}
 
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-		ExplodeString(cookies, ";", cookieValues, 7, 64);
+		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
 	}
 	else
@@ -5586,11 +5588,11 @@ public void PackMenu(int client)
 	FileToKeyValues(Kv, config);
 	int total;
 	static char cookies[454];
-	char cookieValues[7][64];
+	char cookieValues[MAXCHARSETS][64];
 	if(AreClientCookiesCached(client))
 	{
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-		ExplodeString(cookies, ";", cookieValues, 7, 64);
+		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 	}
 
 	do
@@ -5601,10 +5603,10 @@ public void PackMenu(int client)
 
 		KvGetSectionName(Kv, pack, sizeof(pack));
 		IntToString(total, num, sizeof(num));
-		if(total<8 && cookieValues[total-1][0])
+		if(total<(MAXCHARSETS+1) && cookieValues[total-1][0])
 			Format(pack, sizeof(pack), "%s: %s", pack, cookieValues[total-1]);
 
-		AddMenuItem(dMenu, num, pack, (CurrentCharSet==total-1 || total>7) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+		AddMenuItem(dMenu, num, pack, (CurrentCharSet==total-1 || total>MAXCHARSETS) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 	}
 	while(KvGotoNextKey(Kv));
 	CloseHandle(Kv);
@@ -5645,9 +5647,9 @@ public void PackBoss(int client, int pack)
 	if(AreClientCookiesCached(client))
 	{
 		static char cookies[454];
-		char cookieValues[7][64];
+		char cookieValues[MAXCHARSETS][64];
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-		ExplodeString(cookies, ";", cookieValues, 7, 64);
+		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		if(cookieValues[pack][0])
 			strcopy(boss, sizeof(boss), cookieValues[pack]);
 	}
@@ -5725,15 +5727,15 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 			}
 
 			pack = StringToInt(name[1]);
-			if(pack < 7)
+			if(pack < MAXCHARSETS)
 			{
-				char cookieValues[7][64];
+				char cookieValues[MAXCHARSETS][64];
 				GetClientCookie(param1, SelectionCookie, cookies, sizeof(cookies));
-				ExplodeString(cookies, ";", cookieValues, 7, 64);
+				ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 				strcopy(cookieValues[pack], 64, name[0]);
 
 				strcopy(cookies, sizeof(cookies), cookieValues[0]);
-				for(int i=1; i<7; i++)
+				for(int i=1; i<MAXCHARSETS; i++)
 				{
 					Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 				}
@@ -5766,13 +5768,13 @@ void SaveKeepBossCookie(int client)
 		return;
 
 	static char cookies[454];
-	char cookieValues[7][64];
+	char cookieValues[MAXCHARSETS][64];
 	GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-	ExplodeString(cookies, ";", cookieValues, 7, 64);
+	ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 	strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
 
 	strcopy(cookies, sizeof(cookies), cookieValues[0]);
-	for(int i=1; i<7; i++)
+	for(int i=1; i<MAXCHARSETS; i++)
 	{
 		Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 	}
@@ -9159,10 +9161,6 @@ public void OnClientPostAdminCheck(int client)
 		if(!buffer[0])
 			SetClientCookie(client, HudCookies, "0 0 0 0 0 0 0");
 			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED
-
-		GetClientCookie(client, SelectionCookie, buffer, sizeof(buffer));
-		if(!buffer[0])
-			SetClientCookie(client, SelectionCookie, ";;;;;;");
 
 		SetupClientCookies(client);
 	}
@@ -13059,7 +13057,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			else
 			{
 				char classname[64];
-				if(GetEntityClassname(attacker, classname, sizeof(classname)) && !strcmp(classname, "trigger_hurt", false))
+				if(GetEntityClassname(attacker, classname, sizeof(classname)) && StrEqual(classname, "trigger_hurt", false))
 				{
 					if(SpawnTeleOnTriggerHurt && IsBoss(client) && CheckRoundState()==1)
 					{
@@ -13566,7 +13564,7 @@ stock int FindTeleOwner(int client)
 
 	int teleporter = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
 	static char classname[32];
-	if(IsValidEntity(teleporter) && GetEntityClassname(teleporter, classname, sizeof(classname)) && !strcmp(classname, "obj_teleporter", false))
+	if(IsValidEntity(teleporter) && GetEntityClassname(teleporter, classname, sizeof(classname)) && StrEqual(classname, "obj_teleporter", false))
 	{
 		int owner = GetEntPropEnt(teleporter, Prop_Send, "m_hBuilder");
 		if(IsValidClient(owner, false))
@@ -16063,7 +16061,7 @@ stock int GetHealingTarget(int client, bool checkgun=false)
 	{
 		static char classname[64];
 		GetEntityClassname(medigun, classname, sizeof(classname));
-		if(!strcmp(classname, "tf_weapon_medigun", false))
+		if(StrEqual(classname, "tf_weapon_medigun", false))
 		{
 			if(GetEntProp(medigun, Prop_Send, "m_bHealing"))
 				return GetEntPropEnt(medigun, Prop_Send, "m_hHealingTarget");
@@ -16143,11 +16141,11 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		KvRewind(Kv);
 
 		int packs, current;
-		bool choosen[16];
+		bool choosen[MAXCHARSETS];
 		for(int tries; tries<99 && packs<=shuffle; tries++)
 		{
 			current = validCharsets[GetRandomInt(1, charsets)]-1;
-			if(current<0 || choosen[current] || (charsets>shuffle && current==CurrentCharSet))
+			if(current<0 || current>=MAXCHARSETS || choosen[current] || (charsets>shuffle && current==CurrentCharSet))
 				continue;
 
 			packs++;
@@ -16202,11 +16200,11 @@ public Action Command_Nextmap(int client, int args)
 
 public Action Command_Say(int client, int args)
 {
-	static char chat[128];
+	static char chat[32];
 	if(GetCmdArgString(chat, sizeof(chat))<1 || !client)
 		return Plugin_Continue;
 
-	if(!strcmp(chat, "\"nextmap\"") && FF2CharSetString[0])
+	if(FF2CharSetString[0] && StrEqual(chat, "\"nextmap\""))
 	{
 		Command_Nextmap(client, 0);
 		return Plugin_Handled;
