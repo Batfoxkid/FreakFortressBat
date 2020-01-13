@@ -79,9 +79,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 10th, 2020"
+#define FORK_DATE_REVISION "January 12th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -827,7 +827,7 @@ public void OnPluginStart()
 	cvarDamageHud = CreateConVar("ff2_damage_tracker", "0", "Default Damage Tracker value for players", _, true, 0.0, true, 9.0);
 	cvarTelefrag = CreateConVar("ff2_telefrag_damage", "5000.0", "Damage dealt upon a Telefrag", _, true, 0.0);
 	cvarHealth = CreateConVar("ff2_health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", "Default boss health formula");
-	cvarRageDamage = CreateConVar("ff2_health_formula", "1900.0", "Default boss ragedamage formula");
+	cvarRageDamage = CreateConVar("ff2_rage_formula", "1900.0", "Default boss ragedamage formula");
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -3897,7 +3897,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(Damage[top[0]] > 9000)
+	if(!TimesTen && Damage[top[0]]>9000)
 		CreateTimer(1.0, Timer_NineThousand, _, TIMER_FLAG_NO_MAPCHANGE);
 
 	if(!botBoss && statPlayers>0)
@@ -5170,7 +5170,7 @@ public Action Command_SetMyBoss(int client, int args)
 			continue;
 
 		KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
-		if(StrEqual(boss, xIncoming[client], false))
+		if(StrEqual(bossName, xIncoming[client], false))
 		{
 			if(CheckValidBoss(client, xIncoming[client], !DuoMin))
 				GetBossSpecial(config, bossName, sizeof(bossName), client);
@@ -8392,12 +8392,12 @@ public Action OnUberDeployed(Handle event, const char[] name, bool dontBroadcast
 			GetEntityClassname(medigun, classname, sizeof(classname));
 			if(StrEqual(classname, "tf_weapon_medigun"))
 			{
-				TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+				//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
 				int target = GetHealingTarget(client);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
-					TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+					//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
 					uberTarget[client] = target;
 				}
@@ -8424,11 +8424,11 @@ public Action Timer_Uber(Handle timer, any medigunid)
 			int target = GetHealingTarget(client);
 			if(charge > 0.05)
 			{
-				TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+				//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5);
 				if(IsValidClient(target, false) && IsPlayerAlive(target))
 				{
-					TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+					//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
 					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5);
 					uberTarget[client] = target;
 				}
@@ -11534,7 +11534,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 	int custom = GetEventInt(event, "custom");
 	if(custom == TF_CUSTOM_TELEFRAG)
 	{
-		damage = IsPlayerAlive(attacker) ? 9001 : 1;
+		damage = IsPlayerAlive(attacker) ? TimesTen ? RoundFloat(cvarTelefrag.IntValue*cvarTimesTen.FloatValue) : cvarTelefrag.IntValue : 1;
 	}
 	else if(custom == TF_CUSTOM_BOOTS_STOMP)
 	{
