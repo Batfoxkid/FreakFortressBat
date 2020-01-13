@@ -78,10 +78,10 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 12th, 2020"
+#define FORK_DEV_REVISION "pack-kv"
+#define FORK_DATE_REVISION "January 13th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -427,7 +427,7 @@ bool areSubPluginsEnabled;
 int FF2CharSet;
 int CurrentCharSet;
 int validCharsets[64];
-char CurrentCharSetString[42];
+char CharSetString[7][42];
 char FF2CharSetString[42];
 bool isCharSetSelected = false;
 bool HasCharSets;
@@ -796,7 +796,7 @@ public void OnPluginStart()
 	cvarSappers = CreateConVar("ff2_sapper", "0", "0-Disable, 1-Can sap the boss, 2-Can sap minions, 3-Can sap both", _, true, 0.0, true, 3.0);
 	cvarSapperCooldown = CreateConVar("ff2_sapper_cooldown", "500", "0-No Cooldown, #-Damage needed to be able to use again", _, true, 0.0);
 	cvarSapperStart = CreateConVar("ff2_sapper_starting", "0", "#-Damage needed for first usage (Not used if ff2_sapper or ff2_sapper_cooldown is 0)", _, true, 0.0);
-	cvarTheme = CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0, true, 15.0);
+	cvarTheme = CreateConVar("ff2_theme", "0", "0-No Theme, #-Flags of Themes", _, true, 0.0);
 	cvarSelfHealing = CreateConVar("ff2_healing", "0", "0-Block Boss Healing, 1-Allow Self-Healing, 2-Allow Non-Self Healing, 3-Allow All Healing", _, true, 0.0, true, 3.0);
 	cvarBotRage = CreateConVar("ff2_bot_rage", "1", "0-Disable, 1-Bots can use rage when ready", _, true, 0.0, true, 1.0);
 	cvarDamageToTele = CreateConVar("ff2_tts_damage", "250.0", "Minimum damage boss needs to take in order to be teleported to spawn", _, true, 1.0);
@@ -2122,7 +2122,7 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	}
 
 	CurrentCharSet = i;
-	KvGetSectionName(Kv, CurrentCharSetString, sizeof(CurrentCharSetString));
+	KvGetSectionName(Kv, CharSetString[CurrentCharSet], sizeof(CharSetString[]));
 
 	BuildPath(Path_SM, filepath, PLATFORM_MAX_PATH, ConfigPath);
 	for(i=1; Specials<MAXSPECIALS && i<=MAXSPECIALS; i++)
@@ -3586,7 +3586,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		}
 		else
 		{
-			FormatEx(newName, 256, "%s | %s", oldName, CurrentCharSetString);
+			FormatEx(newName, 256, "%s | %s", oldName, CharSetString[CurrentCharSet]);
 		}
 		hostName.SetString(newName);
 	}
@@ -4883,7 +4883,7 @@ void SetupClientCookies(int client)
 		}
 
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-		ExplodeString(cookies, ";", cookieValues, 8, 64);
+		ExplodeString(cookies, ";", cookieValues, 7, 64);
 		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
 	}
 	else
@@ -5174,7 +5174,7 @@ public Action Command_SetMyBoss(int client, int args)
 			}
 			else if(KvGetNum(BossKV[config], "hidden", 0) &&
 			      !(KvGetNum(BossKV[config], "donator", 0) ||
-			        BossTheme(config) ||
+			        KvGetNum(BossKV[config], "theme", 0) ||
 				KvGetNum(BossKV[config], "admin", 0) ||
 				KvGetNum(BossKV[config], "owner", 0)))
 			{
@@ -5258,7 +5258,7 @@ public Action Command_SetMyBoss(int client, int args)
 
 	if(HasCharSets)
 	{
-		SetMenuTitle(dMenu, "%t", "ff2_boss_selection_pack", CurrentCharSetString, boss);
+		SetMenuTitle(dMenu, "%t", "ff2_boss_selection_pack", CharSetString[CurrentCharSet], boss);
 	}
 	else
 	{
@@ -5370,7 +5370,7 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 		else if(KvGetNum(BossKV[config], "hidden", 0) &&
 		      !(KvGetNum(BossKV[config], "donator", 0) ||
-		        BossTheme(config) ||
+		        KvGetNum(BossKV[config], "theme", 0) ||
 			KvGetNum(BossKV[config], "admin", 0) ||
 			KvGetNum(BossKV[config], "owner", 0)))
 		{
@@ -5575,7 +5575,7 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 
 public void PackMenu(int client)
 {
-	static char pack[128], num[6], config[PLATFORM_MAX_PATH];
+	static char pack[128], num[4], config[PLATFORM_MAX_PATH];
 	Handle dMenu = CreateMenu(PackMenuH);
 	SetGlobalTransTarget(client);
 	SetMenuTitle(dMenu, "%t", "to0_packmenu");
@@ -5586,11 +5586,11 @@ public void PackMenu(int client)
 	FileToKeyValues(Kv, config);
 	int total;
 	static char cookies[454];
-	char cookieValues[8][64];
+	char cookieValues[7][64];
 	if(AreClientCookiesCached(client))
 	{
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-		ExplodeString(cookies, ";", cookieValues, 8, 64);
+		ExplodeString(cookies, ";", cookieValues, 7, 64);
 	}
 
 	do
@@ -5601,10 +5601,10 @@ public void PackMenu(int client)
 
 		KvGetSectionName(Kv, pack, sizeof(pack));
 		IntToString(total, num, sizeof(num));
-		if(AreClientCookiesCached(client) && total<8)
+		if(total<8 && cookieValues[total-1][0])
 			Format(pack, sizeof(pack), "%s: %s", pack, cookieValues[total-1]);
 
-		AddMenuItem(dMenu, num, pack, CurrentCharSet==total-1 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+		AddMenuItem(dMenu, num, pack, (CurrentCharSet==total-1 || total>7) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 	}
 	while(KvGotoNextKey(Kv));
 	CloseHandle(Kv);
@@ -5639,51 +5639,49 @@ public int PackMenuH(Handle menu, MenuAction action, int param1, int param2)
 public void PackBoss(int client, int pack)
 {
 	char boss[66], bossName[64];
-	static char , character[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH];
 	Handle dMenu = CreateMenu(PackBossH);
 	SetGlobalTransTarget(client);
 
-	if(AreClientCookiesCached(client) && pack<7)
+	if(AreClientCookiesCached(client))
 	{
 		static char cookies[454];
-		char cookieValues[8][64];
+		char cookieValues[7][64];
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-		ExplodeString(cookies, ";", cookieValues, 8, 64);
+		ExplodeString(cookies, ";", cookieValues, 7, 64);
 		if(cookieValues[pack][0])
 			strcopy(boss, sizeof(boss), cookieValues[pack]);
 	}
 
-	KvGetSectionName(Kv, bossName, sizeof(bossName));
-	SetMenuTitle(dMenu, "%t", "to0_viewpack", bossName, boss);
+	SetMenuTitle(dMenu, "%t", "to0_viewpack", CharSetString[pack], boss);
 
 	FormatEx(boss, sizeof(boss), ";%i", pack);
 	FormatEx(bossName, sizeof(bossName), "%t", "to0_random");
 	AddMenuItem(dMenu, boss, bossName);
 
-	for(int i=1; i<PackSpecials[pack]; i++)
+	for(int config; config<PackSpecials[pack]; config++)
 	{
-		KvRewind(BossKV[config]);
-		if(KvGetNum(BossKV[config], "blocked", 0))
+		KvRewind(PackKV[config][pack]);
+		if(KvGetNum(PackKV[config][pack], "blocked", 0))
 			continue;
 
-		KvGetString(BossKV[config], "name", boss, sizeof(boss));
-		GetBossSpecial(config, bossName, sizeof(bossName), client);
-		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-		   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
+		KvGetString(PackKV[config][pack], "name", boss, sizeof(boss));
+		GetBossSpecial(config, bossName, sizeof(bossName), client, pack);
+		if((KvGetNum(PackKV[config][pack], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(PackKV[config][pack], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
 		{
-			if(!KvGetNum(BossKV[config], "hidden", 0))
+			if(!KvGetNum(PackKV[config][pack], "hidden", 0))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+		else if(KvGetNum(PackKV[config][pack], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 		{
-			if(!KvGetNum(BossKV[config], "hidden", 1))
+			if(!KvGetNum(PackKV[config][pack], "hidden", 1))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "hidden", 0) &&
-		      !(KvGetNum(BossKV[config], "donator", 0) ||
-			KvGetNum(BossKV[config], "admin", 0) ||
-			KvGetNum(BossKV[config], "owner", 0)))
+		else if(KvGetNum(PackKV[config][pack], "hidden", 0) &&
+		      !(KvGetNum(PackKV[config][pack], "donator", 0) ||
+		        KvGetNum(PackKV[config][pack], "theme", 0) ||
+			KvGetNum(PackKV[config][pack], "admin", 0) ||
+			KvGetNum(PackKV[config][pack], "owner", 0)))
 		{
 			// Don't show
 		}
@@ -5692,31 +5690,6 @@ public void PackBoss(int client, int pack)
 			Format(boss, sizeof(boss), "%s;%i", boss, pack);
 			AddMenuItem(dMenu, boss, bossName);
 		}
-
-		if(KvGetNum(bossKV, "blocked", 0))
-			continue;
-
-		KvGetString(bossKV, "name", bossName, sizeof(bossName));
-		if((KvGetNum(bossKV, "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-		   (KvGetNum(bossKV, "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
-		{
-			if(!KvGetNum(bossKV, "hidden", 0))
-				AddMenuItem(dMenu, bossName, bossName, ITEMDRAW_DISABLED);
-
-			CloseHandle(bossKV);
-			continue;
-		}
-		else if(KvGetNum(bossKV, "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
-		{
-			if(!KvGetNum(bossKV, "hidden", 1))
-				AddMenuItem(dMenu, bossName, bossName, ITEMDRAW_DISABLED);
-
-			CloseHandle(bossKV);
-			continue;
-		}
-
-		AddMenuItem(dMenu, boss, bossName);
-		CloseHandle(bossKV);
 	}
 
 	SetMenuExitButton(dMenu, true);
@@ -5737,6 +5710,7 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 			if(!AreClientCookiesCached(param1))
 			{
 				PrintToChat(param1, "[SM] %t", "Could not connect to database");
+				PackMenu(param1);
 				return;
 			}
 
@@ -5753,9 +5727,9 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 			pack = StringToInt(name[1]);
 			if(pack < 7)
 			{
-				char cookieValues[8][64];
+				char cookieValues[7][64];
 				GetClientCookie(param1, SelectionCookie, cookies, sizeof(cookies));
-				ExplodeString(cookies, ";", cookieValues, 8, 64);
+				ExplodeString(cookies, ";", cookieValues, 7, 64);
 				strcopy(cookieValues[pack], 64, name[0]);
 
 				strcopy(cookies, sizeof(cookies), cookieValues[0]);
@@ -5779,93 +5753,11 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 bool BossTheme(int config)
 {
 	KvRewind(BossKV[config]);
-	int theme = KvGetNum(BossKV[config], "theme", 0);
-	if(theme > 0)
-	{
-		switch(cvarTheme.IntValue)
-		{
-			case 0:
-			{
-				return true;
-			}
-			case 1:
-			{
-				if(theme==1)
-					return false;
-			}
-			case 2:
-			{
-				if(theme==2)
-					return false;
-			}
-			case 3:
-			{
-				if(theme==1 || theme==2)
-					return false;
-			}
-			case 4:
-			{
-				if(theme==3)
-					return false;
-			}
-			case 5:
-			{
-				if(theme==1 || theme==3)
-					return false;
-			}
-			case 6:
-			{
-				if(theme==2 || theme==3)
-					return false;
-			}
-			case 7:
-			{
-				if(theme==1 || theme==2 || theme==3)
-					return false;
-			}
-			case 8:
-			{
-				if(theme==4)
-					return false;
-			}
-			case 9:
-			{
-				if(theme==1 || theme==4)
-					return false;
-			}
-			case 10:
-			{
-				if(theme==2 || theme==4)
-					return false;
-			}
-			case 11:
-			{
-				if(theme==1 || theme==2 || theme==4)
-					return false;
-			}
-			case 12:
-			{
-				if(theme==3 || theme==4)
-					return false;
-			}
-			case 13:
-			{
-				if(theme==1 || theme==3 || theme==4)
-					return false;
-			}
-			case 14:
-			{
-				if(theme==2 || theme==3 || theme==4)
-					return false;
-			}
-			default:
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-	return false;
+	int theme = RoundFloat(Pow(KvGetFloat(BossKV[config], "theme"), 2.0));
+	if(theme < 1)
+		return false;
+
+	return !(cvarTheme.IntValue & theme);
 }
 
 void SaveKeepBossCookie(int client)
@@ -5874,13 +5766,13 @@ void SaveKeepBossCookie(int client)
 		return;
 
 	static char cookies[454];
-	char cookieValues[8][64];
+	char cookieValues[7][64];
 	GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-	ExplodeString(cookies, ";", cookieValues, 8, 64);
+	ExplodeString(cookies, ";", cookieValues, 7, 64);
 	strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
 
 	strcopy(cookies, sizeof(cookies), cookieValues[0]);
-	for(int i=1; i<8; i++)
+	for(int i=1; i<7; i++)
 	{
 		Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 	}
@@ -13575,35 +13467,41 @@ public Action OnGetMaxHealth(int client, int &maxHealth)
 	return Plugin_Continue;
 }
 
-void GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int client=0)
+void GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int client=0, int pack=-1)
 {
 	if(boss < 0)
 		return;
 
-	if(!BossKV[boss])
+	Handle kv;
+	if(pack < 0)
+	{
+		kv = BossKV[boss];
+	}
+	else
+	{
+		kv = PackKV[boss][pack];
+	}
+
+	if(!kv)
 		return;
 
 	static char name[64], language[20];
 	GetLanguageInfo(IsValidClient(client) ? GetClientLanguage(client) : GetServerLanguage(), language, sizeof(language), name, sizeof(name));
 	Format(language, sizeof(language), "name_%s", language);
 
-	KvRewind(BossKV[boss]);
-	KvGetString(BossKV[boss], language, name, bufferLength);
+	KvRewind(kv);
+	KvGetString(kv, language, name, bufferLength);
 	if(!name[0])
 	{
 		if(IsValidClient(client))	// Don't check server's lanuage twice
 		{
 			GetLanguageInfo(GetServerLanguage(), language, 8, name, 8);
 			Format(language, sizeof(language), "name_%s", language);
-			KvGetString(BossKV[boss], language, name, bufferLength);
+			KvGetString(kv, language, name, bufferLength);
 		}
 
 		if(!name[0])
-		{
-			KvGetString(BossKV[boss], "name", name, bufferLength);
-			if(!name[0])
-				strcopy(buffer, bufferLength, "=Failed name=");
-		}
+			KvGetString(kv, "name", name, bufferLength, "=Failed name=");
 	}
 	strcopy(buffer, bufferLength, name);
 }
