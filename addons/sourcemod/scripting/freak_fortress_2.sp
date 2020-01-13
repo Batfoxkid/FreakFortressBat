@@ -81,7 +81,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 10th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4217,8 +4217,10 @@ public int Command_HudMenuH(Handle menu, MenuAction action, int param1, int para
 				if(HudSettings[param1][param2] > 9)
 					HudSettings[param1][param2] = 1;
 			}
-
-			HudSettings[param1][param2] = HudSettings[param1][param2] ? 0 : 1;
+			else
+			{
+				HudSettings[param1][param2] = HudSettings[param1][param2] ? 0 : 1;
+			}
 			Command_HudMenu(param1, 0);
 		}
 	}
@@ -9349,15 +9351,16 @@ public Action ClientTimer(Handle timer)
 
 		for(observer=0; observer<10; observer++)
 		{
-			if(Damage[client] < Damage[best[observer]])
+			if(best[observer] && Damage[client]<Damage[best[observer]])
 				continue;
-			
+
 			index = 9;
 			while(index > observer)
 			{
 				best[index] = best[--index];
 			}
 			best[observer] = client;
+			break;
 		}
 	}
 
@@ -9529,11 +9532,11 @@ public Action ClientTimer(Handle timer)
 
 					if(LastAliveClass[client] == TFClass_Engineer)
 					{
-						SetHudTextParams(-1.0, 0.45, 0.35, 0, 55, 0, 255, 0, 0.35, 0.0, 0.1);
+						SetHudTextParams(0.0, 0.5, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
 					}
 					else
 					{
-						SetHudTextParams(-1.0, 0.99, 0.35, 0, 55, 0, 255, 0, 0.35, 0.0, 0.1);
+						SetHudTextParams(0.0, 0.0, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
 					}
 
 					FF2_ShowSyncHudText(client, infoHUD, top);
