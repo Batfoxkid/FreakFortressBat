@@ -2049,7 +2049,10 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 {
 	char filepath[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH], key[4], charset[42];
 	Specials = 0;
-	PackSpecials = 0;
+	for(int i; i<MAXCHARSETS; i++)
+	{
+		PackSpecials[i] = 0;
+	}
 	BuildPath(Path_SM, filepath, PLATFORM_MAX_PATH, "%s/%s", DataPath, CharsetCFG);
 
 	if(!FileExists(filepath))
