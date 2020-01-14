@@ -512,4 +512,8 @@
 		"en"		"Boss Health"
 		"ru"		"Здоровье Босса"
 	}
+	"Hud Ranking"
+	{
+		"en"		"Damage Tracker"
+	}
 }
