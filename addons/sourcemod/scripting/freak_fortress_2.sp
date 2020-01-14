@@ -81,7 +81,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 13th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."009"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."010"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -2157,9 +2157,15 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	delete Kv;
 
 	int amount;
-	// Get side characters (up to 7 packs)
 	if(HasCharSets)
 	{
+		if(cvarNameChange.IntValue == 2)
+		{
+			char newName[256];
+			FormatEx(newName, 256, "%s | %s", oldName, CharSetString[CurrentCharSet]);
+			hostName.SetString(newName);
+		}
+
 		// KvRewind, you son of a-
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 		Kv = CreateKeyValues("");
@@ -3586,19 +3592,12 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	if(!PointType)
 		SetControlPoint(false);
 
-	if(cvarNameChange.BoolValue)
+	if(cvarNameChange.IntValue == 1)
 	{
 		char newName[256];
-		if(cvarNameChange.IntValue == 1)
-		{
-			static char bossName[64];
-			GetBossSpecial(Special[0], bossName, 64);
-			FormatEx(newName, 256, "%s | %s", oldName, bossName);
-		}
-		else
-		{
-			FormatEx(newName, 256, "%s | %s", oldName, CharSetString[CurrentCharSet]);
-		}
+		static char bossName[64];
+		GetBossSpecial(Special[0], bossName, 64);
+		FormatEx(newName, 256, "%s | %s", oldName, bossName);
 		hostName.SetString(newName);
 	}
 	return Plugin_Continue;
