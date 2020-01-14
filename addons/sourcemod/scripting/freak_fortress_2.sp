@@ -5738,7 +5738,7 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 			pack = StringToInt(name[1]);
 			if(pack < MAXCHARSETS)
 			{
-				if(cvarBossDesc.BoolValue && ToggleInfo[param1])
+				if(param2 && cvarBossDesc.BoolValue && ToggleInfo[param1])
 				{
 					strcopy(cIncoming[param1], sizeof(cIncoming[]), cookies);
 					PackConfirmBoss(param1, pack);
