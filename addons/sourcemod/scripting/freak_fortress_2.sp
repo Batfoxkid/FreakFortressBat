@@ -81,7 +81,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 13th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."009"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -2173,7 +2173,6 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 			}
 
 			KvGetSectionName(Kv, CharSetString[amount], sizeof(CharSetString[]));
-			PrintToConsoleAll(CharSetString[amount]);
 			for(i=1; PackSpecials[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
 			{
 				IntToString(i, key, sizeof(key));
@@ -2189,7 +2188,6 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 				}
 				LoadSideCharacter(config, amount);
 			}
-			PrintToConsoleAll("has %i", PackSpecials[amount]);
 			amount++;
 		} while(amount<7 && KvGotoNextKey(Kv));
 
@@ -5245,27 +5243,27 @@ public Action Command_SetMyBoss(int client, int args)
 	Handle dMenu = CreateMenu(Command_SetMyBossH);
 	SetGlobalTransTarget(client);
 	if(ToggleBoss[client] == Setting_On)
-		FormatEx(boss, sizeof(boss), "%t", "to0_random");
-
-	for(int config; config<=Specials; config++)
 	{
-		if(config == Specials)
+		for(int config; config<=Specials; config++)
 		{
-			strcopy(boss, sizeof(boss), "");
-			break;
-		}
+			if(config == Specials)
+			{
+				FormatEx(boss, sizeof(boss), "%t", "to0_random");
+				break;
+			}
 
-		KvRewind(BossKV[config]);
-		if(KvGetNum(BossKV[config], "blocked", 0))
-			continue;
+			KvRewind(BossKV[config]);
+			if(KvGetNum(BossKV[config], "blocked", 0))
+				continue;
 
-		KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
-		if(StrEqual(bossName, xIncoming[client], false))
-		{
-			if(CheckValidBoss(client, xIncoming[client], !DuoMin))
-				GetBossSpecial(config, bossName, sizeof(bossName), client);
+			KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
+			if(StrEqual(bossName, xIncoming[client], false))
+			{
+				if(CheckValidBoss(client, xIncoming[client], !DuoMin))
+					GetBossSpecial(config, boss, sizeof(boss), client);
 
-			break;
+				break;
+			}
 		}
 	}
 
