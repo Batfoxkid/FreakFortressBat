@@ -1,3 +1,5 @@
+#include <sdktools>
+
 #define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
 #define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
 #define FF2FLAG_CLASSTIMERDISABLED 		(1<<3)		//Used to prevent clients' timer
@@ -874,7 +876,6 @@ stock void FPrintToChat(int client, const char[] message, any ...)
 }
 stock void FPrintToChatAll(const char[] message, any ...)
 {
-	SetGlobalTransTarget(client);
 	char buffer[192];
 	VFormat(buffer, sizeof(buffer), message, 2);
 	CPrintToChatAll("%t%s", "Prefix", buffer);
