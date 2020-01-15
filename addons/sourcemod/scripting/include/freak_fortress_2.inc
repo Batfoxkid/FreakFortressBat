@@ -1,7 +1,3 @@
-#include <morecolors>
-#include <sdktools>
-#tryinclude <tf2items>
-
 #define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
 #define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
 #define FF2FLAG_CLASSTIMERDISABLED 		(1<<3)		//Used to prevent clients' timer
@@ -865,59 +861,44 @@ stock void FF2Dbg(const char[] buffer, any ...)
 }
 
 /**
- * Prints a More Colors message with FF2's prefix
+ * Prints a color message with FF2's prefix
  *
  * Uses the same params and return values as CPrintToChat, CPrintToChatAll, and CReplyToCommand
  */
 stock void FPrintToChat(int client, const char[] message, any ...)
 {
-	CCheckTrie();
-	if(client<=0 || client>MaxClients)
-	{
-		ThrowError("Invalid client index %i", client);
-	}
-	if(!IsClientInGame(client))
-	{
-		ThrowError("Client %i is not in game", client);
-	}
-	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
-	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
-	VFormat(buffer2, sizeof(buffer2), buffer, 3);
-	CReplaceColorCodes(buffer2);
-	CSendMessage(client, buffer2);
+	char buffer[192];
+	VFormat(buffer, sizeof(buffer), message, 3);
+	CPrintToChat(client, "%t%s", "Prefix", buffer);
 }
 stock void FPrintToChatAll(const char[] message, any ...)
 {
-	CCheckTrie();
-	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
-	for(int i=1; i<=MaxClients; i++)
-	{
-		if(!IsClientInGame(i) || CSkipList[i])
-		{
-			CSkipList[i] = false;
-			continue;
-		}
-		SetGlobalTransTarget(i);
-		Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
-		VFormat(buffer2, sizeof(buffer2), buffer, 2);
-		CReplaceColorCodes(buffer2);
-		CSendMessage(i, buffer2);
-	}
+	SetGlobalTransTarget(client);
+	char buffer[192];
+	VFormat(buffer, sizeof(buffer), message, 2);
+	CPrintToChatAll("%t%s", "Prefix", buffer);
 }
 stock void FReplyToCommand(int client, const char[] message, any ...)
 {
-	char buffer[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
-	VFormat(buffer, sizeof(buffer), message, 3);
-	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	char buffer[192];
+	VFormat(message, sizeof(message), buffer, 3);
+	if(!client)
+	{
+		VFormat(buffer, sizeof(buffer), message, 3);
+		CRemoveTags(buffer, sizeof(buffer));
+		PrintToServer("[FF2] %s", buffer);
+	}
+	else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
 		CRemoveTags(buffer, sizeof(buffer));
 		PrintToConsole(client, "[FF2] %s", buffer);
 	}
 	else
 	{
-		FPrintToChat(client, "%s", buffer);
+		VFormat(buffer, sizeof(buffer), message, 3);
+		CPrintToChat(client, "%t%s", "Prefix", buffer);
 	}
 }
 
