@@ -17111,7 +17111,7 @@ public int Native_RemoveClientShield(Handle plugin, int numParams)
 
 public int Native_LogError(Handle plugin, int numParams)
 {
-	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH], message[256];
+	char buffer[256], buffer2[256], message[256];
 	SetNativeString(1, message, sizeof(message));
 	Format(buffer, sizeof(buffer), "%s", message);
 	VFormat(buffer2, sizeof(buffer2), buffer, 3);
