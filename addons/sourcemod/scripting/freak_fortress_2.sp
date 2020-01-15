@@ -81,7 +81,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 13th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."010"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."011"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -1080,7 +1080,7 @@ public void OnPluginStart()
 	Handle gameData = LoadGameConfigFile("equipwearable");
 	if(gameData == null)
 	{
-		FF2_LogError("[Gamedata] Failed to find equipwearable.txt");
+		LogToFile(eLog, "[Gamedata] Failed to find equipwearable.txt");
 		return;
 	}
 
@@ -1089,7 +1089,7 @@ public void OnPluginStart()
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKEquipWearable = EndPrepSDKCall();
 	if(SDKEquipWearable == null)
-		FF2_LogError("[Gamedata] Failed to create call: CBasePlayer::EquipWearable");
+		LogToFile(eLog, "[Gamedata] Failed to create call: CBasePlayer::EquipWearable");
 
 	delete gameData;
 }
@@ -9353,6 +9353,7 @@ public Action OnPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 	if(!IsValidClient(client))
 		return Plugin_Continue;
 
+	LastAliveClass[client] = TF2_GetPlayerClass(client);
 	for(int i; i<3; i++)
 	{
 		CritBoosted[client][i] = -1;
@@ -9644,7 +9645,7 @@ public Action ClientTimer(Handle timer)
 
 					if(LastAliveClass[client] == TFClass_Engineer)
 					{
-						SetHudTextParams(0.0, 0.5, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+						SetHudTextParams(0.0, 0.35, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
 					}
 					else
 					{
@@ -10972,7 +10973,6 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 	if(!client)
 		return Plugin_Continue;
 
-	LastAliveClass[client] = TF2_GetPlayerClass(client);
 	if(Enabled3 && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER)) // Because those damn subplugins
 	{
 		int reds, blus;
@@ -17111,10 +17111,11 @@ public int Native_RemoveClientShield(Handle plugin, int numParams)
 
 public int Native_LogError(Handle plugin, int numParams)
 {
-	static char buffer[MAX_BUFFER_LENGTH], message[256];
-	SetNativeString(1, buffer, sizeof(buffer));
-	VFormat(message, sizeof(message), buffer, 4);
-	LogToFile(eLog, message);
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH], message[256];
+	SetNativeString(1, message, sizeof(message));
+	Format(buffer, sizeof(buffer), "%s", message);
+	VFormat(buffer2, sizeof(buffer2), buffer, 3);
+	LogToFile(eLog, buffer2);
 }
 
 public int Native_Debug(Handle plugin, int numParams)
