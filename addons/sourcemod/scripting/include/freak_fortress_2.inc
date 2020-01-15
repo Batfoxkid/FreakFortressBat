@@ -884,10 +884,9 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 {
 	SetGlobalTransTarget(client);
 	char buffer[192];
-	VFormat(message, sizeof(message), buffer, 3);
+	VFormat(buffer, sizeof(buffer), message, 3);
 	if(!client)
 	{
-		VFormat(buffer, sizeof(buffer), message, 3);
 		CRemoveTags(buffer, sizeof(buffer));
 		PrintToServer("[FF2] %s", buffer);
 	}
@@ -898,7 +897,6 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 	}
 	else
 	{
-		VFormat(buffer, sizeof(buffer), message, 3);
 		CPrintToChat(client, "%t%s", "Prefix", buffer);
 	}
 }
