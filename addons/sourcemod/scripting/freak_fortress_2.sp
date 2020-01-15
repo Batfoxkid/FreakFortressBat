@@ -50,7 +50,7 @@ last time or to encourage others to do the same.
 #include <freak_fortress_2>
 #include <adt_array>
 #include <clientprefs>
-#include <morecolors>
+#include <colorlib>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <tf2items>
@@ -81,7 +81,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 13th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."011"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
