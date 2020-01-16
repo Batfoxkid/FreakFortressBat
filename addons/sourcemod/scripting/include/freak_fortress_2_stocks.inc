@@ -1,6 +1,88 @@
+#include <sdktools>
+#include <tf2_stocks>
 #include <tf2attributes>
+#include <freak_fortress_2>
+
+#if !defined MAXTF2PLAYERS
+	#define MAXTF2PLAYERS 36
+#endif
 
 Handle SDKEquipWearable = null;
+
+#if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>=10
+enum struct FF2Player
+{
+	int Client;
+	int Boss;
+
+	bool Setup(int client)
+	{
+		if(client<1 || client>MaxClients || !IsClientInGame(client))
+			return false;
+
+		this.Client = client;
+		this.Boss = FF2_GetBossIndex(client);
+		return true;
+	}
+
+	bool Valid()
+	{
+		return (this.Client && IsClientInGame(this.Client));
+	}
+
+	bool Name(char[] buffer, int bufferLength, int clientLang=0)
+	{
+		if(this.Boss == -1)
+		{
+			return GetClientName(this.Client, buffer, bufferLength);
+		}
+		else
+		{
+			return FF2_GetBossName(this.Boss, buffer, bufferLength, 0, clientLang);
+		}
+	}
+
+	int Health()
+	{
+		if(this.Boss == -1)
+		{
+			return GetClientHealth(this.Client);
+		}
+		else
+		{
+			return FF2_GetBossHealth(this.Boss)/FF2_GetBossLives(this.Boss);
+		}
+	}
+
+	int MaxHealth()
+	{
+		if(this.Boss == -1)
+		{
+			return GetEntProp(this.Client, Prop_Data, "m_iMaxHealth");
+		}
+		else
+		{
+			return FF2_GetBossMaxHealth(this.Boss);
+		}
+	}
+
+	int Lives()
+	{
+		if(this.Boss == -1)
+			return 1;
+
+		return FF2_GetBossLives(this.Boss);
+	}
+
+	int MaxLives()
+	{
+		if(this.Boss == -1)
+			return 1;
+
+		return FF2_GetBossMaxLives(this.Boss);
+	}
+};
+#endif
 
 /**
  * Created an Annotation message attached to an entity.
@@ -16,7 +98,7 @@ Handle SDKEquipWearable = null;
  */
 stock int CreateAttachedAnnotation(int client, int entity, bool effect=true, float time, const char[] buffer, any ...)
 {
-	static char message[512];
+	char message[512];
 	SetGlobalTransTarget(client);
 	VFormat(message, sizeof(message), buffer, 6);
 	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
@@ -62,7 +144,7 @@ stock bool ShowGameText(int client=0, const char[] icon="leaderboard_streak", in
 	if(bf == null)
 		return false;
 
-	static char message[512];
+	char message[512];
 	SetGlobalTransTarget(client);
 	VFormat(message, sizeof(message), buffer, 5);
 	ReplaceString(message, sizeof(message), "\n", "");
@@ -123,7 +205,7 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname="tf_wear
 	SetEntProp(wearable, Prop_Send, "m_bInitialized", 1);
 		
 	// Allow quality / level override by updating through the offset.
-	static char netClass[64];
+	char netClass[64];
 	GetEntityNetClass(wearable, netClass, sizeof(netClass));
 	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityQuality"), quality);
 	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityLevel"), level);
@@ -177,3 +259,71 @@ stock bool SetupWearableSDK()
 	}
 	return true;
 }
+
+stock bool MapHasMusic()
+{
+	int entity = -1;
+	char name[64];
+	while((entity=FindEntityByClassname2(entity, "info_target")) != -1)
+	{
+		GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
+		if(StrEqual(name, "hale_no_music", false))
+			return true;
+	
+	}
+	return false;
+}
+
+stock int GetClosestPlayerTo(int entity, TFTeam team=TFTeam_Unassigned)
+{
+	int best;
+	float dist, temp, loc[3], pos[3];
+	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", loc);
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsClientInGame(client) && IsPlayerAlive(client) && entity!=client)
+		{
+			if(team>TFTeam_Unassigned && TF2_GetClientTeam(client)!=team)
+				continue;
+
+			GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
+			temp = GetVectorDistance(loc, pos);
+			if(!best || temp<dist)
+			{
+				dist = temp;
+				best = client;
+			}
+		}
+	}
+	return best;
+}
+
+stock bool TeleMeToYou(int entity, int target, bool angles=false)
+{
+	float pos[3], ang[3];
+	GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos);
+	if(angles)
+	{
+		GetEntPropVector(target, Prop_Send, "m_angRotation", ang);
+	}
+	else
+	{
+		ang = NULL_VECTOR;
+	}
+
+	bool ducked = false;
+	if(IsValidClient(entity) && IsValidClient(target) && GetEntProp(target, Prop_Send, "m_bDucked"))
+	{
+		float vec[3];
+		vec[0] = 24.0;
+		vec[1] = 24.0;
+		vec[2] = 62.0;
+		SetEntPropVector(entity, Prop_Send, "m_vecMaxs", vec);
+		SetEntProp(entity, Prop_Send, "m_bDucked", 1);
+		SetEntityFlags(entity, GetEntityFlags(entity)|FL_DUCKING);
+		ducked = true;
+	}
+	TeleportEntity(iMe, vPos, vAng, NULL_VECTOR);
+	return bDucked;
+}
+
