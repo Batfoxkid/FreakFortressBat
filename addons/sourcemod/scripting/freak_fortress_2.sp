@@ -50,7 +50,7 @@ last time or to encourage others to do the same.
 #include <freak_fortress_2>
 #include <adt_array>
 #include <clientprefs>
-#include <colorlib>
+#include <morecolors>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <tf2items>
@@ -65,7 +65,6 @@ last time or to encourage others to do the same.
 #tryinclude <smac>
 #tryinclude <goomba>
 #tryinclude <tf2attributes>
-#tryinclude <freak_fortress_2_kstreak>
 #define REQUIRE_PLUGIN
 
 #pragma newdecls required
@@ -79,9 +78,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 13th, 2020"
+#define FORK_DATE_REVISION "January 15th, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."014"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -100,7 +99,7 @@ last time or to encourage others to do the same.
 #define DATE_REVISION "December 4th, 2019"
 
 #define DATATABLE "ff2_stattrak"
-#define CHANGELOG_URL "https://batfoxkid.github.io/FreakFortressBat/"
+#define CHANGELOG_URL "https://batfoxkid.github.io/FreakFortressBat"
 
 #define MAXENTITIES 2048			// Probably shouldn't touch this
 #define MAXSPECIALS 128				// Maximum bosses in a pack
@@ -115,19 +114,20 @@ last time or to encourage others to do the same.
 #define HEALTHBAR_MAX 255
 #define MONOCULUS "eyeball_boss"
 
-// File paths
 #define ConfigPath "configs/freak_fortress_2"
 #define DataPath "data/freak_fortress_2"
-#define LogPath "logs/freak_fortress_2"
-#define BossLogPath "logs/freak_fortress_2/bosses"
 #define CharsetCFG "characters.cfg"
-#define DebugLog "ff2_debug.log"
 #define DoorCFG "doors.cfg"
-#define ErrorLog "ff2_errors.log"
+#define DifficultyCFG "difficulty.cfg"
 #define MapCFG "maps.cfg"
 #define SpawnTeleportCFG "spawn_teleport.cfg"
 #define SpawnTeleportBlacklistCFG "spawn_teleport_blacklist.cfg"
 #define WeaponCFG "weapons.cfg"
+
+#define LogPath "logs/freak_fortress_2"
+#define BossLogPath "logs/freak_fortress_2/bosses"
+#define DebugLog "ff2_debug.log"
+#define ErrorLog "ff2_errors.log"
 
 bool EnabledDesc = false;
 #if defined _steamtools_included
@@ -143,10 +143,6 @@ bool tf2attributes = false;
 
 #if defined _goomba_included
 bool goomba = false;
-#endif
-
-#if defined _freak_fortress_2_kstreak_included
-bool kmerge = false;
 #endif
 
 #if !defined _smac_included
@@ -204,7 +200,7 @@ int BossLives[MAXTF2PLAYERS];
 int BossLivesMax[MAXTF2PLAYERS];
 int BossRageDamage[MAXTF2PLAYERS];
 bool BossSwitched[MAXTF2PLAYERS];
-float BossCharge[MAXTF2PLAYERS][8];
+float BossCharge[MAXTF2PLAYERS][4];
 float Stabbed[MAXTF2PLAYERS];
 float Marketed[MAXTF2PLAYERS];
 float Cabered[MAXTF2PLAYERS];
@@ -225,6 +221,7 @@ bool SpawnTeleOnTriggerHurt = false;
 bool HealthBarMode;
 bool HealthBarModeC[MAXTF2PLAYERS];
 bool ShowHealthText;
+bool SpecialRound;
 int CritBoosted[MAXTF2PLAYERS][3];
 
 int timeleft;
@@ -343,6 +340,7 @@ ConVar cvarDamageHud;
 ConVar cvarTelefrag;
 ConVar cvarHealth;
 ConVar cvarRageDamage;
+ConVar cvarDifficulty;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -450,6 +448,7 @@ ConVar hostName;
 char oldName[256];
 int changeGamemode;
 Handle kvWeaponMods = INVALID_HANDLE;
+Handle kvDiffMods = INVALID_HANDLE;
 Handle SDKEquipWearable = null;
 
 bool dmgTriple[MAXTF2PLAYERS];
@@ -655,6 +654,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 // Boss Selection
 char xIncoming[MAXTF2PLAYERS][700];
 char cIncoming[MAXTF2PLAYERS][700];
+char dIncoming[MAXTF2PLAYERS][700];
 int CanBossVs[MAXTF2PLAYERS];
 int CanBossTeam[MAXTF2PLAYERS];
 
@@ -669,6 +669,7 @@ enum SettingPrefs
 
 Handle LastPlayedCookie = INVALID_HANDLE;
 Handle SelectionCookie = INVALID_HANDLE;
+Handle DiffCookie = INVALID_HANDLE;
 
 ClientPoint[MAXTF2PLAYERS];
 ClientID[MAXTF2PLAYERS];
@@ -687,6 +688,7 @@ bool ToggleVoice[MAXTF2PLAYERS];
 bool ToggleInfo[MAXTF2PLAYERS];
 SettingPrefs ToggleDuo[MAXTF2PLAYERS];
 SettingPrefs ToggleBoss[MAXTF2PLAYERS];
+SettingPrefs ToggleDiff[MAXTF2PLAYERS];
 
 // Stat Tracker
 int BossWins[MAXTF2PLAYERS];
@@ -831,6 +833,7 @@ public void OnPluginStart()
 	cvarTelefrag = CreateConVar("ff2_telefrag_damage", "5000.0", "Damage dealt upon a Telefrag", _, true, 0.0);
 	cvarHealth = CreateConVar("ff2_health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", "Default boss health formula");
 	cvarRageDamage = CreateConVar("ff2_rage_formula", "1900.0", "Default boss ragedamage formula");
+	cvarDifficulty = CreateConVar("ff2_difficulty_random", "0.0", "0-Players can set their difficulty, #-Chance of difficulty", _, true, 0.0, true, 100.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -1026,6 +1029,7 @@ public void OnPluginStart()
 	HudCookies = RegClientCookie("ff2_cookies_huds", "Player's HUD Settings", CookieAccess_Protected);
 	LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
 	SelectionCookie = RegClientCookie("ff2_boss_selection", "Player's Boss Selection", CookieAccess_Protected);
+	DiffCookie = RegClientCookie("ff2_boss_difficulty", "Player's Difficulty Selection", CookieAccess_Protected);
 
 	jumpHUD = CreateHudSynchronizer();
 	rageHUD = CreateHudSynchronizer();
@@ -1358,7 +1362,7 @@ public Action Command_AddCharge(int client, int args)
 			float rageMeter = StringToFloat(ragePCT);
 			int abilitySlot = StringToInt(slotCharge);
 
-			if(!abilitySlot || abilitySlot<=7)
+			if(abilitySlot>=0 && abilitySlot<4)
 			{
 				BossCharge[Boss[client]][abilitySlot] += rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
@@ -1402,7 +1406,7 @@ public Action Command_AddCharge(int client, int args)
 			return Plugin_Handled;
 		}
 
-		if(!abilitySlot || abilitySlot<=7)
+		if(abilitySlot>=0 || abilitySlot<4)
 		{
 			BossCharge[Boss[target_list[target]]][abilitySlot] += rageMeter;
 			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]), RoundFloat(rageMeter));
@@ -1445,7 +1449,7 @@ public Action Command_SetCharge(int client, int args)
 			float rageMeter = StringToFloat(ragePCT);
 			int abilitySlot = StringToInt(slotCharge);
 
-			if(!abilitySlot || abilitySlot<=7)
+			if(abilitySlot>=0 || abilitySlot<4)
 			{
 				BossCharge[Boss[client]][abilitySlot] = rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
@@ -1489,7 +1493,7 @@ public Action Command_SetCharge(int client, int args)
 			return Plugin_Handled;
 		}
 
-		if(!abilitySlot || abilitySlot<=7)
+		if(abilitySlot>=0 || abilitySlot<4)
 		{
 			BossCharge[Boss[target_list[target]]][abilitySlot] = rageMeter;
 			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]));
@@ -1704,12 +1708,6 @@ public void OnLibraryAdded(const char[] name)
 		smac = true;
 	}
 	#endif
-	#if defined _freak_fortress_2_kstreak_included
-	else if(StrEqual(name, "ff2_kstreak_pref", false))
-	{
-		kmerge = view_as<bool>(FF2_KStreak_Merge());
-	}
-	#endif
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -1746,12 +1744,6 @@ public void OnLibraryRemoved(const char[] name)
 	else if(StrEqual(name, "smac", false))
 	{
 		smac = false;
-	}
-	#endif
-	#if defined _freak_fortress_2_kstreak_included
-	else if(StrEqual(name, "ff2_kstreak_pref", false))
-	{
-		kmerge = false;
 	}
 	#endif
 }
@@ -1892,11 +1884,12 @@ public void EnableFF2()
 		CreateTimer(time, Timer_Announce, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
 	CacheWeapons();
+	CacheDifficulty();
 	CheckToChangeMapDoors();
 	CheckToTeleportToSpawn();
 	MapHasMusic(true);
 	FindCharacters();
-	strcopy(FF2CharSetString, 2, "");
+	FF2CharSetString[0] = 0;
 
 	#if !defined _smac_included
 	if(smac && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE)
@@ -2043,6 +2036,30 @@ public void CacheWeapons()
 		return;
 	}
 	ConfigWeapons = true;
+}
+
+public void CacheDifficulty()
+{
+	char config[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, DifficultyCFG);
+	if(!FileExists(config))
+	{
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, DifficultyCFG);
+		if(!FileExists(config))
+		{
+			LogToFile(eLog, "[Difficulty] Could not find '%s'!", DifficultyCFG);
+			kvDiffMods = null;
+			return;
+		}
+	}
+
+	kvDiffMods = CreateKeyValues("difficulty");
+	if(!FileToKeyValues(kvDiffMods, config))
+	{
+		LogToFile(eLog, "[Difficulty] '%s' is improperly formatted!", DifficultyCFG);
+		kvDiffMods = null;
+		return;
+	}
 }
 
 public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextKey
@@ -3106,6 +3123,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 {
 	teamplay_round_start_TeleportToMultiMapSpawn(); // Cache spawns
 	isCapping = false;
+	SpecialRound = false;
 	if(changeGamemode == 1)
 	{
 		EnableFF2();
@@ -3547,8 +3565,8 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	float players = 1.0;
 	if(Enabled3)
 	{
-		players += playingmerc + bosses - playingboss*0.45;
-		float players2 = playingboss + 1 + bosses - playingmerc*0.45;
+		players += playingmerc + bosses - playingboss*0.75;
+		float players2 = playingboss + 1 + bosses - playingmerc*0.75;
 		for(boss=0; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
@@ -3583,6 +3601,37 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		}
 	}
 
+	if(bosses==1 && kvDiffMods!=null && IsValidClient(Boss[0]) && IsPlayerAlive(Boss[0]))
+	{
+		if(!IsFakeClient(Boss[0]) && !cvarDifficulty.BoolValue && dIncoming[Boss[0]][0])
+		{
+			LoadDifficulty(0);
+		}
+		else if((IsFakeClient(Boss[0]) && !cvarDifficulty.BoolValue && GetRandomInt(0, 9)) || (GetRandomFloat(0.0, 100.0)<cvarDifficulty.FloatValue && ToggleDiff[Boss[0]]!=Setting_Off))
+		{
+			int count;
+			KvRewind(kvDiffMods);
+			KvGotoFirstSubKey(kvDiffMods);
+			while(KvGotoNextKey(kvDiffMods))
+			{
+				count++;
+			}
+
+			if(count)
+			{
+				KvRewind(kvDiffMods);
+				KvGotoFirstSubKey(kvDiffMods);
+				for(count=GetRandomInt(0, count-1); count>0; count--)
+				{
+					KvGotoNextKey(kvDiffMods);
+				}
+
+				KvGetSectionName(kvDiffMods, dIncoming[Boss[0]], sizeof(dIncoming[]));
+				LoadDifficulty(0);
+			}
+		}
+	}
+
 	CreateTimer(0.2, BossTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, Timer_StartRound, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -3603,6 +3652,64 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	return Plugin_Continue;
 }
 
+void LoadDifficulty(int boss)
+{
+	char plugin[68];
+	KvRewind(kvDiffMods);
+	KvGotoFirstSubKey(kvDiffMods);
+	do
+	{
+		static char section[64];
+		KvGetSectionName(kvDiffMods, section, sizeof(section));
+		if(!StrEqual(section, dIncoming[Boss[boss]]))
+			continue;
+
+		KvRewind(BossKV[Special[boss]]);
+		KvGetString(BossKV[Special[boss]], "filename", plugin, sizeof(plugin));
+		if(!KvGetNum(kvDiffMods, plugin, KvGetNum(kvDiffMods, "default", 1)))
+			break;
+
+		SpecialRound = true;
+		KvGotoFirstSubKey(kvDiffMods);
+		do
+		{
+			static char buffer[PLATFORM_MAX_PATH];
+			KvGetSectionName(kvDiffMods, buffer, sizeof(buffer));
+			FormatEx(plugin, sizeof(plugin), "%s.ff2", buffer);
+			Handle iter = GetPluginIterator();
+			Handle pl = INVALID_HANDLE;
+			while(MorePlugins(iter))
+			{
+				pl = ReadPlugin(iter);
+				GetPluginFilename(pl, buffer, sizeof(buffer));
+				if(StrContains(buffer, plugin, false) == -1)
+					continue;
+
+				Function func = GetFunctionByName(pl, "FF2_OnDifficulty");
+				if(func == INVALID_FUNCTION)
+					break;
+
+				Call_StartFunction(pl, func);
+				Call_PushCell(boss);
+				Call_PushString(section);
+				Call_PushCell(kvDiffMods);
+				Call_Finish();
+				break;
+			}
+			delete iter;
+
+			if(kvDiffMods == INVALID_HANDLE)
+			{
+				LogToFile(eLog, "[Difficulty] %s closed needed Handle for difficulty!", buffer);
+				CacheDifficulty();
+				return;
+			}
+
+		} while(KvGotoNextKey(kvDiffMods));
+		break;
+	} while(KvGotoNextKey(kvDiffMods));
+}
+
 public Action Timer_EnableCap(Handle timer)
 {
 	if((Enabled || Enabled2) && CheckRoundState()==-1)
@@ -3610,16 +3717,16 @@ public Action Timer_EnableCap(Handle timer)
 		SetControlPoint(true);
 		if(checkDoors)
 		{
-			int ent=-1;
-			while((ent=FindEntityByClassname2(ent, "func_door"))!=-1)
+			int ent = -1;
+			while((ent=FindEntityByClassname2(ent, "func_door")) != -1)
 			{
 				AcceptEntityInput(ent, "Open");
 				AcceptEntityInput(ent, "Unlock");
 			}
 
-			if(doorCheckTimer==INVALID_HANDLE)
+			if(doorCheckTimer == INVALID_HANDLE)
 			{
-				doorCheckTimer=CreateTimer(5.0, Timer_CheckDoors, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+				doorCheckTimer = CreateTimer(5.0, Timer_CheckDoors, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			}
 		}
 	}
@@ -3637,7 +3744,7 @@ public Action Timer_CheckDoors(Handle timer)
 		return Plugin_Continue;
 
 	int entity = -1;
-	while((entity=FindEntityByClassname2(entity, "func_door"))!=-1)
+	while((entity=FindEntityByClassname2(entity, "func_door")) != -1)
 	{
 		AcceptEntityInput(entity, "Open");
 		AcceptEntityInput(entity, "Unlock");
@@ -3675,7 +3782,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	if(cvarBossLog.IntValue>0 && cvarBossLog.IntValue<=playing2 && !CheatsUsed)
+	if(cvarBossLog.IntValue>0 && cvarBossLog.IntValue<=playing2 && !CheatsUsed && !SpecialRound)
 	{
 		Handle bossLog = OpenFile(bLog, "a+");
 		if(bossLog != INVALID_HANDLE)
@@ -3828,7 +3935,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			if(IsPlayerAlive(Boss[client]))
 				isBossAlive = true;
 
-			for(int slot=1; slot<8; slot++)
+			for(int slot=1; slot<4; slot++)
 			{
 				BossCharge[client][slot] = 0.0;
 			}
@@ -4059,26 +4166,30 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
+	if(ReloadConfigs)
+	{
+		CacheWeapons();
+		CacheDifficulty();
+		CheckToChangeMapDoors();
+		CheckToTeleportToSpawn();
+		FindCharacters();
+		FF2CharSetString[0] = 0;
+		ReloadConfigs = false;
+		LoadCharset = false;
+		ReloadWeapons = false;
+	}
+
 	if(LoadCharset)
 	{
-		LoadCharset=false;
 		FindCharacters();
-		strcopy(FF2CharSetString, 2, "");
+		FF2CharSetString[0] = 0;
+		LoadCharset = false;
 	}
 
 	if(ReloadWeapons)
 	{
 		CacheWeapons();
-		ReloadWeapons=false;
-	}
-
-	if(ReloadConfigs)
-	{
-		CacheWeapons();
-		CheckToChangeMapDoors();
-		CheckToTeleportToSpawn();
-		FindCharacters();
-		ReloadConfigs = false;
+		ReloadWeapons = false;
 	}
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -4343,6 +4454,213 @@ public int SkipBossPanelH(Handle menu, MenuAction action, int client, int positi
 		}
 		if(QueuePoints[client] >= 10)
 			QueuePoints[client] -= 10;
+	}
+}
+
+public Action DiffMenu(int client, int args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		return Plugin_Handled;
+	}
+
+	if(cvarDifficulty.BoolValue)
+	{
+		Handle menu = CreateMenu(MenuHandlerDifficulty);
+		SetGlobalTransTarget(client);
+		SetMenuTitle(menu, "%t", "FF2 Special Menu Title");
+
+		char menuoption[128];
+		FormatEx(menuoption, sizeof(menuoption), "%t", "Enable Special");
+		AddMenuItem(menu, "FF2 Special Toggle Menu", menuoption);
+		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Special");
+		AddMenuItem(menu, "FF2 Special Toggle Menu", menuoption);
+		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Special For This Map");
+		if(Enabled2 && kvDiffMods!=null)
+		{
+			AddMenuItem(menu, "FF2 Special Toggle Menu", menuoption);
+		}
+		else
+		{
+			AddMenuItem(menu, "FF2 Special Toggle Menu", menuoption, ITEMDRAW_DISABLED);
+		}
+
+		SetMenuExitButton(menu, true);
+		DisplayMenu(menu, client, 20);
+		return Plugin_Handled;
+	}
+
+	if(kvDiffMods == null)
+		return Plugin_Handled;
+
+	if(!CheckCommandAccess(client, "ff2_difficulty", 0, true))
+	{
+		ReplyToCommand(client, "[SM] %t", "No Access");
+		return Plugin_Handled;
+	}
+
+	bool denyAll = (!cvarBossDesc.BoolValue || !ToggleInfo[client]) && (IsBoss(client) && FF2_GetRoundState()!=2);
+
+	char name[64];
+	Handle dMenu = CreateMenu(DiffMenuH);
+	SetGlobalTransTarget(client);
+
+	SetMenuTitle(dMenu, "%t\n %t", "FF2 Difficulty Settings Menu Title", "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : " - ");
+
+	FormatEx(name, sizeof(name), "%t", "Off");
+	AddMenuItem(dMenu, "", name, (!dIncoming[client][0] || denyAll || (IsBoss(client) && FF2_GetRoundState()!=2)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	KvRewind(kvDiffMods);
+	KvGotoFirstSubKey(kvDiffMods);
+	do
+	{
+		KvGetSectionName(kvDiffMods, name, sizeof(name));
+		AddMenuItem(dMenu, name, name, denyAll ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	} while(KvGotoNextKey(kvDiffMods));
+
+	SetMenuExitButton(dMenu, true);
+	SetMenuExitBackButton(dMenu, true);
+	DisplayMenu(dMenu, client, MENU_TIME_FOREVER);
+	return Plugin_Handled;
+}
+
+public int MenuHandlerDifficulty(Handle menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_Select)
+	{
+		int choice = param2 + 1;
+		ToggleDiff[param1] = view_as<SettingPrefs>(choice);
+
+		switch(choice)
+		{
+			case 1:
+				FPrintToChat(param1, "%t", "FF2 Special Enabled Notification");
+			case 2:
+				FPrintToChat(param1, "%t", "FF2 Special Disabled Notification");
+			case 3:
+				FPrintToChat(param1, "%t", "FF2 Special Disabled Notification For Map");
+		}
+	}
+	else if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+public int DiffMenuH(Handle menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			if(!param2)
+			{
+				dIncoming[param1][0] = 0;
+				SaveKeepBossCookie(param1);
+				ToggleDiff[param1] = Setting_Off;
+				Command_SetMyBoss(param1, 0);
+				return;
+			}
+
+			if(!cvarBossDesc.BoolValue || !ToggleInfo[param1])
+			{
+				if(IsBoss(param1) && FF2_GetRoundState()!=2)
+				{
+					FReplyToCommand(param1, "%t", "ff2_changedifficulty_denied");
+					DiffMenu(param1, 0);
+					return;
+				}
+
+				GetMenuItem(menu, param2, dIncoming[param1], sizeof(dIncoming[]));
+				SaveKeepBossCookie(param1);
+				ToggleDiff[param1] = Setting_On;
+				Command_SetMyBoss(param1, 0);
+				return;
+			}
+
+			GetMenuItem(menu, param2, cIncoming[param1], sizeof(cIncoming[]));
+			ConfirmDiff(param1);
+		}
+		case MenuAction_Cancel:
+		{
+			if(param2 == MenuCancel_ExitBack)
+				Command_SetMyBoss(param1, 0);
+		}
+	}
+}
+
+public Action ConfirmDiff(int client)
+{
+	char text[512];
+	static char language[20], name[64];
+	GetLanguageInfo(GetClientLanguage(client), language, sizeof(language), text, sizeof(text));
+	Format(language, sizeof(language), "description_%s", language);
+	SetGlobalTransTarget(client);
+
+	KvRewind(kvDiffMods);
+	KvGotoFirstSubKey(kvDiffMods);
+	do
+	{
+		KvGetSectionName(kvDiffMods, name, sizeof(name));
+		if(StrEqual(name, cIncoming[client], false))
+		{
+			KvGetString(kvDiffMods, language, text, sizeof(text));
+			if(!text[0])
+			{
+				KvGetString(kvDiffMods, "description_en", text, sizeof(text));  //Default to English if their language isn't available
+				if(!text[0])
+					FormatEx(text, sizeof(text), "%t", "to0_nodesc");
+			}
+			ReplaceString(text, sizeof(text), "\\n", "\n");
+			break;
+		}
+	} while(KvGotoNextKey(kvDiffMods));
+
+	Handle dMenu = CreateMenu(ConfirmDiffH);
+	SetMenuTitle(dMenu, text);
+
+	FormatEx(text, sizeof(text), "%t", "to0_confirm", name);
+	AddMenuItem(dMenu, name, text, (IsBoss(client) && FF2_GetRoundState()!=2) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+
+	FormatEx(text, sizeof(text), "%t", "to0_cancel");
+	AddMenuItem(dMenu, text, text);
+
+	SetMenuExitButton(dMenu, false);
+	DisplayMenu(dMenu, client, MENU_TIME_FOREVER);
+	return Plugin_Handled;
+}
+
+public int ConfirmDiffH(Handle menu, MenuAction action, int param1, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			CloseHandle(menu);
+		}
+		case MenuAction_Select:
+		{
+			if(param2)
+			{
+				DiffMenu(param1, 0);
+			}
+			else if(IsBoss(param1) && FF2_GetRoundState()!=2)
+			{
+				FReplyToCommand(param1, "%t", "ff2_changedifficulty_denied");
+				DiffMenu(param1, 0);
+			}
+			else
+			{
+				strcopy(dIncoming[param1], sizeof(dIncoming[]), cIncoming[param1]);
+				SaveKeepBossCookie(param1);
+				ToggleDiff[param1] = Setting_On;
+				Command_SetMyBoss(param1, 0);
+			}
+		}
 	}
 }
 
@@ -4834,6 +5152,7 @@ void SetupClientCookies(int client)
 		ToggleInfo[client] = false;
 		ToggleDuo[client] = Setting_On;
 		ToggleBoss[client] = Setting_On;
+		ToggleDiff[client] = Setting_On;
 
 		BossWins[client] = 0;
 		BossLosses[client] = 0;
@@ -4864,12 +5183,16 @@ void SetupClientCookies(int client)
 		ToggleInfo[client] = view_as<bool>(StringToInt(cookieValues[3][0]));
 		ToggleDuo[client] = view_as<SettingPrefs>(StringToInt(cookieValues[4][0]));
 		ToggleBoss[client] = view_as<SettingPrefs>(StringToInt(cookieValues[5][0]));
+		ToggleDiff[client] = view_as<SettingPrefs>(StringToInt(cookieValues[6][0]));
 
 		if(ToggleDuo[client] == Setting_Temp)
 			ToggleDuo[client] = Setting_On;
 
 		if(ToggleBoss[client] == Setting_Temp)
 			ToggleBoss[client] = Setting_Undef;
+
+		if(ToggleDiff[client] == Setting_Temp)
+			ToggleDiff[client] = Setting_On;
 
 		if(cvarDatabase.IntValue < 2)
 		{
@@ -4895,6 +5218,8 @@ void SetupClientCookies(int client)
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
+
+		GetClientCookie(client, DiffCookie, dIncoming[client], sizeof(dIncoming[]));
 	}
 	else
 	{
@@ -4904,6 +5229,7 @@ void SetupClientCookies(int client)
 		ToggleInfo[client] = true;
 		ToggleDuo[client] = Setting_Undef;
 		ToggleBoss[client] = Setting_Undef;
+		ToggleDiff[client] = Setting_Undef;
 
 		BossWins[client] = 0;
 		BossLosses[client] = 0;
@@ -4981,7 +5307,7 @@ void SaveClientPreferences(int client)
 	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
 	ExplodeString(cookies, " ", cookieValues, 8, 5);
 
-	FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i 3 3", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(ToggleBoss[client]));
+	FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i %i 3", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(ToggleBoss[client]), view_as<int>(ToggleDiff[client]));
 	SetClientCookie(client, FF2Cookies, cookies);
 
 	IntToString(HudSettings[client][0], cookies, sizeof(cookies));
@@ -4994,7 +5320,7 @@ void SaveClientPreferences(int client)
 
 void SaveClientStats(int client)
 {
-	if(!IsValidClient(client) || IsFakeClient(client) || cvarStatPlayers.IntValue<1 || (!cvarBvBStat.BoolValue && Enabled3))
+	if(SpecialRound || !IsValidClient(client) || IsFakeClient(client) || cvarStatPlayers.IntValue<1 || (!cvarBvBStat.BoolValue && Enabled3))
 		return;
 
 	if(cvarStatWin2Lose.IntValue > 2)
@@ -5059,7 +5385,7 @@ void SaveClientStats(int client)
 
 void AddClientStats(int client, CookieStats cookie, int num)
 {
-	if(!IsValidClient(client) || cvarStatPlayers.IntValue<1)
+	if(SpecialRound || !IsValidClient(client) || cvarStatPlayers.IntValue<1)
 		return;
 
 	if(!IsFakeClient(client) && (CheatsUsed || cvarStatPlayers.IntValue>playing2 || (!cvarBvBStat.BoolValue && Enabled3)))
@@ -5268,11 +5594,25 @@ public Action Command_SetMyBoss(int client, int args)
 
 	if(HasCharSets)
 	{
-		SetMenuTitle(dMenu, "%t", "ff2_boss_selection_pack", CharSetString[CurrentCharSet], boss);
+		if(kvDiffMods!=null && !cvarDifficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
+		{
+			SetMenuTitle(dMenu, "%t%t", "ff2_boss_selection_pack", CharSetString[CurrentCharSet], boss, "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
+		}
+		else
+		{
+			SetMenuTitle(dMenu, "%t", "ff2_boss_selection_pack", CharSetString[CurrentCharSet], boss);
+		}
 	}
 	else
 	{
-		SetMenuTitle(dMenu, "%t", "ff2_boss_selection", boss);
+		if(kvDiffMods!=null && !cvarDifficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
+		{
+			SetMenuTitle(dMenu, "%t%t", "ff2_boss_selection", boss, "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
+		}
+		else
+		{
+			SetMenuTitle(dMenu, "%t", "ff2_boss_selection", boss);
+		}
 	}
 
 	FormatEx(boss, sizeof(boss), "%t", "to0_random");
@@ -5311,24 +5651,25 @@ public Action Command_SetMyBoss(int client, int args)
 		AddMenuItem(dMenu, boss, boss);
 	}
 
-	#if defined _freak_fortress_2_kstreak_included
-	if(kmerge && CheckCommandAccess(client, "ff2_kstreak_a", 0, true))
+	if(kvDiffMods!=null && CheckCommandAccess(client, "ff2_difficulty", 0, true))
 	{
-		if(FF2_KStreak_GetCookies(client, 0) == 1)
+		if(cvarDifficulty.BoolValue)
 		{
-			FormatEx(boss, sizeof(boss), "%t", "to0_disablekstreak");
-		}
-		else if(FF2_KStreak_GetCookies(client, 0) < 1)
-		{
-			FormatEx(boss, sizeof(boss), "%t", "to0_enablekstreak");
+			if(view_as<int>(ToggleDiff[client]) < 2)
+			{
+				FormatEx(boss, sizeof(boss), "%t", "to0_disablediff");
+			}
+			else
+			{
+				FormatEx(boss, sizeof(boss), "%t", "to0_enablediff");
+			}
 		}
 		else
 		{
-			FormatEx(boss, sizeof(boss), "%t", "to0_togglekstreak");
+			FormatEx(boss, sizeof(boss), "%t", "to0_difficulty");
 		}
 		AddMenuItem(dMenu, boss, boss);
 	}
-	#endif
 
 	if(cvarSkipBoss.BoolValue)
 	{
@@ -5450,13 +5791,11 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 					option[1] = choices;
 					continue;
 				}
-				#if defined _freak_fortress_2_kstreak_included
-				if(!option[2] && kmerge && CheckCommandAccess(param1, "ff2_kstreak_a", 0, true))
+				if(!option[2] && kvDiffMods!=null && CheckCommandAccess(param1, "ff2_difficulty", 0, true))
 				{
 					option[2] = choices;
 					continue;
 				}
-				#endif
 				if(!option[3] && cvarSkipBoss.BoolValue)
 				{
 					option[3] = choices;
@@ -5477,12 +5816,10 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 			{
 				CompanionMenu(param1, 0);
 			}
-			#if defined _freak_fortress_2_kstreak_included
 			else if(param2 == option[2])
 			{
-				FF2_KStreak_Menu(param1, 0);
+				DiffMenu(param1, 0);
 			}
-			#endif
 			else if(param2 == option[3])
 			{
 				SkipBossPanel(param1);
@@ -5882,21 +6219,27 @@ bool BossTheme(int config)
 
 void SaveKeepBossCookie(int client)
 {
-	if(!AreClientCookiesCached(client) || !cvarSelectBoss.BoolValue)
+	if(!AreClientCookiesCached(client))
 		return;
 
 	static char cookies[454];
-	char cookieValues[MAXCHARSETS][64];
-	GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
-	ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
-	strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
-
-	strcopy(cookies, sizeof(cookies), cookieValues[0]);
-	for(int i=1; i<MAXCHARSETS; i++)
+	if(cvarSelectBoss.BoolValue)
 	{
-		Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
+		char cookieValues[MAXCHARSETS][64];
+		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
+		strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
+
+		strcopy(cookies, sizeof(cookies), cookieValues[0]);
+		for(int i=1; i<MAXCHARSETS; i++)
+		{
+			Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
+		}
+		SetClientCookie(client, SelectionCookie, cookies);
 	}
-	SetClientCookie(client, SelectionCookie, cookies);
+
+	if(!cvarDifficulty.BoolValue)
+		SetClientCookie(client, DiffCookie, dIncoming[client]);
 }
 
 bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
@@ -6131,12 +6474,22 @@ public Action MessageTimer(Handle timer)
 			{
 				if(IsValidClient(client))
 				{
-					GetBossSpecial(Special[boss], name, sizeof(name));
+					GetBossSpecial(Special[boss], name, sizeof(name), client);
 					Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
 					FPrintToChat(client, textChat);
+					if(SpecialRound && cvarGameText.IntValue<2)
+						Format(text[client], sizeof(text[]), "%s\n(%s)", text[client], dIncoming[Boss[boss]]);
 				}
+			}
+
+			if(SpecialRound)
+			{
+				FormatEx(textChat, sizeof(textChat), "%t", "ff2_boss_selection_diff", dIncoming[Boss[boss]]);
+				ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
+				FPrintToChatAll(textChat);
+				break;
 			}
 		}
 	}
@@ -6150,11 +6503,11 @@ public Action MessageTimer(Handle timer)
 			{
 				if(BossIcon[0])
 				{
-					ShowGameText(client, BossIcon, _, text[client]);
+					ShowGameText(client, BossIcon, SpecialRound ? BossTeam : 0, text[client]);
 				}
 				else
 				{
-					ShowGameText(client, "leaderboard_streak", _, text[client]);
+					ShowGameText(client, "leaderboard_streak", SpecialRound ? BossTeam : 0, text[client]);
 				}
 				CreateTimer(1.5, Timer_ShowHealthText, _, TIMER_FLAG_NO_MAPCHANGE);
 			}
@@ -9036,7 +9389,7 @@ public Action Command_LoadCharset(int client, int args)
 
 			FReplyToCommand(client, "Character set has been switched to %s", config);
 			FindCharacters();
-			strcopy(FF2CharSetString, 2, "");
+			FF2CharSetString[0] = 0;
 			LoadCharset = false;
 			break;
 		}
@@ -9071,7 +9424,7 @@ public int Command_LoadCharsetH(Handle menu, MenuAction action, int client, int 
 			{
 				FReplyToCommand(client, "Character set has been switched");
 				FindCharacters();
-				strcopy(FF2CharSetString, 2, "");
+				FF2CharSetString[0] = 0;
 				LoadCharset = false;
 			}
 		}
@@ -9114,7 +9467,8 @@ public Action Command_ReloadCharset(int client, int args)
 	}
 	FReplyToCommand(client, "Current character set has been reloaded!");
 	FindCharacters();
-	LoadCharset=false;
+	FF2CharSetString[0] = 0;
+	LoadCharset = false;
 	return Plugin_Handled;
 }
 
@@ -9134,7 +9488,7 @@ public Action Command_ReloadFF2Weapons(int client, int args)
 	}
 	FReplyToCommand(client, "%s has been reloaded!", WeaponCFG);
 	CacheWeapons();
-	ReloadWeapons=false;
+	ReloadWeapons = false;
 	return Plugin_Handled;
 }
 
@@ -9153,9 +9507,11 @@ public Action Command_ReloadFF2Configs(int client, int args)
 		return Plugin_Handled;
 	}
 	CacheWeapons();
+	CacheDifficulty();
 	CheckToChangeMapDoors();
 	CheckToTeleportToSpawn();
 	FindCharacters();
+	FF2CharSetString[0] = 0;
 	ReloadConfigs = false;
 	return Plugin_Handled;
 }
@@ -9259,6 +9615,7 @@ public void OnClientPostAdminCheck(int client)
 	Damage[client] = 0;
 	uberTarget[client] = -1;
 	xIncoming[client][0] = 0;
+	dIncoming[client][0] = 0;
 	CanBossVs[client] = 0;
 	CanBossTeam[client] = 0;
 
@@ -9267,18 +9624,18 @@ public void OnClientPostAdminCheck(int client)
 		static char buffer[24];
 		GetClientCookie(client, FF2Cookies, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, FF2Cookies, "0 1 1 1 0 0 3");
-			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | UNUSED
+			SetClientCookie(client, FF2Cookies, "0 1 1 1 0 0 0 3");
+			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | special toggle | UNUSED
 
 		GetClientCookie(client, StatCookies, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, StatCookies, "0 0 0 0 0 0 0");
-			//Boss wins | boss losses | boss kills | boss deaths | player kills | player MVPs | UNUSED
+			SetClientCookie(client, StatCookies, "0 0 0 0 0 0 0 0");
+			//Boss wins | boss losses | boss kills | boss deaths | player kills | player MVPs | UNUSED | UNUSED
 
 		GetClientCookie(client, HudCookies, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, HudCookies, "0 0 0 0 0 0 0");
-			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED
+			SetClientCookie(client, HudCookies, "0 0 0 0 0 0 0 0");
+			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED | UNUSED
 
 		SetupClientCookies(client);
 	}
@@ -9328,6 +9685,7 @@ public void OnClientDisconnect(int client)
 	Damage[client] = 0;
 	uberTarget[client] = -1;
 	xIncoming[client][0] = 0;
+	dIncoming[client][0] = 0;
 	CanBossVs[client] = 0;
 	SaveClientStats(client);
 	SaveClientPreferences(client);
@@ -12392,7 +12750,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				if(IsValidEntity(weapon) && weapon>MaxClients && attacker<=MaxClients)
 				{
 					GetEntityClassname(weapon, classname, sizeof(classname));
-					if(!StrContains(classname, "eyeball_boss"))  //Dang spell Monoculuses
+					if(!HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))  //Dang spell Monoculuses
 					{
 						index = -1;
 						classname[0] = 0;
@@ -13226,7 +13584,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		{
 			if(allowedDetonations != 1)
 			{
-				int index = (IsValidEntity(weapon) && weapon>MaxClients && attacker<=MaxClients ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
+				int index = (IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") && attacker<=MaxClients) ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1;
 				if(index == 307)  //Ullapool Caber
 				{
 					if(allowedDetonations<1 || allowedDetonations-detonations[attacker]>1)
@@ -14161,11 +14519,11 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	{
 		if(BossSwitched[boss])
 		{
-			players += bosses + playingboss - playingmerc*0.45;
+			players += bosses + playingboss - playingmerc*0.75;
 		}
 		else
 		{
-			players += bosses + playingmerc - playingboss*0.45;
+			players += bosses + playingmerc - playingboss*0.75;
 		}
 	}
 	else
@@ -14293,9 +14651,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	}
 
 	if(TimesTen && addition!=1 && addition>0)
-	{
 		result *= addition;
-	}
 
 	if(StrContains(key, "ragedamage", false))
 	{
@@ -14386,9 +14742,7 @@ stock float GetArgumentF(int index, const char[] plugin_name, const char[] abili
 				KvGoBack(BossKV[Special[index]]);
 				continue;
 			}
-
-			float see = KvGetFloat(BossKV[Special[index]], arg, defvalue);
-			return see;
+			return KvGetFloat(BossKV[Special[index]], arg, defvalue);
 		}
 	}
 	return 0.0;
@@ -16714,7 +17068,7 @@ public int Native_GetBossHealth(Handle plugin, int numParams)
 
 public int Native_SetBossHealth(Handle plugin, int numParams)
 {
-	BossHealth[GetNativeCell(1)]=GetNativeCell(2);
+	BossHealth[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetBossMaxHealth(Handle plugin, int numParams)
@@ -16724,7 +17078,7 @@ public int Native_GetBossMaxHealth(Handle plugin, int numParams)
 
 public int Native_SetBossMaxHealth(Handle plugin, int numParams)
 {
-	BossHealthMax[GetNativeCell(1)]=GetNativeCell(2);
+	BossHealthMax[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetBossLives(Handle plugin, int numParams)
@@ -16734,7 +17088,7 @@ public int Native_GetBossLives(Handle plugin, int numParams)
 
 public int Native_SetBossLives(Handle plugin, int numParams)
 {
-	BossLives[GetNativeCell(1)]=GetNativeCell(2);
+	BossLives[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetBossMaxLives(Handle plugin, int numParams)
@@ -16744,7 +17098,7 @@ public int Native_GetBossMaxLives(Handle plugin, int numParams)
 
 public int Native_SetBossMaxLives(Handle plugin, int numParams)
 {
-	BossLivesMax[GetNativeCell(1)]=GetNativeCell(2);
+	BossLivesMax[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetBossCharge(Handle plugin, int numParams)
@@ -16754,7 +17108,7 @@ public int Native_GetBossCharge(Handle plugin, int numParams)
 
 public int Native_SetBossCharge(Handle plugin, int numParams)  //TODO: This duplicates logic found in Timer_UseBossCharge
 {
-	BossCharge[GetNativeCell(1)][GetNativeCell(2)]=view_as<float>(GetNativeCell(3));
+	BossCharge[GetNativeCell(1)][GetNativeCell(2)] = view_as<float>(GetNativeCell(3));
 }
 
 public int Native_GetBossRageDamage(Handle plugin, int numParams)
@@ -16764,7 +17118,7 @@ public int Native_GetBossRageDamage(Handle plugin, int numParams)
 
 public int Native_SetBossRageDamage(Handle plugin, int numParams)
 {
-	BossRageDamage[GetNativeCell(1)]=GetNativeCell(2);
+	BossRageDamage[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetRoundState(Handle plugin, int numParams)
@@ -16820,7 +17174,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 {
 	static char pluginName[64], abilityName[64];
 
-	int boss=GetNativeCell(1);
+	int boss = GetNativeCell(1);
 	GetNativeString(2, pluginName, sizeof(pluginName));
 	GetNativeString(3, abilityName, sizeof(abilityName));
 	if(boss==-1 || Special[boss]==-1 || !BossKV[Special[boss]])
@@ -16860,7 +17214,7 @@ public int Native_DoAbility(Handle plugin, int numParams)
 	static char ability_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
-	UseAbility(ability_name,plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
+	UseAbility(ability_name, plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
 public int Native_GetAbilityArgument(Handle plugin, int numParams)
@@ -16945,7 +17299,7 @@ public int Native_GetFF2flags(Handle plugin, int numParams)
 
 public int Native_SetFF2flags(Handle plugin, int numParams)
 {
-	FF2flags[GetNativeCell(1)]=GetNativeCell(2);
+	FF2flags[GetNativeCell(1)] = GetNativeCell(2);
 }
 
 public int Native_GetQueuePoints(Handle plugin, int numParams)
@@ -16960,13 +17314,13 @@ public int Native_SetQueuePoints(Handle plugin, int numParams)
 
 public int Native_GetSpecialKV(Handle plugin, int numParams)
 {
-	int index=GetNativeCell(1);
-	bool isNumOfSpecial=view_as<bool>(GetNativeCell(2));
+	int index = GetNativeCell(1);
+	bool isNumOfSpecial = view_as<bool>(GetNativeCell(2));
 	if(isNumOfSpecial)
 	{
 		if(index!=-1 && index<Specials)
 		{
-			if(BossKV[index]!=INVALID_HANDLE)
+			if(BossKV[index] != INVALID_HANDLE)
 				KvRewind(BossKV[index]);
 
 			return view_as<int>(BossKV[index]);
@@ -16976,7 +17330,7 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 	{
 		if(index!=-1 && index<=MaxClients && Special[index]!=-1 && Special[index]<MAXSPECIALS)
 		{
-			if(BossKV[Special[index]]!=INVALID_HANDLE)
+			if(BossKV[Special[index]] != INVALID_HANDLE)
 				KvRewind(BossKV[Special[index]]);
 
 			return view_as<int>(BossKV[Special[index]]);
@@ -17111,11 +17465,14 @@ public int Native_RemoveClientShield(Handle plugin, int numParams)
 
 public int Native_LogError(Handle plugin, int numParams)
 {
-	char buffer[256], buffer2[256], message[256];
-	SetNativeString(1, message, sizeof(message));
-	Format(buffer, sizeof(buffer), "%s", message);
-	VFormat(buffer2, sizeof(buffer2), buffer, 3);
-	LogToFile(eLog, buffer2);
+	char buffer[256];
+	int error = FormatNativeString(0, 1, 2, sizeof(buffer), _, buffer);
+	if(error != SP_ERROR_NONE)
+	{
+		ThrowNativeError(error, "Failed to format");
+		return;
+	}
+	LogToFile(eLog, buffer);
 }
 
 public int Native_Debug(Handle plugin, int numParams)
@@ -17130,7 +17487,7 @@ public int Native_SetCheats(Handle plugin, int numParams)
 
 public int Native_GetCheats(Handle plugin, int numParams)
 {
-	return CheatsUsed;
+	return (CheatsUsed || SpecialRound);
 }
 
 public int Native_MakeBoss(Handle plugin, int numParams)
@@ -17251,9 +17608,7 @@ public Action VSH_OnGetRoundState(int &result)
 public void OnTakeDamagePost(int client, int attacker, int inflictor, float damage, int damagetype)
 {
 	if(IsBoss(client))
-	{
 		UpdateHealthBar();
-	}
 }
 
 stock void MyAddServerTag(const char[] tag)
@@ -17324,11 +17679,15 @@ public void OnEntityCreated(int entity, const char[] classname)
 
 public void OnEntityDestroyed(int entity)
 {
-	if(entity==g_Monoculus)
+	if(entity == g_Monoculus)
 	{
-		g_Monoculus=FindEntityByClassname(-1, MONOCULUS);
-		if(g_Monoculus==entity)
-			g_Monoculus=FindEntityByClassname(entity, MONOCULUS);
+		g_Monoculus = FindEntityByClassname2(-1, MONOCULUS);
+		if(g_Monoculus == entity)
+		{
+			g_Monoculus = FindEntityByClassname2(entity, MONOCULUS);
+			if(!IsValidEntity(g_Monoculus) || g_Monoculus==-1)
+				FindHealthBar();
+		}
 	}
 }
 
@@ -17384,9 +17743,9 @@ public int CheckRoundState()
 
 void FindHealthBar()
 {
-	healthBar=FindEntityByClassname(-1, HEALTHBAR_CLASS);
+	healthBar = FindEntityByClassname2(-1, HEALTHBAR_CLASS);
 	if(!IsValidEntity(healthBar))
-		healthBar=CreateEntityByName(HEALTHBAR_CLASS);
+		healthBar = CreateEntityByName(HEALTHBAR_CLASS);
 }
 
 public void HealthbarEnableChanged(Handle convar, const char[] oldValue, const char[] newValue)

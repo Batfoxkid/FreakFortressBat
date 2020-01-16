@@ -1,4 +1,6 @@
 #include <sdktools>
+#include <morecolors>
+#tryinclude <tf2items>
 
 #define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
 #define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
@@ -637,7 +639,7 @@ native void FF2_LogError(const char[] message, any ...);
 native bool FF2_Debug();
 
 /**
- * Sets the cheat status to turn of logging and statistics
+ * Sets the cheat status to turn off logging and statistics
  *
  * @param status	Disable statistics if true
  *
@@ -773,11 +775,25 @@ forward Action FF2_OnLoseLife(int boss, int &lives, int maxLives);
 forward void FF2_OnAlivePlayersChanged(int players, int bosses);
 
 /**
+ * Called when the boss has a difficulty/special set for this plugin
+ *
+ * @note		This is called per-plugin, no need to check which plugin it belongs to
+ * @note		Don't change the position or close the handle, instead just use KvGetNum, KvGetString, etc.
+ *
+ * @param boss		Boss index
+ * @param difficulty	Name of the difficulty/special
+ * @param kv		KeyValues handle of difficulty config
+ *
+ * @noreturn
+ */
+forward void FF2_OnDifficulty(int boss, const char[] difficulty, Handle kv);
+
+/**
  * Gives ammo to a weapon
  *
  * @param client	Client's index
  * @param weapon	Weapon
- * @param ammo		Ammo (set to 1 for clipless weapons, then set the actual ammo using clip)
+ * @param ammo		Ammo (set to -1 for clipless weapons, then set the actual ammo using clip)
  * @param clip		Clip
  *
  * @error		Invalid client index or client not in game
@@ -924,7 +940,6 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
 		switch(TF2_GetPlayerClass(client))
 		{
 			case TFClass_Scout:	ReplaceString(name, 64, "saxxy", "tf_weapon_bat", false);
-			case TFClass_Soldier:	ReplaceString(name, 64, "saxxy", "tf_weapon_shovel", false);
 			case TFClass_Pyro:	ReplaceString(name, 64, "saxxy", "tf_weapon_fireaxe", false);
 			case TFClass_DemoMan:	ReplaceString(name, 64, "saxxy", "tf_weapon_bottle", false);
 			case TFClass_Heavy:	ReplaceString(name, 64, "saxxy", "tf_weapon_fists", false);
@@ -932,16 +947,17 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
 			case TFClass_Medic:	ReplaceString(name, 64, "saxxy", "tf_weapon_bonesaw", false);
 			case TFClass_Sniper:	ReplaceString(name, 64, "saxxy", "tf_weapon_club", false);
 			case TFClass_Spy:	ReplaceString(name, 64, "saxxy", "tf_weapon_knife", false);
+			default:		ReplaceString(name, 64, "saxxy", "tf_weapon_shovel", false);
 		}
 	}
 	else if(StrEqual(name, "tf_weapon_shotgun", false))	// If using tf_weapon_shotgun for Soldier/Pyro/Heavy/Engineer
 	{
 		switch(TF2_GetPlayerClass(client))
 		{
-			case TFClass_Soldier:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_soldier", false);
 			case TFClass_Pyro:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_pyro", false);
 			case TFClass_Heavy:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_hwg", false);
 			case TFClass_Engineer:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_primary", false);
+			default:		ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_soldier", false);
 		}
 	}
 
@@ -965,11 +981,11 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
 		int i2;
 		for(int i; i<count; i+=2)
 		{
-			int attrib=StringToInt(atts[i]);
+			int attrib = StringToInt(atts[i]);
 			if(!attrib)
 			{
 				LogError("Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
-				CloseHandle(hWeapon);
+				delete hWeapon;
 				return -1;
 			}
 
@@ -1020,7 +1036,7 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
  */
 stock int FF2_GetArgI(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, int defValue=0)
 {
-	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
+	return GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedI")==FeatureStatus_Available ?
 	       FF2_GetArgNamedI(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgument(boss, plugin_name, ability_name, index, defValue)) :
 	       FF2_GetAbilityArgument(boss, plugin_name, ability_name, index, defValue);
 }
@@ -1041,7 +1057,7 @@ stock int FF2_GetArgI(int boss, const char[] plugin_name, const char[] ability_n
  */
 stock float FF2_GetArgF(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, float defValue=0.0)
 {
-	return FF2_NamedArgumentsUsed(boss, plugin_name, ability_name) ?
+	return GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedI")==FeatureStatus_Available ?
 	       FF2_GetArgNamedF(boss, plugin_name, ability_name, argument, FF2_GetAbilityArgumentFloat(boss, plugin_name, ability_name, index, defValue)) :
 	       FF2_GetAbilityArgumentFloat(boss, plugin_name, ability_name, index, defValue);
 }
@@ -1063,7 +1079,7 @@ stock float FF2_GetArgF(int boss, const char[] plugin_name, const char[] ability
  */
 stock int FF2_GetArgS(int boss, const char[] plugin_name, const char[] ability_name, const char[] argument, int index, char[] buffer, int bufferLength)
 {
-	if(FF2_NamedArgumentsUsed(boss, plugin_name, ability_name))
+	if(GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedI") == FeatureStatus_Available)
 	{
 		FF2_GetArgNamedS(boss, plugin_name, ability_name, argument, buffer, bufferLength);
 		if(!strlen(buffer))
@@ -1091,12 +1107,15 @@ public SharedPlugin __pl_FF2 =
 public void __pl_FF2_SetNTVOptional()
 {
 	MarkNativeAsOptional("FF2_IsFF2Enabled");
+	MarkNativeAsOptional("FF2_IsBossVsBoss");
 	MarkNativeAsOptional("FF2_GetFF2Version");
 	MarkNativeAsOptional("FF2_GetForkVersion");
+	MarkNativeAsOptional("FF2_GetRoundState");
 	MarkNativeAsOptional("FF2_GetBossUserId");
 	MarkNativeAsOptional("FF2_GetBossIndex");
 	MarkNativeAsOptional("FF2_GetBossTeam");
 	MarkNativeAsOptional("FF2_GetBossSpecial");
+	MarkNativeAsOptional("FF2_GetBossName");
 	MarkNativeAsOptional("FF2_GetBossHealth");
 	MarkNativeAsOptional("FF2_SetBossHealth");
 	MarkNativeAsOptional("FF2_GetBossMaxHealth");
@@ -1110,28 +1129,33 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_GetBossRageDamage");
 	MarkNativeAsOptional("FF2_SetBossRageDamage");
 	MarkNativeAsOptional("FF2_GetClientDamage");
-	MarkNativeAsOptional("FF2_GetRoundState");
 	MarkNativeAsOptional("FF2_GetRageDist");
 	MarkNativeAsOptional("FF2_HasAbility");
+	MarkNativeAsOptional("FF2_DoAbility");
 	MarkNativeAsOptional("FF2_GetAbilityArgument");
 	MarkNativeAsOptional("FF2_GetAbilityArgumentFloat");
 	MarkNativeAsOptional("FF2_GetAbilityArgumentString");
 	MarkNativeAsOptional("FF2_GetArgNamedI");
 	MarkNativeAsOptional("FF2_GetArgNamedF");
 	MarkNativeAsOptional("FF2_GetArgNamedS");
-	MarkNativeAsOptional("FF2_RandomSound");
 	MarkNativeAsOptional("FF2_EmitVoiceToAll");
+	MarkNativeAsOptional("FF2_RandomSound");
 	MarkNativeAsOptional("FF2_StartMusic");
 	MarkNativeAsOptional("FF2_StopMusic");
 	MarkNativeAsOptional("FF2_GetSpecialKV");
-	MarkNativeAsOptional("FF2_GetQueuePoints");
-	MarkNativeAsOptional("FF2_SetQueuePoints");
 	MarkNativeAsOptional("FF2_GetFF2flags");
 	MarkNativeAsOptional("FF2_SetFF2flags");
-	MarkNativeAsOptional("FF2_DoAbility");
+	MarkNativeAsOptional("FF2_GetQueuePoints");
+	MarkNativeAsOptional("FF2_SetQueuePoints");
 	MarkNativeAsOptional("FF2_GetClientGlow");
 	MarkNativeAsOptional("FF2_SetClientGlow");
+	MarkNativeAsOptional("FF2_GetClientShield");
+	MarkNativeAsOptional("FF2_RemoveClientShield");
+	MarkNativeAsOptional("FF2_LogError");
 	MarkNativeAsOptional("FF2_Debug");
+	MarkNativeAsOptional("FF2_SetCheats");
+	MarkNativeAsOptional("FF2_GetCheats");
+	MarkNativeAsOptional("FF2_MakeBoss");
 }
 #endif
 

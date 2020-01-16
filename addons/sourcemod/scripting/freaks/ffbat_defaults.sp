@@ -1,7 +1,7 @@
 /*
 	Default Abilities Pack:
 
-	model_projectile_replace
+	Rages:
 	rage_cbs_bowrage
 	rage_cloneattack
 	rage_explosive_dance
@@ -13,10 +13,27 @@
 	rage_stun
 	rage_stunsg
 	rage_uber
+
+	Charges:
+	special_democharge
+
+	Difficulties:
+	health
+	nocharge
+	nohud
+	nolives
+	nopassive
+	norage
+	noslot
+	outline
+	rage
+	tfcond
+
+	Specials:
+	model_projectile_replace
 	spawn_many_objects_on_death
 	spawn_many_objects_on_kill
 	special_cbs_multimelee
-	special_democharge
 	special_dissolve
 	special_dropprop
 	special_noanims
@@ -27,7 +44,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <tf2_stocks>
-#include <colorlib>
+#include <morecolors>
 #include <tf2items>
 #include <freak_fortress_2>
 #include <freak_fortress_2_subplugin>
@@ -38,8 +55,8 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"0"
-#define MINOR_REVISION	"5"
-#define STABLE_REVISION	"4"
+#define MINOR_REVISION	"6"
+#define STABLE_REVISION	"0"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -49,6 +66,7 @@
 #define SPOOK "yikes_fx"
 
 #define CBS_MAX_ARROWS 9
+#define MAXTF2PLAYERS 36
 
 #define SOUND_SLOW_MO_START	"replay/enterperformancemode.wav"	//Used when Ninja Spy enters slow mo
 #define SOUND_SLOW_MO_END	"replay/exitperformancemode.wav"	//Used when Ninja Spy exits slow mo
@@ -76,23 +94,32 @@ ConVar cvarCheats;
 
 //	Global
 Handle OnHaleRage = INVALID_HANDLE;
-int FF2Flags[MAXPLAYERS+1];
+int FF2Flags[MAXTF2PLAYERS];
 int Players;
 int TotalPlayers;
 
 //	Clone Attack
-int CloneOwnerIndex[MAXPLAYERS+1] = -1;
+int CloneOwnerIndex[MAXTF2PLAYERS] = -1;
+
+//	Difficulty
+bool NoCharge[MAXTF2PLAYERS];
+int NoSlot[MAXTF2PLAYERS];
+bool NoPassive[MAXTF2PLAYERS];
+bool NoRage[MAXTF2PLAYERS];
+bool NoHud[MAXTF2PLAYERS];
+bool Outline[MAXTF2PLAYERS];
+TFCond Cond[MAXTF2PLAYERS];
 
 //	Demo Charge
-float Charged[MAXPLAYERS+1];
+float Charged[MAXTF2PLAYERS];
 
 //	Demo Overlay
 int Demopan;
 
 //	Explosive Dance
-int ExpCount[MAXPLAYERS+1] = 35;
-float ExpDamage[MAXPLAYERS+1] = 180.0;
-int ExpRange[MAXPLAYERS+1] = 350;
+int ExpCount[MAXTF2PLAYERS] = 35;
+float ExpDamage[MAXTF2PLAYERS] = 180.0;
+int ExpRange[MAXTF2PLAYERS] = 350;
 
 //	Instant Teleport
 float Tslowdown;
@@ -140,9 +167,7 @@ public void OnPluginStart2()
 	cvarCheats = FindConVar("sv_cheats");
 
 	AddCommandListener(Listener_PreventCheats, "");
-
 	PrecacheSound("items/pumpkin_pickup.wav");
-
 	LoadTranslations("freak_fortress_2.phrases");
 
 	//Strip cheats flag from all cvars-don't reset them when sv_cheats 1 changes
@@ -165,10 +190,14 @@ public void OnPluginStart2()
 	} 
 	while(FindNextConCommand(interator, name, sizeof(name), isCommand, flags));
 
-	if(FF2_GetRoundState() != 2)	// In case the plugin is loaded in late
+	for(int boss; boss<=MaxClients; boss++)
 	{
-		OnRoundStart(INVALID_HANDLE, "plugin_lateload", false);
+		Cond[boss] = TFCond_Slowed;
+		NoSlot[boss] = -2;
 	}
+
+	if(FF2_GetRoundState() != 2)	// In case the plugin is loaded in late
+		OnRoundStart(INVALID_HANDLE, "plugin_lateload", false);
 }
 
 public void OnMapStart()
@@ -232,10 +261,7 @@ bool IsSlowMoActive()
 
 public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ability_name, int status)
 {
-	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
-	int slot = FF2_GetArgI(boss, this_plugin_name, ability_name, "slot", 0);
-
-	if(!slot)  //Rage
+	if(!FF2_GetArgI(boss, this_plugin_name, ability_name, "slot", 0))  //Rage
 	{
 		if(!boss)
 		{
@@ -272,6 +298,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		if(duration <= 0)
 			return Plugin_Continue;
 
+		int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 		TF2_AddCondition(client, TFCond_Ubercharged, duration);
 		SetEntProp(client, Prop_Data, "m_takedamage", 0);
 		CreateTimer(duration, Timer_StopUber, boss, TIMER_FLAG_NO_MAPCHANGE);
@@ -310,6 +337,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		if(TflagOverride == 0)
 			TflagOverride = TF_STUNFLAGS_GHOSTSCARE|TF_STUNFLAG_NOSOUNDOREFFECT;
 
+		int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 		for(int target=1; target<=MaxClients; target++)
 		{
 			if(IsClientInGame(target) && IsPlayerAlive(target) && target!=client && !(FF2_GetFF2flags(target) & FF2FLAG_ALLOWSPAWNINBOSSTEAM))
@@ -371,7 +399,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 	else if(!StrContains(ability_name, "rage_tradespam"))
 	{
 		CreateTimer(0.0, Timer_Demopan_Rage, 1, TIMER_FLAG_NO_MAPCHANGE);
-		Demopan = GetClientTeam(client);
+		Demopan = GetClientTeam(GetClientOfUserId(FF2_GetBossUserId(boss)));
 	}
 	else if(StrEqual(ability_name, "rage_cbs_bowrage"))
 	{
@@ -395,6 +423,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
     */
 	else if(StrEqual(ability_name, "special_democharge"))
 	{
+		int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 		if(status<1 || Charged[client]>GetGameTime())
 			return Plugin_Continue;
 
@@ -420,6 +449,90 @@ public void FF2_OnAlivePlayersChanged(int players, int bosses)
 	Players = players+bosses;
 	if(TotalPlayers > players+bosses)
 		TotalPlayers = players+bosses;
+}
+
+public void FF2_PreAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, bool &enabled)
+{
+	if(NoSlot[boss] == slot)
+	{
+		enabled = false;
+	}
+	else if(!slot)
+	{
+		if(NoRage[boss])
+			enabled = false;
+	}
+	else if(slot > 3)
+	{
+		if(NoPassive[boss])
+			enabled = false;
+	}
+	else if(slot > 0)
+	{
+		if(NoCharge[boss])
+			enabled = false;
+	}
+}
+
+public void FF2_OnDifficulty(int boss, const char[] section, Handle kv)
+{
+	// "nocharge" determines if the boss can use charge abilities
+	NoCharge[boss] = view_as<bool>(KvGetNum(kv, "nocharge", 0));
+
+	// "noslot" determines the specific slot that won't be used
+	NoSlot[boss] = KvGetNum(kv, "noslot", -2);
+
+	// "nopassive" determines if the boss can use passive abilities
+	NoPassive[boss] = view_as<bool>(KvGetNum(kv, "nopassive", 0));
+
+	// "norage" determines if the boss can use rage abilities
+	NoRage[boss] = view_as<bool>(KvGetNum(kv, "norage", 0));
+
+	// "nohud" determines if the boss can see the HUD
+	NoHud[boss] = view_as<bool>(KvGetNum(kv, "nohud", 0));
+
+	// "outline" determines if the boss is always outlined
+	Outline[boss] = view_as<bool>(KvGetNum(kv, "outline", 0));
+
+	// "tfcond" determines if the boss always have a condition
+	Cond[boss] = view_as<TFCond>(KvGetNum(kv, "tfcond", 0));
+
+	int health = FF2_GetBossMaxHealth(boss);
+	int lives = FF2_GetBossMaxLives(boss);
+
+	// "nolives" determines if the boss has lives
+	if(KvGetNum(kv, "nolives"))
+	{
+		health *= lives;
+		lives = 1;
+	}
+
+	// "health" determines the ratio
+	health = RoundFloat(health*KvGetFloat(kv, "health", 1.0));
+
+	if(lives > 0)
+	{
+		FF2_SetBossMaxLives(boss, lives);
+		FF2_SetBossLives(boss, lives);
+	}
+
+	if(health > 0)
+	{
+		FF2_SetBossMaxHealth(boss, health);
+		FF2_SetBossHealth(boss, health*lives);
+	}
+
+	if(NoRage[boss])
+	{
+		FF2_SetBossRageDamage(boss, 99999);
+	}
+	else
+	{
+		// "rage" determines the ratio
+		health = RoundFloat(FF2_GetBossRageDamage(boss)*KvGetFloat(kv, "rage", 1.0));
+		if(health > 0)
+			FF2_SetBossRageDamage(boss, health);
+	}
 }
 
 public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
@@ -482,6 +595,23 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	}
 	#endif
 
+	for(int client; client<=MaxClients; client++)
+	{
+		Cond[client] = TFCond_Slowed;
+		NoCharge[client] = false;
+		NoHud[client] = false;
+		NoPassive[client] = false;
+		NoRage[client] = false;
+		NoSlot[client] = -2;
+		Outline[client] = false;
+
+		if(client && IsClientInGame(client) && CloneOwnerIndex[client]!=-1)  //FIXME: IsClientInGame() shouldn't be needed
+		{
+			CloneOwnerIndex[client] = -1;
+			FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_CLASSTIMERDISABLED);
+		}
+	}
+
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(FF2Flags[client] & FLAG_ONSLOWMO)
@@ -490,13 +620,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 				KillTimer(SlowMoTimer);
 
 			Timer_StopSlowMo(INVALID_HANDLE, -1);
-			return Plugin_Continue;
-		}
-
-		if(IsClientInGame(client) && CloneOwnerIndex[client]!=-1)  //FIXME: IsClientInGame() shouldn't be needed
-		{
-			CloneOwnerIndex[client] = -1;
-			FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_CLASSTIMERDISABLED);
 		}
 	}
 	return Plugin_Continue;
@@ -1707,6 +1830,61 @@ public Action Timer_StopSlowMo(Handle timer, any boss)
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float velocity[3], float angles[3], int &weapon)
 {
 	int boss = FF2_GetBossIndex(client);
+	if(boss < 0)
+		return Plugin_Continue;
+
+	if(NoHud[boss] || NoCharge[boss] || NoSlot[boss])
+	{
+		if(NoHud[boss])
+			FF2_SetFF2flags(client, FF2_GetFF2flags(client)|FF2FLAG_HUDDISABLED);
+
+		static char buffer[256];
+		Handle iter = GetPluginIterator();
+		Handle plugin;
+		while(MorePlugins(iter))
+		{
+			plugin = ReadPlugin(iter);
+			GetPluginFilename(plugin, buffer, sizeof(buffer));
+			if(StrContains(buffer, "ff2_dynamic_defaults.ff2", false) == -1)
+				continue;
+
+			if(NoHud[boss])
+			{
+				Function func = GetFunctionByName(plugin, "DD_SetForceHUDEnabled");
+				if(func != INVALID_FUNCTION)
+				{
+					Call_StartFunction(plugin, func);
+					Call_PushCell(client);
+					Call_PushCell(false);
+					Call_Finish();
+				}
+			}
+
+			if(NoCharge[boss] || NoSlot[boss])
+			{
+				Function func = GetFunctionByName(plugin, "DD_SetDisabled");
+				if(func != INVALID_FUNCTION)
+				{
+					Call_StartFunction(plugin, func);
+					Call_PushCell(client);
+					Call_PushCell(NoCharge[boss] || NoSlot[boss]==1);
+					Call_PushCell(NoCharge[boss] || NoSlot[boss]==1);
+					Call_PushCell(NoCharge[boss] || NoSlot[boss]==2);
+					Call_PushCell(NoCharge[boss] || NoSlot[boss]==3);
+					Call_Finish();
+				}
+			}
+			break;
+		}
+		delete iter;
+	}
+
+	if(Cond[boss] != TFCond_Slowed)
+		TF2_AddCondition(client, Cond[boss]);
+
+	if(Outline[boss])
+		FF2_SetClientGlow(client, 12.0, 12.0);
+
 	if(!(FF2Flags[client] & FLAG_ONSLOWMO))
 		return Plugin_Continue;
 
@@ -1763,13 +1941,7 @@ public Action Timer_Rage_SlowMo_Attack(Handle timer, Handle data)
 
 public bool TraceRayDontHitSelf(int entity, int mask)
 {
-	if(!entity || entity>MaxClients)
-		return true;
-
-	//if(FF2_GetBossIndex(entity)==-1)
-		//return true;
-
-	return false;
+	return true;
 }
 
 public Action Timer_SlowMoChange(Handle timer, any boss)
