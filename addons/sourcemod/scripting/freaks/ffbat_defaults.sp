@@ -1040,7 +1040,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 		addduration = 0.0;
 	}
  // Solo Rage Duration
-	float soloduration = GetArgF(boss, "rage_stun", "solo", 13, 0.0, 1);
+	float soloduration = GetArgF(boss, "rage_stun", "solo", 13, 0.0, 0);
 	if(soloduration <= 0)
 		soloduration = duration;
 
