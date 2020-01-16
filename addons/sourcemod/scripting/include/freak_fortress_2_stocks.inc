@@ -17,10 +17,12 @@ enum struct FF2Player
 
 	bool Setup(int client)
 	{
-		if(client<1 || client>MaxClients || !IsClientInGame(client))
-			return false;
-
 		this.Client = client;
+		if(client<1 || client>MaxClients || !IsClientInGame(client))
+		{
+			this.Boss = -1;
+			return false;
+		}
 		this.Boss = FF2_GetBossIndex(client);
 		return true;
 	}
@@ -33,53 +35,179 @@ enum struct FF2Player
 	bool Name(char[] buffer, int bufferLength, int clientLang=0)
 	{
 		if(this.Boss == -1)
-		{
 			return GetClientName(this.Client, buffer, bufferLength);
-		}
-		else
-		{
+
+		if(GetFeatureStatus(FeatureType_Native, "FF2_GetBossName") == FeatureStatus_Available)
 			return FF2_GetBossName(this.Boss, buffer, bufferLength, 0, clientLang);
-		}
+
+		return FF2_GetBossSpecial(this.Boss, buffer, bufferLength, 0);
 	}
 
-	int Health()
+	int Health(int newValue=0)
 	{
 		if(this.Boss == -1)
 		{
+			if(newValue > 0)
+			{
+				SetEntityHealth(this.Client, newValue);
+				return newValue;
+			}
+
 			return GetClientHealth(this.Client);
 		}
-		else
+
+		if(newValue > 0)
 		{
-			return FF2_GetBossHealth(this.Boss)/FF2_GetBossLives(this.Boss);
+			FF2_SetBossHealth(this.Boss, newValue+(FF2_GetBossLives(this.Boss)*FF2_GetBossMaxHealth(this.Boss));
+			return newValue;
 		}
+
+		return FF2_GetBossHealth(this.Boss)/FF2_GetBossLives(this.Boss);
 	}
 
-	int MaxHealth()
+	int MaxHealth(int newValue=0)
 	{
 		if(this.Boss == -1)
 		{
+			if(newValue > 0)
+			{
+				SetEntProp(this.Client, Prop_Data, "m_iMaxHealth", newValue);
+				return newValue;
+			}
+
 			return GetEntProp(this.Client, Prop_Data, "m_iMaxHealth");
 		}
-		else
+
+		if(newValue > 0)
 		{
-			return FF2_GetBossMaxHealth(this.Boss);
+			FF2_SetBossMaxHealth(this.Boss, newValue);
+			return newValue;
 		}
+
+		return FF2_GetBossMaxHealth(this.Boss);
 	}
 
-	int Lives()
+	int Lives(int newValue=0)
 	{
 		if(this.Boss == -1)
 			return 1;
+
+		if(newValue > 0)
+		{
+			FF2_SetBossLives(this.Boss, newValue);
+			return newValue;
+		}
 
 		return FF2_GetBossLives(this.Boss);
 	}
 
-	int MaxLives()
+	int MaxLives(int newValue=0)
 	{
 		if(this.Boss == -1)
 			return 1;
 
+		if(newValue > 0)
+		{
+			FF2_SetBossMaxLives(this.Boss, newValue);
+			return newValue;
+		}
+
 		return FF2_GetBossMaxLives(this.Boss);
+	}
+
+	float Rage(float newValue=-1.0)
+	{
+		if(this.Boss == -1)
+		{
+			if(newValue >= 0)
+			{
+				SetEntPropFloat(this.Client, Prop_Send, "m_flRageMeter", newValue);
+				return newValue;
+			}
+
+			return GetEntPropFloat(this.Client, Prop_Send, "m_flRageMeter");
+		}
+
+		if(newValue >= 0)
+		{
+			FF2_SetBossCharge(this.Boss, 0, newValue);
+			return newValue;
+		}
+
+		return FF2_GetBossCharge(this.Boss, 0);
+	}
+
+	int Damage(int newValue=-1)
+	{
+		if(this.Boss == -1)
+			return FF2_GetClientDamage(this.Client);
+
+		if(newValue >= 0)
+		{
+			FF2_SetBossRageDamage(this.Boss, newValue);
+			return newValue;
+		}
+
+		return FF2_GetBossRageDamage(this.Boss);
+	}
+
+	float Charge(int slot=1, float newValue=0.0)
+	{
+		if(slot<0 || slot>3)
+			return 0.0;
+
+		if(this.Boss == -1)
+		{
+			switch(slot)
+			{
+				case 1:
+				{
+					if(newValue >= 0)
+					{
+						return newValue;
+					}
+
+					return 
+				}
+				case 2:
+				{
+					if(newValue >= 0)
+					{
+						return newValue;
+					}
+
+					return 
+				}
+				case 3:
+				{
+					if(newValue >= 0)
+					{
+						SetEntPropFloat(this.Client, Prop_Send, "m_flChargeMeter", newValue);
+						return newValue;
+					}
+
+					return GetEntPropFloat(this.Client, Prop_Send, "m_flChargeMeter");
+				}
+				default:
+				{
+					if(newValue >= 0)
+					{
+						SetEntPropFloat(this.Client, Prop_Send, "m_flRageMeter", newValue);
+						return newValue;
+					}
+
+					return GetEntPropFloat(this.Client, Prop_Send, "m_flRageMeter");
+				}
+			}
+		}
+
+		if(newValue >= 0)
+		{
+			FF2_SetBossCharge(this.Boss, slot, newValue);
+			return newValue;
+		}
+
+		return FF2_GetBossCharge(this.Boss, slot);
 	}
 };
 #endif
@@ -119,7 +247,7 @@ stock int CreateAttachedAnnotation(int client, int entity, bool effect=true, flo
 }
 
 /**
- * Displays a HUD-styled message
+ * Displays a HUD-styled message.
  *
  * @param client	The client that sees the message (0 for all players)
  * @param icon		Icon that the message displays
@@ -157,7 +285,7 @@ stock bool ShowGameText(int client=0, const char[] icon="leaderboard_streak", in
 }
 
 /**
- * Changes the worldmodel of a entity
+ * Changes the worldmodel of a entity.
  *
  * @param entity	Entity index
  * @param model		Model filepath
@@ -181,7 +309,7 @@ stock bool ConfigureWorldModelOverride(int entity, const char[] model, bool wear
 }
 
 /**
- * Creates and gives a wearable to a client
+ * Creates and gives a wearable to a client.
  *
  * @param client	Client index
  * @param classname	Classname of wearable
@@ -232,7 +360,7 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname="tf_wear
 }
 
 /**
- * Setups SDKEquipWearable handle
+ * Setups SDKEquipWearable handle.
  *
  * @return		True on success or already setup, false on failure.
  */
@@ -260,6 +388,11 @@ stock bool SetupWearableSDK()
 	return true;
 }
 
+/**
+ * Checks if the map has it's own music playing.
+ *
+ * @return		True if the map has music, false otherwise.
+ */
 stock bool MapHasMusic()
 {
 	int entity = -1;
@@ -274,6 +407,14 @@ stock bool MapHasMusic()
 	return false;
 }
 
+/**
+ * Gets the closest player to an entity.
+ *
+ * @param entity	Entity index
+ * @param team		If to filter a specific team
+ *
+ * @return		Client index of nearest player
+ */
 stock int GetClosestPlayerTo(int entity, TFTeam team=TFTeam_Unassigned)
 {
 	int best;
@@ -298,6 +439,15 @@ stock int GetClosestPlayerTo(int entity, TFTeam team=TFTeam_Unassigned)
 	return best;
 }
 
+/**
+ * Teleports an entity to another entity.
+ *
+ * @param entity	Entity index to teleport
+ * @param target	Entity index to teleport to
+ * @param angles	If to rotate the entity
+ *
+ * @return		True if a client was forced to duck
+ */
 stock bool TeleMeToYou(int entity, int target, bool angles=false)
 {
 	float pos[3], ang[3];
@@ -323,7 +473,8 @@ stock bool TeleMeToYou(int entity, int target, bool angles=false)
 		SetEntityFlags(entity, GetEntityFlags(entity)|FL_DUCKING);
 		ducked = true;
 	}
-	TeleportEntity(iMe, vPos, vAng, NULL_VECTOR);
-	return bDucked;
+	TeleportEntity(entity, pos, ang, NULL_VECTOR);
+	return ducked;
 }
 
+#file "FF2 Include: Stocks"
