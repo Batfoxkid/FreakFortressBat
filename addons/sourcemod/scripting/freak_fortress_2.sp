@@ -3607,7 +3607,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		{
 			LoadDifficulty(0);
 		}
-		else if((IsFakeClient(Boss[0]) && !cvarDifficulty.BoolValue && GetRandomInt(0, 9)) || (GetRandomFloat(0.0, 100.0)<cvarDifficulty.FloatValue && ToggleDiff[Boss[0]]!=Setting_Off))
+		else if((IsFakeClient(Boss[0]) && !cvarDifficulty.BoolValue && GetRandomInt(0, 9)) || (GetRandomFloat(0.0, 100.0)<cvarDifficulty.FloatValue && ToggleDiff[Boss[0]]!=Setting_Off  && ToggleDiff[Boss[0]]!=Setting_Temp))
 		{
 			int count;
 			KvRewind(kvDiffMods);
@@ -4051,6 +4051,8 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 						GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
 						Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						if(SpecialRound)
+							Format(text[client], sizeof(text[]), "%s\n(%s)", text[client], dIncoming[target]);
 					}
 				}
 			}
@@ -4506,7 +4508,7 @@ public Action DiffMenu(int client, int args)
 	Handle dMenu = CreateMenu(DiffMenuH);
 	SetGlobalTransTarget(client);
 
-	SetMenuTitle(dMenu, "%t\n %t", "FF2 Difficulty Settings Menu Title", "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : " - ");
+	SetMenuTitle(dMenu, "%t\n %t", "FF2 Difficulty Settings Menu Title", "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
 
 	FormatEx(name, sizeof(name), "%t", "Off");
 	AddMenuItem(dMenu, "", name, (!dIncoming[client][0] || denyAll || (IsBoss(client) && FF2_GetRoundState()!=2)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
@@ -4534,11 +4536,11 @@ public int MenuHandlerDifficulty(Handle menu, MenuAction action, int param1, int
 		switch(choice)
 		{
 			case 1:
-				FPrintToChat(param1, "%t", "FF2 Special Enabled Notification");
+				FPrintToChat(param1, "%t", "FF2 Special Enabled");
 			case 2:
-				FPrintToChat(param1, "%t", "FF2 Special Disabled Notification");
+				FPrintToChat(param1, "%t", "FF2 Special Disabled");
 			case 3:
-				FPrintToChat(param1, "%t", "FF2 Special Disabled Notification For Map");
+				FPrintToChat(param1, "%t", "FF2 Special Disabled For Map");
 		}
 	}
 	else if(action == MenuAction_End)
