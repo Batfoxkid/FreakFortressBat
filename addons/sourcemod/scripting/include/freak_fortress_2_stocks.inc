@@ -10,6 +10,96 @@
 Handle SDKEquipWearable = null;
 
 #if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>=10
+enum struct FF2Ability
+{
+	int Boss;
+	char Name[64];
+	char Plugin[64];
+
+	bool Setup(int boss=0, const char[] plugin, const char[] ability)
+	{
+		this.Boss = boss;
+		strcopy(this.Plugin, 64, plugin);
+		strcopy(this.Name, 64, ability);
+		return this.Valid();
+	}
+
+	bool Valid()
+	{
+		return FF2_HasAbility(this.Boss, this.Plugin, this.Name);
+	}
+
+	float Dist()
+	{
+		return FF2_GetRageDist(this.Boss, this.Plugin, this.Name);
+	}
+
+	float Do(int slot=0, int button=0)
+	{
+		return FF2_DoAbility(this.Boss, this.Plugin, this.Name, slot, button);
+	}
+
+	int ArgInt(const char[] argName="", int argNumber=-1, int defaultValue=0)
+	{
+		int junk = -321654987;
+		int value = junk;
+		if(argName[0] && GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedI")==FeatureStatus_Available)
+		{
+			value = FF2_GetArgNamedI(this.Boss, this.Plugin, this.Name, argName, junk);
+			if(value != junk)
+				return value;
+		}
+
+		if(argNumber >= 0)
+		{
+			value = FF2_GetAbilityArgument(this.Boss, this.Plugin, this.Name, argNumber, junk);
+			if(value != junk)
+				return value;
+		}
+		return defaultValue;
+	}
+
+	float ArgFloat(const char[] argName="", int argNumber=-1, float defaultValue=0.0)
+	{
+		float junk = -321654987.258;
+		float value = junk;
+		if(argName[0] && GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedF")==FeatureStatus_Available)
+		{
+			value = FF2_GetArgNamedF(this.Boss, this.Plugin, this.Name, argName, junk);
+			if(value != junk)
+				return value;
+		}
+
+		if(argNumber >= 0)
+		{
+			value = FF2_GetAbilityArgumentFloat(this.Boss, this.Plugin, this.Name, argNumber, junk);
+			if(value != junk)
+				return value;
+		}
+		return defaultValue;
+	}
+
+	void ArgString(const char[] argName="", int argNumber=-1, char[] buffer, int bufferLength, const char[] defaultValue="")
+	{
+		buffer[0] = 0;
+		if(argName[0] && GetFeatureStatus(FeatureType_Native, "FF2_GetArgNamedS")==FeatureStatus_Available)
+		{
+			FF2_GetArgNamedS(this.Boss, this.Plugin, this.Name, argName, buffer, bufferLength);
+			if(buffer[0])
+				return;
+		}
+
+		if(argNumber >= 0)
+		{
+			FF2_GetAbilityArgumentString(this.Boss, this.Plugin, this.Name, argNumber, buffer, bufferLength);
+			if(buffer[0])
+				return;
+		}
+		strcopy(buffer, bufferLength, defautValue);
+		return strlen(buffer);
+	}
+};
+
 enum struct FF2Player
 {
 	int Client;
@@ -117,24 +207,7 @@ enum struct FF2Player
 
 	float Rage(float newValue=-1.0)
 	{
-		if(this.Boss == -1)
-		{
-			if(newValue >= 0)
-			{
-				SetEntPropFloat(this.Client, Prop_Send, "m_flRageMeter", newValue);
-				return newValue;
-			}
-
-			return GetEntPropFloat(this.Client, Prop_Send, "m_flRageMeter");
-		}
-
-		if(newValue >= 0)
-		{
-			FF2_SetBossCharge(this.Boss, 0, newValue);
-			return newValue;
-		}
-
-		return FF2_GetBossCharge(this.Boss, 0);
+		return this.Charge(0, newValue);
 	}
 
 	int Damage(int newValue=-1)
@@ -151,7 +224,7 @@ enum struct FF2Player
 		return FF2_GetBossRageDamage(this.Boss);
 	}
 
-	float Charge(int slot=1, float newValue=0.0)
+	float Charge(int slot=1, float newValue=-1.0)
 	{
 		if(slot<0 || slot>3)
 			return 0.0;
@@ -164,19 +237,21 @@ enum struct FF2Player
 				{
 					if(newValue >= 0)
 					{
+						SetEntPropFloat(this.Client, Prop_Send, "m_flEnergyDrinkMeter", newValue);
 						return newValue;
 					}
 
-					return 
+					return GetEntPropFloat(this.Client, Prop_Send, "m_flEnergyDrinkMeter");
 				}
 				case 2:
 				{
 					if(newValue >= 0)
 					{
+						SetEntPropFloat(this.Client, Prop_Send, "m_flHypeMeter", newValue);
 						return newValue;
 					}
 
-					return 
+					return GetEntPropFloat(this.Client, Prop_Send, "m_flHypeMeter");
 				}
 				case 3:
 				{
@@ -208,6 +283,94 @@ enum struct FF2Player
 		}
 
 		return FF2_GetBossCharge(this.Boss, slot);
+	}
+
+	float Dist()
+	{
+		if(this.Boss == -1)
+			return 0.0;
+
+		return FF2_GetRageDist(this.Boss);
+	}
+
+	bool Sound(const char[] keyvalue, char[] buffer, int bufferLength, int slot=0)
+	{
+		if(this.Boss == -1)
+			return false;
+
+		return FF2_RandomSound(keyvalue, buffer, bufferLength, this.Boss, slot);
+	}
+
+	void Music(bool toggle=true)
+	{
+		if(toggle)
+		{
+			FF2_StartMusic(this.Client);
+			return;
+		}
+		FF2_StopMusic(this.Client);
+	}
+
+	Handle Kv()
+	{
+		if(this.Boss == -1)
+			return INVALID_HANDLE;
+
+		return FF2_GetSpecialKV(this.Boss, 0);
+	}
+
+	int Flags(int newValue=-1)
+	{
+		if(newValue >= 0)
+		{
+			FF2_SetFF2flags(this.Client, newValue);
+			return newValue;
+		}
+
+		return FF2_GetFF2flags(this.Client);
+	}
+
+	int Queue(int newValue=-321654987)
+	{
+		if(newValue != -321654987)
+		{
+			FF2_SetQueuePoints(this.Client, newValue);
+			return newValue;
+		}
+
+		return FF2_GetQueuePoints(this.Client);
+	}
+
+	float Glow(float newValue=-321654987.258, bool override=false)
+	{
+		if(newValue != -321654987.258)
+			return FF2_GetClientGlow(this.Client);
+
+		if(override)
+		{
+			FF2_SetClientGlow(this.Client, newValue, newValue);
+			return newValue;
+		}
+
+		FF2_SetClientGlow(this.Client, newValue, -1.0);
+		return newValue;
+	}
+
+	float Shield(float newValue=-1.0, int entity=0, float reduction=-1.0)
+	{
+		if(!newValue && !entity)
+		{
+			FF2_RemoveClientShield(this.Client);
+			return newValue;
+		}
+
+		if(newValue>=0 || entity || reduction>=0)
+		{
+			FF2_SetClientShield(this.Client, entity, newValue, reduction);
+			return newValue;
+		}
+
+		return FF2_GetClientShield(this.Client);
 	}
 };
 #endif
