@@ -36,13 +36,18 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Selection: {1}"
-		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n\nТекущий выбор: {1}"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n \nТекущий выбор: {1}"
 	}
 	"ff2_boss_selection_pack"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Boss Pack: {1}\nCurrent Selection: {2}"
-		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n\nТекущий выбор: {2}"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n \nТекущий набор: {1}\nТекущий выбор: {2}"
+	}
+	"ff2_boss_selection_diff"
+	{
+		"#format"	"{1:s}"
+		"en"		"\nCurrent Difficulty: {1}"
 	}
 	"boss_selection_overridden"
 	{
@@ -84,20 +89,13 @@
 		"en"		"Enable Companions"
 		"ru"		"Включить компаньонов"
 	}
-	"to0_disablekstreak"
+	"to0_disablediff"
 	{
-		"en"		"Disable Killstreaks"
-		"ru"		"Выключить серии убийств"
+		"en"		"Disable Specials"
 	}
-	"to0_enablekstreak"
+	"to0_enablediff"
 	{
-		"en"		"Enable Killstreaks"
-		"ru"		"Включить серии убийств"
-	}
-	"to0_togglekstreak"
-	{
-		"en"		"Toggle Killstreaks"
-		"ru"		"Переключить серии убийств"
+		"en"		"Enable Specials"
 	}
 	"to0_difficulty"
 	{
@@ -107,6 +105,7 @@
 	"to0_viewall"
 	{
 		"en"		"View All Bosses"
+		"ru"		"Посмотреть всех боссов"
 	}
 	"to0_confirm"
 	{
@@ -116,8 +115,9 @@
 	}
 	"to0_confirmpack"
 	{
-		"#format"	"{1:s}"
+		"#format"	"{1:s},{2:s}"
 		"en"		"Select {1} for {2}"
+		"ru"		"Выбрать {1} для {2}"
 	}
 	"to0_cancel"
 	{
@@ -127,16 +127,18 @@
 	"to0_nodesc"
 	{
 		"en"		"No Boss Description"
-		"ru"		"Нет описания босса"
+		"ru"		"Описание босса отсутствует"
 	}
 	"to0_packmenu"
 	{
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \n"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n \n"
 	}
 	"to0_viewpack"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \nBoss Pack: {1}\nSelection: {2}"
+		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n \nНабор персонажей: {1}\nВыбор: {2}"
 	}
 	"to0_comfirmrandom"
 	{
@@ -204,6 +206,34 @@
 	{
 		"en"		"Disable queue points for this map only"
 		"ru"		"Отключить очки очереди только на этой карте"
+	}
+	"FF2 Special Menu Title"
+	{
+		"en"		"Boss special round preferences:"
+	}
+	"Enable Special"
+	{
+		"en"		"Enable special rounds"
+	}
+	"Disable Special"
+	{
+		"en"		"Disable special rounds"
+	}
+	"Disable Special For This Map"
+	{
+		"en"		"Disable special rounds for this map only"
+	}
+	"FF2 Special Enabled"
+	{
+		"en"		"You will have a chance for special rounds. Don't want special rounds? Do {olive}/ff2difficulty{default}"
+	}
+	"FF2 Special Disabled"
+	{
+		"en"		"You will not have a chance for special rounds. Want special rounds? Do {olive}/ff2difficulty{default}"
+	}
+	"FF2 Special Disabled For Map"
+	{
+		"en"		"You will not have a chance for special rounds for this map only. Want special rounds? Do {olive}/ff2difficulty{default}"
 	}
 	"FF2 Companion Toggle Notify"
 	{
@@ -299,68 +329,8 @@
 	}
 	"FF2 Difficulty Settings Menu Title"
 	{
-		"en"		"Up for a challenge? You can change your difficulty level! This will modify your selected boss's total health!"
-		"ru"		"Готов к испытанию? Ты можешь выбрать свой уровень сложности! Это повлияет на общее здоровье твоего босса!"
-	}
-	"ff2difficulty_undefined"
-	{
-		"#format"	"{1:i}"
-		"en"		"No difficulty selected. You will have {1} pct HP!"
-		"ru"		"Сложность не выбрана. У тебя будет {1} процентов ОЗ!"
-	}
-	"ff2difficulty_normal"
-	{
-		"#format"	"{1:i}"
-		"en"		"Difficulty: Normal ({1} pct HP)"
-		"ru"		"Сложность: Обычная ({1} процентов ОЗ)"
-	}
-	"ff2difficulty_hard"
-	{
-		"#format"	"{1:i}"
-		"en"		"Difficulty: Hard ({1} pct HP, RAGE fewer times)"
-		"ru"		"Сложность: Высокая ({1} процентов ОЗ, меньше ЯРОСТИ)"
-	}
-	"ff2difficulty_lunatic"
-	{
-		"#format"	"{1:i}"
-		"en"		"Difficulty: Lunatic ({1} pct HP, No RAGE)"
-		"ru"		"Сложность: Сумасшедшая ({1} процентов ОЗ, без ЯРОСТИ)"
-	}
-	"ff2difficulty_insane"
-	{
-		"#format"	"{1:i}"
-		"en"		"Difficulty: Insane ({1} pct HP, No RAGE)"
-		"ru"		"Сложность: Безумная ({1} процентов ОЗ, без ЯРОСТИ)"
-	}
-	"FF2 Normal Difficulty"
-	{
-		"#format"	"{1:i}"
-		"en"		"Normal: {1} percent total HP"
-		"ru"		"Обычная: {1} процентов общих ОЗ"
-	}
-	"FF2 Hard Difficulty"
-	{
-		"#format"	"{1:i}"
-		"en"		"Hard: {1} percent HP, RAGE fewer times"
-		"ru"		"Высокая: {1} процентов ОЗ, меньше ЯРОСТИ"
-	}
-	"FF2 Lunatic Difficulty"
-	{
-		"#format"	"{1:i}"
-		"en"		"Lunatic: {1} percent HP, RAGE (including death effects) disabled!"
-		"ru"		"Сумасшедшая: {1} процентов ОЗ, ЯРОСТЬ (включая эффекты смерти) отключена!"
-	}
-	"FF2 Insane Difficulty"
-	{
-		"#format"	"{1:i}"
-		"en"		"Insane: {1} percent HP, RAGE (including death effects) disabled!"
-		"ru"		"Безумная: {1} процентов ОЗ, ЯРОСТЬ (включая эффекты смерти) отключена!"
-	}
-	"FF2 New Difficulty"
-	{
-		"#format"	"{1:i}"
-		"en"		"You will now spawn with {1} percent total HP the next time you are the boss"
-		"ru"		"Теперь ты возродишся с {1} процентами от общих ОЗ при твоей следующей очереди на босса"
+		"en"		"Up for a challenge? You can change your difficulty!"
+		"ru"		"Готов к испытанию? Ты можешь выбрать свой уровень сложности!"
 	}
 	"ff2_please wait"
 	{
@@ -466,6 +436,7 @@
 	"deny_map"
 	{
 		"en"		"This boss can't be played on this map!"
+		"ru"		"Этим боссом нельзя играть на текущей карте!"
 	}
 	"deny_recent"
 	{
@@ -506,5 +477,9 @@
 	{
 		"en"		"Boss Health"
 		"ru"		"Здоровье Босса"
+	}
+	"Hud Ranking"
+	{
+		"en"		"Damage Tracker"
 	}
 }

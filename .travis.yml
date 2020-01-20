@@ -39,7 +39,6 @@ before_script:
     - wget "https://raw.githubusercontent.com/Silenci0/SMAC/master/addons/sourcemod/scripting/include/smac.inc" -O include/smac.inc
     - wget "https://raw.githubusercontent.com/Silenci0/SMAC/master/addons/sourcemod/scripting/include/smac_stocks.inc" -O include/smac_stocks.inc
     - wget "https://forums.alliedmods.net/attachment.php?attachmentid=116849&d=1377667508" -O include/tf2attributes.inc
-    - wget "https://forums.alliedmods.net/attachment.php?attachmentid=175386&d=1556998847" -O include/freak_fortress_2_kstreak.inc
 
     # RTD is particularly annoying since it doesn't handle optional plugin dependencies correctly
     - sed -i'' 's/required = 1/#if defined REQUIRE_PLUGIN\nrequired = 1\n\#else\nrequired = 0/' include/rtd.inc
