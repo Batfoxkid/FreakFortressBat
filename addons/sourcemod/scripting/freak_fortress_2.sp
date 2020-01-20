@@ -77,8 +77,8 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "6"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 17th, 2020"
+//#define FORK_DEV_REVISION "development"
+#define FORK_DATE_REVISION "January 20, 2020"
 
 #define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."015"
 
@@ -904,6 +904,7 @@ public void OnPluginStart()
 	HookConVarChange(cvarAttributes, CvarChange);
 	HookConVarChange(cvarStartingUber, CvarChange);
 	HookConVarChange(cvarHealth, CvarChange);
+	HookConVarChange(cvarRageDamage, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");

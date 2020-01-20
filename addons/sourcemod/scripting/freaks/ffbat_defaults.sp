@@ -1422,7 +1422,7 @@ void Rage_Clone(const char[] ability_name, int boss)
 		FF2_SetFF2flags(clone, FF2_GetFF2flags(clone)|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_CLASSTIMERDISABLED);
 		ChangeClientTeam(clone, GetClientTeam(client));
 		TF2_RespawnPlayer(clone);
-		CloneOwnerIndex[clone] = boss;
+		CloneOwnerIndex[clone] = client;
 		TF2_SetPlayerClass(clone, (class ? (view_as<TFClassType>(class)) : (view_as<TFClassType>(KvGetNum(bossKV[config], "class", 0)))), _, false);
 
 		if(changeModel)
