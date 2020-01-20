@@ -9987,14 +9987,9 @@ public Action ClientTimer(Handle timer)
 
 			if((ShowHealthText || HudSettings[client][2]) && !Enabled3 && HudSettings[client][HUDTYPES-1]!=1)
 			{
+				index = HudSettings[client][HUDTYPES-1];
 				if(index < 1)
-				{
 					index = cvarDamageHud.IntValue;
-				}
-				else
-				{
-					index = HudSettings[client][HUDTYPES-1];
-				}
 
 				if(index > 2)
 				{
