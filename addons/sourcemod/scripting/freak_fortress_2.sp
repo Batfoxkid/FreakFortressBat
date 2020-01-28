@@ -75,12 +75,12 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "6"
+#define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 20, 2020"
+#define FORK_DEV_REVISION "development"
+#define FORK_DATE_REVISION "January 28, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."015"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -96,7 +96,7 @@ last time or to encourage others to do the same.
 #define MINOR_REVISION "11"
 #define STABLE_REVISION "0"
 #define DEV_REVISION "Beta"
-#define DATE_REVISION "December 4th, 2019"
+#define DATE_REVISION "--Unknown--"
 
 #define DATATABLE "ff2_stattrak"
 #define CHANGELOG_URL "https://batfoxkid.github.io/FreakFortressBat"
@@ -704,7 +704,7 @@ int HudSettings[MAXTF2PLAYERS][HUDTYPES];
 
 public void OnPluginStart()
 {
-	LogMessage("===Freak Fortress 2 Initializing-%s===", BUILD_NUMBER);
+	LogMessage("Freak Fortress 2 %s Loading...", BUILD_NUMBER);
 
 	// Logs
 	BuildPath(Path_SM, pLog, sizeof(pLog), BossLogPath);
@@ -720,7 +720,7 @@ public void OnPluginStart()
 	if(!FileExists(eLog))
 		OpenFile(eLog, "a+");
 
-	cvarVersion = CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
+	cvarVersion = CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	cvarCharset = CreateConVar("ff2_current", "0", "Freak Fortress 2 Current Boss Pack", FCVAR_SPONLY|FCVAR_DONTRECORD);
 	cvarPointType = CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
 	cvarPointDelay = CreateConVar("ff2_point_delay", "6", "Seconds to add to ff2_point_time per player");
@@ -2063,7 +2063,7 @@ public void CacheDifficulty()
 	}
 }
 
-public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextKey
+public void FindCharacters()
 {
 	char filepath[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH], key[4], charset[42];
 	Specials = 0;
@@ -2148,20 +2148,43 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 	KvGetSectionName(Kv, CharSetString[CurrentCharSet], sizeof(CharSetString[]));
 
 	BuildPath(Path_SM, filepath, PLATFORM_MAX_PATH, ConfigPath);
-	for(i=1; Specials<MAXSPECIALS && i<=MAXSPECIALS; i++)
+	KvGetString(Kv, "1", config, PLATFORM_MAX_PATH);
+	if(config[0])
 	{
-		IntToString(i, key, sizeof(key));
-		KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
-		if(!config[0])
-			continue;
-
-		if(StrContains(config, "*") >= 0)
+		for(i=1; Specials<MAXSPECIALS && i<=MAXSPECIALS; i++)
 		{
-			ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
-			ProcessDirectory(filepath, "", config, -1);
-			continue;
+			IntToString(i, key, sizeof(key));
+			KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
+			if(!config[0])
+				continue;
+
+			if(StrContains(config, "*") >= 0)
+			{
+				ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
+				ProcessDirectory(filepath, "", config, -1);
+				continue;
+			}
+			LoadCharacter(config);
 		}
-		LoadCharacter(config);
+	}
+	else
+	{
+		KvGotoFirstSubKey(Kv);
+		do
+		{
+			KvGetSectionName(Kv, config, PLATFORM_MAX_PATH);
+			if(!config[0])
+				break;
+
+			if(StrContains(config, "*") >= 0)
+			{
+				ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
+				ProcessDirectory(filepath, "", config, -1);
+				continue;
+			}
+			LoadCharacter(config);
+		} while(KvGotoNextKey(Kv) && Specials<MAXSPECIALS);
+		KvGoBack(Kv);
 	}
 
 	KvGetString(Kv, "chances", ChancesString, sizeof(ChancesString));
@@ -2197,20 +2220,43 @@ public void FindCharacters()  //TODO: Investigate KvGotoFirstSubKey; KvGotoNextK
 			}
 
 			KvGetSectionName(Kv, CharSetString[amount], sizeof(CharSetString[]));
-			for(i=1; PackSpecials[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
+			KvGetString(Kv, "1", config, PLATFORM_MAX_PATH);
+			if(config[0])
 			{
-				IntToString(i, key, sizeof(key));
-				KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
-				if(!config[0])
-					continue;
-
-				if(StrContains(config, "*") >= 0)
+				for(i=1; PackSpecials[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
 				{
-					ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
-					ProcessDirectory(filepath, "", config, amount);
-					continue;
+					IntToString(i, key, sizeof(key));
+					KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
+					if(!config[0])
+						continue;
+
+					if(StrContains(config, "*") >= 0)
+					{
+						ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
+						ProcessDirectory(filepath, "", config, amount);
+						continue;
+					}
+					LoadSideCharacter(config, amount);
 				}
-				LoadSideCharacter(config, amount);
+			}
+			else
+			{
+				KvGotoFirstSubKey(Kv);
+				do
+				{
+					KvGetSectionName(Kv, config, PLATFORM_MAX_PATH);
+					if(!config[0])
+						break;
+
+					if(StrContains(config, "*") >= 0)
+					{
+						ReplaceString(config, PLATFORM_MAX_PATH, "*", "");
+						ProcessDirectory(filepath, "", config, amount);
+						continue;
+					}
+					LoadSideCharacter(config, amount);
+				} while(KvGotoNextKey(Kv) && PackSpecials[amount]<MAXSPECIALS);
+				KvGoBack(Kv);
 			}
 			amount++;
 		} while(amount<7 && KvGotoNextKey(Kv));
@@ -10086,7 +10132,7 @@ public Action ClientTimer(Handle timer)
 						case 1:
 						{
 							SetHudTextParams(-1.0, 0.83, 0.35, 90, 255, 90, 255, 0, 0.0, 0.0, 0.0);
-							ShowSyncHudText(client, jumpHUD, "Dead Ringer Ready");
+							ShowSyncHudText(client, jumpHUD, "%t", "Dead Ringer Ready");
 						}
 						case 2:
 						{
@@ -11712,13 +11758,15 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 			}
 
 			char sound[64];
-			if(GetRandomInt(0, 2))
+			if(GetRandomInt(0, 1))
 			{
-				FormatEx(sound, sizeof(sound), "vo/announcer_am_capenabled0%i.mp3", GetRandomInt(1, 4));
+				EmitGameSoundToAll("Announcer.AM_CapEnabledRandom");
 			}
 			else
 			{
-				FormatEx(sound, sizeof(sound), "vo/announcer_am_capincite0%i.mp3", GetRandomInt(0, 1) ? 1 : 3);
+				char sound[64];
+				FormatEx(sound, sizeof(sound), "Announcer.AM_CapIncite0%i", GetRandomInt(1, 4));
+				EmitGameSoundToAll(sound);
 			}
 			EmitSoundToAll(sound);
 		}
@@ -11876,29 +11924,29 @@ public Action Timer_DrawGame(Handle timer)
 	{
 		case 300:
 		{
-			EmitSoundToAll("vo/announcer_ends_5min.mp3");
+			EmitGameSoundToAll("Announcer.RoundEnds5minutes");
 		}
 		case 120:
 		{
-			EmitSoundToAll("vo/announcer_ends_2min.mp3");
+			EmitGameSoundToAll("Announcer.RoundEnds2minutes");
 		}
 		case 60:
 		{
-			EmitSoundToAll("vo/announcer_ends_60sec.mp3");
+			EmitGameSoundToAll("Announcer.RoundEnds60seconds");
 		}
 		case 30:
 		{
-			EmitSoundToAll("vo/announcer_ends_30sec.mp3");
+			EmitGameSoundToAll("Announcer.RoundEnds30seconds");
 		}
 		case 10:
 		{
-			EmitSoundToAll("vo/announcer_ends_10sec.mp3");
+			EmitGameSoundToAll("Announcer.RoundEnds10seconds");
 		}
 		case 1, 2, 3, 4, 5:
 		{
 			char sound[PLATFORM_MAX_PATH];
-			FormatEx(sound, PLATFORM_MAX_PATH, "vo/announcer_ends_%isec.mp3", time);
-			EmitSoundToAll(sound);
+			FormatEx(sound, sizeof(sound), "Announcer.RoundEnds%iseconds", time);
+			EmitGameSoundToAll(sound);
 		}
 		case 0:
 		{
@@ -15583,7 +15631,13 @@ public Action NewPanelCmd(int client, int args)
 	static char url[192];
 	cvarChangelog.GetString(url, sizeof(url));
 	Format(url, sizeof(url), "%s#%s.%s.%s", url, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, FORK_STABLE_REVISION);
-	ShowMOTDPanel(client, "Unofficial FF2 Version Info", url, MOTDPANEL_TYPE_URL);
+	KeyValues kv = CreateKeyValues("data");
+	kv.SetString("title", "Unofficial FF2 Changelog");
+	kv.SetString("msg", url);
+	kv.SetNum("customsvr", 1);
+	kv.SetNum("type", MOTDPANEL_TYPE_URL);
+	ShowVGUIPanel(client, "info", kv, true);
+	delete kv
 	return Plugin_Handled;
 }
 
