@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 28, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -703,7 +703,6 @@ public void OnPluginStart()
 	if(!DirExists(pLog))
 	{
 		CreateDirectory(pLog, 511);
-
 		if(!DirExists(pLog))
 			LogError("Failed to create directory at %s", pLog);
 	}
@@ -861,41 +860,41 @@ public void OnPluginStart()
 	AddCommandListener(OnJoinTeam, "autoteam");		//Used to make sure players don't kill themselves and change team
 	AddCommandListener(OnChangeClass, "joinclass");		//Used to make sure bosses don't change class
 
-	HookConVarChange(cvarEnabled, CvarChange);
-	HookConVarChange(cvarAnnounce, CvarChange);
-	HookConVarChange(cvarCircuitStun, CvarChange);
-	HookConVarChange(cvarHealthBar, CvarChange);
-	HookConVarChange(cvarLastPlayerGlow, CvarChange);
-	HookConVarChange(cvarSpecForceBoss, CvarChange);
-	HookConVarChange(cvarBossTeleporter, CvarChange);
-	HookConVarChange(cvarShieldCrits, CvarChange);
-	HookConVarChange(cvarCaberDetonations, CvarChange);
-	HookConVarChange(cvarGoombaDamage, CvarChange);
-	HookConVarChange(cvarGoombaRebound, CvarChange);
-	HookConVarChange(cvarBossRTD, CvarChange);
+	cvarEnabled.AddChangeHook(CvarChange);
+	cvarAnnounce.AddChangeHook(CvarChange);
+	cvarCircuitStun.AddChangeHook(CvarChange);
+	cvarHealthBar.AddChangeHook(CvarChange);
+	cvarLastPlayerGlow.AddChangeHook(CvarChange);
+	cvarSpecForceBoss.AddChangeHook(CvarChange);
+	cvarBossTeleporter.AddChangeHook(CvarChange);
+	cvarShieldCrits.AddChangeHook(CvarChange);
+	cvarCaberDetonations.AddChangeHook(CvarChange);
+	cvarGoombaDamage.AddChangeHook(CvarChange);
+	cvarGoombaRebound.AddChangeHook(CvarChange);
+	cvarBossRTD.AddChangeHook(CvarChange);
+	cvarSniperDamage.AddChangeHook(CvarChange);
+	cvarSniperMiniDamage.AddChangeHook(CvarChange);
+	cvarBowDamage.AddChangeHook(CvarChange);
+	cvarBowDamageNon.AddChangeHook(CvarChange);
+	cvarBowDamageMini.AddChangeHook(CvarChange);
+	cvarSniperClimbDamage.AddChangeHook(CvarChange);
+	cvarSniperClimbDelay.AddChangeHook(CvarChange);
+	cvarQualityWep.AddChangeHook(CvarChange);
+	cvarPointsInterval.AddChangeHook(CvarChange);
+	cvarPointsDamage.AddChangeHook(CvarChange);
+	cvarPointsMin.AddChangeHook(CvarChange);
+	cvarPointsExtra.AddChangeHook(CvarChange);
+	cvarDuoMin.AddChangeHook(CvarChange);
+	cvarAnnotations.AddChangeHook(CvarChange);
+	cvarTellName.AddChangeHook(CvarChange);
+	cvarHealthHud.AddChangeHook(CvarChange);
+	cvarDatabase.AddChangeHook(CvarChange);
+	cvarChargeAngle.AddChangeHook(CvarChange);
+	cvarAttributes.AddChangeHook(CvarChange);
+	cvarStartingUber.AddChangeHook(CvarChange);
+	cvarHealth.AddChangeHook(CvarChange);
+	cvarRageDamage.AddChangeHook(CvarChange);
 	HookConVarChange(cvarNextmap=FindConVar("sm_nextmap"), CvarChangeNextmap);
-	HookConVarChange(cvarSniperDamage, CvarChange);
-	HookConVarChange(cvarSniperMiniDamage, CvarChange);
-	HookConVarChange(cvarBowDamage, CvarChange);
-	HookConVarChange(cvarBowDamageNon, CvarChange);
-	HookConVarChange(cvarBowDamageMini, CvarChange);
-	HookConVarChange(cvarSniperClimbDamage, CvarChange);
-	HookConVarChange(cvarSniperClimbDelay, CvarChange);
-	HookConVarChange(cvarQualityWep, CvarChange);
-	HookConVarChange(cvarPointsInterval, CvarChange);
-	HookConVarChange(cvarPointsDamage, CvarChange);
-	HookConVarChange(cvarPointsMin, CvarChange);
-	HookConVarChange(cvarPointsExtra, CvarChange);
-	HookConVarChange(cvarDuoMin, CvarChange);
-	HookConVarChange(cvarAnnotations, CvarChange);
-	HookConVarChange(cvarTellName, CvarChange);
-	HookConVarChange(cvarHealthHud, CvarChange);
-	HookConVarChange(cvarDatabase, CvarChange);
-	HookConVarChange(cvarChargeAngle, CvarChange);
-	HookConVarChange(cvarAttributes, CvarChange);
-	HookConVarChange(cvarStartingUber, CvarChange);
-	HookConVarChange(cvarHealth, CvarChange);
-	HookConVarChange(cvarRageDamage, CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -2687,7 +2686,7 @@ public void LoadSideCharacter(const char[] character, int pack)
 	PackSpecials[pack]++;
 }
 
-public void CvarChange(Handle convar, const char[] oldValue, const char[] newValue)
+public void CvarChange(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if(convar == cvarAnnounce)
 	{
@@ -2985,7 +2984,7 @@ stock bool IsFF2Map()
 		}
 	}
 
-	Handle file = OpenFile(config, "r");
+	File file = OpenFile(config, "r");
 	if(file == INVALID_HANDLE)
 	{
 		LogToFile(eLog, "[Maps] Error reading from '%s'", config);
@@ -2993,12 +2992,13 @@ stock bool IsFF2Map()
 	}
 
 	int tries;
-	while(ReadFileLine(file, config, sizeof(config)))
+	while(file.ReadLine(config, sizeof(config)))
 	{
 		tries++;
 		if(tries >= 100)
 		{
 			LogToFile(eLog, "[Maps] An infinite loop occurred while trying to check the map");
+			delete file;
 			return true;
 		}
 
@@ -3008,11 +3008,11 @@ stock bool IsFF2Map()
 
 		if(!StrContains(currentmap, config, false) || !StrContains(config, "all", false))
 		{
-			CloseHandle(file);
+			delete file;
 			return true;
 		}
 	}
-	CloseHandle(file);
+	delete file;
 	return false;
 }
 
@@ -3062,14 +3062,14 @@ stock void CheckToChangeMapDoors()
 		}
 	}
 
-	Handle file = OpenFile(config, "r");
+	File file = OpenFile(config, "r");
 	if(file == INVALID_HANDLE)
 	{
 		LogToFile(eLog, "[Doors] Error reading from '%s'", config);
 		return;
 	}
 
-	while(!IsEndOfFile(file) && ReadFileLine(file, config, sizeof(config)))
+	while(!file.EndOfFile && file.ReadLine(config, sizeof(config)))
 	{
 		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
@@ -3102,14 +3102,14 @@ void CheckToTeleportToSpawn()
 		}
 	}
 
-	Handle fileh = OpenFile(config, "r");
-	if(fileh == null)
+	File file = OpenFile(config, "r");
+	if(file == INVALID_HANDLE)
 	{
 		LogToFile(eLog, "[TTS] Error reading from '%s'", SpawnTeleportCFG);
 		return;
 	}
 
-	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, sizeof(config)))
+	while(!file.EndOfFile() && file.ReadLine(config, sizeof(config)))
 	{
 		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
@@ -3118,10 +3118,11 @@ void CheckToTeleportToSpawn()
 		if(StrContains(currentmap, config, false)>=0 || !StrContains(config, "all", false))
 		{
 			SpawnTeleOnTriggerHurt = true;
-			delete fileh;
+			delete file;
 			return;
 		}
 	}
+	delete file;
 
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportBlacklistCFG);
 	if(!FileExists(config))
@@ -3134,14 +3135,14 @@ void CheckToTeleportToSpawn()
 		}
 	}
 
-	fileh = OpenFile(config, "r");
-	if(fileh == null)
+	file = OpenFile(config, "r");
+	if(file == INVALID_HANDLE)
 	{
 		LogToFile(eLog, "[TTS] Error reading from '%s'", SpawnTeleportBlacklistCFG);
 		return;
 	}
 
-	while(!IsEndOfFile(fileh) && ReadFileLine(fileh, config, sizeof(config)))
+	while(!file.EndOfFile() && file.ReadLine(config, sizeof(config)))
 	{
 		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
@@ -3153,7 +3154,7 @@ void CheckToTeleportToSpawn()
 			break;
 		}
 	}
-	delete fileh;
+	delete file;
 }
 
 public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
@@ -3484,9 +3485,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				}
 				else
 				{
-					Handle clientPack = CreateDataPack();
-					WritePackCell(clientPack, client);
-					CreateTimer(cvarFF2TogglePrefDelay.FloatValue, BossMenuTimer, clientPack);
+					CreateTimer(cvarFF2TogglePrefDelay.FloatValue, BossMenuTimer, GetClientUserId(client));
 				}
 				continue;
 			}
@@ -3820,14 +3819,14 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	int team = event.GetInt("team");
 	if(cvarBossLog.IntValue>0 && cvarBossLog.IntValue<=playing2 && !CheatsUsed && !SpecialRound)
 	{
-		Handle bossLog = OpenFile(bLog, "a+");
+		File bossLog = OpenFile(bLog, "a+");
 		if(bossLog != INVALID_HANDLE)
 		{
 			static char bossName[64], FormatedTime[64], Result[64], PlayerName[64], Authid[64];
 			int CurrentTime = GetTime();
 			int boss;
 
-			FormatTime(FormatedTime, 100, "%X", CurrentTime);
+			FormatTime(FormatedTime, sizeof(FormatedTime), "%X", CurrentTime);
 			strcopy(Result, sizeof(Result), team==BossTeam ? "won" : "loss");
 			for(int client=1; client<=MaxClients; client++)
 			{
@@ -3850,8 +3849,8 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 				}
 			}
 
-			WriteFileLine(bossLog, "%s on %s - %s <%s> has %s", FormatedTime, currentmap, PlayerName, Authid, Result);
-			WriteFileLine(bossLog, "");
+			bossLog.WriteLine("%s on %s - %s <%s> has %s", FormatedTime, currentmap, PlayerName, Authid, Result);
+			bossLog.WriteLine("");
 			delete bossLog;
 		}
 	}
@@ -4280,7 +4279,6 @@ public Action Timer_SetEnabled3(Handle timer, bool toggle)
 
 			ChangeClientTeam(client, team);
 		}
-
 	}
 	else
 	{
@@ -4289,16 +4287,13 @@ public Action Timer_SetEnabled3(Handle timer, bool toggle)
 	return Plugin_Continue;
 }
 
-public Action BossMenuTimer(Handle timer, any clientpack)
+public Action BossMenuTimer(Handle timer, int userid)
 {
-	int client;
-	ResetPack(clientpack);
-	client = ReadPackCell(clientpack);
-	CloseHandle(clientpack);
-	if(ToggleBoss[client]!=Setting_On && ToggleBoss[client]!=Setting_Off)
-	{
+	int client = GetClientOfUserId(client);
+	if(IsValidClient(client) && ToggleBoss[client]!=Setting_On && ToggleBoss[client]!=Setting_Off)
 		BossMenu(client, 0);
-	}
+
+	retrun Plugin_Continue;
 }
 
 public Action CompanionMenu(int client, int args)
@@ -4349,7 +4344,7 @@ public int MenuHandlerCompanion(Handle menu, MenuAction action, int param1, int 
 	}
 	else if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 }
 
@@ -4401,7 +4396,7 @@ public int MenuHandlerBoss(Handle menu, MenuAction action, int param1, int param
 	}
 	else if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 }
 
@@ -4439,7 +4434,7 @@ public int Command_HudMenuH(Handle menu, MenuAction action, int param1, int para
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -4476,7 +4471,7 @@ public Action SkipBossPanel(int client)
 	FormatEx(text, sizeof(text), "%t", "No");
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, SkipBossPanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	delete panel;
 	return Plugin_Handled;
 }
 
@@ -4579,7 +4574,7 @@ public int MenuHandlerDifficulty(Handle menu, MenuAction action, int param1, int
 	}
 	else if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 }
 
@@ -4589,7 +4584,7 @@ public int DiffMenuH(Handle menu, MenuAction action, int param1, int param2)
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -4676,7 +4671,7 @@ public int ConfirmDiffH(Handle menu, MenuAction action, int param1, int param2)
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -4713,13 +4708,13 @@ public int SortQueueDesc(const x[], const y[], const array[][], Handle data)
 	return 0;
 }
 
-public Action OnBroadcast(Handle event, const char[] name, bool dontBroadcast)
+public Action OnBroadcast(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled || cvarBroadcast.BoolValue)
 		return Plugin_Continue;
 
 	static char sound[PLATFORM_MAX_PATH];
-	GetEventString(event, "sound", sound, sizeof(sound));
+	event.GetString("sound", sound, sizeof(sound));
 	if(!StrContains(sound, "Game.Your", false) || StrEqual(sound, "Game.Stalemate", false) || !StrContains(sound, "Announcer.AM_RoundStartRandom", false))
 		return Plugin_Handled;
 
@@ -5803,7 +5798,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -5939,7 +5934,7 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -5993,7 +5988,7 @@ public void PackMenu(int client)
 		AddMenuItem(dMenu, num, pack, (CurrentCharSet==total-1 || total>MAXCHARSETS) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 	}
 	while(KvGotoNextKey(Kv));
-	CloseHandle(Kv);
+	delete Kv;
 
 	SetMenuExitButton(dMenu, true);
 	SetMenuExitBackButton(dMenu, true);
@@ -6006,7 +6001,7 @@ public int PackMenuH(Handle menu, MenuAction action, int param1, int param2)
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -6089,7 +6084,7 @@ public int PackBossH(Handle menu, MenuAction action, int param1, int param2)
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -6197,7 +6192,7 @@ public int PackConfirmBossH(Handle menu, MenuAction action, int param1, int para
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -6366,16 +6361,16 @@ stock int CreateAttachedAnnotation(int client, int entity, bool effect=true, flo
 	event.GetFloat("lifetime", time);
 	event.SetInt("visibilityBitfield", (1<<client));
 	event.SetBool("show_effect", effect);
-	SetEventString(event, "text", message);
-	SetEventString(event, "play_sound", "vo/null.wav");
+	event.SetString("text", message);
+	event.SetString("play_sound", "vo/null.wav");
 	event.SetInt("id", entity); //What to enter inside? Need a way to identify annotations by entindex!
-	FireEvent(event);
+	event.Fire();
 	return entity;
 }
 
 stock bool ShowGameText(int client, const char[] icon="leaderboard_streak", int color=0, const char[] buffer, any ...)
 {
-	Handle bf;
+	BfWrite bf;
 	if(!client)
 	{
 		bf = StartMessageAll("HudNotifyCustom");
@@ -6393,9 +6388,9 @@ stock bool ShowGameText(int client, const char[] icon="leaderboard_streak", int 
 	VFormat(message, sizeof(message), buffer, 5);
 	ReplaceString(message, sizeof(message), "\n", "");
 
-	BfWriteString(bf, message);
-	BfWriteString(bf, icon);
-	BfWriteByte(bf, color);
+	bf.WriteString(message);
+	bf.WriteString(icon);
+	bf.WriteByte(color);
 	EndMessage();
 	return true;
 }
@@ -8506,8 +8501,8 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 			attribCount += 2*addattribs;
 		}
 
-		if(weapon!=item)  //FlaminSarge: Item might be equal to weapon, so closing item's handle would also close weapon's
-			CloseHandle(item);  //probably returns false but whatever (rswallen-apparently not)
+		if(weapon != item)  //FlaminSarge: Item might be equal to weapon, so closing item's handle would also close weapon's
+			delete item;  //probably returns false but whatever (rswallen-apparently not)
 	}
 
 	if(name[0])
@@ -8532,7 +8527,7 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 			if(!attrib)
 			{
 				LogToFile(eLog, "[Weapons] Bad weapon attribute passed: %s ; %s", weaponAttribsArray[i], weaponAttribsArray[i+1]);
-				CloseHandle(weapon);
+				delete weapon;
 				return INVALID_HANDLE;
 			}
 
@@ -9124,7 +9119,7 @@ public int Command_SetNextBossH(Handle menu, MenuAction action, int client, int 
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -9300,7 +9295,7 @@ public Action Command_Charset(int client, int args)
 			AddMenuItem(menu, charset, charset);
 		}
 		while(KvGotoNextKey(Kv));
-		CloseHandle(Kv);
+		delete Kv;
 
 		SetMenuExitButton(menu, true);
 		DisplayMenu(menu, client, MENU_TIME_FOREVER);
@@ -9338,7 +9333,7 @@ public Action Command_Charset(int client, int args)
 			break;
 		}
 	}
-	CloseHandle(Kv);
+	delete Kv;
 	return Plugin_Handled;
 }
 
@@ -9348,7 +9343,7 @@ public int Command_CharsetH(Handle menu, MenuAction action, int client, int choi
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -9394,7 +9389,7 @@ public Action Command_LoadCharset(int client, int args)
 			AddMenuItem(menu, charset, charset);
 		}
 		while(KvGotoNextKey(Kv));
-		CloseHandle(Kv);
+		delete Kv;
 
 		SetMenuExitButton(menu, true);
 		DisplayMenu(menu, client, MENU_TIME_FOREVER);
@@ -9441,7 +9436,7 @@ public Action Command_LoadCharset(int client, int args)
 			break;
 		}
 	}
-	CloseHandle(Kv);
+	delete Kv;
 	return Plugin_Handled;
 }
 
@@ -9451,7 +9446,7 @@ public int Command_LoadCharsetH(Handle menu, MenuAction action, int client, int 
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -12044,7 +12039,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 		damage *= 5;
 	}
 
-	if(GetEventBool(event, "minicrit") && GetEventBool(event, "allseecrit"))
+	if(event.GetBool("minicrit") && event.GetBool("allseecrit"))
 		event.SetBool("allseecrit", false);
 
 	if(custom==TF_CUSTOM_TELEFRAG || custom==TF_CUSTOM_BOOTS_STOMP)
@@ -14154,37 +14149,34 @@ stock void RandomlyDisguise(int client)	//Original code was mecha's, but the ori
 		int disguiseTarget = -1;
 		int team = GetClientTeam(client);
 
-		Handle disguiseArray = CreateArray();
-		for(int clientcheck; clientcheck<=MaxClients; clientcheck++)
+		ArrayList disguiseArray = new ArrayList();
+		for(int clientcheck=1; clientcheck<=MaxClients; clientcheck++)
 		{
 			if(IsValidClient(clientcheck) && GetClientTeam(clientcheck)==team && clientcheck!=client)
-				PushArrayCell(disguiseArray, clientcheck);
+				disguiseArray.Push(clientcheck);
 		}
 
-		if(GetArraySize(disguiseArray) < 1)
+		if(disguiseArray.Length < 1)
 		{
 			disguiseTarget = client;
 		}
 		else
 		{
-			disguiseTarget = GetArrayCell(disguiseArray, GetRandomInt(0, GetArraySize(disguiseArray)-1));
+			disguiseTarget = disguiseArray.Get(GetRandomInt(0, disguiseArray.Length-1));
 			if(!IsValidClient(disguiseTarget))
-				disguiseTarget=client;
+				disguiseTarget = client;
 		}
+		delete disguiseArray;
 
-		int class = GetRandomInt(0, 4);
-		TFClassType classArray[] = {TFClass_Scout, TFClass_Pyro, TFClass_Medic, TFClass_Engineer, TFClass_Sniper};
-		CloseHandle(disguiseArray);
-
-		if(TF2_GetPlayerClass(client)==TFClass_Spy)
+		if(TF2_GetPlayerClass(client) == TFClass_Spy)
 		{
-			TF2_DisguisePlayer(client, view_as<TFTeam>(team), classArray[class], disguiseTarget);
+			TF2_DisguisePlayer(client, view_as<TFTeam>(team), GetRandomInt(0, 1) ? TFClass_Medic : TFClass_Scout, disguiseTarget);
 		}
 		else
 		{
 			TF2_AddCondition(client, TFCond_Disguised, -1.0);
 			SetEntProp(client, Prop_Send, "m_nDisguiseTeam", team);
-			SetEntProp(client, Prop_Send, "m_nDisguiseClass", classArray[class]);
+			SetEntProp(client, Prop_Send, "m_nDisguiseClass", GetRandomInt(0, 1) ? view_as<int>(TFClass_Medic) : view_as<int>(TFClass_Scout));
 			SetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex", disguiseTarget);
 			SetEntProp(client, Prop_Send, "m_iDisguiseHealth", 200);
 		}
@@ -14493,22 +14485,22 @@ stock int GetBossIndex(int client)
 	return -1;
 }
 
-stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
+stock int Operate(ArrayList sumArray, int &bracket, float value, ArrayList _operator)
 {
-	float sum = GetArrayCell(sumArray, bracket);
-	switch(GetArrayCell(_operator, bracket))
+	float sum = sumArray.Get(bracket);
+	switch(_operator.Get(bracket))
 	{
 		case Operator_Add:
 		{
-			SetArrayCell(sumArray, bracket, sum+value);
+			sumArray.Set(bracket, sum+value);
 		}
 		case Operator_Subtract:
 		{
-			SetArrayCell(sumArray, bracket, sum-value);
+			sumArray.Set(bracket, sum-value);
 		}
 		case Operator_Multiply:
 		{
-			SetArrayCell(sumArray, bracket, sum*value);
+			sumArray.Set(bracket, sum*value);
 		}
 		case Operator_Divide:
 		{
@@ -14518,27 +14510,27 @@ stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
 				bracket = 0;
 				return;
 			}
-			SetArrayCell(sumArray, bracket, sum/value);
+			sumArray.Set(bracket, sum/value);
 		}
 		case Operator_Exponent:
 		{
-			SetArrayCell(sumArray, bracket, Pow(sum, value));
+			sumArray.Set(bracket, Pow(sum, value));
 		}
 		default:
 		{
-			SetArrayCell(sumArray, bracket, value);  //This means we're dealing with a constant
+			sumArray.Set(bracket, value);  //This means we're dealing with a constant
 		}
 	}
-	SetArrayCell(_operator, bracket, Operator_None);
+	_operator.Set(bracket, Operator_None);
 }
 
-stock void OperateString(Handle sumArray, int &bracket, char[] value, int size, Handle _operator)
+stock void OperateString(ArrayList sumArray, int &bracket, char[] value, int size, Handle _operator)
 {
-	if(!StrEqual(value, ""))  //Make sure 'value' isn't blank
-	{
-		Operate(sumArray, bracket, StringToFloat(value), _operator);
-		strcopy(value, size, "");
-	}
+	if(value[0])  //Make sure 'value' isn't blank
+		return;
+
+	Operate(sumArray, bracket, StringToFloat(value), _operator);
+	strcopy(value, size, "");
 }
 
 stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, int defaultValue)
@@ -14586,10 +14578,11 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 		}
 	}
 
-	Handle sumArray = CreateArray(_, size), _operator=CreateArray(_, size);
+	ArrayList sumArray = new ArrayList(_, size)
+	ArrayList _operator = new ArrayList(_, size);
 	int bracket;  //Each bracket denotes a separate sum (within parentheses).  At the end, they're all added together to achieve the actual sum
-	SetArrayCell(sumArray, 0, 0.0);  //TODO:  See if these can be placed naturally in the loop
-	SetArrayCell(_operator, bracket, Operator_None);
+	sumArray.Set(0, 0.0);  //TODO:  See if these can be placed naturally in the loop
+	_operator.Set(bracket, Operator_None);
 
 	char character[2], value[16];  //We don't decl value because we directly append characters to it and there's no point in decl'ing character
 	for(int i; i<=strlen(formula); i++)
@@ -14604,29 +14597,29 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 			case '(':
 			{
 				bracket++;  //We've just entered a new parentheses so increment the bracket value
-				SetArrayCell(sumArray, bracket, 0.0);
-				SetArrayCell(_operator, bracket, Operator_None);
+				sumArray.Set(bracket, 0.0);
+				_operator.Set(bracket, Operator_None);
 			}
 			case ')':
 			{
 				OperateString(sumArray, bracket, value, sizeof(value), _operator);
-				if(GetArrayCell(_operator, bracket) != Operator_None)  //Something like (5*)
+				if(_operator.Get(bracket) != Operator_None)  //Something like (5*)
 				{
 					LogToFile(eLog, "[Boss] %s's %s formula has an invalid operator at character %i", bossName, key, i+1);
-					CloseHandle(sumArray);
-					CloseHandle(_operator);
+					delete sumArray;
+					delete _operator;
 					return defaultValue;
 				}
 
 				if(--bracket<0)  //Something like (5))
 				{
 					LogToFile(eLog, "[Boss] %s's %s formula has an unbalanced parentheses at character %i", bossName, key, i+1);
-					CloseHandle(sumArray);
-					CloseHandle(_operator);
+					delete sumArray;
+					delete _operator;
 					return defaultValue;
 				}
 
-				Operate(sumArray, bracket, GetArrayCell(sumArray, bracket+1), _operator);
+				Operate(sumArray, bracket, sumArray.Get(bracket+1), _operator);
 			}
 			case '\0':  //End of formula
 			{
@@ -14647,32 +14640,32 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 				{
 					case '+':
 					{
-						SetArrayCell(_operator, bracket, Operator_Add);
+						_operator.Set(bracket, Operator_Add);
 					}
 					case '-':
 					{
-						SetArrayCell(_operator, bracket, Operator_Subtract);
+						_operator.Set(bracket, Operator_Subtract);
 					}
 					case '*':
 					{
-						SetArrayCell(_operator, bracket, Operator_Multiply);
+						_operator.Set(bracket, Operator_Multiply);
 					}
 					case '/':
 					{
-						SetArrayCell(_operator, bracket, Operator_Divide);
+						_operator.Set(bracket, Operator_Divide);
 					}
 					case '^':
 					{
-						SetArrayCell(_operator, bracket, Operator_Exponent);
+						_operator.Set(bracket, Operator_Exponent);
 					}
 				}
 			}
 		}
 	}
 
-	float result = GetArrayCell(sumArray, 0);
-	CloseHandle(sumArray);
-	CloseHandle(_operator);
+	float result = sumArray.Get(0);
+	delete sumArray;
+	delete _operator;
 
 	float addition = cvarTimesTen.FloatValue;
 	if(result < 1)
@@ -15057,7 +15050,7 @@ public bool PickCharacter(int boss, int companion)
 					PrecacheCharacter(Special[boss]);
 					return true;
 				}
-				Special[boss]=characterIndex;
+				Special[boss] = characterIndex;
 				PrecacheCharacter(Special[boss]);
 				return true;
 			}
@@ -15363,7 +15356,7 @@ public Action QueuePanelCmd(int client, int args)
 	DrawPanelItem(panel, text);
 
 	SendPanelToClient(panel, client, QueuePanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	delete panel;
 	return Plugin_Handled;
 }
 
@@ -15471,7 +15464,7 @@ public Action TurnToZeroPanel(int client, int target)
 	DrawPanelItem(panel, text);
 	shortname[client] = target;
 	SendPanelToClient(panel, client, TurnToZeroPanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	delete panel;
 	return Plugin_Handled;
 }
 
@@ -15604,7 +15597,7 @@ public Action FF2Panel(int client, int args)  //._.
 	FormatEx(text, sizeof(text), "%t", "menu_6");  //Exit
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, FF2PanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	delete panel;
 	return Plugin_Handled;
 }
 
@@ -15656,7 +15649,7 @@ public Action HelpPanel3(int client)
 	DrawPanelItem(panel, "On");
 	DrawPanelItem(panel, "Off");
 	SendPanelToClient(panel, client, ClassInfoTogglePanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	delete panel;
 	return Plugin_Handled;
 }
 
@@ -15762,7 +15755,7 @@ public Action HelpPanelClass(int client)
 	FormatEx(text, sizeof(text), "%t", "Exit");
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, client, HintPanelH, 20);
-	CloseHandle(panel);
+	delete panel;
 	#else
 	char translation[64];
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
@@ -15929,7 +15922,7 @@ public Action HelpPanelClass(int client)
 		FormatEx(text, sizeof(text), "%t", "Exit");
 		DrawPanelItem(panel, text);
 		SendPanelToClient(panel, client, HintPanelH, 20);
-		CloseHandle(panel);
+		delete panel;
 	}
 	#endif
 	return Plugin_Continue;
@@ -15959,7 +15952,7 @@ void HelpPanelBoss(int boss)
 	FormatEx(text, sizeof(text), "%T", "Exit", Boss[boss]);
 	DrawPanelItem(panel, text);
 	SendPanelToClient(panel, Boss[boss], HintPanelH, 20);
-	CloseHandle(panel);
+	delete panel;
 }
 
 public Action MusicTogglePanelCmd(int client, int args)
@@ -16004,7 +15997,7 @@ public Action MusicTogglePanel(int client)
 		DrawPanelItem(panel, "On");
 		DrawPanelItem(panel, "Off");
 		SendPanelToClient(panel, client, MusicTogglePanelH, MENU_TIME_FOREVER);
-		CloseHandle(panel);
+		delete panel;
 	}
 	else
 	{
@@ -16376,7 +16369,7 @@ public int Command_TrackListH(Handle menu, MenuAction action, int param1, int pa
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_Select:
 		{
@@ -16465,7 +16458,7 @@ public Action VoiceTogglePanel(int client)
 	DrawPanelItem(panel, "On");
 	DrawPanelItem(panel, "Off");
 	SendPanelToClient(panel, client, VoiceTogglePanelH, MENU_TIME_FOREVER);
-	CloseHandle(panel);
+	delete panel;
 	return Plugin_Continue;
 }
 
@@ -16601,7 +16594,7 @@ stock bool IsValidClient(int client, bool replaycheck=true)
 	return true;
 }
 
-public void CvarChangeNextmap(Handle convar, const char[] oldValue, const char[] newValue)
+public void CvarChangeNextmap(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	CreateTimer(0.1, Timer_DisplayCharsetVote, _, TIMER_FLAG_NO_MAPCHANGE);
 }
@@ -16666,7 +16659,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 			AddMenuItem(menu, index, charset[current]);
 		}
 	}
-	CloseHandle(Kv);
+	delete Kv;
 
 	if(charsets > 1)  //We have enough to call a vote
 	{
@@ -16684,7 +16677,7 @@ public int Handler_VoteCharset(Handle menu, MenuAction action, int param1, int p
 	{
 		case MenuAction_End:
 		{
-			CloseHandle(menu);
+			delete menu;
 		}
 		case MenuAction_VoteEnd:
 		{
@@ -16841,19 +16834,18 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 			{
 				Call_PushCell(3);
 				Call_Finish(action);
-				Handle data;
+				DataPack data;
 				CreateDataTimer(0.1, Timer_UseBossCharge, data);
-				WritePackCell(data, boss);
-				WritePackCell(data, slot);
+				data.WriteCell(boss);
+				data.WriteCell(slot);
 				if(GetArgumentI(boss, plugin_name, ability_name, "slot", -2) != -2)
 				{
-					WritePackFloat(data, -1.0*GetArgumentF(boss, plugin_name, ability_name, "cooldown", 5.0));
+					data.WriteFloat(-1.0*GetArgumentF(boss, plugin_name, ability_name, "cooldown", 5.0));
 				}
 				else
 				{
-					WritePackFloat(data, -1.0*GetAbilityArgumentFloat(boss, plugin_name, ability_name, 2, 5.0));
+					data.WriteFloat(-1.0*GetAbilityArgumentFloat(boss, plugin_name, ability_name, 2, 5.0));
 				}
-				ResetPack(data);
 			}
 			else
 			{
@@ -16917,9 +16909,10 @@ public void SwitchTeams(int bossteam, int otherteam, bool respawn)
 	}
 }
 
-public Action Timer_UseBossCharge(Handle timer, Handle data)
+public Action Timer_UseBossCharge(Handle timer, DataPack data)
 {
-	BossCharge[ReadPackCell(data)][ReadPackCell(data)] = ReadPackFloat(data);
+	data.Reset();
+	BossCharge[data.ReadCell()][data.ReadCell()] = data.ReadFloat();
 	return Plugin_Continue;
 }
 
@@ -17173,9 +17166,9 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 {
 	int index = GetNativeCell(1);
 	static char plugin_name[64];
-	GetNativeString(2,plugin_name,64);
+	GetNativeString(2, plugin_name, 64);
 	static char ability_name[64];
-	GetNativeString(3,ability_name,64);
+	GetNativeString(3, ability_name, 64);
 
 	if(!BossKV[Special[index]])
 		return view_as<int>(0.0);
@@ -17183,7 +17176,7 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 	KvRewind(BossKV[Special[index]]);
 	float see;
 	if(!ability_name[0])
-		return view_as<int>(KvGetFloat(BossKV[Special[index]],"ragedist",400.0));
+		return view_as<int>(KvGetFloat(BossKV[Special[index]], "ragedist", 400.0));
 
 	char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
@@ -17202,7 +17195,7 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 			if((see=KvGetFloat(BossKV[Special[index]], "dist", -1.0)) < 0)
 			{
 				KvRewind(BossKV[Special[index]]);
-				see = KvGetFloat(BossKV[Special[index]] ,"ragedist", 400.0);
+				see = KvGetFloat(BossKV[Special[index]], "ragedist", 400.0);
 			}
 			return view_as<int>(see);
 		}
