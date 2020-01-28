@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 28, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -462,14 +462,6 @@ float LifeHealing[MAXTF2PLAYERS];
 float OverHealing[MAXTF2PLAYERS];
 int GoombaMode;
 int CapMode;
-
-static const char OTVoice[][] =
-{
-	"vo/announcer_overtime.mp3",
-	"vo/announcer_overtime2.mp3",
-	"vo/announcer_overtime3.mp3",
-	"vo/announcer_overtime4.mp3"
-};
 
 enum Operators
 {
@@ -3190,7 +3182,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				SteamWorks_SetGameDescription("Team Fortress");
 				Enabled = false;
 				EnabledDesc = false;
-				return Plugin_Continue;
+				return;
 			}
 			#endif
 
@@ -3392,7 +3384,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 		if((Special[MAXBOSSES]<0) || !BossKV[Special[MAXBOSSES]])
 		{
 			LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", MAXBOSSES);
-			return Plugin_Continue;
+			return;
 		}
 
 		if(cvarBvBChaos.IntValue > 1)
@@ -3405,14 +3397,14 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				if((Special[bossCount]<0) || !BossKV[Special[bossCount]])
 				{
 					LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", bossCount);
-					return Plugin_Continue;
+					return;
 				}
 
 				PickCharacter(MAXBOSSES+bossCount, MAXBOSSES+bossCount);
 				if((Special[MAXBOSSES+bossCount]<0) || !BossKV[Special[MAXBOSSES+bossCount]])
 				{
 					LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", MAXBOSSES+bossCount);
-					return Plugin_Continue;
+					return;
 				}
 			}
 		}
@@ -3550,7 +3542,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	}
 
 	if(!isBossAlive)
-		return Plugin_Continue;
+		return;
 
 	int point = MaxClients+1;
 	while((point=FindEntityByClassname2(point, "trigger_capture_area")) != -1)
@@ -4208,7 +4200,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	if(ReloadFF2)
 	{
 		ServerCommand("sm plugins reload freak_fortress_2");
-		return Plugin_Continue;
+		return;
 	}
 
 	if(ReloadConfigs)
@@ -11517,14 +11509,14 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 	if(!(flags & TF_DEATHFLAG_DEADRINGER))
 	{
-		static char name[PLATFORM_MAX_PATH];
+		static char classname[PLATFORM_MAX_PATH];
 		FakeClientCommand(client, "destroy 2");
 		for(int entity=MaxClients+1; entity<MAXENTITIES; entity++)
 		{
 			if(IsValidEntity(entity))
 			{
-				GetEntityClassname(entity, name, sizeof(name));
-				if(!StrContains(name, "obj_sentrygun") && (GetEntPropEnt(entity, Prop_Send, "m_hBuilder")==client))
+				GetEntityClassname(entity, classname, sizeof(classname));
+				if(!StrContains(classname, "obj_sentrygun") && (GetEntPropEnt(entity, Prop_Send, "m_hBuilder")==client))
 				{
 					SetVariantInt(GetEntPropEnt(entity, Prop_Send, "m_iMaxHealth")+1);
 					AcceptEntityInput(entity, "RemoveHealth");
