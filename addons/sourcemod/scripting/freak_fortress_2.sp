@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "January 28, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -840,11 +840,11 @@ public void OnPluginStart()
 	CreateConVar("ff2_base_jumper_stun", "0", "Whether or not the Base Jumper should be disabled when a player gets stunned", _, true, 0.0, true, 1.0);
 	CreateConVar("ff2_solo_shame", "0", "Always insult the boss for solo raging", _, true, 0.0, true, 1.0);
 
-	HookEvent("teamplay_round_start", OnRoundSetup);
-	HookEvent("arena_round_start", OnRoundStart);
+	HookEvent("teamplay_round_start", OnRoundSetup, EventHookMode_PostNoCopy);
+	HookEvent("arena_round_start", OnRoundStart, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_round_win", OnRoundEnd);
 	HookEvent("teamplay_broadcast_audio", OnBroadcast, EventHookMode_Pre);
-	HookEvent("teamplay_point_startcapture", OnStartCapture);
+	HookEvent("teamplay_point_startcapture", OnStartCapture, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_capture_broken", OnBreakCapture);
 	HookEvent("player_spawn", OnPlayerSpawn, EventHookMode_Pre);
 	HookEvent("post_inventory_application", OnPostInventoryApplication, EventHookMode_Pre);
@@ -852,11 +852,10 @@ public void OnPluginStart()
 	HookEvent("player_chargedeployed", OnUberDeployed);
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
 	HookEvent("player_healed", OnPlayerHealed, EventHookMode_Pre);
-	//HookEvent("player_ignited", OnPlayerIgnited, EventHookMode_Pre);
 	HookEvent("object_destroyed", OnObjectDestroyed, EventHookMode_Pre);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Pre);
 	HookEvent("deploy_buff_banner", OnDeployBackup);
-	HookEvent("rps_taunt_event", OnRPS, EventHookMode_Post);
+	HookEvent("rps_taunt_event", OnRPS);
 
 	OnPluginStart_TeleportToMultiMapSpawn();	// Setup adt_array
 
@@ -2301,15 +2300,14 @@ public void FindCharacters()
 		AddFileToDownloadsTable("sound/saxton_hale/9000.wav");
 		PrecacheSound("saxton_hale/9000.wav", true);
 	}
-	PrecacheSound("vo/announcer_am_capincite01.mp3", true);
-	PrecacheSound("vo/announcer_am_capincite03.mp3", true);
-	PrecacheSound("vo/announcer_am_capenabled01.mp3", true);
-	PrecacheSound("vo/announcer_am_capenabled02.mp3", true);
-	PrecacheSound("vo/announcer_am_capenabled03.mp3", true);
-	PrecacheSound("vo/announcer_am_capenabled04.mp3", true);
+	PrecacheScriptSound("Announcer.AM_CapEnabledRandom");
+	PrecacheScriptSound("Announcer.AM_CapIncite01.mp3");
+	PrecacheScriptSound("Announcer.AM_CapIncite02.mp3");
+	PrecacheScriptSound("Announcer.AM_CapIncite03.mp3");
+	PrecacheScriptSound("Announcer.AM_CapIncite04.mp3");
+	PrecacheScriptSound("Announcer.RoundEnds5minutes");
+	PrecacheScriptSound("Announcer.RoundEnds2minutes");
 	PrecacheSound("weapons/barret_arm_zap.wav", true);
-	PrecacheSound("vo/announcer_ends_5min.mp3", true);
-	PrecacheSound("vo/announcer_ends_2min.mp3", true);
 	PrecacheSound("player/doubledonk.wav", true);
 	PrecacheSound("ambient/lightson.wav", true);
 	PrecacheSound("ambient/lightsoff.wav", true);
@@ -3166,7 +3164,7 @@ void CheckToTeleportToSpawn()
 	delete fileh;
 }
 
-public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
+public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	teamplay_round_start_TeleportToMultiMapSpawn(); // Cache spawns
 	isCapping = false;
@@ -3206,7 +3204,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 
 	Enabled = Enabled2;
 	if(!Enabled)
-		return Plugin_Continue;
+		return;
 
 	if(FileExists("bNextMapToFF2"))
 		DeleteFile("bNextMapToFF2");
@@ -3279,7 +3277,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 		Enabled = false;
 		DisableSubPlugins();
 		SetControlPoint(true);
-		return Plugin_Continue;
+		return;
 	}
 	else if(RoundCount<arenaRounds)  //We're still in arena mode
 	{
@@ -3309,7 +3307,7 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 				toRed = !toRed;
 			}
 		}
-		return Plugin_Continue;
+		return;
 	}
 
 	for(int client; client<=MaxClients; client++)
@@ -3378,14 +3376,14 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 			if(IsValidClient(client) && !IsBoss(client) && (GetClientTeam(client)!=OtherTeam && !Enabled3))
 				CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		}
-		return Plugin_Continue;  //NOTE: This is needed because OnRoundSetup gets fired a second time once both teams have players
+		return;  //NOTE: This is needed because OnRoundSetup gets fired a second time once both teams have players
 	}
 
 	PickCharacter(0, 0);
 	if((Special[0]<0) || !BossKV[Special[0]])
 	{
 		LogToFile(eLog, "[!!!] Couldn't find a boss for index 0!");
-		return Plugin_Continue;
+		return;
 	}
 
 	if(Enabled3)
@@ -3532,13 +3530,12 @@ public Action OnRoundSetup(Handle event, const char[] name, bool dontBroadcast)
 	firstBlood = true;
 	CheatsUsed = false;
 	ShowHealthText = false;
-	return Plugin_Continue;
 }
 
-public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
+public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled)
-		return Plugin_Continue;
+		return;
 
 	CreateTimer(0.5, MessageTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.1, Timer_Move, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -3696,7 +3693,6 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 		FormatEx(newName, 256, "%s | %s", oldName, bossName);
 		hostName.SetString(newName);
 	}
-	return Plugin_Continue;
 }
 
 void LoadDifficulty(int boss)
@@ -3813,7 +3809,7 @@ public void CheckArena()
 	}
 }
 
-public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
+public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	RoundCount++;
 	SapperMinion = false;
@@ -3826,9 +3822,10 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	if(!Enabled)
 	{
 		Enabled3 = false;
-		return Plugin_Continue;
+		return;
 	}
 
+	int team = event.GetInt("team");
 	if(cvarBossLog.IntValue>0 && cvarBossLog.IntValue<=playing2 && !CheatsUsed && !SpecialRound)
 	{
 		Handle bossLog = OpenFile(bLog, "a+");
@@ -3839,7 +3836,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			int boss;
 
 			FormatTime(FormatedTime, 100, "%X", CurrentTime);
-			strcopy(Result, sizeof(Result), GetEventInt(event, "team")==BossTeam ? "won" : "loss");
+			strcopy(Result, sizeof(Result), team==BossTeam ? "won" : "loss");
 			for(int client=1; client<=MaxClients; client++)
 			{
 				boss = GetBossIndex(client);
@@ -3872,7 +3869,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	int bossWin = 0;
 	float bonusRoundTime = GetConVarFloat(FindConVar("mp_bonusroundtime"))-0.5;
 	static char sound[PLATFORM_MAX_PATH];
-	if(GetEventInt(event, "team") == BossTeam)
+	if(team == BossTeam)
 	{
 		bossWin = 1;
 		if(RandomSound("sound_win", sound, sizeof(sound)))
@@ -3887,7 +3884,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			EmitMusicToAllExcept(sound);
 		}
 	}
-	else if(GetEventInt(event, "team") == OtherTeam)
+	else if(team == OtherTeam)
 	{
 		if(Enabled3)
 		{
@@ -3926,7 +3923,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 	if(Enabled3 && bossWin>-1)
 	{
-		int winningTeam = GetEventInt(event, "team");
 		int target;
 		char text[MAXTF2PLAYERS][128];
 		static char bossName[64];
@@ -3935,7 +3931,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			target = Boss[boss];
 			if(IsValidClient(target))
 			{
-				if(GetClientTeam(target) == winningTeam)
+				if(GetClientTeam(target) == team)
 				{
 					char lives[8];
 					if(BossLives[boss] > 1)
@@ -3954,7 +3950,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			}
 		}
 
-		if(winningTeam == view_as<int>(TFTeam_Red))
+		if(team == view_as<int>(TFTeam_Red))
 		{
 			SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 50, 50, 255);
 		}
@@ -4178,7 +4174,7 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		if(IsValidClient(client))
 		{
 			//TODO:  Clear HUD text here
-			if(IsBoss(client) && GetClientTeam(client)==GetEventInt(event, "team"))
+			if(IsBoss(client) && GetClientTeam(client)==team)
 			{
 				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_win");
 			}
@@ -4243,7 +4239,6 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
 	UpdateHealthBar();
-	return Plugin_Continue;
 }
 
 public Action Timer_SetEnabled3(Handle timer, bool toggle)
@@ -4741,8 +4736,11 @@ public Action OnBroadcast(Handle event, const char[] name, bool dontBroadcast)
 
 public Action Timer_NineThousand(Handle timer)
 {
-	EmitSoundToAll("saxton_hale/9000.wav", _, _, _, _, _, _, _, _, _, false);
-	EmitSoundToAllExcept("saxton_hale/9000.wav", _, SNDCHAN_VOICE, _, _, _, _, _, _, _, false);
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsValidClient(client) && ToggleVoice[client])
+			ClientCommand(client, "playgamesound \"saxton_hale/9000.wav\"");
+	}
 	return Plugin_Continue;
 }
 
@@ -4760,8 +4758,8 @@ public Action Timer_CalcQueuePoints(Handle timer)
 		{
 			damage = Damage[client];
 			damage2 = Damage[client];
-			Handle event = CreateEvent("player_escort_score", true);
-			SetEventInt(event, "player", client);
+			Event event = CreateEvent("player_escort_score", true);
+			event.SetInt("player", client);
 
 			int points;
 			while(damage-PointsInterval > 0)
@@ -4769,8 +4767,8 @@ public Action Timer_CalcQueuePoints(Handle timer)
 				damage -= PointsInterval;
 				points++;
 			}
-			SetEventInt(event, "points", points);
-			FireEvent(event);
+			event.SetInt("points", points);
+			event.Fire();
 
 			if(IsBoss(client))
 			{
@@ -5133,7 +5131,7 @@ stock void EmitSoundToAllExcept(const char[] sample, int entity=SOUND_FROM_PLAYE
 		if(IsValidClient(client))
 		{
 			if(ToggleVoice[client])
-				clients[total++]=client;
+				clients[total++] = client;
 		}
 	}
 
@@ -6368,17 +6366,17 @@ stock int CreateAttachedAnnotation(int client, int entity, bool effect=true, flo
 	VFormat(message, sizeof(message), buffer, 6);
 	ReplaceString(message, sizeof(message), "\n", "");  //Get rid of newlines
 
-	Handle event = CreateEvent("show_annotation");
+	Event event = CreateEvent("show_annotation");
 	if(event == INVALID_HANDLE)
 		return -1;
 
-	SetEventInt(event, "follow_entindex", entity);
-	SetEventFloat(event, "lifetime", time);
-	SetEventInt(event, "visibilityBitfield", (1<<client));
-	SetEventBool(event, "show_effect", effect);
+	event.SetInt("follow_entindex", entity);
+	event.GetFloat("lifetime", time);
+	event.SetInt("visibilityBitfield", (1<<client));
+	event.SetBool("show_effect", effect);
 	SetEventString(event, "text", message);
 	SetEventString(event, "play_sound", "vo/null.wav");
-	SetEventInt(event, "id", entity); //What to enter inside? Need a way to identify annotations by entindex!
+	event.SetInt("id", entity); //What to enter inside? Need a way to identify annotations by entindex!
 	FireEvent(event);
 	return entity;
 }
@@ -8882,12 +8880,12 @@ stock int FindPlayerBack(int client, int index)
 	return -1;
 }
 
-public Action OnObjectDestroyed(Handle event, const char[] name, bool dontBroadcast)
+public Action OnObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled)
 		return Plugin_Continue;
 	
-	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
 	if(GetRandomInt(0, 2) || !IsBoss(attacker))
 		return Plugin_Continue;
 
@@ -8898,36 +8896,38 @@ public Action OnObjectDestroyed(Handle event, const char[] name, bool dontBroadc
 	return Plugin_Continue;
 }
 
-public Action OnUberDeployed(Handle event, const char[] name, bool dontBroadcast)
+public void OnUberDeployed(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(Enabled && IsValidClient(client) && IsPlayerAlive(client) && (Enabled3 || GetClientTeam(client)!=BossTeam))
+	if(!Enabled)
+		return;
+
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(!IsValidClient(client) || !IsPlayerAlive(client) || !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
+		return;
+
+	int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+	if(!IsValidEntity(medigun))
+		return;
+
+	static char classname[64];
+	GetEntityClassname(medigun, classname, sizeof(classname));
+	if(!StrEqual(classname, "tf_weapon_medigun"))
+		return;
+
+	//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+	TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
+	int target = GetHealingTarget(client);
+	if(IsValidClient(target, false) && IsPlayerAlive(target))
 	{
-		int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-		if(IsValidEntity(medigun))
-		{
-			static char classname[64];
-			GetEntityClassname(medigun, classname, sizeof(classname));
-			if(StrEqual(classname, "tf_weapon_medigun"))
-			{
-				//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
-				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
-				int target = GetHealingTarget(client);
-				if(IsValidClient(target, false) && IsPlayerAlive(target))
-				{
-					//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
-					TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
-					uberTarget[client] = target;
-				}
-				else
-				{
-					uberTarget[client] = -1;
-				}
-				CreateTimer(0.4, Timer_Uber, EntIndexToEntRef(medigun), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-			}
-		}
+		//TF2_AddCondition(client, TFCond_UberchargedCanteen, 0.5);
+		TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
+		uberTarget[client] = target;
 	}
-	return Plugin_Continue;
+	else
+	{
+		uberTarget[client] = -1;
+	}
+	CreateTimer(0.4, Timer_Uber, EntIndexToEntRef(medigun), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Timer_Uber(Handle timer, any medigunid)
@@ -9748,7 +9748,7 @@ public void OnClientDisconnect(int client)
 	}
 }
 
-public Action OnPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
+public Action OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled)
 		return Plugin_Continue;
@@ -9756,7 +9756,7 @@ public Action OnPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 	if(CheckRoundState() == 1)
 		CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!IsValidClient(client))
 		return Plugin_Continue;
 
@@ -9768,12 +9768,13 @@ public Action OnPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 	return Plugin_Continue;
 }
 
-public Action OnPostInventoryApplication(Handle event, const char[] name, bool dontBroadcast)
+public Action OnPostInventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled)
 		return Plugin_Continue;
 
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int userid = event.GetInt("userid");
+	int client = GetClientOfUserId(userid);
 	if(!IsValidClient(client))
 		return Plugin_Continue;
 
@@ -9796,9 +9797,9 @@ public Action OnPostInventoryApplication(Handle event, const char[] name, bool d
 			RemovePlayerTarge(client);
 			TF2_RemoveAllWeapons(client);
 			TF2_RegeneratePlayer(client);
-			CreateTimer(0.1, Timer_RegenPlayer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(0.1, Timer_RegenPlayer, userid, TIMER_FLAG_NO_MAPCHANGE);
 		}
-		CreateTimer(0.2, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(0.2, Timer_MakeNotBoss, userid, TIMER_FLAG_NO_MAPCHANGE);
 	}
 
 	FF2flags[client] &= ~(FF2FLAG_UBERREADY|FF2FLAG_ISBUFFED|FF2FLAG_TALKING|FF2FLAG_ALLOWSPAWNINBOSSTEAM|FF2FLAG_USINGABILITY|FF2FLAG_CLASSHELPED|FF2FLAG_CHANGECVAR|FF2FLAG_ROCKET_JUMPING);
@@ -11277,46 +11278,44 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	return Plugin_Handled;
 }
 
-public Action OnRPS(Handle event, const char[] eventName, bool dontBroadcast)
+public void OnRPS(Event event, const char[] name, bool dontBroadcast)
 {
-	int winner = GetEventInt(event, "winner");
-	int loser = GetEventInt(event, "loser");
+	int winner = event.GetInt("winner");
+	if(!IsValidClient(winner))
+		return;
 
-	if(!IsValidClient(winner) || !IsValidClient(loser))	// Check for valid clients
-		return Plugin_Continue;
+	int loser = event.GetInt("loser");
+	if(!IsValidClient(loser))
+		return;
 
 	if(!IsBoss(winner) && IsBoss(loser) && GetBossIndex(loser)>=0 && cvarRPSLimit.IntValue>0)	// Boss Loses on RPS?
 	{
-		RPSWinner=winner;
+		RPSWinner = winner;
 		TF2_AddCondition(RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not during damage
 		CreateTimer(3.1, Timer_RPS, loser, TIMER_FLAG_NO_MAPCHANGE);
-		return Plugin_Continue;
+		return;
 	}
 
 	int points = cvarRPSPoints.IntValue;	// Teammate or Minion loses?
 	if(ToggleBoss[winner]==Setting_Off || ToggleBoss[loser]==Setting_Off || IsBoss(winner) || IsBoss(loser) || QueuePoints[winner]<points || QueuePoints[loser]<points || points<1)
-		return Plugin_Continue;
+		return;
 
 	FPrintToChat(winner, "%t", "rps_won", points, loser);
 	QueuePoints[winner] += points;
 
 	FPrintToChat(loser, "%t", "rps_lost", points, winner);
 	QueuePoints[loser] -= points;
-	return Plugin_Continue;
 }
 
-public Action OnStartCapture(Handle event, const char[] eventName, bool dontBroadcast)
+public void OnStartCapture(Event event, const char[] name, bool dontBroadcast)
 {
-	isCapping=true;
-	return Plugin_Continue;
+	isCapping = true;
 }
 
-public Action OnBreakCapture(Handle event, const char[] eventName, bool dontBroadcast)
+public void OnBreakCapture(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!GetEventFloat(event, "time_remaining"))
-		isCapping=false;
-
-	return Plugin_Continue;
+	if(!event.GetFloat("time_remaining"))
+		isCapping = false;
 }
 
 public void EndBossRound()
@@ -11353,9 +11352,7 @@ public Action OverTimeAlert(Handle timer)
 
 	if(OTCount > 0)
 	{
-		static char OTAlerting[PLATFORM_MAX_PATH];
-		strcopy(OTAlerting, sizeof(OTAlerting), OTVoice[GetRandomInt(0, sizeof(OTVoice)-1)]);
-		EmitSoundToAll(OTAlerting);
+		EmitGameSoundToAll("Game.Overtime");
 		if(GetConVarInt(FindConVar("tf_overtime_nag")))
 			OTCount = GetRandomInt(-3, 0);
 
@@ -11366,16 +11363,18 @@ public Action OverTimeAlert(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroadcast)
+public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled)
 		return Plugin_Continue;
 
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int userid = event.GetInt("userid");
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return Plugin_Continue;
 
-	if(Enabled3 && !(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER)) // Because those damn subplugins
+	int flags = event.GetInt("death_flags");
+	if(Enabled3 && !(flags & TF_DEATHFLAG_DEADRINGER)) // Because those damn subplugins
 	{
 		int reds, blus;
 		if(CheckRoundState() == 1)
@@ -11414,15 +11413,15 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 	if(CheckRoundState() != 1)
 		return Plugin_Continue;
 
-	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
 	static char sound[PLATFORM_MAX_PATH];
 	CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 	DoOverlay(client, "");
 
 	if(!IsBoss(client))
 	{
-		if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER) && (Enabled3 || GetClientTeam(client)!=BossTeam))
-			CreateTimer(1.0, Timer_Damage, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		if(!(flags & TF_DEATHFLAG_DEADRINGER) && (Enabled3 || GetClientTeam(client)!=BossTeam))
+			CreateTimer(1.0, Timer_Damage, userid, TIMER_FLAG_NO_MAPCHANGE);
 
 		if(IsBoss(attacker))
 		{
@@ -11485,7 +11484,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 			if(!IsFakeClient(client) || IsFakeClient(attacker))
 			{
 				BossKillsF[attacker]++;
-				if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+				if(!(flags & TF_DEATHFLAG_DEADRINGER))
 					AddClientStats(attacker, Cookie_BossKills, 1);
 			}
 
@@ -11495,7 +11494,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 	else if(attacker)
 	{
 		int boss = GetBossIndex(client);
-		if(boss==-1 || (GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+		if(boss==-1 || (flags & TF_DEATHFLAG_DEADRINGER))
 			return Plugin_Continue;
 
 		if(RandomSound("sound_death", sound, sizeof(sound), boss))
@@ -11516,7 +11515,7 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 		Cabered[boss] = 0.0;
 	}
 
-	if(!(GetEventInt(event, "death_flags") & TF_DEATHFLAG_DEADRINGER))
+	if(!(flags & TF_DEATHFLAG_DEADRINGER))
 	{
 		static char name[PLATFORM_MAX_PATH];
 		FakeClientCommand(client, "destroy 2");
@@ -11530,10 +11529,10 @@ public Action OnPlayerDeath(Handle event, const char[] eventName, bool dontBroad
 					SetVariantInt(GetEntPropEnt(entity, Prop_Send, "m_iMaxHealth")+1);
 					AcceptEntityInput(entity, "RemoveHealth");
 
-					Handle eventRemoveObject = CreateEvent("object_removed", true);
-					SetEventInt(eventRemoveObject, "userid", GetClientUserId(client));
-					SetEventInt(eventRemoveObject, "index", entity);
-					FireEvent(eventRemoveObject);
+					Event boom = CreateEvent("object_removed", true);
+					boom.SetInt("userid", GetClientUserId(client));
+					boom.SetInt("index", entity);
+					boom.Fire();
 					AcceptEntityInput(entity, "kill");
 				}
 			}
@@ -11551,12 +11550,12 @@ public Action Timer_Damage(Handle timer, any userid)
 	return Plugin_Continue;
 }
 
-public Action OnObjectDeflected(Handle event, const char[] name, bool dontBroadcast)
+public Action OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled || GetEventInt(event, "weaponid"))  //0 means that the client was airblasted, which is what we want
+	if(!Enabled || event.GetInt("weaponid"))  // 0 means that the client was airblasted, which is what we want
 		return Plugin_Continue;
 
-	int client = GetClientOfUserId(GetEventInt(event, "ownerid"));
+	int client = GetClientOfUserId(event.GetInt("ownerid"));
 	int boss = GetBossIndex(client);
 	if(boss!=-1 && BossCharge[boss][0]<rageMax[client])
 	{
@@ -11567,34 +11566,33 @@ public Action OnObjectDeflected(Handle event, const char[] name, bool dontBroadc
 	return Plugin_Continue;
 }
 
-public Action OnJarate(UserMsg msg_id, Handle bf, const int[] players, int playersNum, bool reliable, bool init)
+public Action OnJarate(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
 {
-	int client = BfReadByte(bf);
-	int victim = BfReadByte(bf);
+	int client = bf.ReadByte();
+	int victim = bf.ReadByte();
 	int boss = GetBossIndex(victim);
-	if(boss != -1)
-	{
-		int jarate = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-		if(jarate != -1)
-		{
-			int index=GetEntProp(jarate, Prop_Send, "m_iItemDefinitionIndex");
-			if((index==58 || index==1083 || index==1105) && GetEntProp(jarate, Prop_Send, "m_iEntityLevel")!=-122)  //-122 is the Jar of Ants which isn't really Jarate
-			{
-				BossCharge[boss][0] -= rageMax[victim]*8.0/rageMin[victim];  //TODO: Allow this to be customizable
-				if(BossCharge[boss][0] < 0.0)
-					BossCharge[boss][0] = 0.0;
-			}
-		}
-	}
+	if(boss == -1)
+		return Plugin_Continue;
+
+	int jarate = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+	if(jarate==-1 || GetEntProp(jarate, Prop_Send, "m_iEntityLevel")==-122)	// -122 is the Jar of Ants which isn't really Jarate
+		return Plugin_Continue;
+
+	int index = GetEntProp(jarate, Prop_Send, "m_iItemDefinitionIndex");
+	if(!(index==58 && index==1083 && index==1105))
+		return Plugin_Continue;
+
+	BossCharge[boss][0] -= rageMax[victim]*8.0/rageMin[victim];	//TODO: Allow this to be customizable
+	if(BossCharge[boss][0] < 0.0)
+		BossCharge[boss][0] = 0.0;
+
 	return Plugin_Continue;
 }
 
-public Action OnDeployBackup(Handle event, const char[] name, bool dontBroadcast)
+public void OnDeployBackup(Event event, const char[] name, bool dontBroadcast)
 {
-	if(Enabled && GetEventInt(event, "buff_type") == 2)
-		FF2flags[GetClientOfUserId(GetEventInt(event, "buff_owner"))] |= FF2FLAG_ISBUFFED;
-
-	return Plugin_Continue;
+	if(Enabled && event.GetInt("buff_type") == 2)
+		FF2flags[GetClientOfUserId(event.GetInt("buff_owner"))] |= FF2FLAG_ISBUFFED;
 }
 
 public Action Timer_CheckAlivePlayers(Handle timer)
@@ -11757,7 +11755,6 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 				}
 			}
 
-			char sound[64];
 			if(GetRandomInt(0, 1))
 			{
 				EmitGameSoundToAll("Announcer.AM_CapEnabledRandom");
@@ -11768,7 +11765,6 @@ public Action Timer_CheckAlivePlayers(Handle timer)
 				FormatEx(sound, sizeof(sound), "Announcer.AM_CapIncite0%i", GetRandomInt(1, 4));
 				EmitGameSoundToAll(sound);
 			}
-			EmitSoundToAll(sound);
 		}
 		SetArenaCapEnableTime(0.0);
 		SetControlPoint(true);
@@ -11964,14 +11960,14 @@ public Action Timer_DrawGame(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
+public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled || CheckRoundState()!=1)
 		return Plugin_Continue;
 
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
-	int damage = GetEventInt(event, "damageamount");
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	int damage = event.GetInt("damageamount");
 
 	if(IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client) && damage && shield[client])
 	{
@@ -11990,7 +11986,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 			}
 			case 3:
 			{
-				if(GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee)!=GetEventInt(event, "weaponid") && shieldHP[client]>=0.0 && damage<preHealth)
+				if(GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee)!=event.GetInt("weaponid") && shieldHP[client]>=0.0 && damage<preHealth)
 				{
 					int damageresist = RoundFloat(float(damage)*shDmgReduction[client]);
 
@@ -12006,7 +12002,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 						FormatEx(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
 						EmitSoundToClient(client, ric, _, _, _, _, 0.7, _, _, _, _, false);
 						EmitSoundToClient(attacker, ric, _, _, _, _, 0.7, _, _, _, _, false);
-						SetEventInt(event, "damageamount", damage-damageresist);
+						event.SetInt("damageamount", damage-damageresist);
 						return Plugin_Changed;
 					}
 				}
@@ -12036,7 +12032,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 				FormatEx(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
 				EmitSoundToClient(client, ric, _, _, _, _, 0.7, _, _, _, _, false);
 				EmitSoundToClient(attacker, ric, _, _, _, _, 0.7, _, _, _, _, false);
-				SetEventInt(event, "damageamount", damage-damageresist);
+				event.SetInt("damageamount", damage-damageresist);
 				return Plugin_Changed;
 			}
 		}
@@ -12046,7 +12042,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || (client==attacker && SelfKnockback[client]<2))
 		return Plugin_Continue;
 
-	int custom = GetEventInt(event, "custom");
+	int custom = event.GetInt("custom");
 	if(custom == TF_CUSTOM_TELEFRAG)
 	{
 		damage = IsPlayerAlive(attacker) ? TimesTen ? RoundFloat(cvarTelefrag.IntValue*cvarTimesTen.FloatValue) : cvarTelefrag.IntValue : 1;
@@ -12057,10 +12053,10 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 	}
 
 	if(GetEventBool(event, "minicrit") && GetEventBool(event, "allseecrit"))
-		SetEventBool(event, "allseecrit", false);
+		event.SetBool("allseecrit", false);
 
 	if(custom==TF_CUSTOM_TELEFRAG || custom==TF_CUSTOM_BOOTS_STOMP)
-		SetEventInt(event, "damageamount", damage);
+		event.SetInt("damageamount", damage);
 
 	for(int lives=1; lives<BossLives[boss]; lives++)
 	{
@@ -12204,14 +12200,14 @@ stock bool RemoveCond(int client, TFCond cond)
 	return false;
 }
 
-public Action OnPlayerHealed(Handle event, const char[] name, bool dontBroadcast)
+public Action OnPlayerHealed(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled || CheckRoundState()!=1)
 		return Plugin_Continue;
 
-	int client = GetClientOfUserId(GetEventInt(event, "patient"));
-	int healer = GetClientOfUserId(GetEventInt(event, "healer"));
-	int heals = GetEventInt(event, "amount");
+	int client = GetClientOfUserId(event.GetInt("patient"));
+	int healer = GetClientOfUserId(event.GetInt("healer"));
+	int heals = event.GetInt("amount");
 
 	if(IsBoss(client))
 	{
@@ -15637,7 +15633,7 @@ public Action NewPanelCmd(int client, int args)
 	kv.SetNum("customsvr", 1);
 	kv.SetNum("type", MOTDPANEL_TYPE_URL);
 	ShowVGUIPanel(client, "info", kv, true);
-	delete kv
+	delete kv;
 	return Plugin_Handled;
 }
 
