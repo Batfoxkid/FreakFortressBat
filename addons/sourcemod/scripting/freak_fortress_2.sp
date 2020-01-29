@@ -3069,7 +3069,7 @@ stock void CheckToChangeMapDoors()
 		return;
 	}
 
-	while(!file.EndOfFile && file.ReadLine(config, sizeof(config)))
+	while(!file.EndOfFile() && file.ReadLine(config, sizeof(config)))
 	{
 		strcopy(config, strlen(config)-1, config);
 		if(!strncmp(config, "//", 2, false))
@@ -4293,7 +4293,7 @@ public Action BossMenuTimer(Handle timer, int userid)
 	if(IsValidClient(client) && ToggleBoss[client]!=Setting_On && ToggleBoss[client]!=Setting_Off)
 		BossMenu(client, 0);
 
-	retrun Plugin_Continue;
+	return Plugin_Continue;
 }
 
 public Action CompanionMenu(int client, int args)
@@ -6373,11 +6373,11 @@ stock bool ShowGameText(int client, const char[] icon="leaderboard_streak", int 
 	BfWrite bf;
 	if(!client)
 	{
-		bf = StartMessageAll("HudNotifyCustom");
+		bf = view_as<BfWrite>(StartMessageAll("HudNotifyCustom"));
 	}
 	else
 	{
-		bf = StartMessageOne("HudNotifyCustom", client);
+		bf = view_as<BfWrite>(StartMessageOne("HudNotifyCustom", client));
 	}
 
 	if(bf == null)
@@ -14524,7 +14524,7 @@ stock int Operate(ArrayList sumArray, int &bracket, float value, ArrayList _oper
 	_operator.Set(bracket, Operator_None);
 }
 
-stock void OperateString(ArrayList sumArray, int &bracket, char[] value, int size, Handle _operator)
+stock void OperateString(ArrayList sumArray, int &bracket, char[] value, int size, ArrayList _operator)
 {
 	if(value[0])  //Make sure 'value' isn't blank
 		return;
@@ -14578,13 +14578,13 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 		}
 	}
 
-	ArrayList sumArray = new ArrayList(_, size)
+	ArrayList sumArray = new ArrayList(_, size);
 	ArrayList _operator = new ArrayList(_, size);
 	int bracket;  //Each bracket denotes a separate sum (within parentheses).  At the end, they're all added together to achieve the actual sum
 	sumArray.Set(0, 0.0);  //TODO:  See if these can be placed naturally in the loop
 	_operator.Set(bracket, Operator_None);
 
-	char character[2], value[16];  //We don't decl value because we directly append characters to it and there's no point in decl'ing character
+	char character[2], value[16];
 	for(int i; i<=strlen(formula); i++)
 	{
 		character[0] = formula[i];  //Find out what the next char in the formula is
