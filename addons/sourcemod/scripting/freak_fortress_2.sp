@@ -78,9 +78,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 28, 2020"
+#define FORK_DATE_REVISION "January 30, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6732,7 +6732,11 @@ void EquipBoss(int boss)
 			if(weaponlevel < 0)
 				weaponlevel = 101;
 
+			#if defined _tf2attributes_included
+			if(!tf2attributes && strangewep)
+			#else
 			if(strangewep)
+			#endif
 			{
 				if(attributes[0])
 				{
@@ -6773,6 +6777,11 @@ void EquipBoss(int boss)
 			if(weapon == -1)
 				continue;
 
+			#if defined _tf2attributes_included
+			if(tf2attributes && strangewep)
+				TF2Attrib_SetByDefIndex(weapon, 214, view_as<float>(strangekills));
+			#endif
+
 			FF2_SetAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", -1), KvGetNum(BossKV[Special[boss]], "clip", -1));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
@@ -6807,8 +6816,6 @@ void EquipBoss(int boss)
 			}
 			else
 			{
-				SetEntPropFloat(weapon, Prop_Send, "m_flModelScale", 0.001);
-				SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", -1);
 				SetEntProp(weapon, Prop_Send, "m_nModelIndexOverrides", -1, _, 0);
 			}
 
@@ -7167,7 +7174,11 @@ void EquipBoss(int boss)
 				if(weaponlevel < 0)
 					weaponlevel = 101;
 
+				#if defined _tf2attributes_included
+				if(!tf2attributes && strangewep)
+				#else
 				if(strangewep)
+				#endif
 				{
 					if(attributes[0])
 					{
@@ -7182,6 +7193,11 @@ void EquipBoss(int boss)
 				weapon = TF2_CreateAndEquipWearable(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
 				if(!IsValidEntity(weapon))
 					continue;
+
+				#if defined _tf2attributes_included
+				if(tf2attributes && strangewep)
+					TF2Attrib_SetByDefIndex(weapon, 214, view_as<float>(strangekills));
+				#endif
 
 				if(KvGetNum(BossKV[Special[boss]], "show", 1))
 				{
@@ -7228,20 +7244,20 @@ stock bool ConfigureWorldModelOverride(int entity, const char[] model, bool wear
 	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, 1);
 	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, 2);
 	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", modelIndex, _, 3);
-	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", (!wearable ? GetEntProp(entity, Prop_Send, "m_iWorldModelIndex") : GetEntProp(entity, Prop_Send, "m_nModelIndex")), _, 0);
+	SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", (wearable ? GetEntProp(entity, Prop_Send, "m_nModelIndex") : GetEntProp(entity, Prop_Send, "m_iWorldModelIndex")), _, 0);
 	return true;
 }
 
 stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int index, int level, int quality, char[] attributes)
 {
 	int wearable;
-	if(!classname[0])
+	if(classname[0])
 	{
-		wearable = CreateEntityByName("tf_wearable");
+		wearable = CreateEntityByName(classname);
 	}
 	else
 	{
-		wearable = CreateEntityByName(classname);
+		wearable = CreateEntityByName("tf_wearable");
 	}
 
 	if(!IsValidEntity(wearable))
@@ -7507,7 +7523,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	int entity = -1;
 	while((entity=FindEntityByClassname2(entity, "tf_wear*")) != -1)
 	{
-		if(IsBoss(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")))
+		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
 		{
 			switch(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"))
 			{
@@ -7531,7 +7547,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	entity = -1;
 	while((entity=FindEntityByClassname2(entity, "tf_powerup_bottle")) != -1)
 	{
-		if(IsBoss(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity")))
+		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
 			TF2_RemoveWearable(client, entity);
 	}
 
