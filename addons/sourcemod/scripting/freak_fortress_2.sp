@@ -78,9 +78,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "January 30, 2020"
+#define FORK_DATE_REVISION "February 3, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -530,6 +530,7 @@ Handle OnAddQueuePoints;
 Handle OnLoadCharacterSet;
 Handle OnLoseLife;
 Handle OnAlivePlayersChanged;
+Handle OnBackstabbed;
 
 bool bBlockVoice[MAXSPECIALS];
 bool MapBlocked[MAXSPECIALS];
@@ -622,6 +623,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	OnLoadCharacterSet = CreateGlobalForward("FF2_OnLoadCharacterSet", ET_Hook, Param_CellByRef, Param_String);
 	OnLoseLife = CreateGlobalForward("FF2_OnLoseLife", ET_Hook, Param_Cell, Param_CellByRef, Param_Cell);  //Boss, lives left, max lives
 	OnAlivePlayersChanged = CreateGlobalForward("FF2_OnAlivePlayersChanged", ET_Hook, Param_Cell, Param_Cell);  //Players, bosses
+	OnBackstabbed = CreateGlobalForward("FF2_OnBackstabbed", ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_FloatByRef);  //Boss, client, attacker, damage
 
 	RegPluginLibrary("freak_fortress_2");
 
@@ -4597,7 +4599,7 @@ public int DiffMenuH(Handle menu, MenuAction action, int param1, int param2)
 				return;
 			}
 
-			if(!cvarBossDesc.BoolValue || !ToggleInfo[param1])
+			if(!cvarBossDesc.BoolValue)
 			{
 				if(IsBoss(param1) && FF2_GetRoundState()!=2)
 				{
@@ -11533,7 +11535,7 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					AcceptEntityInput(entity, "RemoveHealth");
 
 					Event boom = CreateEvent("object_removed", true);
-					boom.SetInt("userid", GetClientUserId(client));
+					boom.SetInt("userid", userid);
 					boom.SetInt("index", entity);
 					boom.Fire();
 					AcceptEntityInput(entity, "kill");
@@ -11594,7 +11596,7 @@ public Action OnJarate(UserMsg msg_id, BfRead bf, const int[] players, int playe
 
 public void OnDeployBackup(Event event, const char[] name, bool dontBroadcast)
 {
-	if(Enabled && event.GetInt("buff_type") == 2)
+	if(Enabled && event.GetInt("buff_type")==2)
 		FF2flags[GetClientOfUserId(event.GetInt("buff_owner"))] |= FF2FLAG_ISBUFFED;
 }
 
@@ -12448,6 +12450,27 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 				damagecustom = 0;
 
+				float damage2 = damage*3.0;
+				Action action = Plugin_Continue;
+				Call_StartForward(OnBackstabbed);
+				Call_PushCell(boss);
+				Call_PushCell(client);
+				Call_PushCell(attacker);
+				Call_PushFloatEx(damage2);
+				Call_Finish(action);
+				switch(action)
+				{
+					case Plugin_Changed:
+					{
+						damage = damage2/3.0;
+					}
+					case Plugin_Stop:
+					{
+						damage = 0;
+						return Plugin_Handled;
+					}
+				}
+
 				EmitSoundToClient(client, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 				EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 				SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+1.5);
@@ -12462,10 +12485,10 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					switch(melee)
 					{
 						case 225, 356, 423, 461, 574, 649, 1071, 30758:  //Your Eternal Reward, Conniver's Kunai, Saxxy, Wanga Prick, Big Earner, Spy-cicle, Golden Frying Pan, Prinny Machete
-							animation=16;
+							animation = 16;
 
 						case 638:  //Sharp Dresser
-							animation=32;
+							animation = 32;
 					}
 					SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
 				}
@@ -12597,6 +12620,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				if(Stabbed[boss] < 3)
 					Stabbed[boss]++;
 
+				if(action == Plugin_Handled)
+				{
+					damage = 0;
+					return Plugin_Handled;
+				}
 				return Plugin_Changed;
 			}
 
@@ -13294,6 +13322,27 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 					damagecustom = 0;
 
+					float damage2 = damage*3.0;
+					Action action = Plugin_Continue;
+					Call_StartForward(OnBackstabbed);
+					Call_PushCell(boss);
+					Call_PushCell(client);
+					Call_PushCell(attacker);
+					Call_PushFloatEx(damage2);
+					Call_Finish(action);
+					switch(action)
+					{
+						case Plugin_Changed:
+						{
+							damage = damage2/3.0;
+						}
+						case Plugin_Stop:
+						{
+							damage = 0;
+							return Plugin_Handled;
+						}
+					}
+
 					EmitSoundToClient(client, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 					EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 					SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+2.0);
@@ -13400,6 +13449,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						HealthBarMode = true;
 						CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					}
+
 					switch(index)
 					{
 						case 225, 574:	//Your Eternal Reward, Wanga Prick
@@ -13422,7 +13472,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 					}
 
-					if(GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Primary)==525)  //Diamondback
+					if(GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Primary) == 525)  //Diamondback
 						SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+cvarDiamond.IntValue);
 
 					ActivateAbilitySlot(boss, 6);
@@ -13430,6 +13480,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(Stabbed[boss] < 3)
 						Stabbed[boss]++;
 
+					if(action == Plugin_Handled)
+					{
+						damage = 0;
+						return Plugin_Handled;
+					}
 					return Plugin_Changed;
 				}
 
@@ -14542,7 +14597,7 @@ stock int Operate(ArrayList sumArray, int &bracket, float value, ArrayList _oper
 
 stock void OperateString(ArrayList sumArray, int &bracket, char[] value, int size, ArrayList _operator)
 {
-	if(value[0])  //Make sure 'value' isn't blank
+	if(!value[0])  //Make sure 'value' isn't blank
 		return;
 
 	Operate(sumArray, bracket, StringToFloat(value), _operator);
