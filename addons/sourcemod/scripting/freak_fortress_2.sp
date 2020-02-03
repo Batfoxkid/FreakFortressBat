@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 3, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -2501,7 +2501,7 @@ public void LoadCharacter(const char[] character)
 	static char section[64];
 	KvSetString(BossKV[Specials], "filename", character);
 	KvGetString(BossKV[Specials], "name", config, sizeof(config));
-	bBlockVoice[Specials] = view_as<bool>(KvGetNum(BossKV[Specials], "sound_block_vo", 0));
+	bBlockVoice[Specials] = view_as<bool>(KvGetNum(BossKV[Specials], "sound_block_vo"));
 	BossSpeed[Specials] = KvGetFloat(BossKV[Specials], "maxspeed", 340.0);
 	KvGotoFirstSubKey(BossKV[Specials]);
 
@@ -5489,7 +5489,7 @@ public Action Command_SetMyBoss(int client, int args)
 		for(int config; config<Specials; config++)
 		{
 			KvRewind(BossKV[config]);
-			if(KvGetNum(BossKV[config], "blocked", 0))
+			if(KvGetNum(BossKV[config], "blocked"))
 			{
 				if(config == Specials-1)
 				{
@@ -5518,11 +5518,11 @@ public Action Command_SetMyBoss(int client, int args)
 				}
 			}
 
-			if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-			   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+			if((KvGetNum(BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+			   (KvGetNum(BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
 			   (BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true)))
 			{
-				if(KvGetNum(BossKV[config], "hidden", 0))
+				if(KvGetNum(BossKV[config], "hidden"))
 				{
 					FReplyToCommand(client, "%t", "deny_unknown");
 					return Plugin_Handled;
@@ -5533,7 +5533,7 @@ public Action Command_SetMyBoss(int client, int args)
 					return Plugin_Handled;
 				}
 			}
-			else if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+			else if(KvGetNum(BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 			{
 				if(KvGetNum(BossKV[config], "hidden", 1))
 				{
@@ -5546,11 +5546,11 @@ public Action Command_SetMyBoss(int client, int args)
 					return Plugin_Handled;
 				}
 			}
-			else if(KvGetNum(BossKV[config], "hidden", 0) &&
-			      !(KvGetNum(BossKV[config], "donator", 0) ||
-			        KvGetNum(BossKV[config], "theme", 0) ||
-				KvGetNum(BossKV[config], "admin", 0) ||
-				KvGetNum(BossKV[config], "owner", 0)))
+			else if(KvGetNum(BossKV[config], "hidden") &&
+			      !(KvGetNum(BossKV[config], "donator") ||
+			        KvGetNum(BossKV[config], "theme") ||
+				KvGetNum(BossKV[config], "admin") ||
+				KvGetNum(BossKV[config], "owner")))
 			{
 				FReplyToCommand(client, "%t", "deny_unknown");
 				return Plugin_Handled;
@@ -5562,7 +5562,7 @@ public Action Command_SetMyBoss(int client, int args)
 				return Plugin_Handled;
 			}
 
-			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+			if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 			{
 				FReplyToCommand(client, "%t", "deny_nofirst");
 				return Plugin_Handled;
@@ -5593,8 +5593,8 @@ public Action Command_SetMyBoss(int client, int args)
 				}
 			}
 			strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-			CanBossVs[client] = KvGetNum(BossKV[config], "noversus", 0);
-			CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam", 0);
+			CanBossVs[client] = KvGetNum(BossKV[config], "noversus");
+			CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam");
 			SaveKeepBossCookie(client);
 			FReplyToCommand(client, "%t", "to0_boss_selected", bossName);
 			return Plugin_Handled;
@@ -5616,7 +5616,7 @@ public Action Command_SetMyBoss(int client, int args)
 			}
 
 			KvRewind(BossKV[config]);
-			if(KvGetNum(BossKV[config], "blocked", 0))
+			if(KvGetNum(BossKV[config], "blocked"))
 				continue;
 
 			KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
@@ -5630,7 +5630,7 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 	}
 
-	if(HasCharSets)
+	if(HasCharSets && CurrentCharSet<MAXCHARSETS)
 	{
 		if(kvDiffMods!=null && !cvarDifficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
 		{
@@ -5739,29 +5739,29 @@ public Action Command_SetMyBoss(int client, int args)
 	for(int config; config<Specials; config++)
 	{
 		KvRewind(BossKV[config]);
-		if(KvGetNum(BossKV[config], "blocked", 0))
+		if(KvGetNum(BossKV[config], "blocked"))
 			continue;
 
 		KvGetString(BossKV[config], "name", boss, sizeof(boss));
 		GetBossSpecial(config, bossName, sizeof(bossName), client);
 		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-		if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-		   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+		if((KvGetNum(BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
 		   (BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true)))
 		{
-			if(!KvGetNum(BossKV[config], "hidden", 0))
+			if(!KvGetNum(BossKV[config], "hidden"))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+		else if(KvGetNum(BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 		{
 			if(!KvGetNum(BossKV[config], "hidden", 1))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "hidden", 0) &&
-		      !(KvGetNum(BossKV[config], "donator", 0) ||
-		        KvGetNum(BossKV[config], "theme", 0) ||
-			KvGetNum(BossKV[config], "admin", 0) ||
-			KvGetNum(BossKV[config], "owner", 0)))
+		else if(KvGetNum(BossKV[config], "hidden") &&
+		      !(KvGetNum(BossKV[config], "donator") ||
+		        KvGetNum(BossKV[config], "theme") ||
+			KvGetNum(BossKV[config], "admin") ||
+			KvGetNum(BossKV[config], "owner")))
 		{
 			// Don't show
 		}
@@ -5769,7 +5769,7 @@ public Action Command_SetMyBoss(int client, int args)
 		{
 			AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+		else if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 		{
 			AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
@@ -5981,7 +5981,7 @@ public void PackMenu(int client)
 	do
 	{
 		total++;
-		if(KvGetNum(Kv, "hidden", 0))
+		if(KvGetNum(Kv, "hidden"))
 			continue;
 
 		KvGetSectionName(Kv, pack, sizeof(pack));
@@ -6046,27 +6046,27 @@ public void PackBoss(int client, int pack)
 	for(int config; config<PackSpecials[pack]; config++)
 	{
 		KvRewind(PackKV[config][pack]);
-		if(KvGetNum(PackKV[config][pack], "blocked", 0))
+		if(KvGetNum(PackKV[config][pack], "blocked"))
 			continue;
 
 		KvGetString(PackKV[config][pack], "name", boss, sizeof(boss));
 		GetBossSpecial(config, bossName, sizeof(bossName), client, pack);
-		if((KvGetNum(PackKV[config][pack], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-		   (KvGetNum(PackKV[config][pack], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
+		if((KvGetNum(PackKV[config][pack], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(PackKV[config][pack], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
 		{
-			if(!KvGetNum(PackKV[config][pack], "hidden", 0))
+			if(!KvGetNum(PackKV[config][pack], "hidden"))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(PackKV[config][pack], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+		else if(KvGetNum(PackKV[config][pack], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 		{
 			if(!KvGetNum(PackKV[config][pack], "hidden", 1))
 				AddMenuItem(dMenu, boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(PackKV[config][pack], "hidden", 0) &&
-		      !(KvGetNum(PackKV[config][pack], "donator", 0) ||
-		        KvGetNum(PackKV[config][pack], "theme", 0) ||
-			KvGetNum(PackKV[config][pack], "admin", 0) ||
-			KvGetNum(PackKV[config][pack], "owner", 0)))
+		else if(KvGetNum(PackKV[config][pack], "hidden") &&
+		      !(KvGetNum(PackKV[config][pack], "donator") ||
+		        KvGetNum(PackKV[config][pack], "theme") ||
+			KvGetNum(PackKV[config][pack], "admin") ||
+			KvGetNum(PackKV[config][pack], "owner")))
 		{
 			// Don't show
 		}
@@ -6289,7 +6289,7 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 	for(int config; config<Specials; config++)
 	{
 		KvRewind(BossKV[config]);
-		if(KvGetNum(BossKV[config], "blocked", 0))
+		if(KvGetNum(BossKV[config], "blocked"))
 			continue;
 
 		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
@@ -6301,22 +6301,22 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 
 			if(client)
 			{
-				if((KvGetNum(BossKV[config], "donator", 0) && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-				   (KvGetNum(BossKV[config], "admin", 0) && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
-				   (KvGetNum(BossKV[config], "owner", 0) && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
+				if((KvGetNum(BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+				   (KvGetNum(BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+				   (KvGetNum(BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
 					return false;
 
 				if(BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
 					return false;
 			}
 
-			if(KvGetNum(BossKV[config], "nofirst", 0) && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
+			if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 				return false;
 
 			if(client)
 			{
-				CanBossVs[client] = KvGetNum(BossKV[config], "noversus", 0);
-				CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam", 0);
+				CanBossVs[client] = KvGetNum(BossKV[config], "noversus");
+				CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam");
 			}
 
 			return true;
@@ -6607,7 +6607,7 @@ void EquipBoss(int boss)
 			strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
 			weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
 			index = KvGetNum(BossKV[Special[boss]], "index");
-			overridewep = view_as<bool>(KvGetNum(BossKV[Special[boss]], "override", 0));
+			overridewep = view_as<bool>(KvGetNum(BossKV[Special[boss]], "override"));
 			strangekills = -1;
 			strangewep = true;
 			switch(strangerank)
@@ -6810,7 +6810,7 @@ void EquipBoss(int boss)
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 3);
 			}
 
-			if(KvGetNum(BossKV[Special[boss]], "show", 0))
+			if(KvGetNum(BossKV[Special[boss]], "show"))
 			{
 				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
 				if(wModel[0])
@@ -7391,9 +7391,9 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 		SelfHealing[client] = cvarSelfHealing.IntValue;
 	}
 
-	LifeHealing[client] = KvGetFloat(BossKV[Special[boss]], "healing_lives", 0.0);
-	OverHealing[client] = KvGetFloat(BossKV[Special[boss]], "healing_over", 0.0);
-	rageMode[client] = KvGetNum(BossKV[Special[boss]], "ragemode", 0);
+	LifeHealing[client] = KvGetFloat(BossKV[Special[boss]], "healing_lives");
+	OverHealing[client] = KvGetFloat(BossKV[Special[boss]], "healing_over");
+	rageMode[client] = KvGetNum(BossKV[Special[boss]], "ragemode");
 	KvGetString(BossKV[Special[boss]], "icon", BossIcon, sizeof(BossIcon));
 	rageMax[client] = KvGetFloat(BossKV[Special[boss]], "ragemax", 100.0);
 	rageMin[client] = KvGetFloat(BossKV[Special[boss]], "ragemin", 100.0);
@@ -7492,7 +7492,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	TF2_SetPlayerClass(client, KvGetClass(BossKV[Special[boss]], "class"), _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 	SDKHook(client, SDKHook_GetMaxHealth, OnGetMaxHealth);  //Temporary:  Used to prevent boss overheal
 
-	switch(KvGetNum(BossKV[Special[boss]], "pickups", 0))  //Check if the boss is allowed to pickup health/ammo
+	switch(KvGetNum(BossKV[Special[boss]], "pickups"))  //Check if the boss is allowed to pickup health/ammo
 	{
 		case 0:
 			FF2flags[client] &= ~(FF2FLAG_ALLOW_HEALTH_PICKUPS|FF2FLAG_ALLOW_AMMO_PICKUPS);
@@ -7506,7 +7506,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 
 	if(!HasSwitched && !Enabled3)
 	{
-		switch(KvGetNum(BossKV[Special[boss]], "bossteam", 0))
+		switch(KvGetNum(BossKV[Special[boss]], "bossteam"))
 		{
 			case 1: // Always Random
 				SwitchTeams((currentBossTeam==1) ? (view_as<int>(TFTeam_Blue)) : (view_as<int>(TFTeam_Red)) , (currentBossTeam==1) ? (view_as<int>(TFTeam_Red)) : (view_as<int>(TFTeam_Blue)), true);
@@ -7530,7 +7530,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	bool cosmetics = view_as<bool>(KvGetNum(BossKV[Special[boss]], "cosmetics", 0));
+	bool cosmetics = view_as<bool>(KvGetNum(BossKV[Special[boss]], "cosmetics"));
 	int entity = -1;
 	while((entity=FindEntityByClassname2(entity, "tf_wear*")) != -1)
 	{
@@ -9034,7 +9034,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 			}
 		}
 
-		if((IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[client] & FF2FLAG_HUDDISABLED)
+		if((IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 		{
 			for(int target; target<=MaxClients; target++)
 			{
@@ -11106,7 +11106,7 @@ void ActivateAbilitySlot(int boss, int slot, bool buttonmodeactive=false)
 		KvRewind(BossKV[Special[boss]]);
 		if(KvJumpToKey(BossKV[Special[boss]], ability))
 		{
-			if(KvGetNum(BossKV[Special[boss]], "noversus", 0) && Enabled3)
+			if(KvGetNum(BossKV[Special[boss]], "noversus") && Enabled3)
 				continue;
 
 			ability_slot = KvGetNum(BossKV[Special[boss]], "slot", -2);
@@ -11116,7 +11116,7 @@ void ActivateAbilitySlot(int boss, int slot, bool buttonmodeactive=false)
 			if(ability_slot != slot)
 				continue;
 	
-			buttonmode = (buttonmodeactive) ? (KvGetNum(BossKV[Special[boss]], "buttonmode", 0)) : 0;
+			buttonmode = (buttonmodeactive) ? (KvGetNum(BossKV[Special[boss]], "buttonmode")) : 0;
 
 			KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
 			static char abilityName[64], pluginName[64];
@@ -14900,7 +14900,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		}
 
 		FormatEx(path, sizeof(path), "%i_overlay_time", choosen);
-		float time = KvGetFloat(BossKV[Special[boss]], path, 0.0);
+		float time = KvGetFloat(BossKV[Special[boss]], path);
 		if(time > 0)
 			CreateTimer(time, Timer_RemoveOverlay, team, TIMER_FLAG_NO_MAPCHANGE);
 
@@ -14911,7 +14911,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	KvGetString(BossKV[Special[boss]], key, temp, sizeof(temp));
 	if(temp[0])
 	{
-		float time = KvGetFloat(BossKV[Special[boss]], key, 0.0);
+		float time = KvGetFloat(BossKV[Special[boss]], key);
 
 		static char name[64], artist[64];
 
@@ -14960,7 +14960,7 @@ stock bool RandomSoundAbility(const char[] sound, char[] file, int length, int b
 			break;  //Assume that there's no more sounds
 
 		FormatEx(key, sizeof(key), "slot%i", sounds);
-		if(KvGetNum(BossKV[Special[boss]], key, 0)==slot)
+		if(KvGetNum(BossKV[Special[boss]], key)==slot)
 		{
 			match[matches] = sounds;  //Found a match: let's store it in the array
 			matches++;
@@ -16673,7 +16673,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	do
 	{
 		total++;
-		if(KvGetNum(Kv, "hidden", 0))  //Hidden charsets are hidden for a reason :P
+		if(KvGetNum(Kv, "hidden"))  //Hidden charsets are hidden for a reason :P
 			continue;
 
 		charsets++;
