@@ -9661,11 +9661,7 @@ stock void SetArenaCapEnableTime(float time)
 	}
 }
 
-#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
-public int OnRebuildAdminCache(AdminCachePart part)
-#else
 public void OnRebuildAdminCache(AdminCachePart part)
-#endif
 {
 	if(part == AdminCache_Overrides)
 		CheckDuoMin();
@@ -12260,10 +12256,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					{
 						if(boss>=0 && SapperBoss[target])
 						{
-							#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
-							TF2_StunPlayer(target, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
-							TF2_AddCondition(target, TFCond_Sapped, 3.0);
-							#else
 							if(index==810 || index==831)
 							{
 								TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 6.0);
@@ -12274,7 +12266,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_StunPlayer(target, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
 								TF2_AddCondition(target, TFCond_Sapped, 3.0);
 							}
-							#endif
+
 							SapperCooldown[client] = cvarSapperCooldown.FloatValue;
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
@@ -12283,10 +12275,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 						}
 						else if(boss<0 && SapperMinion)
 						{
-							#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
-							TF2_StunPlayer(target, 4.0, 0.0, TF_STUNFLAGS_NORMALBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
-							TF2_AddCondition(target, TFCond_Sapped, 4.0);
-							#else
 							if(index==810 || index==831)
 							{
 								TF2_AddCondition(target, TFCond_PasstimePenaltyDebuff, 8.0);
@@ -12297,7 +12285,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_StunPlayer(target, 4.0, 0.0, TF_STUNFLAGS_NORMALBONK|TF_STUNFLAG_NOSOUNDOREFFECT, client);
 								TF2_AddCondition(target, TFCond_Sapped, 4.0);
 							}
-							#endif
+
 							SapperCooldown[client] = cvarSapperCooldown.FloatValue;
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
@@ -16528,12 +16516,7 @@ public int VoiceTogglePanelH(Handle menu, MenuAction action, int client, int sel
 	}
 }
 
-//Ugly compatability layer since HookSound's arguments changed in 1.8
-#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=7
-public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags)
-#else
 public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
-#endif
 {
 	if(!Enabled || !IsValidClient(client) || channel<1)
 		return Plugin_Continue;
@@ -17800,25 +17783,15 @@ public int CheckRoundState()
 	switch(GameRules_GetRoundState())
 	{
 		case RoundState_Init, RoundState_Pregame:
-		{
 			return -1;
-		}
+
 		case RoundState_StartGame, RoundState_Preround:
-		{
 			return 0;
-		}
+
 		case RoundState_RoundRunning, RoundState_Stalemate:  //Oh Valve.
-		{
 			return 1;
-		}
-		default:
-		{
-			return 2;
-		}
 	}
-	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=9
-	return -1;  //Compiler bug-doesn't recognize 'default' as a valid catch-all
-	#endif
+	return 2;
 }
 
 void FindHealthBar()
