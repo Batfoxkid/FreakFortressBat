@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 3, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3955,7 +3955,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
+			if(IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
 				ShowHudText(client, -1, text[client]);
 		}
 	}
@@ -4099,7 +4099,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 255, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
+			if(IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
 				ShowHudText(client, -1, text[client]);
 		}
 
@@ -4535,7 +4535,7 @@ public Action DiffMenu(int client, int args)
 		return Plugin_Handled;
 	}
 
-	bool denyAll = (!cvarBossDesc.BoolValue || !ToggleInfo[client]) && (IsBoss(client) && GetRoundState()!=2);
+	bool denyAll = (!cvarBossDesc.BoolValue || !ToggleInfo[client]) && (IsBoss(client) && CheckRoundState()!=2);
 
 	char name[64];
 	Handle dMenu = CreateMenu(DiffMenuH);
@@ -4544,7 +4544,7 @@ public Action DiffMenu(int client, int args)
 	SetMenuTitle(dMenu, "%t\n %t", "FF2 Difficulty Settings Menu Title", "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
 
 	FormatEx(name, sizeof(name), "%t", "Off");
-	AddMenuItem(dMenu, "", name, (!dIncoming[client][0] || denyAll || (IsBoss(client) && GetRoundState()!=2)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	AddMenuItem(dMenu, "", name, (!dIncoming[client][0] || denyAll || (IsBoss(client) && CheckRoundState()!=2)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 	KvRewind(kvDiffMods);
 	KvGotoFirstSubKey(kvDiffMods);
 	do
@@ -4603,7 +4603,7 @@ public int DiffMenuH(Handle menu, MenuAction action, int param1, int param2)
 
 			if(!cvarBossDesc.BoolValue)
 			{
-				if(IsBoss(param1) && GetRoundState()!=2)
+				if(IsBoss(param1) && CheckRoundState()!=2)
 				{
 					FReplyToCommand(param1, "%t", "ff2_changedifficulty_denied");
 					DiffMenu(param1, 0);
@@ -4659,7 +4659,7 @@ public Action ConfirmDiff(int client)
 	SetMenuTitle(dMenu, text);
 
 	FormatEx(text, sizeof(text), "%t", "to0_confirm", name);
-	AddMenuItem(dMenu, name, text, (IsBoss(client) && GetRoundState()!=2) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	AddMenuItem(dMenu, name, text, (IsBoss(client) && CheckRoundState()!=2) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 
 	FormatEx(text, sizeof(text), "%t", "to0_cancel");
 	AddMenuItem(dMenu, text, text);
@@ -4683,7 +4683,7 @@ public int ConfirmDiffH(Handle menu, MenuAction action, int param1, int param2)
 			{
 				DiffMenu(param1, 0);
 			}
-			else if(IsBoss(param1) && GetRoundState()!=2)
+			else if(IsBoss(param1) && CheckRoundState()!=2)
 			{
 				FReplyToCommand(param1, "%t", "ff2_changedifficulty_denied");
 				DiffMenu(param1, 0);
@@ -9034,24 +9034,27 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 			}
 		}
 
-		for(int target; target<=MaxClients; target++)
+		if((IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[client] & FF2FLAG_HUDDISABLED)
 		{
-			if(IsValidClient(target) && (IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+			for(int target; target<=MaxClients; target++)
 			{
-				if(bosses<2 && cvarGameText.IntValue>0)
+				if(IsValidClient(target))
 				{
-					if(BossIcon[0])
+					if(bosses<2 && cvarGameText.IntValue>0)
 					{
-						ShowGameText(target, BossIcon, _, text[client]);
+						if(BossIcon[0])
+						{
+							ShowGameText(target, BossIcon, _, text[client]);
+						}
+						else
+						{
+							ShowGameText(target, "leaderboard_streak", _, text[client]);
+						}
 					}
 					else
 					{
-						ShowGameText(target, "leaderboard_streak", _, text[client]);
+						PrintCenterText(target, text[client]);
 					}
-				}
-				else
-				{
-					PrintCenterText(target, text[client]);
 				}
 			}
 		}
@@ -11792,8 +11795,6 @@ public Action Timer_DrawGame(Handle timer)
 		FormatEx(timeDisplay, sizeof(timeDisplay), "%s:0%i", timeDisplay, time%60);
 	}
 
-	SetHudTextParams(-1.0, 0.17, 1.1, 255, 255, 255, 255);
-
 	int client;
 	static char message[MAXTF2PLAYERS][512], name[64];
 	if(bosses<2 && cvarGameText.IntValue>0 && alivePlayers==1 && cvarHealthHud.IntValue<2)
@@ -11801,97 +11802,100 @@ public Action Timer_DrawGame(Handle timer)
 		int boss2, clients;
 		for(client=1; client<=MaxClients; client++)
 		{
-			if(IsBoss(client))
-			{
-				boss2 = GetBossIndex(client);
-				char bossLives[8];
-				if(BossLives[boss2] > 1)
-					FormatEx(bossLives, sizeof(bossLives), "x%i", BossLives[boss2]);
+			if(!IsBoss(client))
+				continue;
 
-				for(clients=1; clients<=MaxClients; clients++)
-				{
-					if(IsValidClient(client))
-					{
-						GetBossSpecial(Special[boss2], name, sizeof(name), client);
-						Format(message[clients], sizeof(message[]), "%s\n%t", message[clients], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
-					}
-				}
+			boss2 = GetBossIndex(client);
+			char bossLives[8];
+			if(BossLives[boss2] > 1)
+				FormatEx(bossLives, sizeof(bossLives), "x%i", BossLives[boss2]);
+
+			for(clients=1; clients<=MaxClients; clients++)
+			{
+				if(!IsValidClient(clients))
+					continue;
+
+				SetGlobalTransTarget(clients);
+				GetBossSpecial(Special[boss2], name, sizeof(name), clients);
+				Format(message[clients], sizeof(message[]), "%s\n%t", message[clients], "ff2_hp", name, BossHealth[boss2]-BossHealthMax[boss2]*(BossLives[boss2]-1), BossHealthMax[boss2], bossLives);
 			}
 		}
 	}
 
+	SetHudTextParams(-1.0, 0.17, 1.1, 255, 255, 255, 255);
 	for(client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && (IsPlayerAlive(client) || IsClientObserver(client)))
+		if(!IsValidClient(client) || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (!IsPlayerAlive(client) && !IsClientObserver(client)))
+			continue;
+
+		SetGlobalTransTarget(client);
+		if(!HudSettings[client][3] && !HudSettings[client][4] && bosses<2 && cvarGameText.IntValue>0 && alivePlayers==1 && cvarHealthHud.IntValue<2)
 		{
-			if(!HudSettings[client][3] && !HudSettings[client][4] && bosses<2 && cvarGameText.IntValue>0 && alivePlayers==1 && cvarHealthHud.IntValue<2)
+			if(timeleft<=countdownTime && timeleft>=countdownTime/2)
 			{
-				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
-				{
-					ShowGameText(client, "ico_notify_sixty_seconds", _, "%s | %s", message[client], timeDisplay);
-				}
-				else if(timeleft<countdownTime/2 && timeleft>=countdownTime/6)
-				{
-					ShowGameText(client, "ico_notify_thirty_seconds", _, "%s | %s", message[client], timeDisplay);
-				}
-				else if(timeleft<countdownTime/6 && timeleft>0)
-				{
-					ShowGameText(client, "ico_notify_ten_seconds", _, "%s | %s", message[client], timeDisplay);
-				}
-				else if(isCapping)
-				{
-					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%s | %t", message[client], "Overtime");
-				}
-				else if(BossIcon[0])
-				{
-					ShowGameText(client, BossIcon, _, "%s | %s", message[client], timeDisplay);
-				}
-				else
-				{
-					ShowGameText(client, "leaderboard_streak", _, "%s | %s", message[client], timeDisplay);
-				}
+				ShowGameText(client, "ico_notify_sixty_seconds", _, "%s | %s", message[client], timeDisplay);
 			}
-			else if(HudSettings[client][3])
+			else if(timeleft<countdownTime/2 && timeleft>=countdownTime/6)
 			{
+				ShowGameText(client, "ico_notify_thirty_seconds", _, "%s | %s", message[client], timeDisplay);
 			}
-			else if(bosses<2 && cvarGameText.IntValue>1)
+			else if(timeleft<countdownTime/6 && timeleft>0)
 			{
-				if(timeleft<=countdownTime && timeleft>=countdownTime/2)
-				{
-					ShowGameText(client, "ico_notify_sixty_seconds", _, "%t", "Time Left", timeDisplay);
-				}
-				else if(timeleft<countdownTime/2 && timeleft>=countdownTime/6)
-				{
-					ShowGameText(client, "ico_notify_thirty_seconds", _, "%t", "Time Left", timeDisplay);
-				}
-				else if(timeleft<countdownTime/6 && timeleft>=0)
-				{
-					ShowGameText(client, "ico_notify_ten_seconds", _, "%t", "Time Left", timeDisplay);
-				}
-				else if(isCapping)
-				{
-					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
-				}
-				else if(BossIcon[0])
-				{
-					ShowGameText(client, BossIcon, _, timeDisplay);
-				}
-				else
-				{
-					ShowGameText(client, "leaderboard_streak", _, timeDisplay);
-				}
+				ShowGameText(client, "ico_notify_ten_seconds", _, "%s | %s", message[client], timeDisplay);
 			}
-			else if((FF2flags[target] & FF2FLAG_HUDDISABLED) || (GetClientButtons(client) & IN_SCORE))
+			else if(isCapping)
 			{
+				ShowGameText(client, "ico_notify_flag_moving_alt", _, "%s | %t", message[client], "Overtime");
 			}
-			else if(isCapping && timeleft<1)
+			else if(BossIcon[0])
 			{
-				ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
+				ShowGameText(client, BossIcon, _, "%s | %s", message[client], timeDisplay);
 			}
 			else
 			{
-				ShowSyncHudText(client, timeleftHUD, timeDisplay);
+				ShowGameText(client, "leaderboard_streak", _, "%s | %s", message[client], timeDisplay);
 			}
+		}
+		else if(HudSettings[client][3])
+		{
+		}
+		else if(bosses<2 && cvarGameText.IntValue>1)
+		{
+			if(timeleft<=countdownTime && timeleft>=countdownTime/2)
+			{
+				ShowGameText(client, "ico_notify_sixty_seconds", _, "%t", "Time Left", timeDisplay);
+			}
+			else if(timeleft<countdownTime/2 && timeleft>=countdownTime/6)
+			{
+				ShowGameText(client, "ico_notify_thirty_seconds", _, "%t", "Time Left", timeDisplay);
+			}
+			else if(timeleft<countdownTime/6 && timeleft>=0)
+			{
+				ShowGameText(client, "ico_notify_ten_seconds", _, "%t", "Time Left", timeDisplay);
+			}
+			else if(isCapping)
+			{
+				ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Overtime");
+			}
+			else if(BossIcon[0])
+			{
+				ShowGameText(client, BossIcon, _, timeDisplay);
+			}
+			else
+			{
+				ShowGameText(client, "leaderboard_streak", _, timeDisplay);
+			}
+		}
+		else if(GetClientButtons(client) & IN_SCORE)
+		{
+		}
+		else if(isCapping && timeleft<1)
+		{
+			ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
+		}
+		else
+		{
+			ShowSyncHudText(client, timeleftHUD, timeDisplay);
 		}
 	}
 
@@ -12071,18 +12075,18 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(IsValidClient(target) && (IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
+				if(!IsValidClient(target) || HudSettings[target][2] || (FF2flags[target] & FF2FLAG_HUDDISABLED) || (!IsPlayerAlive(target) && !IsClientObserver(target)))
+					continue;
+	
+				if(cvarGameText.IntValue > 0)
 				{
-					if(cvarGameText.IntValue > 0)
-					{
-						GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
-						ShowGameText(target, "ico_notify_flag_moving_alt", Enabled3 ? GetClientTeam(client) : 0, "%t", ability, bossName, BossLives[boss]);
-					}
-					else
-					{
-						GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
-						PrintCenterText(target, "%t", ability, bossName, BossLives[boss]);
-					}
+					GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
+					ShowGameText(target, "ico_notify_flag_moving_alt", Enabled3 ? GetClientTeam(client) : 0, "%t", ability, bossName, BossLives[boss]);
+				}
+				else
+				{
+					GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
+					PrintCenterText(target, "%t", ability, bossName, BossLives[boss]);
 				}
 			}
 
@@ -12110,7 +12114,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	{
 		if(IsValidClient(target) && IsPlayerAlive(target) && (GetHealingTarget(target, true)==attacker))
 		{
-			healers[healerCount]=target;
+			healers[healerCount] = target;
 			healerCount++;
 		}
 	}
@@ -12471,7 +12475,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				{
 					if(TellName)
 					{
-						char spcl[768];
+						char spcl[64];
 						GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 						switch(Annotations)
 						{
@@ -12542,7 +12546,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(TellName)
 						{
-							char spcl[768];
+							char spcl[64];
 							GetBossSpecial(Special[GetBossIndex(attacker)], spcl, sizeof(spcl), attacker);
 							switch(Annotations)
 							{
@@ -12655,11 +12659,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 				}
 
+				static char spcl[64];
 				if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 				{
 					if(TellName)
 					{
-						static char spcl[768];
 						GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 						switch(Annotations)
 						{
@@ -12693,7 +12697,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				{
 					if(TellName)
 					{
-						static char spcl[768];
 						GetBossSpecial(Special[GetBossIndex(attacker)], spcl, sizeof(spcl), client);
 						switch(Annotations)
 						{
@@ -12934,7 +12937,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								{
 									if(TellName)
 									{
-										static char spcl[768];
+										static char spcl[64];
 										GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 										switch(Annotations)
 										{
@@ -13119,7 +13122,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							{
 								if(TellName)
 								{
-									static char spcl[768];
+									static char spcl[64];
 									GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 									switch(Annotations)
 									{
@@ -13343,7 +13346,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(TellName)
 						{
-							static char spcl[768];
+							static char spcl[64];
 							GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 							switch(Annotations)
 							{
@@ -13382,7 +13385,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							if(TellName)
 							{
-								static char spcl[768];
+								static char spcl[64];
 								GetClientName(attacker, spcl, sizeof(spcl));
 								switch(Annotations)
 								{
@@ -13517,11 +13520,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 					}
 
+					static char spcl[64];
 					if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 					{
 						if(TellName)
 						{
-							static char spcl[768];
 							GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
 							switch(Annotations)
 							{
@@ -13555,7 +13558,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(TellName)
 						{
-							char spcl[768];
 							GetClientName(attacker, spcl, sizeof(spcl));
 							switch(Annotations)
 							{
@@ -16161,7 +16163,7 @@ public Action Command_SkipSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(CheckRoundState()!=1)
+	if(CheckRoundState() != 1)
 	{
 		FReplyToCommand(client, "%t", "ff2_please wait");
 		return Plugin_Handled;
