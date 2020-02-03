@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 3, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -462,6 +462,7 @@ float LifeHealing[MAXTF2PLAYERS];
 float OverHealing[MAXTF2PLAYERS];
 int GoombaMode;
 int CapMode;
+bool TimerMode;
 
 enum Operators
 {
@@ -3951,10 +3952,11 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		{
 			SetHudTextParams(-1.0, 0.2, bonusRoundTime, 50, 50, 255, 255);
 		}
+
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client) && !HudSettings[client][2])
-				FF2_ShowHudText(client, -1, text[client]);
+			if(IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
+				ShowHudText(client, -1, text[client]);
 		}
 	}
 
@@ -4097,8 +4099,8 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 255, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client) && !HudSettings[client][2])
-				FF2_ShowHudText(client, -1, text[client]);
+			if(IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[target] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
+				ShowHudText(client, -1, text[client]);
 		}
 
 		if(!bossWin && RandomSound("sound_fail", sound, sizeof(sound)))
@@ -4164,21 +4166,21 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	static char text[128];
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client))
+		if(!IsValidClient(client) || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (GetClientButtons(client) & IN_SCORE))
+			continue;
+
+		SetGlobalTransTarget(client);
+		if(IsBoss(client) && GetClientTeam(client)==team)
 		{
-			//TODO:  Clear HUD text here
-			if(IsBoss(client) && GetClientTeam(client)==team)
-			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_win");
-			}
-			else if(IsBoss(client))
-			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_lose");
-			}
-			else
-			{
-				FF2_ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
-			}
+			ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_win");
+		}
+		else if(IsBoss(client))
+		{
+			ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_lose");
+		}
+		else
+		{
+			ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
 		}
 	}
 
@@ -4533,7 +4535,7 @@ public Action DiffMenu(int client, int args)
 		return Plugin_Handled;
 	}
 
-	bool denyAll = (!cvarBossDesc.BoolValue || !ToggleInfo[client]) && (IsBoss(client) && FF2_GetRoundState()!=2);
+	bool denyAll = (!cvarBossDesc.BoolValue || !ToggleInfo[client]) && (IsBoss(client) && GetRoundState()!=2);
 
 	char name[64];
 	Handle dMenu = CreateMenu(DiffMenuH);
@@ -4542,7 +4544,7 @@ public Action DiffMenu(int client, int args)
 	SetMenuTitle(dMenu, "%t\n %t", "FF2 Difficulty Settings Menu Title", "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
 
 	FormatEx(name, sizeof(name), "%t", "Off");
-	AddMenuItem(dMenu, "", name, (!dIncoming[client][0] || denyAll || (IsBoss(client) && FF2_GetRoundState()!=2)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	AddMenuItem(dMenu, "", name, (!dIncoming[client][0] || denyAll || (IsBoss(client) && GetRoundState()!=2)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 	KvRewind(kvDiffMods);
 	KvGotoFirstSubKey(kvDiffMods);
 	do
@@ -4601,7 +4603,7 @@ public int DiffMenuH(Handle menu, MenuAction action, int param1, int param2)
 
 			if(!cvarBossDesc.BoolValue)
 			{
-				if(IsBoss(param1) && FF2_GetRoundState()!=2)
+				if(IsBoss(param1) && GetRoundState()!=2)
 				{
 					FReplyToCommand(param1, "%t", "ff2_changedifficulty_denied");
 					DiffMenu(param1, 0);
@@ -4657,7 +4659,7 @@ public Action ConfirmDiff(int client)
 	SetMenuTitle(dMenu, text);
 
 	FormatEx(text, sizeof(text), "%t", "to0_confirm", name);
-	AddMenuItem(dMenu, name, text, (IsBoss(client) && FF2_GetRoundState()!=2) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+	AddMenuItem(dMenu, name, text, (IsBoss(client) && GetRoundState()!=2) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 
 	FormatEx(text, sizeof(text), "%t", "to0_cancel");
 	AddMenuItem(dMenu, text, text);
@@ -4681,7 +4683,7 @@ public int ConfirmDiffH(Handle menu, MenuAction action, int param1, int param2)
 			{
 				DiffMenu(param1, 0);
 			}
-			else if(IsBoss(param1) && FF2_GetRoundState()!=2)
+			else if(IsBoss(param1) && GetRoundState()!=2)
 			{
 				FReplyToCommand(param1, "%t", "ff2_changedifficulty_denied");
 				DiffMenu(param1, 0);
@@ -6462,21 +6464,22 @@ public Action MessageTimer(Handle timer)
 
 				for(int client=1; client<=MaxClients; client++)
 				{
-					if(IsValidClient(client))
+					if(!IsValidClient(client))
+						continue;
+					
+					SetGlobalTransTarget(client);
+					GetBossSpecial(Special[boss], name, sizeof(name));
+					if(BossSwitched[boss])
 					{
-						GetBossSpecial(Special[boss], name, sizeof(name));
-						if(BossSwitched[boss])
-						{
-							Format(text2[client], sizeof(text2[]), "%s\n%t", text2[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-						}
-						else
-						{
-							Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-						}
-						FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-						ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
-						FPrintToChat(client, textChat);
+						Format(text2[client], sizeof(text2[]), "%s\n%t", text2[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					}
+					else
+					{
+						Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+					}
+					FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+					ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
+					FPrintToChat(client, textChat);
 				}
 			}
 		}
@@ -6484,15 +6487,19 @@ public Action MessageTimer(Handle timer)
 		SetHudTextParams(0.25, 0.3, 10.0, 100, 100, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client) && !HudSettings[client][2])
-				FF2_ShowSyncHudText(client, infoHUD, text[client]);
+			if(!IsValidClient(client) || HudSettings[client][2] || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (GetClientButtons(client) & IN_SCORE))
+				continue;
+
+			ShowSyncHudText(client, infoHUD, text[client]);
 		}
 
 		SetHudTextParams(0.6, 0.3, 10.0, 255, 100, 100, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(IsValidClient(client) && !HudSettings[client][2])
-				FF2_ShowSyncHudText(client, abilitiesHUD, text2[client]);
+			if(!IsValidClient(client) || HudSettings[client][2] || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (GetClientButtons(client) & IN_SCORE))
+				continue;
+
+			ShowSyncHudText(client, abilitiesHUD, text2[client]);
 		}
 		CreateTimer(10.0, Timer_ShowHealthText, _, TIMER_FLAG_NO_MAPCHANGE);
 		return Plugin_Continue;
@@ -6508,16 +6515,17 @@ public Action MessageTimer(Handle timer)
 
 			for(int client=1; client<=MaxClients; client++)
 			{
-				if(IsValidClient(client))
-				{
-					GetBossSpecial(Special[boss], name, sizeof(name), client);
-					Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-					FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
-					ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
-					FPrintToChat(client, textChat);
-					if(SpecialRound && cvarGameText.IntValue<2)
-						Format(text[client], sizeof(text[]), "%s\n(%s)", text[client], dIncoming[Boss[boss]]);
-				}
+				if(!IsValidClient(client))
+					continue;
+
+				SetGlobalTransTarget(client);
+				GetBossSpecial(Special[boss], name, sizeof(name), client);
+				Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+				FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+				ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
+				FPrintToChat(client, textChat);
+				if(SpecialRound && cvarGameText.IntValue<2)
+					Format(text[client], sizeof(text[]), "%s\n(%s)", text[client], dIncoming[Boss[boss]]);
 			}
 
 			if(SpecialRound)
@@ -6533,25 +6541,25 @@ public Action MessageTimer(Handle timer)
 	SetHudTextParams(-1.0, 0.2, 10.0, 255, 255, 255, 255);
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !HudSettings[client][2])
+		if(!IsValidClient(client) || HudSettings[client][2] || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (GetClientButtons(client) & IN_SCORE))
+			continue;
+
+		if(bosses<2 && cvarGameText.IntValue>1)
 		{
-			if(bosses<2 && cvarGameText.IntValue>1)
+			if(BossIcon[0])
 			{
-				if(BossIcon[0])
-				{
-					ShowGameText(client, BossIcon, SpecialRound ? BossTeam : 0, text[client]);
-				}
-				else
-				{
-					ShowGameText(client, "leaderboard_streak", SpecialRound ? BossTeam : 0, text[client]);
-				}
-				CreateTimer(1.5, Timer_ShowHealthText, _, TIMER_FLAG_NO_MAPCHANGE);
+				ShowGameText(client, BossIcon, SpecialRound ? BossTeam : 0, text[client]);
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, infoHUD, text[client]);
-				CreateTimer(10.0, Timer_ShowHealthText, _, TIMER_FLAG_NO_MAPCHANGE);
+				ShowGameText(client, "leaderboard_streak", SpecialRound ? BossTeam : 0, text[client]);
 			}
+			CreateTimer(1.5, Timer_ShowHealthText, _, TIMER_FLAG_NO_MAPCHANGE);
+		}
+		else
+		{
+			ShowSyncHudText(client, infoHUD, text[client]);
+			CreateTimer(10.0, Timer_ShowHealthText, _, TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
 	return Plugin_Continue;
@@ -7391,6 +7399,7 @@ public Action Timer_MakeBoss(Handle timer, any boss)
 	rageMin[client] = KvGetFloat(BossKV[Special[boss]], "ragemin", 100.0);
 	GoombaMode = KvGetNum(BossKV[Special[boss]], "goomba", GOOMBA_ALL);
 	CapMode = KvGetNum(BossKV[Special[boss]], "blockcap", CAP_ALL);
+	TimerMode = view_as<bool>(KvGetNum(BossKV[Special[boss]], "miniontimer"));
 
 	// Timer/point settings
 	if(KvGetNum(BossKV[Special[boss]], "pointtype", -1)>=0 && KvGetNum(BossKV[Special[boss]], "pointtype", -1)<=2)
@@ -9906,176 +9915,397 @@ public Action ClientTimer(Handle timer)
 	static char classname[32];
 	TFCond cond;
 	bool alive, validwep;
-	int weapon;
+	int weapon, buttons;
 	int StatHud = cvarStatHud.IntValue;
 	int HealHud = cvarHealingHud.IntValue;
 	float LookHud = cvarLookHud.FloatValue;
 	for(client=1; client<=MaxClients; client++)
 	{
-		if(IsValidClient(client) && !IsBoss(client) && !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
+		if(!IsValidClient(client) || IsBoss(client) || (FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
+			continue;
+
+		alive = IsPlayerAlive(client);
+		if(!Enabled3 && alive && TimerMode && GetClientTeam(client)==BossTeam)
+			continue;
+
+		SetGlobalTransTarget(client);
+		buttons = GetClientButtons(client);
+		if((alive || IsClientObserver(client)) && !HudSettings[client][0] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(buttons & IN_SCORE))
 		{
-			SetGlobalTransTarget(client);
-			alive = IsPlayerAlive(client);
-			if((alive || IsClientObserver(client)) && !HudSettings[client][0])
+			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
+			if(alive && LookHud!=0)
 			{
-				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
-				if(alive && LookHud!=0)
+				observer = GetClientAimTarget(client, true);
+				if(!IsValidClient(observer) || observer==client)
 				{
-					observer = GetClientAimTarget(client, true);
-					if(!IsValidClient(observer) || observer==client)
-					{
-						observer = 0;
-					}
-					else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)!=TF2_GetClientTeam(observer))
-					{
-						observer = 0;
-					}
-					else if(LookHud > 0)
-					{
-						float position[3], position2[3], distance;
-						GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
-						GetEntPropVector(observer, Prop_Send, "m_vecOrigin", position2);
-						distance = GetVectorDistance(position, position2);
-						if(distance > LookHud)
-							observer = 0;
-					}
+					observer = 0;
 				}
-				else if(IsClientObserver(client))
+				else if(TF2_IsPlayerInCondition(observer, TFCond_Disguised) || TF2_IsPlayerInCondition(observer, TFCond_Cloaked) || TF2_GetClientTeam(client)!=TF2_GetClientTeam(observer))
 				{
-					observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-					if(!IsValidClient(observer) || observer==client)
+					observer = 0;
+				}
+				else if(LookHud > 0)
+				{
+					float position[3], position2[3], distance;
+					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
+					GetEntPropVector(observer, Prop_Send, "m_vecOrigin", position2);
+					distance = GetVectorDistance(position, position2);
+					if(distance > LookHud)
 						observer = 0;
 				}
+			}
+			else if(IsClientObserver(client))
+			{
+				observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
+				if(!IsValidClient(observer) || observer==client)
+					observer = 0;
+			}
 
-				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+			if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+			{
+				if((CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>1) && (LookHud!=0 || !alive))
 				{
-					if((CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>1) && (LookHud!=0 || !alive))
+					if((Healing[client]>0 && HealHud==1) || HealHud>1)
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud>1)
-						{
-							FormatEx(top, sizeof(top), "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-						}
-						else
-						{
-							FormatEx(top, sizeof(top), "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-						}
+						FormatEx(top, sizeof(top), "%t", "Self Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 					}
 					else
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud>1)
-						{
-							FormatEx(top, sizeof(top), "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
-						}
-						else
-						{
-							FormatEx(top, sizeof(top), "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
-						}
+						FormatEx(top, sizeof(top), "%t", "Self Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 					}
 				}
 				else
 				{
-					if(observer && !IsBoss(observer))
+					if((Healing[client]>0 && HealHud==1) || HealHud>1)
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud>1)
-						{
-							FormatEx(top, sizeof(top), "%t %t | ", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
-						}
-						else
-						{
-							FormatEx(top, sizeof(top), "%t | ", "Your Damage Dealt", Damage[client]);
-						}
+						FormatEx(top, sizeof(top), "%t", "Stats Healing", Damage[client], Healing[client], PlayerKills[client], PlayerMVPs[client]);
 					}
 					else
 					{
-						if((Healing[client]>0 && HealHud==1) || HealHud>1)
-						{
-							FormatEx(top, sizeof(top), "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
-						}
-						else
-						{
-							FormatEx(top, sizeof(top), "%t", "Your Damage Dealt", Damage[client]);
-						}
+						FormatEx(top, sizeof(top), "%t", "Stats", Damage[client], PlayerKills[client], PlayerMVPs[client]);
 					}
 				}
-
-				if(observer)
+			}
+			else
+			{
+				if(observer && !IsBoss(observer))
 				{
-					if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>1))
+					if((Healing[client]>0 && HealHud==1) || HealHud>1)
 					{
-						if(IsBoss(observer))
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
-						}
-						else if((Healing[observer]>0 && HealHud==1) || HealHud>1)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
-						}
-					}
-					else if(!IsBoss(observer))
-					{
-						if((Healing[observer]>0 && HealHud==1) || HealHud>1)
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
-						}
-						else
-						{
-							FF2_ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer]);
-						}
+						FormatEx(top, sizeof(top), "%t %t | ", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
 					}
 					else
 					{
-						FF2_ShowSyncHudText(client, statHUD, top);
+						FormatEx(top, sizeof(top), "%t | ", "Your Damage Dealt", Damage[client]);
 					}
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, statHUD, top);
-				}
-			}
-
-			if((ShowHealthText || HudSettings[client][2]) && !Enabled3 && HudSettings[client][HUDTYPES-1]!=1)
-			{
-				index = HudSettings[client][HUDTYPES-1];
-				if(index < 1)
-					index = cvarDamageHud.IntValue;
-
-				if(index > 2)
-				{
-					strcopy(top, sizeof(top), bestHud[0]);
-					for(int i=1; i<index && i<10; i++)
+					if((Healing[client]>0 && HealHud==1) || HealHud>1)
 					{
-						Format(top, sizeof(top), "%s\n%s", top, bestHud[i]);
-					}
-
-					if(LastAliveClass[client] == TFClass_Engineer)
-					{
-						SetHudTextParams(0.0, 0.35, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+						FormatEx(top, sizeof(top), "%t %t", "Your Damage Dealt", Damage[client], "Healing", Healing[client]);
 					}
 					else
 					{
-						SetHudTextParams(0.0, 0.0, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+						FormatEx(top, sizeof(top), "%t", "Your Damage Dealt", Damage[client]);
 					}
-
-					FF2_ShowSyncHudText(client, infoHUD, top);
 				}
 			}
 
-			if(!alive)
-				continue;
+			if(observer)
+			{
+				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>1))
+				{
+					if(IsBoss(observer))
+					{
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+					}
+					else if((Healing[observer]>0 && HealHud==1) || HealHud>1)
+					{
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+					}
+					else
+					{
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+					}
+				}
+				else if(!IsBoss(observer))
+				{
+					if((Healing[observer]>0 && HealHud==1) || HealHud>1)
+					{
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+					}
+					else
+					{
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer]);
+					}
+				}
+				else
+				{
+					ShowSyncHudText(client, statHUD, top);
+				}
+			}
+			else
+			{
+				ShowSyncHudText(client, statHUD, top);
+			}
+		}
 
-			TFClassType class = TF2_GetPlayerClass(client);
-			weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-			if(weapon<=MaxClients || !IsValidEntity(weapon) || !GetEntityClassname(weapon, classname, sizeof(classname)))
-				classname[0] = 0;
+		if((ShowHealthText || HudSettings[client][2]) && !Enabled3 && HudSettings[client][HUDTYPES-1]!=1 && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(buttons & IN_SCORE))
+		{
+			index = HudSettings[client][HUDTYPES-1];
+			if(index < 1)
+				index = cvarDamageHud.IntValue;
 
-			validwep = !StrContains(classname, "tf_weapon", false);
+			if(index > 2)
+			{
+				strcopy(top, sizeof(top), bestHud[0]);
+				for(int i=1; i<index && i<10; i++)
+				{
+					Format(top, sizeof(top), "%s\n%s", top, bestHud[i]);
+				}
 
-			index = (validwep ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
-			if(class == TFClass_Medic)
+				if(LastAliveClass[client] == TFClass_Engineer)
+				{
+					SetHudTextParams(0.0, 0.35, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+				}
+				else
+				{
+					SetHudTextParams(0.0, 0.0, 0.35, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+				}
+
+				ShowSyncHudText(client, infoHUD, top);
+			}
+		}
+
+		if(!alive)
+			continue;
+
+		TFClassType class = TF2_GetPlayerClass(client);
+		weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		if(weapon<=MaxClients || !IsValidEntity(weapon) || !GetEntityClassname(weapon, classname, sizeof(classname)))
+			classname[0] = 0;
+
+		validwep = !StrContains(classname, "tf_weapon", false);
+
+		index = (validwep ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1);
+		if((FF2flags[client] & FF2FLAG_ISBUFFED) && !(GetEntProp(client, Prop_Send, "m_bRageDraining")))
+		{
+			FF2flags[client] &= ~FF2FLAG_ISBUFFED;
+		}
+		else if(HudSettings[client][1] || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (buttons & IN_SCORE))
+		{
+		}
+		else if(SapperEnabled && SapperCooldown[client]>0.0)
+		{
+			SapperAmount = RoundToFloor((SapperCooldown[client]-cvarSapperCooldown.FloatValue)*(Pow(cvarSapperCooldown.FloatValue, -1.0)*-100.0));
+			if(SapperAmount < 0)
+				SapperAmount = 0;
+
+			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
+			ShowSyncHudText(client, jumpHUD, "%t", "Sapper Cooldown", SapperAmount);
+		}
+		else if((class==TFClass_Sniper || class==TFClass_DemoMan) && (cvarShieldType.IntValue==3 || cvarShieldType.IntValue==4))
+		{
+			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
+			ShowSyncHudText(client, jumpHUD, "%t", "Shield HP", RoundToFloor(shieldHP[client]/cvarShieldHealth.FloatValue*100.0));
+		}
+		else if(cvarDeadRingerHud.BoolValue && GetClientCloakIndex(client)==59)
+		{
+			if(TF2_IsPlayerInCondition(client, TFCond_Cloaked))
+			{
+				SetHudTextParams(-1.0, 0.83, 0.35, 255, 64, 64, 255, 0, 0.0, 0.0, 0.0);
+				ShowSyncHudText(client, jumpHUD, "%t", "Dead Ringer Active");
+			}
+			else if(GetEntProp(client, Prop_Send, "m_bFeignDeathReady"))
+			{
+				SetHudTextParams(-1.0, 0.83, 0.35, 90, 255, 90, 255, 0, 0.0, 0.0, 0.0);
+				ShowSyncHudText(client, jumpHUD, "%t", "Dead Ringer Ready");
+			}
+			else
+			{
+				SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.0, 0.0, 0.0);
+				ShowSyncHudText(client, jumpHUD, "%t", "Dead Ringer Inactive");
+			}
+		}
+
+		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
+
+		if(lastPlayerGlow > 0)
+		{
+			if(lastPlayerGlow < 1)
+			{
+				if(float(aliveTeammates)/playing <= lastPlayerGlow)
+					SetClientGlow(client, 0.5, 3.0);
+			}
+			else if(aliveTeammates <= lastPlayerGlow)
+			{
+				SetClientGlow(client, 0.5, 3.0);
+			}
+		}
+
+		aliveTeammates = Enabled3 ? GetClientTeam(client)==OtherTeam ? MercAlivePlayers : BossAlivePlayers : MercAlivePlayers;
+
+		if(aliveTeammates==1 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
+		{
+			TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.3);
+			if(class==TFClass_Engineer && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))  // TODO: Is this necessary?
+				SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
+
+			TF2_AddCondition(client, TFCond_Buffed, 0.3);
+			continue;
+		}
+		else if(aliveTeammates==2 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
+		{
+			TF2_AddCondition(client, TFCond_Buffed, 0.3);
+		}
+
+		SetClientGlow(client, -0.2);
+
+		if(Enabled3 || bMedieval)
+			continue;
+
+		cond = TFCond_HalloweenCritCandy;
+		if(TF2_IsPlayerInCondition(client, TFCond_CritCola) && (class==TFClass_Scout || class==TFClass_Sniper))
+		{
+			TF2_AddCondition(client, cond, 0.3);
+			continue;
+		}
+
+		int healer = -1;
+		for(int healtarget=1; healtarget<=MaxClients; healtarget++)
+		{
+			if(IsValidClient(healtarget) && IsPlayerAlive(healtarget) && GetHealingTarget(healtarget, true)==client)
+			{
+				healer = healtarget;
+				break;
+			}
+		}
+
+		bool addthecrit;
+		if(TF2_IsPlayerInCondition(client, TFCond_Cloaked) || TF2_IsPlayerInCondition(client, TFCond_Stealthed))
+		{
+			addthecrit = false;
+		}
+		else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Melee))
+		{
+			switch(CritBoosted[client][2])
+			{
+				case -1:
+				{
+					if(index==416 && cvarMarket.FloatValue)  //Market Gardener
+					{
+						addthecrit = FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
+					}
+					else if(index==44 || index==656 || !StrContains(classname, "tf_weapon_knife", false))  //Sandman, Holiday Punch, Knives
+					{
+						addthecrit = false;
+					}
+					else if(index == 307)	//Ullapool Caber
+					{
+						addthecrit = GetEntProp(weapon, Prop_Send, "m_iDetonated") ? false : true;
+					}
+					else
+					{
+						addthecrit = true;
+					}
+				}
+				case 1:
+				{
+						addthecrit = true;
+						if(cond == TFCond_HalloweenCritCandy)
+							cond = TFCond_Buffed;
+				}
+				case 2:
+				{
+					addthecrit = true;
+				}
+			}
+		}
+		else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
+		{
+			switch(CritBoosted[client][1])
+			{
+				case -1:
+				{
+					if(!StrContains(classname, "tf_weapon_smg"))  //SMGs
+					{
+						if(index!=16 || !IsValidEntity(FindPlayerBack(client, 642)) || SniperClimbDelay<=0)	//Nerf Cozy Camper SMGs if Wall Climb is on
+						{
+							addthecrit = true;
+							if(cond == TFCond_HalloweenCritCandy)
+								cond = TFCond_Buffed;
+						}
+					}
+					else if(!StrContains(classname, "tf_weapon_cleaver") ||
+						!StrContains(classname, "tf_weapon_mechanical_arm") ||
+						!StrContains(classname, "tf_weapon_raygun"))  //Cleaver, Short Circuit, Righteous Bison
+					{
+						addthecrit = true;
+					}
+					else if(class==TFClass_Scout &&
+					       (!StrContains(classname, "tf_weapon_pistol") ||
+						!StrContains(classname, "tf_weapon_handgun_scout_secondary")))	//Scout Pistols
+					{
+						addthecrit = true;
+						if(cond == TFCond_HalloweenCritCandy)
+							cond = TFCond_Buffed;
+					}
+				}
+				case 1:
+				{
+					addthecrit = true;
+					if(cond == TFCond_HalloweenCritCandy)
+						cond = TFCond_Buffed;
+				}
+				case 2:
+				{
+					addthecrit = true;
+				}
+			}
+		}
+		else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
+		{
+			switch(CritBoosted[client][0])
+			{
+				case -1:
+				{
+					if(!StrContains(classname, "tf_weapon_compound_bow"))  //Huntsmans
+					{
+						if(BowDamageNon <= 0)	//If non-crit boosted damage cvar is off
+						{
+							addthecrit = true;
+							if(cond==TFCond_HalloweenCritCandy && BowDamageMini>0)	//If mini-crit boosted damage cvar is on
+								cond = TFCond_Buffed;
+						}
+					}
+					else if(!StrContains(classname, "tf_weapon_revolver"))  //Revolver
+					{
+						addthecrit = true;
+						if(cond == TFCond_HalloweenCritCandy)
+							cond = TFCond_Buffed;
+					}
+					else if(!StrContains(classname, "tf_weapon_crossbow") || !StrContains(classname, "tf_weapon_drg_pomson"))  //Crusader's Crossbow, Pomson 6000
+					{
+						addthecrit = true;
+					}
+				}
+				case 1:
+				{
+					addthecrit = true;
+					if(cond == TFCond_HalloweenCritCandy)
+						cond = TFCond_Buffed;
+				}
+				case 2:
+				{
+					addthecrit = true;
+				}
+			}
+		}
+
+		switch(class)
+		{
+			case TFClass_Medic:
 			{
 				int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 				if(IsValidEntity(medigun))
@@ -10084,12 +10314,12 @@ public Action ClientTimer(Handle timer)
 					char mediclassname[64];
 					if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
 					{
-						if(GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
-							if(!HudSettings[client][1])
+							if(!HudSettings[client][1] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(buttons & IN_SCORE))
 							{
 								SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-								FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
+								ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
 							}
 
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
@@ -10099,9 +10329,9 @@ public Action ClientTimer(Handle timer)
 							}
 						}
 					}
-					else if(weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
+					else if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
 					{
-						if(GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
+						if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
 						{
 							if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
 								FF2flags[client] |= FF2FLAG_UBERREADY;
@@ -10109,313 +10339,52 @@ public Action ClientTimer(Handle timer)
 					}
 				}
 			}
-			else if(!HudSettings[client][1] && (class==TFClass_Sniper || class==TFClass_DemoMan) && (cvarShieldType.IntValue==3 || cvarShieldType.IntValue==4))
+			case TFClass_DemoMan:
 			{
-				if(shield[client] && shieldHP[client]>0 && cvarShieldType.IntValue>2)
+				if(CritBoosted[client][0]==-1 &&
+				   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
+				  !IsValidEntity(GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)) &&
+				   shieldCrits)  //Demoshields
 				{
-					SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
-					FF2_ShowSyncHudText(client, jumpHUD, "%t", "Shield HP", RoundToFloor(shieldHP[client]/cvarShieldHealth.FloatValue*100.0));
+					addthecrit = true;
+					if(shieldCrits == 1)
+						cond = TFCond_CritCola;
 				}
 			}
-			else if(!HudSettings[client][1] && SapperEnabled && SapperCooldown[client]>0.0 && class==TFClass_Spy)
+			case TFClass_Spy:
 			{
-				SapperAmount = RoundToFloor((SapperCooldown[client]-cvarSapperCooldown.FloatValue)*(Pow(cvarSapperCooldown.FloatValue, -1.0)*-100.0));
-				if(SapperAmount < 0)
-					SapperAmount = 0;
-
-				SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
-				FF2_ShowSyncHudText(client, jumpHUD, "%t", "Sapper Cooldown", SapperAmount);
+				if(validwep &&
+				   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
+				  !TF2_IsPlayerInCondition(client, TFCond_Cloaked) &&
+				   TF2_IsPlayerInCondition(client, TFCond_Disguised) &&
+				  !TF2_IsPlayerInCondition(client, TFCond_Stealthed) &&
+				   index==460)
+					TF2_AddCondition(client, TFCond_CritOnDamage, 0.3);
 			}
-			// Chdata's Deadringer Notifier
-			else if(!HudSettings[client][1] && cvarDeadRingerHud.BoolValue && class==TFClass_Spy)
+			case TFClass_Engineer:
 			{
-				if(GetClientCloakIndex(client)==59 && !(GetClientButtons(client) & IN_SCORE))
+				if(validwep &&
+				   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
+				   StrEqual(classname, "tf_weapon_sentry_revenge", false))
 				{
-					int drstatus = TF2_IsPlayerInCondition(client, TFCond_Cloaked) ? 2 : GetEntProp(client, Prop_Send, "m_bFeignDeathReady") ? 1 : 0;
-
-					switch(drstatus)
+					int sentry = FindSentry(client);
+					if(IsValidEntity(sentry) && IsBoss(GetEntPropEnt(sentry, Prop_Send, "m_hEnemy")))
 					{
-						case 1:
-						{
-							SetHudTextParams(-1.0, 0.83, 0.35, 90, 255, 90, 255, 0, 0.0, 0.0, 0.0);
-							ShowSyncHudText(client, jumpHUD, "%t", "Dead Ringer Ready");
-						}
-						case 2:
-						{
-							SetHudTextParams(-1.0, 0.83, 0.35, 255, 64, 64, 255, 0, 0.0, 0.0, 0.0);
-							ShowSyncHudText(client, jumpHUD, "%t", "Dead Ringer Active");
-						}
-						default:
-						{
-							SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.0, 0.0, 0.0);
-							ShowSyncHudText(client, jumpHUD, "%t", "Dead Ringer Inactive");
-						}
+						SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
+					}
+					else if(GetEntProp(client, Prop_Send, "m_iRevengeCrits"))
+					{
+						SetEntProp(client, Prop_Send, "m_iRevengeCrits", 0);
 					}
 				}
 			}
-			else if(class == TFClass_Soldier)
-			{
-				if((FF2flags[client] & FF2FLAG_ISBUFFED) && !(GetEntProp(client, Prop_Send, "m_bRageDraining")))
-					FF2flags[client] &= ~FF2FLAG_ISBUFFED;
-			}
+		}
 
-			int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
-
-			if(lastPlayerGlow > 0)
-			{
-				if(lastPlayerGlow < 1)
-				{
-					if(float(aliveTeammates)/playing <= lastPlayerGlow)
-						SetClientGlow(client, 0.5, 3.0);
-				}
-				else if(aliveTeammates <= lastPlayerGlow)
-				{
-					SetClientGlow(client, 0.5, 3.0);
-				}
-			}
-
-			aliveTeammates = Enabled3 ? GetClientTeam(client)==OtherTeam ? MercAlivePlayers : BossAlivePlayers : MercAlivePlayers;
-
-			if(aliveTeammates==1 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
-			{
-				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.3);
-				if(class==TFClass_Engineer && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) && StrEqual(classname, "tf_weapon_sentry_revenge", false))  // TODO: Is this necessary?
-					SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
-
+		if(addthecrit)
+		{
+			TF2_AddCondition(client, cond, 0.3);
+			if(healer!=-1 && cond!=TFCond_Buffed && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
 				TF2_AddCondition(client, TFCond_Buffed, 0.3);
-				continue;
-			}
-			else if(aliveTeammates==2 && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
-			{
-				TF2_AddCondition(client, TFCond_Buffed, 0.3);
-			}
-
-			SetClientGlow(client, -0.2);
-
-			if(Enabled3 || bMedieval)
-				continue;
-
-			cond = TFCond_HalloweenCritCandy;
-			if(TF2_IsPlayerInCondition(client, TFCond_CritCola) && (class==TFClass_Scout || class==TFClass_Sniper))
-			{
-				TF2_AddCondition(client, cond, 0.3);
-				continue;
-			}
-
-			int healer = -1;
-			for(int healtarget=1; healtarget<=MaxClients; healtarget++)
-			{
-				if(IsValidClient(healtarget) && IsPlayerAlive(healtarget) && GetHealingTarget(healtarget, true)==client)
-				{
-					healer = healtarget;
-					break;
-				}
-			}
-
-			bool addthecrit;
-			if(TF2_IsPlayerInCondition(client, TFCond_Cloaked) || TF2_IsPlayerInCondition(client, TFCond_Stealthed))
-			{
-				addthecrit = false;
-			}
-			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Melee))
-			{
-				switch(CritBoosted[client][2])
-				{
-					case -1:
-					{
-						if(index==416 && cvarMarket.FloatValue)  //Market Gardener
-						{
-							addthecrit = FF2flags[client] & FF2FLAG_ROCKET_JUMPING ? true : false;
-						}
-						else if(index==44 || index==656 || !StrContains(classname, "tf_weapon_knife", false))  //Sandman, Holiday Punch, Knives
-						{
-							addthecrit = false;
-						}
-						else if(index == 307)	//Ullapool Caber
-						{
-							addthecrit = GetEntProp(weapon, Prop_Send, "m_iDetonated") ? false : true;
-						}
-						else
-						{
-							addthecrit = true;
-						}
-					}
-					case 1:
-					{
-						addthecrit = true;
-						if(cond == TFCond_HalloweenCritCandy)
-							cond = TFCond_Buffed;
-					}
-					case 2:
-					{
-						addthecrit = true;
-					}
-				}
-			}
-			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
-			{
-				switch(CritBoosted[client][1])
-				{
-					case -1:
-					{
-						if(!StrContains(classname, "tf_weapon_smg"))  //SMGs
-						{
-							if(index!=16 || !IsValidEntity(FindPlayerBack(client, 642)) || SniperClimbDelay<=0)	//Nerf Cozy Camper SMGs if Wall Climb is on
-							{
-								addthecrit = true;
-								if(cond == TFCond_HalloweenCritCandy)
-									cond = TFCond_Buffed;
-							}
-						}
-						else if(!StrContains(classname, "tf_weapon_cleaver") ||
-							!StrContains(classname, "tf_weapon_mechanical_arm") ||
-							!StrContains(classname, "tf_weapon_raygun"))  //Cleaver, Short Circuit, Righteous Bison
-						{
-							addthecrit = true;
-						}
-						else if(class==TFClass_Scout &&
-						       (!StrContains(classname, "tf_weapon_pistol") ||
-							!StrContains(classname, "tf_weapon_handgun_scout_secondary")))	//Scout Pistols
-						{
-							addthecrit = true;
-							if(cond == TFCond_HalloweenCritCandy)
-								cond = TFCond_Buffed;
-						}
-					}
-					case 1:
-					{
-						addthecrit = true;
-						if(cond == TFCond_HalloweenCritCandy)
-							cond = TFCond_Buffed;
-					}
-					case 2:
-					{
-						addthecrit = true;
-					}
-				}
-			}
-			else if(validwep && weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
-			{
-				switch(CritBoosted[client][0])
-				{
-					case -1:
-					{
-						if(!StrContains(classname, "tf_weapon_compound_bow"))  //Huntsmans
-						{
-							if(BowDamageNon <= 0)	//If non-crit boosted damage cvar is off
-							{
-								addthecrit = true;
-								if(cond==TFCond_HalloweenCritCandy && BowDamageMini>0)	//If mini-crit boosted damage cvar is on
-									cond = TFCond_Buffed;
-							}
-						}
-						else if(!StrContains(classname, "tf_weapon_revolver"))  //Revolver
-						{
-							addthecrit = true;
-							if(cond == TFCond_HalloweenCritCandy)
-								cond = TFCond_Buffed;
-						}
-						else if(!StrContains(classname, "tf_weapon_crossbow") || !StrContains(classname, "tf_weapon_drg_pomson"))  //Crusader's Crossbow, Pomson 6000
-						{
-							addthecrit = true;
-						}
-					}
-					case 1:
-					{
-						addthecrit = true;
-						if(cond == TFCond_HalloweenCritCandy)
-							cond = TFCond_Buffed;
-					}
-					case 2:
-					{
-						addthecrit = true;
-					}
-				}
-			}
-
-			switch(class)
-			{
-				case TFClass_Medic:
-				{
-					int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-					if(IsValidEntity(medigun))
-					{
-						int charge = RoundToFloor(GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")*100);
-						char mediclassname[64];
-						if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Primary))
-						{
-							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
-							{
-								if(!HudSettings[client][1])
-								{
-									SetHudTextParams(-1.0, 0.83, 0.35, 255, 255, 255, 255, 0, 0.2, 0.0, 0.1);
-									FF2_ShowSyncHudText(client, jumpHUD, "%t", "uber-charge", charge);
-								}
-
-								if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
-								{
-									FakeClientCommandEx(client, "voicemenu 1 7");
-									FF2flags[client] |= FF2FLAG_UBERREADY;
-								}
-							}
-						}
-						else if(weapon == GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary))
-						{
-							if(IsValidEntity(medigun) && GetEntityClassname(medigun, mediclassname, sizeof(mediclassname)) && !StrContains(mediclassname, "tf_weapon_medigun", false))
-							{
-								if(charge==100 && !(FF2flags[client] & FF2FLAG_UBERREADY))
-									FF2flags[client] |= FF2FLAG_UBERREADY;
-							}
-						}
-					}
-				}
-				case TFClass_DemoMan:
-				{
-					if(CritBoosted[client][0]==-1 &&
-					   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
-					  !IsValidEntity(GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)) &&
-					   shieldCrits)  //Demoshields
-					{
-						addthecrit = true;
-						if(shieldCrits == 1)
-							cond = TFCond_CritCola;
-					}
-				}
-				case TFClass_Spy:
-				{
-					if(validwep &&
-					   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
-					  !TF2_IsPlayerInCondition(client, TFCond_Cloaked) &&
-					   TF2_IsPlayerInCondition(client, TFCond_Disguised) &&
-					  !TF2_IsPlayerInCondition(client, TFCond_Stealthed) &&
-					   index==460)
-						TF2_AddCondition(client, TFCond_CritOnDamage, 0.3);
-				}
-				case TFClass_Engineer:
-				{
-					if(validwep &&
-					   weapon==GetPlayerWeaponSlot(client, TFWeaponSlot_Primary) &&
-					   StrEqual(classname, "tf_weapon_sentry_revenge", false))
-					{
-						int sentry = FindSentry(client);
-						if(IsValidEntity(sentry) && IsBoss(GetEntPropEnt(sentry, Prop_Send, "m_hEnemy")))
-						{
-							SetEntProp(client, Prop_Send, "m_iRevengeCrits", 3);
-						}
-						else if(GetEntProp(client, Prop_Send, "m_iRevengeCrits"))
-						{
-							SetEntProp(client, Prop_Send, "m_iRevengeCrits", 0);
-						}
-					}
-				}
-			}
-
-			if(addthecrit)
-			{
-				TF2_AddCondition(client, cond, 0.3);
-				if(healer!=-1 && cond!=TFCond_Buffed && !TF2_IsPlayerInCondition(client, TFCond_Cloaked) && !TF2_IsPlayerInCondition(client, TFCond_Stealthed))
-					TF2_AddCondition(client, TFCond_Buffed, 0.3);
-			}
 		}
 	}
 	return Plugin_Continue;
@@ -10482,15 +10451,17 @@ public Action BossTimer(Handle timer)
 	if(!Enabled || CheckRoundState()==2)
 		return Plugin_Stop;
 
+	int client, observer, buttons;
 	bool validBoss;
 	int StatHud = cvarStatHud.IntValue;
 	int HealHud = cvarHealingHud.IntValue;
 	for(int boss; boss<=MaxClients; boss++)
 	{
-		int client = Boss[boss];
+		client = Boss[boss];
 		if(!IsValidClient(client) || !(FF2flags[client] & FF2FLAG_USEBOSSTIMER))
 			continue;
 
+		buttons = GetClientButtons(client);
 		if(GetClientTeam(client) != (BossSwitched[boss] ? OtherTeam : BossTeam))
 		{
 			TF2_ChangeClientTeam(client, BossSwitched[boss] ? view_as<TFTeam>(OtherTeam) : view_as<TFTeam>(BossTeam));
@@ -10498,10 +10469,9 @@ public Action BossTimer(Handle timer)
 
 		if(!IsPlayerAlive(client))
 		{
-			if(!IsClientObserver(client) || HudSettings[client][0])
+			if(!IsClientObserver(client) || HudSettings[client][0] || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (buttons & IN_SCORE))
 				continue;
 
-			int observer;
 			observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 			if(!IsValidClient(observer) || observer==client)
 				observer = 0;
@@ -10513,11 +10483,11 @@ public Action BossTimer(Handle timer)
 				{
 					if((Healing[observer]>0 && HealHud==1) || HealHud>1)
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t %t", "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						ShowSyncHudText(client, statHUD, "%t %t", "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
 					}
 					else
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t", "Spectator Damage Dealt", observer, Damage[observer]);
+						ShowSyncHudText(client, statHUD, "%t", "Spectator Damage Dealt", observer, Damage[observer]);
 					}
 				}
 			}
@@ -10525,11 +10495,11 @@ public Action BossTimer(Handle timer)
 			{
 				if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 				{
-					FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+					ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 				}
 				else
 				{
-					FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
+					ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
 				}
 			}
 			else if(observer)
@@ -10538,36 +10508,36 @@ public Action BossTimer(Handle timer)
 				{
 					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t\n%t %t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						ShowSyncHudText(client, statHUD, "%t\n%t %t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
 					}
 					else
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
 					}
 				}
 				else
 				{
 					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t\n%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						ShowSyncHudText(client, statHUD, "%t\n%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
 					}
 					else
 					{
-						FF2_ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
 					}
 				}
 			}
 			else if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 			{
-				FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+				ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 			}
 			continue;
 		}
 
-		if(!HudSettings[client][0] && StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
+		if(!HudSettings[client][0] && StatHud>-1 && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(buttons & IN_SCORE) && (StatHud>0 || CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true)))
 		{
 			SetHudTextParams(-1.0, 0.99, 0.35, 90, 255, 90, 255);
-			FF2_ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
+			ShowSyncHudText(client, statHUD, "%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client]);
 		}
 
 		validBoss = true;
@@ -10585,16 +10555,14 @@ public Action BossTimer(Handle timer)
 		if(BossHealth[boss]<1 && IsPlayerAlive(client))  // In case the boss hits a hazard and goes into neagtive numbers
 			BossHealth[boss] = 1;
 
-		if(BossLivesMax[boss] > 1)
+		if(BossLivesMax[boss]>1 && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(buttons & IN_SCORE))
 		{
 			SetHudTextParams(-1.0, 0.77, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, livesHUD, "%t", "Boss Lives Left", BossLives[boss], BossLivesMax[boss]);
+			ShowSyncHudText(client, livesHUD, "%t", "Boss Lives Left", BossLives[boss], BossLivesMax[boss]);
 		}
 
 		if(BossRageDamage[boss] < 2)	// When RAGE is infinite
-		{
 			BossCharge[boss][0] = 100.0;
-		}
 
 		if(BossRageDamage[boss] > 99998)	// When RAGE is disabled
 		{
@@ -10609,8 +10577,11 @@ public Action BossTimer(Handle timer)
 			}
 			else
 			{
-				SetHudTextParams(-1.0, 0.83, 0.15, 255, 64, 64, 255);
-				FF2_ShowSyncHudText(client, rageHUD, "%t", "do_rage");
+				if(!(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(buttons & IN_SCORE))
+				{
+					SetHudTextParams(-1.0, 0.83, 0.15, 255, 64, 64, 255);
+					ShowSyncHudText(client, rageHUD, "%t", "do_rage");
+				}
 
 				char sound[PLATFORM_MAX_PATH];
 				if(RandomSound("sound_full_rage", sound, sizeof(sound), boss) && emitRageSound[boss])
@@ -10633,10 +10604,10 @@ public Action BossTimer(Handle timer)
 				}
 			}
 		}
-		else	// RAGE is not infinite, disabled, full
+		else if(!(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(buttons & IN_SCORE))	// RAGE is not infinite, disabled, full
 		{
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255);
-			FF2_ShowSyncHudText(client, rageHUD, "%t", "rage_meter", RoundFloat(BossCharge[boss][0]));
+			ShowSyncHudText(client, rageHUD, "%t", "rage_meter", RoundFloat(BossCharge[boss][0]));
 		}
 
 		SetClientGlow(client, -0.2);
@@ -11910,13 +11881,16 @@ public Action Timer_DrawGame(Handle timer)
 					ShowGameText(client, "leaderboard_streak", _, timeDisplay);
 				}
 			}
+			else if((FF2flags[target] & FF2FLAG_HUDDISABLED) || (GetClientButtons(client) & IN_SCORE))
+			{
+			}
 			else if(isCapping && timeleft<1)
 			{
-				FF2_ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
+				ShowSyncHudText(client, timeleftHUD, "%t", "Overtime");
 			}
 			else
 			{
-				FF2_ShowSyncHudText(client, timeleftHUD, timeDisplay);
+				ShowSyncHudText(client, timeleftHUD, timeDisplay);
 			}
 		}
 	}
@@ -12456,7 +12430,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				Call_PushCell(boss);
 				Call_PushCell(client);
 				Call_PushCell(attacker);
-				Call_PushFloatEx(damage2);
+				Call_PushFloatRef(damage2);
 				Call_Finish(action);
 				switch(action)
 				{
@@ -12466,7 +12440,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case Plugin_Stop:
 					{
-						damage = 0;
+						damage = 0.0;
 						return Plugin_Handled;
 					}
 				}
@@ -12622,7 +12596,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				if(action == Plugin_Handled)
 				{
-					damage = 0;
+					damage = 0.0;
 					return Plugin_Handled;
 				}
 				return Plugin_Changed;
@@ -13328,7 +13302,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					Call_PushCell(boss);
 					Call_PushCell(client);
 					Call_PushCell(attacker);
-					Call_PushFloatEx(damage2);
+					Call_PushFloatRef(damage2);
 					Call_Finish(action);
 					switch(action)
 					{
@@ -13338,7 +13312,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						case Plugin_Stop:
 						{
-							damage = 0;
+							damage = 0.0;
 							return Plugin_Handled;
 						}
 					}
@@ -13482,7 +13456,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 					if(action == Plugin_Handled)
 					{
-						damage = 0;
+						damage = 0.0;
 						return Plugin_Handled;
 					}
 					return Plugin_Changed;
@@ -17603,7 +17577,7 @@ public int Native_MakeBoss(Handle plugin, int numParams)
 	int boss = GetNativeCell(2);
 	if(boss == -1)
 	{
-		boss = FF2_GetBossIndex(client);
+		boss = GetBossIndex(client);
 		if(boss < 0)
 			return;
 
