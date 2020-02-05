@@ -624,7 +624,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	OnLoadCharacterSet = CreateGlobalForward("FF2_OnLoadCharacterSet", ET_Hook, Param_CellByRef, Param_String);
 	OnLoseLife = CreateGlobalForward("FF2_OnLoseLife", ET_Hook, Param_Cell, Param_CellByRef, Param_Cell);  //Boss, lives left, max lives
 	OnAlivePlayersChanged = CreateGlobalForward("FF2_OnAlivePlayersChanged", ET_Hook, Param_Cell, Param_Cell);  //Players, bosses
-	OnBackstabbed = CreateGlobalForward("FF2_OnBackstabbed", ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_FloatByRef);  //Boss, client, attacker, damage
+	OnBackstabbed = CreateGlobalForward("FF2_OnBackStabbed", ET_Hook, Param_Cell, Param_Cell, Param_Cell);  //Boss, client, attacker
 
 	RegPluginLibrary("freak_fortress_2");
 
@@ -12416,25 +12416,16 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 				damagecustom = 0;
 
-				float damage2 = damage*3.0;
 				Action action = Plugin_Continue;
 				Call_StartForward(OnBackstabbed);
 				Call_PushCell(boss);
 				Call_PushCell(client);
 				Call_PushCell(attacker);
-				Call_PushFloatRef(damage2);
 				Call_Finish(action);
-				switch(action)
+				if(action == Plugin_Stop)
 				{
-					case Plugin_Changed:
-					{
-						damage = damage2/3.0;
-					}
-					case Plugin_Stop:
-					{
-						damage = 0.0;
-						return Plugin_Handled;
-					}
+					damage = 0.0;
+					return Plugin_Handled;
 				}
 
 				EmitSoundToClient(client, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
@@ -13287,25 +13278,16 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 					damagecustom = 0;
 
-					float damage2 = damage*3.0;
 					Action action = Plugin_Continue;
 					Call_StartForward(OnBackstabbed);
 					Call_PushCell(boss);
 					Call_PushCell(client);
 					Call_PushCell(attacker);
-					Call_PushFloatRef(damage2);
 					Call_Finish(action);
-					switch(action)
+					if(action == Plugin_Stop)
 					{
-						case Plugin_Changed:
-						{
-							damage = damage2/3.0;
-						}
-						case Plugin_Stop:
-						{
-							damage = 0.0;
-							return Plugin_Handled;
-						}
+						damage = 0.0;
+						return Plugin_Handled;
 					}
 
 					EmitSoundToClient(client, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);

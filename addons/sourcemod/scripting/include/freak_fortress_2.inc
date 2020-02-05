@@ -784,7 +784,7 @@ forward void FF2_OnAlivePlayersChanged(int players, int bosses);
  *
  * @return		Plugin_Changed to adjust the damage dealt, Plugin_Handled to prevent damage being dealt but continue sounds, stuns, etc, Plugin_Stop to prevent the backstab all together
  */
-forward Action FF2_OnBackstabbed(int boss, int client, int attacker, float &damage);
+forward Action FF2_OnBackStabbed(int boss, int client, int attacker);
 
 /**
  * Called when the boss has a difficulty/special set for this plugin
