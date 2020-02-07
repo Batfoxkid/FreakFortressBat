@@ -16642,7 +16642,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		return Plugin_Continue;
 	}
 
-	char[] charset = new char[total][64];
+	char[][] charset = new char[total][42];
 	bool[] validCharsets = new bool[total];
 	int charsets;
 	int shuffle = cvarShuffleCharset.IntValue;
