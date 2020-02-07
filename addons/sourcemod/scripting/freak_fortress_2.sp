@@ -78,9 +78,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 3, 2020"
+#define FORK_DATE_REVISION "February 7, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."009"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -423,10 +423,8 @@ ConVar cvarTags;
 ConVar cvarNextmap;
 bool areSubPluginsEnabled;
 
-int FF2CharSet;
 int CurrentCharSet;
-int validCharsets[64];
-char CharSetString[7][42];
+char CharSetString[MAXCHARSETS][42];
 char FF2CharSetString[42];
 bool isCharSetSelected = false;
 bool HasCharSets;
@@ -2084,7 +2082,7 @@ public void FindCharacters()
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, filepath);
-	FF2CharSet = cvarCharset.IntValue;
+	int FF2CharSet = cvarCharset.IntValue;
 	int NumOfCharSet = FF2CharSet;
 	Action action = Plugin_Continue;
 	Call_StartForward(OnLoadCharacterSet);
@@ -3277,7 +3275,6 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 	}
 	else if(RoundCount<arenaRounds)  //We're still in arena mode
 	{
-		FF2Dbg("Current Boss Pack Index: %i", FF2CharSet);
 		FPrintToChatAll("%t", "arena_round", arenaRounds-RoundCount);
 		Enabled = false;
 		DisableSubPlugins();
@@ -6261,7 +6258,7 @@ void SaveKeepBossCookie(int client)
 		return;
 
 	static char cookies[454];
-	if(cvarSelectBoss.BoolValue)
+	if(CurrentCharSet<MAXCHARSETS && cvarSelectBoss.BoolValue)
 	{
 		char cookieValues[MAXCHARSETS][64];
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
@@ -16622,64 +16619,90 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		return Plugin_Continue;
 	}
 
-	Handle menu = CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
-	SetMenuTitle(menu, "%t", "select_charset");
+	Menu menu = new Menu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
+	menu.SetTitle("%t", "select_charset");
 
-	char config[PLATFORM_MAX_PATH], charset[16][64], index[8];
+	char config[PLATFORM_MAX_PATH], index[8];
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
-	int total, charsets;
-	int shuffle = cvarShuffleCharset.IntValue;
-	if(!shuffle)
-		AddMenuItem(menu, "0", "Random");
+	int total;
 
 	do
 	{
-		total++;
-		if(KvGetNum(Kv, "hidden"))  //Hidden charsets are hidden for a reason :P
-			continue;
-
-		charsets++;
-		validCharsets[charsets] = total;
-
-		KvGetSectionName(Kv, charset[total-1], sizeof(charset[]));
-		if(!shuffle)
-		{
-			IntToString(total, index, sizeof(index));
-			AddMenuItem(menu, index, charset[total-1]);
-		}
+		if(!KvGetNum(Kv, "hidden"))
+			total++;
 	}
 	while(KvGotoNextKey(Kv));
 
-	if(shuffle && charsets>1)
+	if(total < 2)
 	{
-		KvRewind(Kv);
-
-		int packs, current;
-		bool choosen[MAXCHARSETS];
-		for(int tries; tries<99 && packs<=shuffle; tries++)
-		{
-			current = validCharsets[GetRandomInt(1, charsets)]-1;
-			if(current<0 || current>=MAXCHARSETS || choosen[current] || (charsets>shuffle && current==CurrentCharSet))
-				continue;
-
-			packs++;
-			choosen[current] = true;
-			IntToString(current+1, index, sizeof(index));
-			AddMenuItem(menu, index, charset[current]);
-		}
+		delete kv;
+		return Plugin_Continue;
 	}
+
+	char[] charset = new char[total][64];
+	bool[] validCharsets = new bool[total];
+	int charsets;
+	int shuffle = cvarShuffleCharset.IntValue;
+	total = 0;
+	KvRewind(Kv);
+	do
+	{
+		if(KvGetNum(Kv, "hidden"))	//Hidden charsets are hidden for a reason :P
+		{
+			total++;
+			continue;
+		}
+
+		validCharsets[charsets] = total;
+		KvGetSectionName(Kv, charset[charsets], sizeof(charset[]));
+		charsets++;
+		total++;
+	}
+	while(KvGotoNextKey(Kv));
+
 	delete Kv;
 
-	if(charsets > 1)  //We have enough to call a vote
+	int current;
+	if(shuffle)
 	{
-		FF2CharSet = charsets;  //Temporary so that if the vote result is random we know how many valid charsets are in the validCharset array
-		ConVar voteDuration = FindConVar("sm_mapvote_voteduration");
-		VoteMenuToAll(menu, voteDuration ? voteDuration.IntValue : 20);
+		int choosen;
+		int packs = charsets-1;
+		for(int i; i<shuffle && packs>=0; i++)	// We keep doing this until we reached shuffle limit or were're out of packs
+		{
+			choosen = GetRandomInt(0, packs);	// Get a random pack
+			current = validCharsets[choosen];	// Get the pack's index
+			if(current!=CurrentCharSet || charsets<=shuffle)	// If shuffle is more then the max charsets, exclude the current pack
+			{
+				IntToString(current, index, sizeof(index));
+				menu.AddItem(index, charset[current]);	// Add menu option
+			}
+
+			for(current=choosen; current<packs; current++)
+			{
+				validCharsets[current] = validCharsets[current+1];	// Remove choosen pack and move other packs down
+			}
+			packs--;
+		}
+		menu.NoVoteButton = true;
+	}
+	else
+	{
+		IntToString(validCharsets[GetRandomInt(0, charsets-1)], index, sizeof(index));
+		menu.AddItem(index, "Random");
+
+		for(int i; i<charsets; i++)
+		{
+			IntToString(validCharsets[i], index, sizeof(index));
+			menu.AddItem(index, charset[i]);
+		}
 	}
 
+	menu.ExitButton = false;
+	ConVar voteDuration = FindConVar("sm_mapvote_voteduration");
+	menu.DisplayVoteToAll(voteDuration ? voteDuration.IntValue : 20);
 	return Plugin_Continue;
 }
 
@@ -16695,10 +16718,10 @@ public int Handler_VoteCharset(Handle menu, MenuAction action, int param1, int p
 		{
 			char index[8], nextmap[32];
 			GetMenuItem(menu, param1, index, sizeof(index), _, FF2CharSetString, sizeof(FF2CharSetString));
-			cvarCharset.IntValue = StringToInt(index) ? StringToInt(index)-1 : validCharsets[GetRandomInt(1, FF2CharSet)]-1;  //If param1 is 0 then we need to find a random charset
+			cvarCharset.IntValue = StringToInt(index);
 
 			cvarNextmap.GetString(nextmap, sizeof(nextmap));
-			FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);  //"The character set for {1} will be {2}."
+			FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);	//"The character set for {1} will be {2}."
 			isCharSetSelected = true;
 		}
 	}
