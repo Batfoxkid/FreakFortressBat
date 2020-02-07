@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 7, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."010"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."011"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -16643,7 +16643,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	}
 
 	char[][] charset = new char[total][42];
-	bool[] validCharsets = new bool[total];
+	int[] validCharsets = new int[total];
 	int charsets;
 	int shuffle = cvarShuffleCharset.IntValue;
 	total = 0;
@@ -16657,7 +16657,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 		}
 
 		validCharsets[charsets] = total;
-		KvGetSectionName(Kv, charset[charsets], sizeof(charset[]));
+		KvGetSectionName(Kv, charset[charsets], 42);
 		charsets++;
 		total++;
 	}
