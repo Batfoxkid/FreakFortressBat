@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 7, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."009"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."010"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -9306,7 +9306,7 @@ public Action Command_Charset(int client, int args)
 			return Plugin_Handled;
 		}
 
-		Handle menu = CreateMenu(Handler_VoteCharset, view_as<MenuAction>(MENU_ACTIONS_ALL));
+		Handle menu = CreateMenu(Command_CharsetH);
 		SetMenuTitle(menu, "Charset");
 
 		static char config[PLATFORM_MAX_PATH], charset[64];
@@ -16638,7 +16638,7 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 
 	if(total < 2)
 	{
-		delete kv;
+		delete Kv;
 		return Plugin_Continue;
 	}
 
