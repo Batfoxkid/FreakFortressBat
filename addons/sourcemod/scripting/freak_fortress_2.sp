@@ -77,10 +77,10 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "7"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 7, 2020"
+//#define FORK_DEV_REVISION "development"
+#define FORK_DATE_REVISION "February 8, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."011"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -2860,13 +2860,13 @@ public void CvarChange(ConVar convar, const char[] oldValue, const char[] newVal
 #if defined _smac_included
 public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionType type, Handle info)
 {
-	FF2Dbg("SMAC: Cheat detected!");
+	//PrintToConsoleAll("SMAC: Cheat detected!");
 	if(type == Detection_CvarViolation)
 	{
-		FF2Dbg("SMAC: Cheat was a cvar violation!");
+		//PrintToConsoleAll("SMAC: Cheat was a cvar violation!");
 		if((FF2flags[Boss[client]] & FF2FLAG_CHANGECVAR))
 		{
-			FF2Dbg("SMAC: Ignoring violation");
+			//PrintToConsoleAll("SMAC: Ignoring violation");
 			return Plugin_Stop;
 		}
 	}
@@ -3036,7 +3036,7 @@ stock bool MapHasMusic(bool forceRecalc=false)  //SAAAAAARGE
 			GetEntPropString(entity, Prop_Data, "m_iName", name, sizeof(name));
 			if(StrEqual(name, "hale_no_music", false))
 			{
-				FF2Dbg("Detected Map Music");
+				//PrintToConsoleAll("Detected Map Music");
 				hasMusic = true;
 			}
 		}
@@ -4938,7 +4938,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			KvRewind(BossKV[Special[0]]);
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
-			FF2Dbg("{red}MALFUNCTION! NEED INPUT!");
+			//PrintToConsoleAll("{red}MALFUNCTION! NEED INPUT!");
 			if(MusicTimer[client] != INVALID_HANDLE)
 				KillTimer(MusicTimer[client]);
 		}
@@ -4963,7 +4963,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 	{
 		case Plugin_Stop, Plugin_Handled:
 		{
-			FF2Dbg("NEED BIGGER INPUT!");
+			//PrintToConsoleAll("NEED BIGGER INPUT!");
 			return;
 		}
 		case Plugin_Changed:
@@ -4972,7 +4972,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 			strcopy(name, PLATFORM_MAX_PATH, temp[1]);
 			strcopy(artist, PLATFORM_MAX_PATH, temp[2]);
 			time = time2;
-			FF2Dbg("OOO... BIGGER INPUT! %s | %f | %s | %s", music, time, name, artist);
+			//PrintToConsoleAll("OOO... BIGGER INPUT! %s | %f | %s | %s", music, time, name, artist);
 		}
 		default:
 		{
@@ -4987,14 +4987,14 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 			{
 				case Plugin_Stop, Plugin_Handled:
 				{
-					FF2Dbg("NEED INPUT!");
+					//PrintToConsoleAll("NEED INPUT!");
 					return;
 				}
 				case Plugin_Changed:
 				{
 					strcopy(music, PLATFORM_MAX_PATH, temp[0]);
 					time=time2;
-					FF2Dbg("OOO... INPUT! %s | %f", music, time);
+					//PrintToConsoleAll("OOO... INPUT! %s | %f", music, time);
 				}
 			}
 		}
@@ -5081,7 +5081,7 @@ void StopMusic(int client=0, bool permanent=false)
 				StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 				if(MusicTimer[client] != INVALID_HANDLE)
 				{
-					FF2Dbg("TERMINATING INPUT!");
+					//PrintToConsoleAll("TERMINATING INPUT!");
 					KillTimer(MusicTimer[client]);
 					MusicTimer[client] = INVALID_HANDLE;
 				}
@@ -5099,7 +5099,7 @@ void StopMusic(int client=0, bool permanent=false)
 
 		if(MusicTimer[client] != INVALID_HANDLE)
 		{
-			FF2Dbg("END INPUT FOR %N!", client);
+			//PrintToConsoleAll("END INPUT FOR %N!", client);
 			KillTimer(MusicTimer[client]);
 			MusicTimer[client] = INVALID_HANDLE;
 		}
@@ -14125,14 +14125,14 @@ stock void AssignTeam(int client, int team)
 {
 	if(!GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass"))  //Living spectator check: 0 means that no class is selected
 	{
-		FF2Dbg("%N does not have a desired class", client);
+		//PrintToConsoleAll("%N does not have a desired class", client);
 		if(IsBoss(client))
 		{
 			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(KvGetClass(BossKV[Special[Boss[client]]], "class")));  //So we assign one to prevent living spectators
 		}
 		else
 		{
-			FF2Dbg("%N was not a boss and did not have a desired class", client);
+			//PrintToConsoleAll("%N was not a boss and did not have a desired class", client);
 		}
 	}
 
@@ -14142,14 +14142,14 @@ stock void AssignTeam(int client, int team)
 
 	if(GetEntProp(client, Prop_Send, "m_iObserverMode") && IsPlayerAlive(client))  //Welp
 	{
-		FF2Dbg("%N is a living spectator", client);
+		//PrintToConsoleAll("%N is a living spectator", client);
 		if(IsBoss(client))
 		{
 			TF2_SetPlayerClass(client, KvGetClass(BossKV[Special[Boss[client]]], "class"));
 		}
 		else
 		{
-			FF2Dbg("Additional information: %N was not a boss", client);
+			//PrintToConsoleAll("Additional information: %N was not a boss", client);
 			TF2_SetPlayerClass(client, TFClass_Heavy);
 		}
 		TF2_RespawnPlayer(client);
@@ -14871,7 +14871,7 @@ stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		if(time > 0)
 			CreateTimer(time, Timer_RemoveOverlay, team, TIMER_FLAG_NO_MAPCHANGE);
 
-		FF2Dbg("%s | %i | %f", path, view_as<int>(team), time);
+		//PrintToConsoleAll("%s | %i | %f", path, view_as<int>(team), time);
 	}
 
 	FormatEx(key, sizeof(key), "%imusic", choosen);	// And this...
@@ -16627,37 +16627,45 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
-	int total;
+	int total, charsets;
 
 	do
 	{
+		total++;
 		if(!KvGetNum(Kv, "hidden"))
-			total++;
+			charsets++;
 	}
 	while(KvGotoNextKey(Kv));
 
+	delete Kv;
+	//PrintToConsoleAll("%i", total);
 	if(total < 2)
 	{
-		delete Kv;
 		return Plugin_Continue;
 	}
 
+	//PrintToConsoleAll("Rewind");
 	char[][] charset = new char[total][42];
 	int[] validCharsets = new int[total];
-	int charsets;
 	int shuffle = cvarShuffleCharset.IntValue;
+	//PrintToConsoleAll("%i", shuffle);
 	total = 0;
-	KvRewind(Kv);
+	charsets = 0;
+	// KvRewind hates me...
+	Kv = CreateKeyValues("");
+	FileToKeyValues(Kv, config);
 	do
 	{
 		if(KvGetNum(Kv, "hidden"))	//Hidden charsets are hidden for a reason :P
 		{
+			//PrintToConsoleAll("Skip %i %i", total, charsets);
 			total++;
 			continue;
 		}
 
 		validCharsets[charsets] = total;
-		KvGetSectionName(Kv, charset[charsets], 42);
+		KvGetSectionName(Kv, charset[total], 42);
+		//PrintToConsoleAll("%s %i %i", charset[total], total, charsets);
 		charsets++;
 		total++;
 	}
@@ -16665,24 +16673,24 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 
 	delete Kv;
 
-	int current;
 	if(shuffle)
 	{
-		int choosen;
+		int choosen, current;
 		int packs = charsets-1;
 		for(int i; i<shuffle && packs>=0; i++)	// We keep doing this until we reached shuffle limit or were're out of packs
 		{
 			choosen = GetRandomInt(0, packs);	// Get a random pack
 			current = validCharsets[choosen];	// Get the pack's index
+			//PrintToConsoleAll("%i %s %i %i", i, charset[current], choosen, current);
 			if(current!=CurrentCharSet || charsets<=shuffle)	// If shuffle is more then the max charsets, exclude the current pack
 			{
 				IntToString(current, index, sizeof(index));
 				menu.AddItem(index, charset[current]);	// Add menu option
 			}
 
-			for(current=choosen; current<packs; current++)
+			for(; choosen<packs; choosen++)
 			{
-				validCharsets[current] = validCharsets[current+1];	// Remove choosen pack and move other packs down
+				validCharsets[choosen] = validCharsets[choosen+1];	// Remove choosen pack and move other packs down
 			}
 			packs--;
 		}
@@ -16692,11 +16700,13 @@ public Action Timer_DisplayCharsetVote(Handle timer)
 	{
 		IntToString(validCharsets[GetRandomInt(0, charsets-1)], index, sizeof(index));
 		menu.AddItem(index, "Random");
+		//PrintToConsoleAll("Random %s", index);
 
 		for(int i; i<charsets; i++)
 		{
 			IntToString(validCharsets[i], index, sizeof(index));
 			menu.AddItem(index, charset[i]);
+			//PrintToConsoleAll("%i %s %s", i, charset[i], index);
 		}
 	}
 
