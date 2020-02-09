@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 //#define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 8, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."012"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."013"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -8913,7 +8913,7 @@ public void OnUberDeployed(Event event, const char[] name, bool dontBroadcast)
 		return;
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if(!IsValidClient(client) || !IsPlayerAlive(client) || !(FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
+	if(!IsValidClient(client) || !IsPlayerAlive(client) || (FF2flags[client] & FF2FLAG_CLASSTIMERDISABLED))
 		return;
 
 	int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
