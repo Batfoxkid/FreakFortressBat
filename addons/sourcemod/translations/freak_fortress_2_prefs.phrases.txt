@@ -48,6 +48,7 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"\nCurrent Difficulty: {1}"
+		"ru"		"\nТекущая сложность: {1}"
 	}
 	"boss_selection_overridden"
 	{
@@ -92,10 +93,12 @@
 	"to0_disablediff"
 	{
 		"en"		"Disable Specials"
+		"ru"		"Выключить спец.раунды"
 	}
 	"to0_enablediff"
 	{
 		"en"		"Enable Specials"
+		"ru"		"Включить спец.раунды"
 	}
 	"to0_difficulty"
 	{
@@ -210,30 +213,37 @@
 	"FF2 Special Menu Title"
 	{
 		"en"		"Boss special round preferences:"
+		"ru"		"Настройки специального раунда:"
 	}
 	"Enable Special"
 	{
 		"en"		"Enable special rounds"
+		"ru"		"Разрешить спец. раунды"
 	}
 	"Disable Special"
 	{
 		"en"		"Disable special rounds"
+		"ru"		"Запретить спец. раунды"
 	}
 	"Disable Special For This Map"
 	{
 		"en"		"Disable special rounds for this map only"
+		"ru"		"Запретить спец. раунды на этой карте"
 	}
 	"FF2 Special Enabled"
 	{
 		"en"		"You will have a chance for special rounds. Don't want special rounds? Do {olive}/ff2difficulty{default}"
+		"ru"		"Спец. раунды разрешены для вас. Хотите запретить их? Введите {olive}/ff2difficulty{default}"
 	}
 	"FF2 Special Disabled"
 	{
 		"en"		"You will not have a chance for special rounds. Want special rounds? Do {olive}/ff2difficulty{default}"
+		"ru"		"Спец. раунды запрещены для вас. Хотите разрешить их? Введите {olive}/ff2difficulty{default}"
 	}
 	"FF2 Special Disabled For Map"
 	{
 		"en"		"You will not have a chance for special rounds for this map only. Want special rounds? Do {olive}/ff2difficulty{default}"
+		"ru"		"Спец. раунды запрещены для вас на этой карте. Хотите разрешить их? Введите {olive}/ff2difficulty{default}"
 	}
 	"FF2 Companion Toggle Notify"
 	{
@@ -330,7 +340,7 @@
 	"FF2 Difficulty Settings Menu Title"
 	{
 		"en"		"Up for a challenge? You can change your difficulty!"
-		"ru"		"Готов к испытанию? Ты можешь выбрать свой уровень сложности!"
+		"ru"		"Готов к испытанию? Тогда поменяй свой уровень сложности!"
 	}
 	"ff2_please wait"
 	{
@@ -405,13 +415,13 @@
 	}
 	"unknown_song"
 	{
-		"en"		"{default}{snow}Unknown Song"
-		"ru"		"{default}{snow}Неизвестная песня"
+		"en"		"{snow}Unknown Song"
+		"ru"		"{snow}Неизвестная песня"
 	}
 	"unknown_artist"
 	{
-		"en"		"{default}{snow}Unknown Artist"
-		"ru"		"{default}{snow}Неизвестный артист"
+		"en"		"{snow}Unknown Artist"
+		"ru"		"{snow}Неизвестный исполнитель"
 	}
 	"deny_nofirst"
 	{
@@ -481,5 +491,6 @@
 	"Hud Ranking"
 	{
 		"en"		"Damage Tracker"
+		"ru"		"Отслеживатель урона"
 	}
 }

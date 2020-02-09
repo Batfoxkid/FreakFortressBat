@@ -775,6 +775,18 @@ forward Action FF2_OnLoseLife(int boss, int &lives, int maxLives);
 forward void FF2_OnAlivePlayersChanged(int players, int bosses);
 
 /**
+ * Called when a boss is backstabbed
+ *
+ * @param boss		Boss's index
+ * @param client	Boss's client index
+ * @param attacker	Attacker's client index
+ * @param damage	Damage dealt (includes crit bonus)
+ *
+ * @return		Plugin_Changed to adjust the damage dealt, Plugin_Handled to prevent damage being dealt but continue sounds, stuns, etc, Plugin_Stop to prevent the backstab all together
+ */
+forward Action FF2_OnBackStabbed(int boss, int client, int attacker);
+
+/**
  * Called when the boss has a difficulty/special set for this plugin
  *
  * @note		This is called per-plugin, no need to check which plugin it belongs to

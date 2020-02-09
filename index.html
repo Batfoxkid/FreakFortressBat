@@ -18,39 +18,66 @@
 		</header>
 
 		<div class="version_box">
+			<button type="button" class="collapsible"><h3><a name="1.19.7">1.19.7 - February 9, 2020</a></h3></button>
+			<div class="content">
+				<ol>
+					<li>(1.11.0) Changed the characters.cfg formatting</li>
+					<li>(1.11.0) Changed to EmitGameSoundToAll for announcer sounds</li>
+					<li>(1.11.0) Changed changelog to use KeyValues instead</li>
+					<li>(1.11.0) Removed unnecessary flags in ff2_version</li>
+					<li>Added 'miniontimer' setting to prevent minions getting regular crit boosts, etc.</li>
+					<li>Added FF2_OnBackStabbed forward</li>
+					<li>Fixed HUDs showing different lanauages (Untested)</li>
+					<li>Fixed issues with the boss selection menu when the boss pack is higher then MAXCHARSETS</li>
+					<li>Fixed strange ranks always applying 'Hale's Own' regardless of settings</li>
+					<li>Fixed if a single boss has cosmetics disabled, it would remove all boss's cosmetics</li>
+					<li>Fixed ff2_charset selection menu</li>
+					<li>Fixed support for boss pack voting for any amount of boss packs</li>
+					<li>Changed many Handle to use methodmaps</li>
+					<li>Changed 'Over 9000' sound effect to use playgamesound</li>
+					<li>Changed ClientTimer item HUD priorities</li>
+					<li>Changed disguises upon backstabbing the boss to only disguise as a friendly Medic or Scout</li>
+					<li>Removed all debug messages in code</li>
+					<li>Removed all FF2_ShowHudText and FF2_ShowSyncHudText in code</li>
+					<li>Removed all FF2_GetRoundState in code</li>
+					<li>Removed the FF2_GetBossIndex in code</li>
+				</ol>
+			</div>
+		</div>
+		<div class="version_box">
 			<button type="button" class="collapsible"><h3><a name="1.19.6">1.19.6 - January 20, 2020</a></h3></button>
 			<div class="content">
 				<ol>
 					<li>(1.11.0) Changed the online changelog style</li>
 					<li>(1.11.0) Fixes towards when Monolocus spawns</li>
-					<li>Fixed ff2_charset error</li>
 					<li>Added the option to show the current boss pack in the server name</li>
-					<li>Removed the limitation on ff2_theme</li>
 					<li>Added Damage Tracker with a ConVar for a default value</li>
 					<li>Added telefrag damage ConVar</li>
 					<li>Added default health formula ConVar</li>
 					<li>Added default ragedamage formula ConVar</li>
 					<li>Added Difficulty & Special Round</li>
-					<li>Fixed FF2_LogError not working at all</li>
-					<li>Removed passive ability slots 4 to 7</li>
-					<li>Removed Killstreak Preference menu option</li>
-					<li>Fixed viewing all bosses when wildcards are used</li>
 					<li>Added the ability to see boss description from bosses in other packs</li>
+					<li>Added define for maximum of charsets supported for extra features</li>
+					<li>Added upcoming support for ColorLib in replacement of More Colors</li>
+					<li>Added WIP freak_fortress_2_stocks.inc for useful stocks</li>
+					<li>Fixed ff2_charset error</li>
+					<li>Fixed FF2_LogError not working at all</li>
+					<li>Fixed viewing all bosses when wildcards are used</li>
 					<li>Fixed being unable to block bosses from teleporting via ConVar</li>
 					<li>Fixed the server name not resetting back when FF2 is disabled</li>
 					<li>Fixed servers with only one boss pack</li>
 					<li>Fixed version numbering for boss settings</li>
-					<li>Changed the health of bosses in Boss vs Boss to be lower</li>
-					<li>Removed 9000 sound effect in TF2x10</li>
-					<li>Added define for maximum of charsets supported for extra features</li>
 					<li>Fixed some cases where =Failed name= is instead blank</li>
 					<li>Fixed knives causing Razorback to break while keeping resistances</li>
 					<li>Fixed non-Uber Medi-Guns giving Uber to Medics</li>
-					<li>Added upcoming support for ColorLib in replacement of More Colors</li>
 					<li>Fixed FF2_SpawnWeapon for saxxy and tf_weapon_shotgun for non-related classes</li>
-					<li>Removed slot requirement on FF2_GetArg related stocks</li>
 					<li>Fixed natives with REQUIRE_PLUGIN being undefined</li>
-					<li>Added WIP freak_fortress_2_stocks.inc for useful stocks</li>
+					<li>Changed the health of bosses in Boss vs Boss to be lower</li>
+					<li>Removed the limitation on ff2_theme</li>
+					<li>Removed passive ability slots 4 to 7</li>
+					<li>Removed Killstreak Preference menu option</li>
+					<li>Removed 9000 sound effect in TF2x10</li>
+					<li>Removed slot requirement on FF2_GetArg related stocks</li>
 				</ol>
 			</div>
 		</div>
@@ -211,7 +238,7 @@
 					<li>Added a ConVar to adjust merc vs merc damage while each team as a alive boss during a Boss vs Boss round</li>
 					<li>Boss self knockback can now be set to also include self damage</li>
 					<li>Boss health HUD doesn't appear while the introduction message is displayed</li>
-					<li>Added admin command `ff2_makeboss` to force a player to become a boss</li>
+					<li>Added admin command ff2_makeboss to force a player to become a boss</li>
 					<li>Fixed errors about incorrect boss version showing in SourceMod error log instead of FF2's error log</li>
 					<li>(1.11.0) Replaced Debug stock with FFDbg</li>
 					<li>Fixed FF2_HasAbility being a int instead of a bool</li>
@@ -275,7 +302,7 @@
 			</div>
 		</div>
 		<div class="version_box">
-			<button type="button" class="collapsible"><h3><a name="1.18.4">1.18.4 - July 2, 2019</a></h3></button>
+			<button type="button" class="collapsible"><h3><a name="1.18.4">1.18.4 - June 2, 2019</a></h3></button>
 			<div class="content">
 				<ol>
 					<li>Fixed serious issue with boss HUDs, class voicelines, etc.</li>
@@ -409,12 +436,12 @@
 					<li>Added Boss Preference option in main FF2 menu</li>
 					<li>Updated some options in main FF2 menu</li>
 					<li>Fix companions getting infinite rage</li>
-					<li>Health packs dropped by the Candy Cane give healing credit to the Scout (Thanks Vee)</li>
+					<li>Health packs dropped by the Candy Cane give healing credit to the Scout (Thanks Marxvee)</li>
 					<li>Improved how the Killstreaker and Airstrike gains their heads</li>
 					<li>Reworked some weapon stats</li>
 					<li>Fix Huntsmans doing no taunt damage when ff2_bow_non or ff2_bow_mini is disabled</li>
 					<li>Fixed shields against crit and mini-crit attacks</li>
-					<li>Added cvar ff2_hud_heal to let players see healing done towards teammates (Thanks Vee again)</li>
+					<li>Added cvar ff2_hud_heal to let players see healing done towards teammates (Thanks Marxvee again)</li>
 					<li>Fixed airblasts causing errors</li>
 					<li>Improved when sound_hit, sound_kill_, and sound_first_blood plays</li>
 					<li>Added cvars for RPS queue point betting or limiting boss fails</li>
@@ -689,7 +716,7 @@
 			</div>
 		</div>
 		<div class="version_box">
-			<button type="button" class="collapsible"><h3><a name="1.15.1"1.15.1 - December 7, 2018></a></h3></button>
+			<button type="button" class="collapsible"><h3><a name="1.15.1">1.15.1 - December 7, 2018></a></h3></button>
 			<div class="content">
 				<ol>
 					<li>Weapons by config (SHADoW)</li>
@@ -784,7 +811,7 @@
 			<button type="button" class="collapsible"><h3><a name="1.13.7">1.13.7 - November 17, 2018</a></h3></button>
 			<div class="content">
 				<ol>
-					<li>1) ''admin'' in boss configs also acts the same as ''blocked'' (Batfoxkid)</li>
+					<li>''admin'' in boss configs also acts the same as ''blocked'' (Batfoxkid)</li>
 				</ol>
 			</div>
 		</div>
@@ -866,7 +893,7 @@
 			<button type="button" class="collapsible"><h3><a name="1.12.3">1.12.3 - October 28, 2018</a></h3></button>
 			<div class="content">
 				<ol>
-					<li>1) Buffed Rocket/Sticky Jumper (Batfoxkid)</li>
+					<li>Buffed Rocket/Sticky Jumper (Batfoxkid)</li>
 				</ol>
 			</div>
 		</div>
@@ -990,6 +1017,30 @@
 				<ol>
 					<li>Spectate command is blocked as the boss (Batfoxkid)</li>
 					<li>Huo-Long Heater work-in-progress change (Noobis)</li>
+				</ol>
+			</div>
+		</div>
+		<div class="version_box">
+			<button type="button" class="collapsible"><h3><a name="1.11.2">1.11.2 - October 1, 2018</a></h3></button>
+			<div class="content">
+				<ol>
+					<li>Removed RTD support (Batfoxkid)</li>
+				</ol>
+			</div>
+		</div>
+		<div class="version_box">
+			<button type="button" class="collapsible"><h3><a name="1.11.1">1.11.1 - September 11, 2018</a></h3></button>
+			<div class="content">
+				<ol>
+					<li>Fixed FF2 managing weapons (Batfoxkid)</li>
+				</ol>
+			</div>
+		</div>
+		<div class="version_box">
+			<button type="button" class="collapsible"><h3><a name="1.11.0">1.11.0 - September 10, 2018</a></h3></button>
+			<div class="content">
+				<ol>
+					<li>Using TF2Items instead of FF2's weapons (Batfoxkid)</li>
 				</ol>
 			</div>
 		</div>
