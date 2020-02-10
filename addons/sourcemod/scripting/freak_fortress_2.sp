@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 10, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5879,7 +5879,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				if(CheckValidBoss(param1, name))
 				{
 					strcopy(xIncoming[param1], sizeof(xIncoming[]), name);
-					IgnoreValid[client] = false;
+					IgnoreValid[param1] = false;
 					SaveKeepBossCookie(param1);
 					FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
 				}
@@ -5954,7 +5954,7 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 				static char bossName[64];
 				GetMenuItem(menu, param2, bossName, sizeof(bossName));
 				strcopy(xIncoming[param1], sizeof(xIncoming[]), cIncoming[param1]);
-				IgnoreValid[client] = false;
+				IgnoreValid[param1] = false;
 				SaveKeepBossCookie(param1);
 				FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
 			}
@@ -15759,45 +15759,6 @@ public Action HelpPanelClass(int client)
 	char text[512];
 	TFClassType class = TF2_GetPlayerClass(client);
 	SetGlobalTransTarget(client);
-	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=8
-	switch(class)
-	{
-		case TFClass_Scout:
-			FormatEx(text, sizeof(text), "%t", "help_scout");
-
-		case TFClass_Soldier:
-			FormatEx(text, sizeof(text), "%t", "help_soldier");
-
-		case TFClass_Pyro:
-			FormatEx(text, sizeof(text), "%t", "help_pyro");
-
-		case TFClass_DemoMan:
-			FormatEx(text, sizeof(text), "%t", "help_demo");
-
-		case TFClass_Heavy:
-			FormatEx(text, sizeof(text), "%t", "help_heavy");
-
-		case TFClass_Engineer:
-			FormatEx(text, sizeof(text), "%t", "help_eggineer");
-
-		case TFClass_Medic:
-			FormatEx(text, sizeof(text), "%t", "help_medic");
-
-		case TFClass_Sniper:
-			FormatEx(text, sizeof(text), "%t", "help_sniper");
-
-		case TFClass_Spy:
-			FormatEx(text, sizeof(text), "%t", "help_spie");
-	}
-
-	Format(text, sizeof(text), "%t\n%s", "help_melee", text);
-	Handle panel = CreatePanel();
-	SetPanelTitle(panel, text);
-	FormatEx(text, sizeof(text), "%t", "Exit");
-	DrawPanelItem(panel, text);
-	SendPanelToClient(panel, client, HintPanelH, 20);
-	delete panel;
-	#else
 	char translation[64];
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 	if(IsValidEntity(weapon))
@@ -15965,7 +15926,6 @@ public Action HelpPanelClass(int client)
 		SendPanelToClient(panel, client, HintPanelH, 20);
 		delete panel;
 	}
-	#endif
 	return Plugin_Continue;
 }
 
