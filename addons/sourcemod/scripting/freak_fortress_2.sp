@@ -15759,6 +15759,45 @@ public Action HelpPanelClass(int client)
 	char text[512];
 	TFClassType class = TF2_GetPlayerClass(client);
 	SetGlobalTransTarget(client);
+	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=8
+	switch(class)
+	{
+		case TFClass_Scout:
+			FormatEx(text, sizeof(text), "%t", "help_scout");
+
+		case TFClass_Soldier:
+			FormatEx(text, sizeof(text), "%t", "help_soldier");
+
+		case TFClass_Pyro:
+			FormatEx(text, sizeof(text), "%t", "help_pyro");
+
+		case TFClass_DemoMan:
+			FormatEx(text, sizeof(text), "%t", "help_demo");
+
+		case TFClass_Heavy:
+			FormatEx(text, sizeof(text), "%t", "help_heavy");
+
+		case TFClass_Engineer:
+			FormatEx(text, sizeof(text), "%t", "help_eggineer");
+
+		case TFClass_Medic:
+			FormatEx(text, sizeof(text), "%t", "help_medic");
+
+		case TFClass_Sniper:
+			FormatEx(text, sizeof(text), "%t", "help_sniper");
+
+		case TFClass_Spy:
+			FormatEx(text, sizeof(text), "%t", "help_spie");
+	}
+
+	Format(text, sizeof(text), "%t\n%s", "help_melee", text);
+	Handle panel = CreatePanel();
+	SetPanelTitle(panel, text);
+	FormatEx(text, sizeof(text), "%t", "Exit");
+	DrawPanelItem(panel, text);
+	SendPanelToClient(panel, client, HintPanelH, 20);
+	delete panel;
+	#else
 	char translation[64];
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 	if(IsValidEntity(weapon))
@@ -15926,6 +15965,7 @@ public Action HelpPanelClass(int client)
 		SendPanelToClient(panel, client, HintPanelH, 20);
 		delete panel;
 	}
+	#endif
 	return Plugin_Continue;
 }
 
@@ -16970,12 +17010,12 @@ stock void RemoveShield(int client, int attacker)
 	shield[client] = 0;
 }
 
-public any Native_IsEnabled(Handle plugin, int numParams)
+public int Native_IsEnabled(Handle plugin, int numParams)
 {
 	return Enabled;
 }
 
-public any Native_FF2Version(Handle plugin, int numParams)
+public int Native_FF2Version(Handle plugin, int numParams)
 {
 	int version[3];  //Blame the compiler for this mess -.-
 	version[0] = StringToInt(MAJOR_REVISION);
@@ -16989,12 +17029,12 @@ public any Native_FF2Version(Handle plugin, int numParams)
 	#endif
 }
 
-public any Native_IsVersus(Handle plugin, int numParams)
+public int Native_IsVersus(Handle plugin, int numParams)
 {
 	return Enabled3;
 }
 
-public any Native_ForkVersion(Handle plugin, int numParams)
+public int Native_ForkVersion(Handle plugin, int numParams)
 {
 	int fversion[3];
 	fversion[0] = StringToInt(FORK_MAJOR_REVISION);
@@ -17008,7 +17048,7 @@ public any Native_ForkVersion(Handle plugin, int numParams)
 	#endif
 }
 
-public any Native_GetBoss(Handle plugin, int numParams)
+public int Native_GetBoss(Handle plugin, int numParams)
 {
 	int boss = GetNativeCell(1);
 	if(boss>=0 && boss<=MaxClients && IsValidClient(Boss[boss]))
@@ -17017,17 +17057,17 @@ public any Native_GetBoss(Handle plugin, int numParams)
 	return -1;
 }
 
-public any Native_GetIndex(Handle plugin, int numParams)
+public int Native_GetIndex(Handle plugin, int numParams)
 {
 	return GetBossIndex(GetNativeCell(1));
 }
 
-public any Native_GetTeam(Handle plugin, int numParams)
+public int Native_GetTeam(Handle plugin, int numParams)
 {
 	return BossTeam;
 }
 
-public any Native_GetSpecial(Handle plugin, int numParams)
+public int Native_GetSpecial(Handle plugin, int numParams)
 {
 	int index=GetNativeCell(1), dstrlen=GetNativeCell(3), see=GetNativeCell(4);
 	char[] s = new char[dstrlen];
@@ -17060,7 +17100,7 @@ public any Native_GetSpecial(Handle plugin, int numParams)
 	return true;
 }
 
-public any Native_GetName(Handle plugin, int numParams)
+public int Native_GetName(Handle plugin, int numParams)
 {
 	int index=GetNativeCell(1), dstrlen=GetNativeCell(3), see=GetNativeCell(4), client=GetNativeCell(5);
 	char[] s = new char[dstrlen];
@@ -17126,67 +17166,67 @@ public any Native_GetName(Handle plugin, int numParams)
 	return true;
 }
 
-public any Native_GetBossHealth(Handle plugin, int numParams)
+public int Native_GetBossHealth(Handle plugin, int numParams)
 {
 	return BossHealth[GetNativeCell(1)];
 }
 
-public any Native_SetBossHealth(Handle plugin, int numParams)
+public int Native_SetBossHealth(Handle plugin, int numParams)
 {
 	BossHealth[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public any Native_GetBossMaxHealth(Handle plugin, int numParams)
+public int Native_GetBossMaxHealth(Handle plugin, int numParams)
 {
 	return BossHealthMax[GetNativeCell(1)];
 }
 
-public any Native_SetBossMaxHealth(Handle plugin, int numParams)
+public int Native_SetBossMaxHealth(Handle plugin, int numParams)
 {
 	BossHealthMax[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public any Native_GetBossLives(Handle plugin, int numParams)
+public int Native_GetBossLives(Handle plugin, int numParams)
 {
 	return BossLives[GetNativeCell(1)];
 }
 
-public any Native_SetBossLives(Handle plugin, int numParams)
+public int Native_SetBossLives(Handle plugin, int numParams)
 {
 	BossLives[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public any Native_GetBossMaxLives(Handle plugin, int numParams)
+public int Native_GetBossMaxLives(Handle plugin, int numParams)
 {
 	return BossLivesMax[GetNativeCell(1)];
 }
 
-public any Native_SetBossMaxLives(Handle plugin, int numParams)
+public int Native_SetBossMaxLives(Handle plugin, int numParams)
 {
 	BossLivesMax[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public any Native_GetBossCharge(Handle plugin, int numParams)
+public int Native_GetBossCharge(Handle plugin, int numParams)
 {
 	return BossCharge[GetNativeCell(1)][GetNativeCell(2)];
 }
 
-public any Native_SetBossCharge(Handle plugin, int numParams)  //TODO: This duplicates logic found in Timer_UseBossCharge
+public int Native_SetBossCharge(Handle plugin, int numParams)  //TODO: This duplicates logic found in Timer_UseBossCharge
 {
 	BossCharge[GetNativeCell(1)][GetNativeCell(2)] = GetNativeCell(3);
 }
 
-public any Native_GetBossRageDamage(Handle plugin, int numParams)
+public int Native_GetBossRageDamage(Handle plugin, int numParams)
 {
 	return BossRageDamage[GetNativeCell(1)];
 }
 
-public any Native_SetBossRageDamage(Handle plugin, int numParams)
+public int Native_SetBossRageDamage(Handle plugin, int numParams)
 {
 	BossRageDamage[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public any Native_GetRoundState(Handle plugin, int numParams)
+public int Native_GetRoundState(Handle plugin, int numParams)
 {
 	if(CheckRoundState() < 1)
 		return 0;
@@ -17194,7 +17234,7 @@ public any Native_GetRoundState(Handle plugin, int numParams)
 	return CheckRoundState();
 }
 
-public any Native_GetRageDist(Handle plugin, int numParams)
+public int Native_GetRageDist(Handle plugin, int numParams)
 {
 	int index = GetNativeCell(1);
 	static char plugin_name[64];
@@ -17235,7 +17275,7 @@ public any Native_GetRageDist(Handle plugin, int numParams)
 	return 0.0;
 }
 
-public any Native_HasAbility(Handle plugin, int numParams)
+public int Native_HasAbility(Handle plugin, int numParams)
 {
 	static char pluginName[64], abilityName[64];
 
@@ -17273,7 +17313,7 @@ public any Native_HasAbility(Handle plugin, int numParams)
 	return false;
 }
 
-public any Native_DoAbility(Handle plugin, int numParams)
+public int Native_DoAbility(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17282,7 +17322,7 @@ public any Native_DoAbility(Handle plugin, int numParams)
 	UseAbility(ability_name, plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
-public any Native_GetAbilityArgument(Handle plugin, int numParams)
+public int Native_GetAbilityArgument(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17291,7 +17331,7 @@ public any Native_GetAbilityArgument(Handle plugin, int numParams)
 	return GetAbilityArgument(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
-public any Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
+public int Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17300,7 +17340,7 @@ public any Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 	return GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
-public any Native_GetAbilityArgumentString(Handle plugin, int numParams)
+public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
@@ -17312,7 +17352,7 @@ public any Native_GetAbilityArgumentString(Handle plugin, int numParams)
 	SetNativeString(5, s, dstrlen);
 }
 
-public any Native_GetArgNamedI(Handle plugin, int numParams)
+public int Native_GetArgNamedI(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17323,7 +17363,7 @@ public any Native_GetArgNamedI(Handle plugin, int numParams)
 	return GetArgumentI(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
-public any Native_GetArgNamedF(Handle plugin, int numParams)
+public int Native_GetArgNamedF(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17334,7 +17374,7 @@ public any Native_GetArgNamedF(Handle plugin, int numParams)
 	return GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
-public any Native_GetArgNamedS(Handle plugin, int numParams)
+public int Native_GetArgNamedS(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17348,7 +17388,7 @@ public any Native_GetArgNamedS(Handle plugin, int numParams)
 	SetNativeString(5, s, dstrlen);
 }
 
-public any Native_GetDamage(Handle plugin, int numParams)
+public int Native_GetDamage(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(!IsValidClient(client))
@@ -17357,27 +17397,27 @@ public any Native_GetDamage(Handle plugin, int numParams)
 	return Damage[client];
 }
 
-public any Native_GetFF2flags(Handle plugin, int numParams)
+public int Native_GetFF2flags(Handle plugin, int numParams)
 {
 	return FF2flags[GetNativeCell(1)];
 }
 
-public any Native_SetFF2flags(Handle plugin, int numParams)
+public int Native_SetFF2flags(Handle plugin, int numParams)
 {
 	FF2flags[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public any Native_GetQueuePoints(Handle plugin, int numParams)
+public int Native_GetQueuePoints(Handle plugin, int numParams)
 {
 	return QueuePoints[GetNativeCell(1)];
 }
 
-public any Native_SetQueuePoints(Handle plugin, int numParams)
+public int Native_SetQueuePoints(Handle plugin, int numParams)
 {
 	QueuePoints[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public any Native_GetSpecialKV(Handle plugin, int numParams)
+public int Native_GetSpecialKV(Handle plugin, int numParams)
 {
 	int index = GetNativeCell(1);
 	bool isNumOfSpecial = view_as<bool>(GetNativeCell(2));
@@ -17404,17 +17444,17 @@ public any Native_GetSpecialKV(Handle plugin, int numParams)
 	return INVALID_HANDLE;
 }
 
-public any Native_StartMusic(Handle plugin, int numParams)
+public int Native_StartMusic(Handle plugin, int numParams)
 {
 	StartMusic(GetNativeCell(1));
 }
 
-public any Native_StopMusic(Handle plugin, int numParams)
+public int Native_StopMusic(Handle plugin, int numParams)
 {
 	StopMusic(GetNativeCell(1));
 }
 
-public any Native_RandomSound(Handle plugin, int numParams)
+public int Native_RandomSound(Handle plugin, int numParams)
 {
 	int length = GetNativeCell(3)+1;
 	int boss = GetNativeCell(4);
@@ -17441,7 +17481,7 @@ public any Native_RandomSound(Handle plugin, int numParams)
 	return soundExists;
 }
 
-public any Native_EmitVoiceToAll(Handle plugin, int numParams)
+public int Native_EmitVoiceToAll(Handle plugin, int numParams)
 {
 	int kvLength;
 	GetNativeStringLength(1, kvLength);
@@ -17456,7 +17496,7 @@ public any Native_EmitVoiceToAll(Handle plugin, int numParams)
 	EmitSoundToAllExcept(keyvalue, GetNativeCell(2), GetNativeCell(3), GetNativeCell(4), GetNativeCell(5), GetNativeCell(6), GetNativeCell(7), GetNativeCell(8), origin, dir, GetNativeCell(11), GetNativeCell(12));
 }
 
-public any Native_GetClientGlow(Handle plugin, int numParams)
+public int Native_GetClientGlow(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client))
@@ -17469,12 +17509,12 @@ public any Native_GetClientGlow(Handle plugin, int numParams)
 	}
 }
 
-public any Native_SetClientGlow(Handle plugin, int numParams)
+public int Native_SetClientGlow(Handle plugin, int numParams)
 {
 	SetClientGlow(GetNativeCell(1), GetNativeCell(2), GetNativeCell(3));
 }
 
-public any Native_GetClientShield(Handle plugin, int numParams)
+public int Native_GetClientShield(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client) && hadshield[client])
@@ -17495,7 +17535,7 @@ public any Native_GetClientShield(Handle plugin, int numParams)
 	return -1;
 }
 
-public any Native_SetClientShield(Handle plugin, int numParams)
+public int Native_SetClientShield(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client))
@@ -17517,7 +17557,7 @@ public any Native_SetClientShield(Handle plugin, int numParams)
 	}
 }
 
-public any Native_RemoveClientShield(Handle plugin, int numParams)
+public int Native_RemoveClientShield(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client))
@@ -17528,7 +17568,7 @@ public any Native_RemoveClientShield(Handle plugin, int numParams)
 	}
 }
 
-public any Native_LogError(Handle plugin, int numParams)
+public int Native_LogError(Handle plugin, int numParams)
 {
 	char buffer[256];
 	int error = FormatNativeString(0, 1, 2, sizeof(buffer), _, buffer);
@@ -17540,22 +17580,22 @@ public any Native_LogError(Handle plugin, int numParams)
 	LogToFile(eLog, buffer);
 }
 
-public any Native_Debug(Handle plugin, int numParams)
+public int Native_Debug(Handle plugin, int numParams)
 {
 	return cvarDebug.BoolValue;
 }
 
-public any Native_SetCheats(Handle plugin, int numParams)
+public int Native_SetCheats(Handle plugin, int numParams)
 {
 	CheatsUsed = GetNativeCell(1);
 }
 
-public any Native_GetCheats(Handle plugin, int numParams)
+public int Native_GetCheats(Handle plugin, int numParams)
 {
 	return (CheatsUsed || SpecialRound);
 }
 
-public any Native_MakeBoss(Handle plugin, int numParams)
+public int Native_MakeBoss(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(!IsValidClient(client))
@@ -17585,7 +17625,7 @@ public any Native_MakeBoss(Handle plugin, int numParams)
 	CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public any Native_ChooseBoss(Handle plugin, int numParams)
+public int Native_ChooseBoss(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(client<1 || client>=MAXTF2PLAYERS)
@@ -17599,7 +17639,7 @@ public any Native_ChooseBoss(Handle plugin, int numParams)
 	return CheckValidBoss(client, xIncoming[client]);
 }
 
-public any Native_IsVSHMap(Handle plugin, int numParams)
+public int Native_IsVSHMap(Handle plugin, int numParams)
 {
 	return false;
 }
