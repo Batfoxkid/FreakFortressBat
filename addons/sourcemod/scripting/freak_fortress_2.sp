@@ -78,9 +78,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
 #define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 9, 2020"
+#define FORK_DATE_REVISION "February 10, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -611,6 +611,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_SetCheats", Native_SetCheats);
 	CreateNative("FF2_GetCheats", Native_GetCheats);
 	CreateNative("FF2_MakeBoss", Native_MakeBoss);
+	CreateNative("FF2_SelectBoss", Native_ChooseBoss);
 
 	PreAbility = CreateGlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
 	OnAbility = CreateGlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
@@ -650,6 +651,7 @@ char cIncoming[MAXTF2PLAYERS][700];
 char dIncoming[MAXTF2PLAYERS][700];
 int CanBossVs[MAXTF2PLAYERS];
 int CanBossTeam[MAXTF2PLAYERS];
+bool IgnoreValid[MAXTF2PLAYERS];
 
 // Boss Toggle
 enum SettingPrefs
@@ -667,7 +669,7 @@ Handle DiffCookie = INVALID_HANDLE;
 ClientPoint[MAXTF2PLAYERS];
 ClientID[MAXTF2PLAYERS];
 ClientQueue[MAXTF2PLAYERS][2];
-bool InfiniteRageActive[MAXTF2PLAYERS]=false;
+bool InfiniteRageActive[MAXTF2PLAYERS] = false;
 
 // Boss Log
 char bLog[PLATFORM_MAX_PATH];
@@ -1106,7 +1108,7 @@ public Action Command_SetRage(int client, int args)
 				return Plugin_Handled;
 			}
 
-			if(!IsBoss(client) || GetBossIndex(client)==-1 || !IsPlayerAlive(client) || CheckRoundState()!=1)
+			if(!IsBoss(client) || !IsPlayerAlive(client) || CheckRoundState()!=1)
 			{
 				FReplyToCommand(client, "You must be a boss to set your RAGE!");
 				return Plugin_Handled;
@@ -1116,7 +1118,7 @@ public Action Command_SetRage(int client, int args)
 			GetCmdArg(1, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 
-			BossCharge[Boss[client]][0] = rageMeter;
+			BossCharge[GetBossIndex(client)][0] = rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
 			CheatsUsed = true;
@@ -1145,13 +1147,13 @@ public Action Command_SetRage(int client, int args)
 		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
 			continue;
 
-		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		if(!IsBoss(target_list[target]) || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
 			FReplyToCommand(client, "%s must be a boss to set RAGE!", target_name);
 			return Plugin_Handled;
 		}
 
-		BossCharge[Boss[target_list[target]]][0] = rageMeter;
+		BossCharge[GetBossIndex(target_list[target])][0] = rageMeter;
 		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Set %d rage to %s", RoundFloat(rageMeter), target_name);
 		CheatsUsed = true;
@@ -1175,7 +1177,7 @@ public Action Command_AddRage(int client, int args)
 				return Plugin_Handled;
 			}
 
-			if(!IsBoss(client) || GetBossIndex(client)==-1 || !IsPlayerAlive(client) || CheckRoundState()!=1)
+			if(!IsBoss(client) || !IsPlayerAlive(client) || CheckRoundState()!=1)
 			{
 				FReplyToCommand(client, "You must be a boss to give yourself RAGE!");
 				return Plugin_Handled;
@@ -1185,7 +1187,7 @@ public Action Command_AddRage(int client, int args)
 			GetCmdArg(1, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 
-			BossCharge[Boss[client]][0] += rageMeter;
+			BossCharge[GetBossIndex(client)][0] += rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
 			CheatsUsed = true;
@@ -1214,13 +1216,13 @@ public Action Command_AddRage(int client, int args)
 		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
 			continue;
 
-		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		if(!IsBoss(target_list[target]) || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
 			FReplyToCommand(client, "%s must be a boss to add RAGE!", target_name);
 			return Plugin_Handled;
 		}
 
-		BossCharge[Boss[target_list[target]]][0] += rageMeter;
+		BossCharge[GetBossIndex(target_list[target])][0] += rageMeter;
 		LogAction(client, target_list[target], "\"%L\" added %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
 		CheatsUsed = true;
@@ -1244,18 +1246,19 @@ public Action Command_SetInfiniteRage(int client, int args)
 				return Plugin_Handled;
 			}
 
-			if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || CheckRoundState()!=1)
+			if(!IsBoss(client) || !IsPlayerAlive(client) || CheckRoundState()!=1)
 			{
 				FReplyToCommand(client, "You must be a boss to enable/disable infinite RAGE!");
 				return Plugin_Handled;
 			}
+
 			if(!InfiniteRageActive[client])
 			{
 				InfiniteRageActive[client] = true;
-				BossCharge[Boss[client]][0] = rageMax[client];
+				BossCharge[GetBossIndex(client)][0] = rageMax[client];
 				FReplyToCommand(client, "Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
-				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+				CreateTimer(0.2, Timer_InfiniteRage, GetClientUserId(client), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 				CheatsUsed = true;
 			}
 			else
@@ -1287,7 +1290,7 @@ public Action Command_SetInfiniteRage(int client, int args)
 		if(IsClientSourceTV(target_list[target]) || IsClientReplay(target_list[target]))
 			continue;
 
-		if(!IsBoss(target_list[target]) || GetBossIndex(target_list[target])==-1 || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
+		if(!IsBoss(target_list[target]) || !IsPlayerAlive(target_list[target]) || CheckRoundState()!=1)
 		{
 			FReplyToCommand(client, "%s must be a boss to enable/disable infinite RAGE!", target_name);
 			return Plugin_Handled;
@@ -1296,10 +1299,10 @@ public Action Command_SetInfiniteRage(int client, int args)
 		if(!InfiniteRageActive[target_list[target]])
 		{
 			InfiniteRageActive[target_list[target]] = true;
-			BossCharge[Boss[target_list[target]]][0] = rageMax[target_list[target]];
+			BossCharge[GetBossIndex(target_list[target])][0] = rageMax[target_list[target]];
 			FReplyToCommand(client, "Infinite RAGE activated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
-			CreateTimer(0.2, Timer_InfiniteRage, target_list[target], TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(0.2, Timer_InfiniteRage, GetClientUserId(target_list[target]), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			CheatsUsed = true;
 		}
 		else
@@ -1312,16 +1315,20 @@ public Action Command_SetInfiniteRage(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Timer_InfiniteRage(Handle timer, any client)
+public Action Timer_InfiniteRage(Handle timer, int userid)
 {
-	if(InfiniteRageActive[client] && (CheckRoundState()==2 || CheckRoundState()==-1))
-		InfiniteRageActive[client] = false;
-
-	if(!IsBoss(client) || !IsPlayerAlive(client) || GetBossIndex(client)==-1 || !InfiniteRageActive[client])
+	int client = GetClientOfUserId(userid);
+	if(!IsBoss(client))
 		return Plugin_Stop;
 
-	if(CheckRoundState()==1)
-		BossCharge[Boss[client]][0]=rageMax[client];
+	if(CheckRoundState()!=1 || !IsPlayerAlive(client))
+	{
+		InfiniteRageActive[client] = false;
+		return Plugin_Stop;
+	}
+
+	if(CheckRoundState() == 1)
+		BossCharge[GetBossIndex(client)][0] = rageMax[client];
 
 	return Plugin_Continue;
 }
@@ -1356,8 +1363,8 @@ public Action Command_AddCharge(int client, int args)
 
 			if(abilitySlot>=0 && abilitySlot<4)
 			{
-				BossCharge[Boss[client]][abilitySlot] += rageMeter;
-				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]), RoundFloat(rageMeter));
+				BossCharge[GetBossIndex(client)][abilitySlot] += rageMeter;
+				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[GetBossIndex(client)][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
 			}
@@ -1400,8 +1407,8 @@ public Action Command_AddCharge(int client, int args)
 
 		if(abilitySlot>=0 || abilitySlot<4)
 		{
-			BossCharge[Boss[target_list[target]]][abilitySlot] += rageMeter;
-			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]), RoundFloat(rageMeter));
+			BossCharge[GetBossIndex(target_list[target])][abilitySlot] += rageMeter;
+			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[GetBossIndex(target_list[target])][abilitySlot]), RoundFloat(rageMeter));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			CheatsUsed = true;
 		}
@@ -1443,8 +1450,8 @@ public Action Command_SetCharge(int client, int args)
 
 			if(abilitySlot>=0 || abilitySlot<4)
 			{
-				BossCharge[Boss[client]][abilitySlot] = rageMeter;
-				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Boss[client]][abilitySlot]));
+				BossCharge[GetBossIndex(client)][abilitySlot] = rageMeter;
+				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[GetBossIndex(client)][abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
 				CheatsUsed = true;
 			}
@@ -1487,8 +1494,8 @@ public Action Command_SetCharge(int client, int args)
 
 		if(abilitySlot>=0 || abilitySlot<4)
 		{
-			BossCharge[Boss[target_list[target]]][abilitySlot] = rageMeter;
-			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[Boss[target_list[target]]][abilitySlot]));
+			BossCharge[GetBossIndex(target_list[target])][abilitySlot] = rageMeter;
+			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[GetBossIndex(target_list[target])][abilitySlot]));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			CheatsUsed = true;
 		}
@@ -2864,7 +2871,7 @@ public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionTyp
 	if(type == Detection_CvarViolation)
 	{
 		//PrintToConsoleAll("SMAC: Cheat was a cvar violation!");
-		if((FF2flags[Boss[client]] & FF2FLAG_CHANGECVAR))
+		if((FF2flags[client] & FF2FLAG_CHANGECVAR))
 		{
 			//PrintToConsoleAll("SMAC: Ignoring violation");
 			return Plugin_Stop;
@@ -5592,6 +5599,7 @@ public Action Command_SetMyBoss(int client, int args)
 			strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
 			CanBossVs[client] = KvGetNum(BossKV[config], "noversus");
 			CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam");
+			IgnoreValid[client] = false;
 			SaveKeepBossCookie(client);
 			FReplyToCommand(client, "%t", "to0_boss_selected", bossName);
 			return Plugin_Handled;
@@ -5619,7 +5627,7 @@ public Action Command_SetMyBoss(int client, int args)
 			KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
 			if(StrEqual(bossName, xIncoming[client], false))
 			{
-				if(CheckValidBoss(client, xIncoming[client], !DuoMin))
+				if(IgnoreValid[client] || CheckValidBoss(client, xIncoming[client], !DuoMin))
 					GetBossSpecial(config, boss, sizeof(boss), client);
 
 				break;
@@ -5808,6 +5816,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				xIncoming[param1][0] = 0;
 				CanBossVs[param1] = 0;
 				CanBossTeam[param1] = 0;
+				IgnoreValid[param1] = false;
 				SaveKeepBossCookie(param1);
 				FReplyToCommand(param1, "%t", "to0_comfirmrandom");
 				return;
@@ -5870,6 +5879,7 @@ public int Command_SetMyBossH(Handle menu, MenuAction action, int param1, int pa
 				if(CheckValidBoss(param1, name))
 				{
 					strcopy(xIncoming[param1], sizeof(xIncoming[]), name);
+					IgnoreValid[client] = false;
 					SaveKeepBossCookie(param1);
 					FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
 				}
@@ -5944,6 +5954,7 @@ public int ConfirmBossH(Handle menu, MenuAction action, int param1, int param2)
 				static char bossName[64];
 				GetMenuItem(menu, param2, bossName, sizeof(bossName));
 				strcopy(xIncoming[param1], sizeof(xIncoming[]), cIncoming[param1]);
+				IgnoreValid[client] = false;
 				SaveKeepBossCookie(param1);
 				FReplyToCommand(param1, "%t", "to0_boss_selected", bossName);
 			}
@@ -6325,7 +6336,7 @@ bool CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
 	int client = Boss[boss];
-	if((!boss || boss==MAXBOSSES) && CheckValidBoss(client, xIncoming[client], !DuoMin) && cvarSelectBoss.BoolValue && CheckCommandAccess(client, "ff2_boss", 0, true))
+	if((!boss || boss==MAXBOSSES) && (IgnoreValid[client] || CheckValidBoss(client, xIncoming[client], !DuoMin)) && cvarSelectBoss.BoolValue && CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
 		if(preset)
 		{
@@ -6339,6 +6350,7 @@ public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialNam
 				xIncoming[client][0] = 0;
 				CanBossVs[client] = 0;
 				CanBossTeam[client] = 0;
+				IgnoreValid[client] = false;
 				SaveKeepBossCookie(client);
 			}
 			return Plugin_Changed;
@@ -6568,16 +6580,16 @@ public Action Timer_ShowHealthText(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action MakeModelTimer(Handle timer, any client)
+public Action MakeModelTimer(Handle timer, int boss)
 {
-	if(IsValidClient(Boss[client]) && IsPlayerAlive(Boss[client]) && CheckRoundState()!=2)
+	if(IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]) && CheckRoundState()!=2)
 	{
 		static char model[PLATFORM_MAX_PATH];
-		KvRewind(BossKV[Special[client]]);
-		KvGetString(BossKV[Special[client]], "model", model, PLATFORM_MAX_PATH);
+		KvRewind(BossKV[Special[boss]]);
+		KvGetString(BossKV[Special[boss]], "model", model, PLATFORM_MAX_PATH);
 		SetVariantString(model);
-		AcceptEntityInput(Boss[client], "SetCustomModel");
-		SetEntProp(Boss[client], Prop_Send, "m_bUseClassAnimations", 1);
+		AcceptEntityInput(Boss[boss], "SetCustomModel");
+		SetEntProp(Boss[boss], Prop_Send, "m_bUseClassAnimations", 1);
 		return Plugin_Continue;
 	}
 	return Plugin_Stop;
@@ -9677,6 +9689,7 @@ public void OnClientPostAdminCheck(int client)
 	dIncoming[client][0] = 0;
 	CanBossVs[client] = 0;
 	CanBossTeam[client] = 0;
+	IgnoreValid[client] = false;
 
 	if(AreClientCookiesCached(client))
 	{
@@ -10944,12 +10957,13 @@ public Action GlobalTimer(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action Timer_RPS(Handle timer, int client)
+public Action Timer_RPS(Handle timer, int userid)
 {
+	int client = GetClientOfUserId(userid);
 	if(!IsValidClient(client))
 		return Plugin_Continue;
 
-	int boss=GetBossIndex(client);
+	int boss = GetBossIndex(client);
 	if(boss==-1 || !IsPlayerAlive(client))
 		return Plugin_Continue;
 
@@ -10959,7 +10973,7 @@ public Action Timer_RPS(Handle timer, int client)
 		RPSLosses[client] = 0;
 
 	if(RPSHealth[client] == -1)
-		RPSHealth[client]=BossHealth[boss];
+		RPSHealth[client] = BossHealth[boss];
 
 	if(RPSLosses[client] >= cvarRPSLimit.IntValue)
 	{
@@ -11269,11 +11283,11 @@ public void OnRPS(Event event, const char[] name, bool dontBroadcast)
 	if(!IsValidClient(loser))
 		return;
 
-	if(!IsBoss(winner) && IsBoss(loser) && GetBossIndex(loser)>=0 && cvarRPSLimit.IntValue>0)	// Boss Loses on RPS?
+	if(!IsBoss(winner) && IsBoss(loser) && cvarRPSLimit.IntValue>0)	// Boss Loses on RPS?
 	{
 		RPSWinner = winner;
 		TF2_AddCondition(RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not during damage
-		CreateTimer(3.1, Timer_RPS, loser, TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(3.1, Timer_RPS, GetClientUserId(loser), TIMER_FLAG_NO_MAPCHANGE);
 		return;
 	}
 
@@ -14137,12 +14151,12 @@ stock void AssignTeam(int client, int team)
 		//PrintToConsoleAll("%N does not have a desired class", client);
 		if(IsBoss(client))
 		{
-			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(KvGetClass(BossKV[Special[Boss[client]]], "class")));  //So we assign one to prevent living spectators
+			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(KvGetClass(BossKV[Special[GetBossIndex(client)]], "class")));  //So we assign one to prevent living spectators
 		}
-		else
+		/*else
 		{
-			//PrintToConsoleAll("%N was not a boss and did not have a desired class", client);
-		}
+			PrintToConsoleAll("%N was not a boss and did not have a desired class", client);
+		}*/
 	}
 
 	SetEntProp(client, Prop_Send, "m_lifeState", 2);
@@ -14154,7 +14168,7 @@ stock void AssignTeam(int client, int team)
 		//PrintToConsoleAll("%N is a living spectator", client);
 		if(IsBoss(client))
 		{
-			TF2_SetPlayerClass(client, KvGetClass(BossKV[Special[Boss[client]]], "class"));
+			TF2_SetPlayerClass(client, KvGetClass(BossKV[Special[GetBossIndex(client)]], "class"));
 		}
 		else
 		{
@@ -14344,6 +14358,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
+					IgnoreValid[client] = false;
 					winner = client;
 				}
 			}
@@ -14362,6 +14377,7 @@ stock int GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
+					IgnoreValid[client] = false;
 					winner = client;
 				}
 			}
@@ -14412,6 +14428,7 @@ stock int GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
+					IgnoreValid[client] = false;
 					winner = client;
 				}
 			}
@@ -14430,6 +14447,7 @@ stock int GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 					xIncoming[client][0] = 0;
 					CanBossVs[client] = 0;
 					CanBossTeam[client] = 0;
+					IgnoreValid[client] = false;
 					winner = client;
 				}
 			}
@@ -16992,12 +17010,12 @@ stock void RemoveShield(int client, int attacker)
 	shield[client] = 0;
 }
 
-public int Native_IsEnabled(Handle plugin, int numParams)
+public any Native_IsEnabled(Handle plugin, int numParams)
 {
 	return Enabled;
 }
 
-public int Native_FF2Version(Handle plugin, int numParams)
+public any Native_FF2Version(Handle plugin, int numParams)
 {
 	int version[3];  //Blame the compiler for this mess -.-
 	version[0] = StringToInt(MAJOR_REVISION);
@@ -17011,12 +17029,12 @@ public int Native_FF2Version(Handle plugin, int numParams)
 	#endif
 }
 
-public int Native_IsVersus(Handle plugin, int numParams)
+public any Native_IsVersus(Handle plugin, int numParams)
 {
 	return Enabled3;
 }
 
-public int Native_ForkVersion(Handle plugin, int numParams)
+public any Native_ForkVersion(Handle plugin, int numParams)
 {
 	int fversion[3];
 	fversion[0] = StringToInt(FORK_MAJOR_REVISION);
@@ -17030,26 +17048,26 @@ public int Native_ForkVersion(Handle plugin, int numParams)
 	#endif
 }
 
-public int Native_GetBoss(Handle plugin, int numParams)
+public any Native_GetBoss(Handle plugin, int numParams)
 {
-	int boss=GetNativeCell(1);
+	int boss = GetNativeCell(1);
 	if(boss>=0 && boss<=MaxClients && IsValidClient(Boss[boss]))
 		return GetClientUserId(Boss[boss]);
 
 	return -1;
 }
 
-public int Native_GetIndex(Handle plugin, int numParams)
+public any Native_GetIndex(Handle plugin, int numParams)
 {
 	return GetBossIndex(GetNativeCell(1));
 }
 
-public int Native_GetTeam(Handle plugin, int numParams)
+public any Native_GetTeam(Handle plugin, int numParams)
 {
 	return BossTeam;
 }
 
-public int Native_GetSpecial(Handle plugin, int numParams)
+public any Native_GetSpecial(Handle plugin, int numParams)
 {
 	int index=GetNativeCell(1), dstrlen=GetNativeCell(3), see=GetNativeCell(4);
 	char[] s = new char[dstrlen];
@@ -17082,7 +17100,7 @@ public int Native_GetSpecial(Handle plugin, int numParams)
 	return true;
 }
 
-public int Native_GetName(Handle plugin, int numParams)
+public any Native_GetName(Handle plugin, int numParams)
 {
 	int index=GetNativeCell(1), dstrlen=GetNativeCell(3), see=GetNativeCell(4), client=GetNativeCell(5);
 	char[] s = new char[dstrlen];
@@ -17148,67 +17166,67 @@ public int Native_GetName(Handle plugin, int numParams)
 	return true;
 }
 
-public int Native_GetBossHealth(Handle plugin, int numParams)
+public any Native_GetBossHealth(Handle plugin, int numParams)
 {
 	return BossHealth[GetNativeCell(1)];
 }
 
-public int Native_SetBossHealth(Handle plugin, int numParams)
+public any Native_SetBossHealth(Handle plugin, int numParams)
 {
 	BossHealth[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public int Native_GetBossMaxHealth(Handle plugin, int numParams)
+public any Native_GetBossMaxHealth(Handle plugin, int numParams)
 {
 	return BossHealthMax[GetNativeCell(1)];
 }
 
-public int Native_SetBossMaxHealth(Handle plugin, int numParams)
+public any Native_SetBossMaxHealth(Handle plugin, int numParams)
 {
 	BossHealthMax[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public int Native_GetBossLives(Handle plugin, int numParams)
+public any Native_GetBossLives(Handle plugin, int numParams)
 {
 	return BossLives[GetNativeCell(1)];
 }
 
-public int Native_SetBossLives(Handle plugin, int numParams)
+public any Native_SetBossLives(Handle plugin, int numParams)
 {
 	BossLives[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public int Native_GetBossMaxLives(Handle plugin, int numParams)
+public any Native_GetBossMaxLives(Handle plugin, int numParams)
 {
 	return BossLivesMax[GetNativeCell(1)];
 }
 
-public int Native_SetBossMaxLives(Handle plugin, int numParams)
+public any Native_SetBossMaxLives(Handle plugin, int numParams)
 {
 	BossLivesMax[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public int Native_GetBossCharge(Handle plugin, int numParams)
+public any Native_GetBossCharge(Handle plugin, int numParams)
 {
-	return view_as<int>(BossCharge[GetNativeCell(1)][GetNativeCell(2)]);
+	return BossCharge[GetNativeCell(1)][GetNativeCell(2)];
 }
 
-public int Native_SetBossCharge(Handle plugin, int numParams)  //TODO: This duplicates logic found in Timer_UseBossCharge
+public any Native_SetBossCharge(Handle plugin, int numParams)  //TODO: This duplicates logic found in Timer_UseBossCharge
 {
-	BossCharge[GetNativeCell(1)][GetNativeCell(2)] = view_as<float>(GetNativeCell(3));
+	BossCharge[GetNativeCell(1)][GetNativeCell(2)] = GetNativeCell(3);
 }
 
-public int Native_GetBossRageDamage(Handle plugin, int numParams)
+public any Native_GetBossRageDamage(Handle plugin, int numParams)
 {
 	return BossRageDamage[GetNativeCell(1)];
 }
 
-public int Native_SetBossRageDamage(Handle plugin, int numParams)
+public any Native_SetBossRageDamage(Handle plugin, int numParams)
 {
 	BossRageDamage[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public int Native_GetRoundState(Handle plugin, int numParams)
+public any Native_GetRoundState(Handle plugin, int numParams)
 {
 	if(CheckRoundState() < 1)
 		return 0;
@@ -17216,7 +17234,7 @@ public int Native_GetRoundState(Handle plugin, int numParams)
 	return CheckRoundState();
 }
 
-public int Native_GetRageDist(Handle plugin, int numParams)
+public any Native_GetRageDist(Handle plugin, int numParams)
 {
 	int index = GetNativeCell(1);
 	static char plugin_name[64];
@@ -17225,12 +17243,12 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 	GetNativeString(3, ability_name, 64);
 
 	if(!BossKV[Special[index]])
-		return view_as<int>(0.0);
+		return 0.0;
 
 	KvRewind(BossKV[Special[index]]);
 	float see;
 	if(!ability_name[0])
-		return view_as<int>(KvGetFloat(BossKV[Special[index]], "ragedist", 400.0));
+		return KvGetFloat(BossKV[Special[index]], "ragedist", 400.0);
 
 	char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
@@ -17251,13 +17269,13 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 				KvRewind(BossKV[Special[index]]);
 				see = KvGetFloat(BossKV[Special[index]], "ragedist", 400.0);
 			}
-			return view_as<int>(see);
+			return see;
 		}
 	}
-	return view_as<int>(0.0);
+	return 0.0;
 }
 
-public int Native_HasAbility(Handle plugin, int numParams)
+public any Native_HasAbility(Handle plugin, int numParams)
 {
 	static char pluginName[64], abilityName[64];
 
@@ -17295,7 +17313,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 	return false;
 }
 
-public int Native_DoAbility(Handle plugin, int numParams)
+public any Native_DoAbility(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17304,7 +17322,7 @@ public int Native_DoAbility(Handle plugin, int numParams)
 	UseAbility(ability_name, plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
-public int Native_GetAbilityArgument(Handle plugin, int numParams)
+public any Native_GetAbilityArgument(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17313,16 +17331,16 @@ public int Native_GetAbilityArgument(Handle plugin, int numParams)
 	return GetAbilityArgument(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
-public int Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
+public any Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
-	return view_as<int>(GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5)));
+	return GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
-public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
+public any Native_GetAbilityArgumentString(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
@@ -17334,7 +17352,7 @@ public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
 	SetNativeString(5, s, dstrlen);
 }
 
-public int Native_GetArgNamedI(Handle plugin, int numParams)
+public any Native_GetArgNamedI(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17345,7 +17363,7 @@ public int Native_GetArgNamedI(Handle plugin, int numParams)
 	return GetArgumentI(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
-public int Native_GetArgNamedF(Handle plugin, int numParams)
+public any Native_GetArgNamedF(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17353,10 +17371,10 @@ public int Native_GetArgNamedF(Handle plugin, int numParams)
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
 	GetNativeString(4, argument, sizeof(argument));
-	return view_as<int>(GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5)));
+	return GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
-public int Native_GetArgNamedS(Handle plugin, int numParams)
+public any Native_GetArgNamedS(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17370,7 +17388,7 @@ public int Native_GetArgNamedS(Handle plugin, int numParams)
 	SetNativeString(5, s, dstrlen);
 }
 
-public int Native_GetDamage(Handle plugin, int numParams)
+public any Native_GetDamage(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(!IsValidClient(client))
@@ -17379,27 +17397,27 @@ public int Native_GetDamage(Handle plugin, int numParams)
 	return Damage[client];
 }
 
-public int Native_GetFF2flags(Handle plugin, int numParams)
+public any Native_GetFF2flags(Handle plugin, int numParams)
 {
 	return FF2flags[GetNativeCell(1)];
 }
 
-public int Native_SetFF2flags(Handle plugin, int numParams)
+public any Native_SetFF2flags(Handle plugin, int numParams)
 {
 	FF2flags[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public int Native_GetQueuePoints(Handle plugin, int numParams)
+public any Native_GetQueuePoints(Handle plugin, int numParams)
 {
 	return QueuePoints[GetNativeCell(1)];
 }
 
-public int Native_SetQueuePoints(Handle plugin, int numParams)
+public any Native_SetQueuePoints(Handle plugin, int numParams)
 {
 	QueuePoints[GetNativeCell(1)] = GetNativeCell(2);
 }
 
-public int Native_GetSpecialKV(Handle plugin, int numParams)
+public any Native_GetSpecialKV(Handle plugin, int numParams)
 {
 	int index = GetNativeCell(1);
 	bool isNumOfSpecial = view_as<bool>(GetNativeCell(2));
@@ -17410,7 +17428,7 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 			if(BossKV[index] != INVALID_HANDLE)
 				KvRewind(BossKV[index]);
 
-			return view_as<int>(BossKV[index]);
+			return BossKV[index];
 		}
 	}
 	else
@@ -17420,23 +17438,23 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 			if(BossKV[Special[index]] != INVALID_HANDLE)
 				KvRewind(BossKV[Special[index]]);
 
-			return view_as<int>(BossKV[Special[index]]);
+			return BossKV[Special[index]];
 		}
 	}
-	return view_as<int>(INVALID_HANDLE);
+	return INVALID_HANDLE;
 }
 
-public int Native_StartMusic(Handle plugin, int numParams)
+public any Native_StartMusic(Handle plugin, int numParams)
 {
 	StartMusic(GetNativeCell(1));
 }
 
-public int Native_StopMusic(Handle plugin, int numParams)
+public any Native_StopMusic(Handle plugin, int numParams)
 {
 	StopMusic(GetNativeCell(1));
 }
 
-public int Native_RandomSound(Handle plugin, int numParams)
+public any Native_RandomSound(Handle plugin, int numParams)
 {
 	int length = GetNativeCell(3)+1;
 	int boss = GetNativeCell(4);
@@ -17463,7 +17481,7 @@ public int Native_RandomSound(Handle plugin, int numParams)
 	return soundExists;
 }
 
-public int Native_EmitVoiceToAll(Handle plugin, int numParams)
+public any Native_EmitVoiceToAll(Handle plugin, int numParams)
 {
 	int kvLength;
 	GetNativeStringLength(1, kvLength);
@@ -17478,12 +17496,12 @@ public int Native_EmitVoiceToAll(Handle plugin, int numParams)
 	EmitSoundToAllExcept(keyvalue, GetNativeCell(2), GetNativeCell(3), GetNativeCell(4), GetNativeCell(5), GetNativeCell(6), GetNativeCell(7), GetNativeCell(8), origin, dir, GetNativeCell(11), GetNativeCell(12));
 }
 
-public int Native_GetClientGlow(Handle plugin, int numParams)
+public any Native_GetClientGlow(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client))
 	{
-		return view_as<int>(GlowTimer[client]);
+		return GlowTimer[client];
 	}
 	else
 	{
@@ -17491,12 +17509,12 @@ public int Native_GetClientGlow(Handle plugin, int numParams)
 	}
 }
 
-public int Native_SetClientGlow(Handle plugin, int numParams)
+public any Native_SetClientGlow(Handle plugin, int numParams)
 {
 	SetClientGlow(GetNativeCell(1), GetNativeCell(2), GetNativeCell(3));
 }
 
-public int Native_GetClientShield(Handle plugin, int numParams)
+public any Native_GetClientShield(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client) && hadshield[client])
@@ -17517,7 +17535,7 @@ public int Native_GetClientShield(Handle plugin, int numParams)
 	return -1;
 }
 
-public int Native_SetClientShield(Handle plugin, int numParams)
+public any Native_SetClientShield(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client))
@@ -17539,7 +17557,7 @@ public int Native_SetClientShield(Handle plugin, int numParams)
 	}
 }
 
-public int Native_RemoveClientShield(Handle plugin, int numParams)
+public any Native_RemoveClientShield(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(IsValidClient(client))
@@ -17550,7 +17568,7 @@ public int Native_RemoveClientShield(Handle plugin, int numParams)
 	}
 }
 
-public int Native_LogError(Handle plugin, int numParams)
+public any Native_LogError(Handle plugin, int numParams)
 {
 	char buffer[256];
 	int error = FormatNativeString(0, 1, 2, sizeof(buffer), _, buffer);
@@ -17562,22 +17580,22 @@ public int Native_LogError(Handle plugin, int numParams)
 	LogToFile(eLog, buffer);
 }
 
-public int Native_Debug(Handle plugin, int numParams)
+public any Native_Debug(Handle plugin, int numParams)
 {
 	return cvarDebug.BoolValue;
 }
 
-public int Native_SetCheats(Handle plugin, int numParams)
+public any Native_SetCheats(Handle plugin, int numParams)
 {
 	CheatsUsed = GetNativeCell(1);
 }
 
-public int Native_GetCheats(Handle plugin, int numParams)
+public any Native_GetCheats(Handle plugin, int numParams)
 {
 	return (CheatsUsed || SpecialRound);
 }
 
-public int Native_MakeBoss(Handle plugin, int numParams)
+public any Native_MakeBoss(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	if(!IsValidClient(client))
@@ -17607,7 +17625,21 @@ public int Native_MakeBoss(Handle plugin, int numParams)
 	CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public int Native_IsVSHMap(Handle plugin, int numParams)
+public any Native_ChooseBoss(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if(client<1 || client>=MAXTF2PLAYERS)
+	{
+		GetNativeString(2, xIncoming[0], sizeof(xIncoming[]));
+		return CheckValidBoss(0, xIncoming[0]);
+	}
+
+	GetNativeString(2, xIncoming[client], sizeof(xIncoming[]));
+	IgnoreValid[client] = GetNativeCell(3);
+	return CheckValidBoss(client, xIncoming[client]);
+}
+
+public any Native_IsVSHMap(Handle plugin, int numParams)
 {
 	return false;
 }
