@@ -75,12 +75,12 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "7"
+#define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
-//#define FORK_DEV_REVISION "development"
+#define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 9, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."014"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -9908,7 +9908,7 @@ public Action ClientTimer(Handle timer)
 	}
 
 	char top[384];
-	static char classname[32];
+	static char classname[64];
 	TFCond cond;
 	bool alive, validwep;
 	int weapon, buttons;
@@ -9949,12 +9949,21 @@ public Action ClientTimer(Handle timer)
 					if(distance > LookHud)
 						observer = 0;
 				}
+
+				if(observer)
+					GetClientName(observer, classname, sizeof(classname));
 			}
 			else if(IsClientObserver(client))
 			{
 				observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 				if(!IsValidClient(observer) || observer==client)
+				{
 					observer = 0;
+				}
+				else
+				{
+					GetClientName(observer, classname, sizeof(classname));
+				}
 			}
 
 			if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
@@ -10014,26 +10023,26 @@ public Action ClientTimer(Handle timer)
 				{
 					if(IsBoss(observer))
 					{
-						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Boss", classname, BossWins[observer], BossLosses[observer], BossKills[observer], BossDeaths[observer]);
 					}
 					else if((Healing[observer]>0 && HealHud==1) || HealHud>1)
 					{
-						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats Healing", classname, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
 					}
 					else
 					{
-						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Player Stats", classname, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
 					}
 				}
 				else if(!IsBoss(observer))
 				{
 					if((Healing[observer]>0 && HealHud==1) || HealHud>1)
 					{
-						ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", classname, Damage[observer], "Healing", Healing[observer]);
 					}
 					else
 					{
-						ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", observer, Damage[observer]);
+						ShowSyncHudText(client, statHUD, "%s%t", top, "Spectator Damage Dealt", classname, Damage[observer]);
 					}
 				}
 				else
