@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 10, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -17208,7 +17208,7 @@ public int Native_SetBossMaxLives(Handle plugin, int numParams)
 
 public int Native_GetBossCharge(Handle plugin, int numParams)
 {
-	return BossCharge[GetNativeCell(1)][GetNativeCell(2)];
+	return view_as<int>(BossCharge[GetNativeCell(1)][GetNativeCell(2)]);
 }
 
 public int Native_SetBossCharge(Handle plugin, int numParams)  //TODO: This duplicates logic found in Timer_UseBossCharge
@@ -17243,12 +17243,12 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 	GetNativeString(3, ability_name, 64);
 
 	if(!BossKV[Special[index]])
-		return 0.0;
+		return view_as<int>(0.0);
 
 	KvRewind(BossKV[Special[index]]);
 	float see;
 	if(!ability_name[0])
-		return KvGetFloat(BossKV[Special[index]], "ragedist", 400.0);
+		return view_as<int>(KvGetFloat(BossKV[Special[index]], "ragedist", 400.0));
 
 	char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
@@ -17269,10 +17269,10 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 				KvRewind(BossKV[Special[index]]);
 				see = KvGetFloat(BossKV[Special[index]], "ragedist", 400.0);
 			}
-			return see;
+			return view_as<int>(see);
 		}
 	}
-	return 0.0;
+	return view_as<int>(0.0);
 }
 
 public int Native_HasAbility(Handle plugin, int numParams)
@@ -17337,7 +17337,7 @@ public int Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 	static char ability_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
-	return GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
+	return view_as<int>(GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5)));
 }
 
 public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
@@ -17371,7 +17371,7 @@ public int Native_GetArgNamedF(Handle plugin, int numParams)
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
 	GetNativeString(4, argument, sizeof(argument));
-	return GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
+	return view_as<int>(GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5)));
 }
 
 public int Native_GetArgNamedS(Handle plugin, int numParams)
@@ -17428,7 +17428,7 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 			if(BossKV[index] != INVALID_HANDLE)
 				KvRewind(BossKV[index]);
 
-			return BossKV[index];
+			return view_as<int>(BossKV[index]);
 		}
 	}
 	else
@@ -17438,10 +17438,10 @@ public int Native_GetSpecialKV(Handle plugin, int numParams)
 			if(BossKV[Special[index]] != INVALID_HANDLE)
 				KvRewind(BossKV[Special[index]]);
 
-			return BossKV[Special[index]];
+			return view_as<int>(BossKV[Special[index]]);
 		}
 	}
-	return INVALID_HANDLE;
+	return view_as<int>(INVALID_HANDLE);
 }
 
 public int Native_StartMusic(Handle plugin, int numParams)
@@ -17501,11 +17501,11 @@ public int Native_GetClientGlow(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	if(IsValidClient(client))
 	{
-		return GlowTimer[client];
+		return view_as<int>(GlowTimer[client]);
 	}
 	else
 	{
-		return -1;
+		return view_as<int>(-1.0);
 	}
 }
 
