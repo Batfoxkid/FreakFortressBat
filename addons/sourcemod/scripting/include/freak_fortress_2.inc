@@ -669,6 +669,19 @@ native bool FF2_GetCheats();
 native void FF2_MakeBoss(int client, int boss, int special=-1, bool rival=false);
 
 /**
+ * Sets the boss selection of a client
+ *
+ * @param client	Client's index
+ * @param boss		Boss's name ("name" key)
+ * @param access	Allow the client to play that boss regardless of permission
+ *
+ * @error		Invalid boss index
+ *
+ * @noreturn
+ */
+native void FF2_SelectBoss(int client, const char[] boss, bool access=true);
+
+/**
  * FF2_ONABILITY IS KNOWN TO BE BUGGED AND WILL NOT BE FIXED TO PRESERVE BACKWARDS COMPATABILITY.  DO NOT USE IT.
  * Called when a Boss uses an ability (Rage, jump, teleport, etc)
  * Called every 0.2 seconds for charge abilities
