@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 10, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -5260,6 +5260,7 @@ void SetupClientCookies(int client)
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
+		CheckValidBoss(client, xIncoming[client], !DuoMin);
 
 		GetClientCookie(client, DiffCookie, dIncoming[client], sizeof(dIncoming[]));
 	}
@@ -6269,7 +6270,7 @@ void SaveKeepBossCookie(int client)
 		return;
 
 	static char cookies[454];
-	if(CurrentCharSet<MAXCHARSETS && cvarSelectBoss.BoolValue)
+	if(!IgnoreValid[client] && CurrentCharSet<MAXCHARSETS && cvarSelectBoss.BoolValue)
 	{
 		char cookieValues[MAXCHARSETS][64];
 		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));

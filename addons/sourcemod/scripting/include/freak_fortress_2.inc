@@ -675,11 +675,9 @@ native void FF2_MakeBoss(int client, int boss, int special=-1, bool rival=false)
  * @param boss		Boss's name ("name" key)
  * @param access	Allow the client to play that boss regardless of permission
  *
- * @error		Invalid boss index
- *
- * @noreturn
+ * @return		True if the client normally has access to this boss, false otherwise
  */
-native void FF2_SelectBoss(int client, const char[] boss, bool access=true);
+native bool FF2_SelectBoss(int client, const char[] boss, bool access=true);
 
 /**
  * FF2_ONABILITY IS KNOWN TO BE BUGGED AND WILL NOT BE FIXED TO PRESERVE BACKWARDS COMPATABILITY.  DO NOT USE IT.
