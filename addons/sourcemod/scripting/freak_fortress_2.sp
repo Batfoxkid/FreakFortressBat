@@ -81,7 +81,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 13, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."005"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -4579,9 +4579,9 @@ public Action SkipBossPanel(int client)
 
 	char text[128];
 	FormatEx(text, sizeof(text), "%t", "Yes");
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "No");
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	menu.ExitButton = false;
 	menu.Display(client, MENU_TIME_FOREVER);
 	return Plugin_Handled;
@@ -11319,7 +11319,7 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 		if(Enabled3)
 			return IsPlayerAlive(client) ? Plugin_Handled : Plugin_Continue;
 
-		int team = view_as<int>(TFTeam_Unassigned)
+		int team = view_as<int>(TFTeam_Unassigned);
 		int oldTeam = GetClientTeam(client);
 		if(IsBoss(client) && !BossSwitched[boss])
 		{
@@ -12297,7 +12297,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 			}
 			SetEntProp(attacker, Prop_Send, "m_nStreaks", streak+i);
 			if(fakedeath)
-				FireDeathNotice(client, attacker, attacker, damage, 0, weapon, NULL_VECTOR, NULL_VECTOR, custom, 0);
+				FireDeathNotice(client, attacker, attacker, float(damage), 0, weapon, NULL_VECTOR, NULL_VECTOR, custom, 0);
 		}
 		if(SapperCooldown[attacker] > 0.0)
 			SapperCooldown[attacker] -= damage;
@@ -15574,7 +15574,7 @@ public Action ResetQueuePointsCmd(int client, int args)
 
 	if(!client)  //No confirmation for console
 	{
-		TurnToZeroPanelH(INVALID_HANDLE, MenuAction_Select, client, 1);
+		TurnToZeroPanelH(view_as<Menu>(INVALID_HANDLE), MenuAction_Select, client, 0);
 		return Plugin_Handled;
 	}
 
@@ -15673,9 +15673,9 @@ public Action TurnToZeroPanel(int client, int target)
 	PrintToChat(client, text);
 	menu.SetTitle(text);
 	FormatEx(text, sizeof(text), "%T", "Yes", client);
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%T", "No", client);
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	shortname[client] = target;
 	menu.ExitButton = false;
 	menu.Display(client, MENU_TIME_FOREVER);
@@ -15798,23 +15798,23 @@ public Action FF2Panel(int client, int args)  //._.
 	FormatEx(text, sizeof(text), "%t", "menu_1");  //What's up?
 	menu.SetTitle(text);
 	FormatEx(text, sizeof(text), "%t", "menu_2");  //Investigate the boss's current health level (/ff2hp)
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_3");  //Boss Preferences (/ff2boss)
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_7");  //Changes to my class in FF2 (/ff2classinfo)
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_4");  //What's new? (/ff2new).
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_5");  //Queue points
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_0");  //Toggle HUDs (/ff2hud)
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_8");  //Toggle music (/ff2music)
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_9");  //Toggle monologues (/ff2voice)
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%t", "menu_9a");  //Toggle info about changes of classes in FF2
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	menu.Pagination = false;
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
@@ -15866,8 +15866,8 @@ public Action HelpPanel3(int client)
 {
 	Menu menu = new Menu(ClassInfoTogglePanelH);
 	menu.SetTitle("Turn the Freak Fortress 2 class info...");
-	menu.AddItem("On");
-	menu.AddItem("Off");
+	menu.AddItem("On", "On");
+	menu.AddItem("Off", "Off");
 	menu.ExitButton = false;
 	menu.Display(client, MENU_TIME_FOREVER);
 	return Plugin_Handled;
@@ -15977,7 +15977,7 @@ public Action HelpPanelClass(int client)
 	Menu menu = new Menu(HintPanelH);
 	menu.SetTitle(text);
 	FormatEx(text, sizeof(text), "%t", "Exit");
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	menu.Display(client, 20);
 	#else
 	char translation[64];
@@ -16143,7 +16143,7 @@ public Action HelpPanelClass(int client)
 		Menu menu = new Menu(HintPanelH);
 		menu.SetTitle(text);
 		FormatEx(text, sizeof(text), "%t", "Exit");
-		menu.AddItem(text);
+		menu.AddItem(text, text);
 		menu.Display(client, 20);
 	}
 	#endif
@@ -16172,7 +16172,7 @@ void HelpPanelBoss(int boss)
 	Menu menu = new Menu(HintPanelH);
 	menu.SetTitle(text);
 	FormatEx(text, sizeof(text), "%T", "Exit", Boss[boss]);
-	menu.AddItem(text);
+	menu.AddItem(text, text);
 	menu.Display(Boss[boss], 25);
 }
 
@@ -16215,8 +16215,8 @@ public Action MusicTogglePanel(int client)
 	{
 		Menu menu = new Menu(MusicTogglePanelH);
 		menu.SetTitle("Turn the Freak Fortress 2 music...");
-		menu.AddItem("On");
-		menu.AddItem("Off");
+		menu.AddItem("On", "On");
+		menu.AddItem("Off", "Off");
 		menu.ExitButton = false;
 		menu.Display(client, MENU_TIME_FOREVER);
 	}
@@ -16681,31 +16681,37 @@ public Action VoiceTogglePanelCmd(int client, int args)
 
 public Action VoiceTogglePanel(int client)
 {
-	Menu menu = new Menu(PANEL);
+	Menu menu = new Menu(VoiceTogglePanelH);
 	menu.SetTitle("Turn the Freak Fortress 2 voices...");
-	menu.AddItem("On");
-	menu.AddItem("Off");
+	menu.AddItem("On", "On");
+	menu.AddItem("Off", "Off");
 	menu.ExitButton = false;
-	menu.Display(client, VoiceTogglePanelH, MENU_TIME_FOREVER);
+	menu.Display(client, MENU_TIME_FOREVER);
 	return Plugin_Continue;
 }
 
 public int VoiceTogglePanelH(Menu menu, MenuAction action, int client, int selection)
 {
-	if(IsValidClient(client) && action==MenuAction_Select)
+	switch(action)
 	{
-		if(selection)
+		case MenuAction_End:
 		{
-			ToggleVoice[client] = false;
 		}
-		else
+		case MenuAction_Select:
 		{
-			ToggleVoice[client] = true;
-		}
+			if(selection)
+			{
+				ToggleVoice[client] = false;
+			}
+			else
+			{
+				ToggleVoice[client] = true;
+			}
 
-		FPrintToChat(client, "%t", "ff2_voice", selection ? "off" : "on");	// TODO: Make this more multi-language friendly
-		if(selection)
-			FPrintToChat(client, "%t", "ff2_voice2");
+			FPrintToChat(client, "%t", "ff2_voice", selection ? "off" : "on");	// TODO: Make this more multi-language friendly
+			if(selection)
+				FPrintToChat(client, "%t", "ff2_voice2");
+		}
 	}
 }
 
