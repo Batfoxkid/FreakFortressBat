@@ -12354,6 +12354,16 @@ stock void StoreFloatVectorToAddress(Address addr, const float vec[3])
 	{
 		StoreToAddress(AddressOffset(addr, i*4), view_as<int>(vec[i]), NumberType_Int32);
 	}
+}
+
+stock Address AddressOffset(Address addr, int offs)
+{
+	return addr + view_as<Address>(offs);
+}
+
+stock void StoreEntityHandleToAddress(Address addr, int entity)
+{
+	StoreToAddress(addr, EntIndexToEntRef(entity) & ~(1 << 31), NumberType_Int32);
 	#endif
 }
 
