@@ -59,7 +59,6 @@ last time or to encourage others to do the same.
 #tryinclude <steamtools>
 #endif
 #tryinclude <SteamWorks>
-#tryinclude <sourcescramble>
 #define REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #tryinclude <cw3>
@@ -81,7 +80,7 @@ last time or to encourage others to do the same.
 #define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 13, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."006"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -518,33 +517,6 @@ enum
 	CAP_MERC_TEAM,
 	CAP_NO_MINIONS
 };
-
-#if defined __sourcescramble_ext_included
-enum eTakeDamageInfo: (+= 0x04)
-{
-	m_DamageForce,
-	m_DamagePosition = 12,
-	m_ReportedPosition = 24,
-
-	m_Inflictor = 36,
-	m_Attacker,
-	m_Weapon,
-	m_Damage,
-	m_MaxDamage,
-	m_BaseDamage,
-	m_BitsDamageType,
-	m_DamageCustom,
-	m_DamageStats,
-	m_AmmoType,
-	m_DamagedOtherPlayers,
-	m_PlayerPenetrationCount,
-	m_DamageBonus,
-	m_DamageBonusProvider,
-	m_ForceFriendlyFire,
-	m_DamageForForce,
-	m_CritType
-};
-#endif
 
 int Specials;
 Handle BossKV[MAXSPECIALS];
@@ -1114,10 +1086,10 @@ public void OnPluginStart()
 
 	TimesTen = LibraryExists("tf2x10");
 
-	Handle gameData = LoadGameConfigFile("freak_fortress_2");
-	if(gameData == null)
+	Handle gameData = LoadGameConfigFile("equipwearable");
+	if(gameData == INVALID_HANDLE)
 	{
-		LogToFile(eLog, "[Gamedata] Failed to find freak_fortress_2.txt");
+		LogToFile(eLog, "[Gamedata] Failed to find equipwearable.txt");
 		return;
 	}
 
@@ -1127,17 +1099,6 @@ public void OnPluginStart()
 	SDKEquipWearable = EndPrepSDKCall();
 	if(SDKEquipWearable == null)
 		LogToFile(eLog, "[Gamedata] Failed to create call: CBasePlayer::EquipWearable");
-
-	#if defined __sourcescramble_ext_included
-	StartPrepSDKCall(SDKCall_GameRules);
-	PrepSDKCall_SetFromConf(gameData, SDKConf_Signature, "CTFGameRules::DeathNotice");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Plain);
-	SDKDeathNotice = EndPrepSDKCall();
-	if(SDKDeathNotice == null)
-		LogToFile(eLog, "[Gamedata] Failed to create call: CTFGameRules::DeathNotice");
-	#endif
 
 	delete gameData;
 }
@@ -1867,7 +1828,7 @@ public void OnPluginEnd()
 {
 	OnMapEnd();
 	hostName.SetString(oldName);
-	if(!ReloadFF2 && CheckRoundState() == 1)
+	if(!ReloadFF2 && CheckRoundState()==1)
 	{
 		ForceTeamWin(0);
 		FPrintToChatAll("The plugin has been unexpectedly unloaded!");
@@ -4022,7 +3983,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	if(Enabled3 && bossWin>-1)
 	{
 		int target;
-		char text[MAXTF2PLAYERS][128];
+		char[][] text = new char[MaxClients+1][128];
 		static char bossName[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -4040,7 +4001,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 						if(IsValidClient(client))
 						{
 							GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
-							Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+							Format(text[client], 128, "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 							FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						}
 					}
@@ -4050,11 +4011,11 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 		if(team == view_as<int>(TFTeam_Red))
 		{
-			SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 50, 50, 255);
+			SetHudTextParams(-1.0, 0.25, bonusRoundTime, 255, 50, 50, 255);
 		}
 		else
 		{
-			SetHudTextParams(-1.0, 0.2, bonusRoundTime, 50, 50, 255, 255);
+			SetHudTextParams(-1.0, 0.25, bonusRoundTime, 50, 50, 255, 255);
 		}
 
 		for(int client=1; client<=MaxClients; client++)
@@ -4175,7 +4136,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	if(!Enabled3 && isBossAlive)
 	{
 		int target;
-		char text[MAXTF2PLAYERS][128];
+		char[][] text = new char[MaxClients+1][128];
 		static char bossName[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -4191,16 +4152,16 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 					if(IsValidClient(client))
 					{
 						GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
-						Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						Format(text[client], 128, "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						if(SpecialRound)
-							Format(text[client], sizeof(text[]), "%s\n(%s)", text[client], dIncoming[target]);
+							Format(text[client], 128, "%s\n(%s)", text[client], dIncoming[target]);
 					}
 				}
 			}
 		}
 
-		SetHudTextParams(-1.0, 0.2, bonusRoundTime, 255, 255, 255, 255);
+		SetHudTextParams(-1.0, 0.25, bonusRoundTime, 255, 255, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
@@ -4264,7 +4225,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	SetHudTextParams(-1.0, 0.3, bonusRoundTime, 255, 255, 255, 255);
+	SetHudTextParams(-1.0, 0.35, bonusRoundTime, 255, 255, 255, 255);
 	PrintCenterTextAll("");
 
 	static char text[128];
@@ -6576,11 +6537,12 @@ public Action MessageTimer(Handle timer)
 			doorCheckTimer = CreateTimer(5.0, Timer_CheckDoors, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
 
-	char text[MAXTF2PLAYERS][512], textChat[512];
+	char[][] text = new char[MaxClients+1][512];
+	char textChat[512];
 	static char name[64];
 	if(Enabled3)
 	{
-		char text2[MAXTF2PLAYERS][512];
+		char[][] text2 = new char[MaxClients+1][512];
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]))
@@ -6598,11 +6560,11 @@ public Action MessageTimer(Handle timer)
 					GetBossSpecial(Special[boss], name, sizeof(name));
 					if(BossSwitched[boss])
 					{
-						Format(text2[client], sizeof(text2[]), "%s\n%t", text2[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+						Format(text2[client], 512, "%s\n%t", text2[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					}
 					else
 					{
-						Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+						Format(text[client], 512, "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					}
 					FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
@@ -6647,12 +6609,12 @@ public Action MessageTimer(Handle timer)
 
 				SetGlobalTransTarget(client);
 				GetBossSpecial(Special[boss], name, sizeof(name), client);
-				Format(text[client], sizeof(text[]), "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+				Format(text[client], 512, "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 				FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 				ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
 				FPrintToChat(client, textChat);
 				if(SpecialRound && cvarGameText.IntValue<2)
-					Format(text[client], sizeof(text[]), "%s\n(%s)", text[client], dIncoming[Boss[boss]]);
+					Format(text[client], 512, "%s\n(%s)", text[client], dIncoming[Boss[boss]]);
 			}
 
 			if(SpecialRound)
@@ -9138,7 +9100,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 {
 	if(IsBoss(client) || GetGameTime()>=HPTime)
 	{
-		char text[MAXTF2PLAYERS][512];
+		char[][] text = new char[MaxClients+1][512];
 		static char name[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -9153,7 +9115,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 					if(IsValidClient(target))
 					{
 						GetBossSpecial(Special[boss], name, sizeof(name), target);
-						Format(text[target], sizeof(text[]), "%s\n%t", text[target], "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						Format(text[target], 512, "%s\n%t", text[target], "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						FPrintToChat(target, "%t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 					}
 				}
@@ -12287,17 +12249,12 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 		{
 			KillstreakDamage[attacker] += damage;
 			int streak = GetEntProp(attacker, Prop_Send, "m_nStreaks");
-			int fakedeath;
 			while(KillstreakDamage[attacker]>=cvarDmg2KStreak.FloatValue && i<21)
 			{
 				i++;
 				KillstreakDamage[attacker] -= cvarDmg2KStreak.FloatValue;
-				if(!((streak+i) % 5))
-					fakedeath = streak+i;
 			}
 			SetEntProp(attacker, Prop_Send, "m_nStreaks", streak+i);
-			if(fakedeath)
-				FireDeathNotice(client, attacker, attacker, float(damage), 0, weapon, NULL_VECTOR, NULL_VECTOR, custom, 0);
 		}
 		if(SapperCooldown[attacker] > 0.0)
 			SapperCooldown[attacker] -= damage;
@@ -12318,53 +12275,6 @@ stock bool RemoveCond(int client, TFCond cond)
 		return true;
 	}
 	return false;
-}
-
-// Below code by nosoop
-stock void FireDeathNotice(int client, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom,  int critType)
-{
-	#if defined __sourcescramble_ext_included
-	if(SDKDeathNotice == null)
-		return;
-
-	MemoryBlock takeDamageInfo = new MemoryBlock(0x68);
-	Address pTakeDamageInfo = takeDamageInfo.Address;
-
-	StoreFloatVectorToAddress(AddressOffset(pTakeDamageInfo, m_DamageForce), damageForce);
-	StoreFloatVectorToAddress(AddressOffset(pTakeDamageInfo, m_DamagePosition), damagePosition);
-	StoreFloatVectorToAddress(AddressOffset(pTakeDamageInfo, m_ReportedPosition), damagePosition);
-
-	StoreEntityHandleToAddress(AddressOffset(pTakeDamageInfo, m_Inflictor), IsValidEntity(inflictor) ? inflictor : client);
-	StoreEntityHandleToAddress(AddressOffset(pTakeDamageInfo, m_Attacker), IsValidEntity(attacker) ? attacker : client);
-	StoreEntityHandleToAddress(AddressOffset(pTakeDamageInfo, m_Weapon), IsValidEntity(weapon) ? weapon : client);
-
-	takeDamageInfo.StoreToOffset(m_Damage, view_as<int>(damage), NumberType_Int32);
-	takeDamageInfo.StoreToOffset(m_BaseDamage, view_as<int>(damage), NumberType_Int32);
-	takeDamageInfo.StoreToOffset(m_BitsDamageType, damagetype, NumberType_Int32);
-	takeDamageInfo.StoreToOffset(m_DamageCustom, damagecustom, NumberType_Int32);
-	takeDamageInfo.StoreToOffset(m_CritType, critType, NumberType_Int32);
-
-	SDKCall(SDKDeathNotice, client, pTakeDamageInfo, "player_death");
-	delete takeDamageInfo;
-}
-
-stock void StoreFloatVectorToAddress(Address addr, const float vec[3])
-{
-	for(int i; i<3; i++)
-	{
-		StoreToAddress(AddressOffset(addr, i*4), view_as<int>(vec[i]), NumberType_Int32);
-	}
-}
-
-stock Address AddressOffset(Address addr, int offs)
-{
-	return addr + view_as<Address>(offs);
-}
-
-stock void StoreEntityHandleToAddress(Address addr, int entity)
-{
-	StoreToAddress(addr, EntIndexToEntRef(entity) & ~(1 << 31), NumberType_Int32);
-	#endif
 }
 
 public Action OnPlayerHealed(Event event, const char[] name, bool dontBroadcast)
@@ -12602,6 +12512,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					damage = BossHealthMax[boss]*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
 				}
 				damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
+				damagecustom = 0;
 
 				Action action = Plugin_Continue;
 				Call_StartForward(OnBackstabbed);
@@ -12753,7 +12664,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
 						}
-						FireDeathNotice(client, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, 2);
 					}
 
 					HealthBarMode = true;
@@ -12765,7 +12675,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				if(Stabbed[boss] < 3)
 					Stabbed[boss]++;
 
-				damagecustom = 0;
 				if(action == Plugin_Handled)
 				{
 					damage = 0.0;
@@ -12782,6 +12691,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					return Plugin_Changed;
 				}
 				damage = BossHealth[boss]*1.005;
+				damagecustom = 0;
 
 				for(int all=1; all<=MaxClients; all++)
 				{
@@ -12899,8 +12809,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				HealthBarMode = true;
 				CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
-				FireDeathNotice(client, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, 2);
-				damagecustom = 0;
 				return Plugin_Changed;
 			}
 
@@ -13366,7 +13274,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							ActivateAbilitySlot(boss, 7);
 							HealthBarMode = true;
 							CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
-							FireDeathNotice(client, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, 2);
 							return Plugin_Changed;
 						}
 					}
@@ -13467,6 +13374,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						damage = BossHealthMax[boss]*bosses*(LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 					}
 					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
+					damagecustom = 0;
 
 					Action action = Plugin_Continue;
 					Call_StartForward(OnBackstabbed);
@@ -13575,14 +13483,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							}
 						}
 
-
 						if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
 						{
 							static char sound[PLATFORM_MAX_PATH];
 							if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
 								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss]);
-		
-							FireDeathNotice(client, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, 2);
 						}
 
 						HealthBarMode = true;
@@ -13619,7 +13524,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(Stabbed[boss] < 3)
 						Stabbed[boss]++;
 
-					damagecustom = 0;
 					if(action == Plugin_Handled)
 					{
 						damage = 0.0;
@@ -15550,19 +15454,12 @@ public Action QueuePanelCmd(int client, int args)
 		int target = GetClientWithMostQueuePoints(added, _, false);  //Get whoever has the highest queue points out of those who haven't been listed yet
 		if(!IsValidClient(target))  //When there's no players left, fill up the rest of the list with blank lines
 		{
-			menu.AddItem("", "", ITEMDRAW_SPACER);
+			menu.AddItem("", "");
 			continue;
 		}
 
 		FormatEx(text, sizeof(text), "%N-%i", target, QueuePoints[target]);
-		if(client != target)
-		{
-			menu.AddItem(text, text);
-		}
-		else
-		{
-			menu.AddItem(text, text, ITEMDRAW_DISABLED);
-		}
+		menu.AddItem(text, text, client==target ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 		added[target] = true;
 	}
 
@@ -15988,7 +15885,9 @@ public Action HelpPanelClass(int client)
 	menu.SetTitle(text);
 	FormatEx(text, sizeof(text), "%t", "Exit");
 	menu.AddItem(text, text);
-	menu.Display(client, 20);
+	menu.ExitButton = false;
+	menu.OptionFlags |= MENUFLAG_NO_SOUND;
+	menu.Display(client, 25);
 	#else
 	char translation[64];
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
@@ -16154,7 +16053,9 @@ public Action HelpPanelClass(int client)
 		menu.SetTitle(text);
 		FormatEx(text, sizeof(text), "%t", "Exit");
 		menu.AddItem(text, text);
-		menu.Display(client, 20);
+		menu.ExitButton = false;
+		menu.OptionFlags |= MENUFLAG_NO_SOUND;
+		menu.Display(client, 25);
 	}
 	#endif
 	return Plugin_Continue;
@@ -16183,6 +16084,8 @@ void HelpPanelBoss(int boss)
 	menu.SetTitle(text);
 	FormatEx(text, sizeof(text), "%T", "Exit", Boss[boss]);
 	menu.AddItem(text, text);
+	menu.ExitButton = false;
+	menu.OptionFlags |= MENUFLAG_NO_SOUND;
 	menu.Display(Boss[boss], 25);
 }
 
@@ -17484,7 +17387,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 	int boss = GetNativeCell(1);
 	GetNativeString(2, pluginName, sizeof(pluginName));
 	GetNativeString(3, abilityName, sizeof(abilityName));
-	if(boss==-1 || Special[boss]==-1 || !BossKV[Special[boss]])
+	if(boss==-1 || boss>=MAXTF2PLAYERS || Special[boss]==-1 || !BossKV[Special[boss]])
 		return false;
 
 	KvRewind(BossKV[Special[boss]]);
