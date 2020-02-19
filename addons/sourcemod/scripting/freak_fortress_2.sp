@@ -77,8 +77,8 @@ last time or to encourage others to do the same.
 #define FORK_MINOR_REVISION "19"
 #define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
-#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 13, 2020"
+//#define FORK_DEV_REVISION "development"
+#define FORK_DATE_REVISION "February 19, 2020"
 
 #define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
 
@@ -10086,7 +10086,7 @@ public Action ClientTimer(Handle timer)
 			}
 			else
 			{
-				if(observer && !IsBoss(observer))
+				if(IsValidClient(observer) && !IsBoss(observer))
 				{
 					if((Healing[client]>0 && HealHud==1) || HealHud>1)
 					{
@@ -10110,7 +10110,7 @@ public Action ClientTimer(Handle timer)
 				}
 			}
 
-			if(observer)
+			if(IsValidClient(observer))
 			{
 				if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>1))
 				{
