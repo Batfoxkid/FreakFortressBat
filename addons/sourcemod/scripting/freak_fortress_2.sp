@@ -448,9 +448,6 @@ int changeGamemode;
 Handle kvWeaponMods = INVALID_HANDLE;
 Handle kvDiffMods = INVALID_HANDLE;
 Handle SDKEquipWearable = null;
-#if defined __sourcescramble_ext_included
-Handle SDKDeathNotice = null;
-#endif
 
 bool dmgTriple[MAXTF2PLAYERS];
 bool randomCrits[MAXTF2PLAYERS];
