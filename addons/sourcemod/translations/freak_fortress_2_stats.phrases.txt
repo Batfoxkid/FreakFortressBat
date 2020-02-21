@@ -60,19 +60,19 @@
 	}
 	"Player Stats"	// HUD
 	{
-		"#format"	"{1:N},{2:d},{3:d},{4:d}"
+		"#format"	"{1:s},{2:d},{3:d},{4:d}"
 		"en"		"{1} - Damage: {2} | Bosses Slain: {3} | MVPs: {4}"
 		"ru"		"{1} - Урон: {2} | Боссов убито: {3} | СЦИ: {4}"
 	}
 	"Player Stats Healing"	// HUD
 	{
-		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d}"
+		"#format"	"{1:s},{2:d},{3:d},{4:d},{5:d}"
 		"en"		"{1} - Damage: {2} | Healing: {3} | Bosses Slain: {4} | MVPs: {5}"
 		"ru"		"{1} - Урон: {2} | Лечение: {3} | Боссов убито: {4} | СЦИ: {5}"
 	}
 	"Player Stats Boss"	// HUD
 	{
-		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d}"
+		"#format"	"{1:s},{2:d},{3:d},{4:d},{5:d}"
 		"en"		"{1} - Wins: {2} | Losses: {3} | Kills: {4} | Deaths: {5}"
 		"ru"		"{1} - Побед: {2} | Поражений: {3} | Убийств: {4} | Смертей: {5}"
 	}

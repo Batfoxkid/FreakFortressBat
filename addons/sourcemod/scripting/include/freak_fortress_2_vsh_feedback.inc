@@ -14,7 +14,7 @@ void AskPluginLoad_VSH()
 
 public int Native_VSHIsVSHMap(Handle plugin, int numParams)
 {
-	return IsFF2Map();
+	return IsFF2Map(currentmap);
 }
 
 public int Native_VSHIsEnabled(Handle plugin, int numParams)
