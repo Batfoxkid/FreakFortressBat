@@ -75,12 +75,12 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "8"
+#define FORK_STABLE_REVISION "9"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 20, 2020"
+#define FORK_DATE_REVISION "February 21, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6543,6 +6543,7 @@ public Action MessageTimer(Handle timer)
 	static char name[64];
 	if(Enabled3)
 	{
+		bool boss1, boss2;
 		char[][] text2 = new char[MaxClients+1][512];
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -6561,15 +6562,24 @@ public Action MessageTimer(Handle timer)
 					GetBossSpecial(Special[boss], name, sizeof(name));
 					if(BossSwitched[boss])
 					{
-						Format(text2[client], 512, "%s\n%t", text2[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+						Format(text2[client], 512, "%s\n%t", boss2 ? text2[client] : "", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					}
 					else
 					{
-						Format(text[client], 512, "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+						Format(text[client], 512, "%s\n%t", boss1 ? text[client] : "", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					}
 					FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 					ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
 					FPrintToChat(client, textChat);
+				}
+
+				if(BossSwitched[boss])
+				{
+					boss2 = true;
+				}
+				else
+				{
+					boss1 = true;
 				}
 			}
 		}
@@ -10550,10 +10560,11 @@ public Action BossTimer(Handle timer)
 	if(!Enabled || CheckRoundState()==2)
 		return Plugin_Stop;
 
-	int client, observer, buttons;
+	int client, observer, buttons, target, aliveTeammates;
 	bool validBoss;
 	int StatHud = cvarStatHud.IntValue;
 	int HealHud = cvarHealingHud.IntValue;
+	static char sound[PLATFORM_MAX_PATH];
 	for(int boss; boss<=MaxClients; boss++)
 	{
 		client = Boss[boss];
@@ -10573,7 +10584,13 @@ public Action BossTimer(Handle timer)
 
 			observer = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
 			if(!IsValidClient(observer) || observer==client)
+			{
 				observer = 0;
+			}
+			else
+			{
+				GetClientName(observer, sound, sizeof(sound));
+			}
 
 			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255);
 			if(StatHud<0 || (!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<1))
@@ -10582,11 +10599,11 @@ public Action BossTimer(Handle timer)
 				{
 					if((Healing[observer]>0 && HealHud==1) || HealHud>1)
 					{
-						ShowSyncHudText(client, statHUD, "%t %t", "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						ShowSyncHudText(client, statHUD, "%t %t", "Spectator Damage Dealt", sound, Damage[observer], "Healing", Healing[observer]);
 					}
 					else
 					{
-						ShowSyncHudText(client, statHUD, "%t", "Spectator Damage Dealt", observer, Damage[observer]);
+						ShowSyncHudText(client, statHUD, "%t", "Spectator Damage Dealt", sound, Damage[observer]);
 					}
 				}
 			}
@@ -10598,7 +10615,7 @@ public Action BossTimer(Handle timer)
 				}
 				else
 				{
-					ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", observer, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
+					ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Boss", sound, BossWins[observer], BossLosses[observer], BossKillsF[observer], BossDeaths[observer]);
 				}
 			}
 			else if(observer)
@@ -10607,22 +10624,22 @@ public Action BossTimer(Handle timer)
 				{
 					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 					{
-						ShowSyncHudText(client, statHUD, "%t\n%t %t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer], "Healing", Healing[observer]);
+						ShowSyncHudText(client, statHUD, "%t\n%t %t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", sound, Damage[observer], "Healing", Healing[observer]);
 					}
 					else
 					{
-						ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", observer, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats Healing", sound, Damage[observer], Healing[observer], PlayerKills[observer], PlayerMVPs[observer]);
 					}
 				}
 				else
 				{
 					if(!CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && StatHud<2)
 					{
-						ShowSyncHudText(client, statHUD, "%t\n%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", observer, Damage[observer]);
+						ShowSyncHudText(client, statHUD, "%t\n%t", "Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Spectator Damage Dealt", sound, Damage[observer]);
 					}
 					else
 					{
-						ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", observer, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
+						ShowSyncHudText(client, statHUD, "%t%t", "Self Stats Boss", BossWins[client], BossLosses[client], BossKillsF[client], BossDeaths[client], "Player Stats", sound, Damage[observer], PlayerKills[observer], PlayerMVPs[observer]);
 					}
 				}
 			}
@@ -10682,10 +10699,9 @@ public Action BossTimer(Handle timer)
 					ShowSyncHudText(client, rageHUD, "%t", "do_rage");
 				}
 
-				char sound[PLATFORM_MAX_PATH];
 				if(RandomSound("sound_full_rage", sound, sizeof(sound), boss) && emitRageSound[boss])
 				{
-					float position[3];
+					static float position[3];
 					GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 					FF2flags[client] |= FF2FLAG_TALKING;
@@ -10694,12 +10710,10 @@ public Action BossTimer(Handle timer)
 					for(int target=1; target<=MaxClients; target++)
 					{
 						if(IsClientInGame(target) && target!=client && ToggleVoice[target])
-						{
 							EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
-						}
 					}
 					FF2flags[client] &= ~FF2FLAG_TALKING;
-					emitRageSound[boss]=false;
+					emitRageSound[boss] = false;
 				}
 			}
 		}
@@ -10716,7 +10730,7 @@ public Action BossTimer(Handle timer)
 			ActivateAbilitySlot(boss, i, true);
 		}
 
-		int aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
+		aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
 
 		if(lastPlayerGlow > 0)
 		{
@@ -10753,7 +10767,7 @@ public Action BossTimer(Handle timer)
 				}
 			}
 
-			for(int target; target<=MaxClients; target++)
+			for(target=1; target<=MaxClients; target++)
 			{
 				if(IsValidClient(target) && (IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[target] & FF2FLAG_HUDDISABLED))
 				{
@@ -10787,10 +10801,10 @@ public Action BossTimer(Handle timer)
 		if(HPTime < 0)
 			HPTime = 0.0;
 
-		for(int client2; client2<=MaxClients; client2++)
+		for(target=0; target<=MaxClients; target++)
 		{
-			if(KSpreeTimer[client2] > 0)
-				KSpreeTimer[client2] -= 0.2;
+			if(KSpreeTimer[target] > 0)
+				KSpreeTimer[target] -= 0.2;
 		}
 	}
 
