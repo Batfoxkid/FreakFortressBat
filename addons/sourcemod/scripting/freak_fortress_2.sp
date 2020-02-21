@@ -78,9 +78,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "8"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 19, 2020"
+#define FORK_DATE_REVISION "February 20, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."007"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."008"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -3984,6 +3984,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	{
 		int target;
 		char[][] text = new char[MaxClients+1][128];
+		bool multi;
 		static char bossName[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -4001,10 +4002,11 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 						if(IsValidClient(client))
 						{
 							GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
-							Format(text[client], 128, "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+							Format(text[client], 128, "%s\n%t", multi ? text[client] : "", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 							FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						}
 					}
+					multi = true;
 				}
 			}
 		}
@@ -4137,6 +4139,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	{
 		int target;
 		char[][] text = new char[MaxClients+1][128];
+		bool multi;
 		static char bossName[64];
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -4152,12 +4155,13 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 					if(IsValidClient(client))
 					{
 						GetBossSpecial(Special[boss], bossName, sizeof(bossName), client);
-						Format(text[client], 128, "%s\n%t", text[client], "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						Format(text[client], 128, "%s\n%t", multi ? text[client] : "", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						FPrintToChat(client, "%t", "ff2_alive", bossName, target, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						if(SpecialRound)
 							Format(text[client], 128, "%s\n(%s)", text[client], dIncoming[target]);
 					}
 				}
+				multi = true;
 			}
 		}
 
