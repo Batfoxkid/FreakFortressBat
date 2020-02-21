@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 //#define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 21, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."000"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10707,7 +10707,7 @@ public Action BossTimer(Handle timer)
 					FF2flags[client] |= FF2FLAG_TALKING;
 					EmitSoundToAllExcept(sound);
 
-					for(int target=1; target<=MaxClients; target++)
+					for(target=1; target<=MaxClients; target++)
 					{
 						if(IsClientInGame(target) && target!=client && ToggleVoice[target])
 							EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
@@ -10725,9 +10725,9 @@ public Action BossTimer(Handle timer)
 
 		SetClientGlow(client, -0.2);
 
-		for(int i=1; i<4; i++)
+		for(target=1; target<4; target++)
 		{
-			ActivateAbilitySlot(boss, i, true);
+			ActivateAbilitySlot(boss, target, true);
 		}
 
 		aliveTeammates = Enabled3 ? BossAlivePlayers+MercAlivePlayers-1 : MercAlivePlayers;
