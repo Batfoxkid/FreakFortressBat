@@ -78,9 +78,9 @@ last time or to encourage others to do the same.
 #define FORK_STABLE_REVISION "9"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 21, 2020"
+#define FORK_DATE_REVISION "February 22, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -6605,6 +6605,7 @@ public Action MessageTimer(Handle timer)
 		return Plugin_Continue;
 	}
 
+	bool multi;
 	for(int boss; boss<=MaxClients; boss++)
 	{
 		if(IsValidClient(Boss[boss]))
@@ -6620,7 +6621,7 @@ public Action MessageTimer(Handle timer)
 
 				SetGlobalTransTarget(client);
 				GetBossSpecial(Special[boss], name, sizeof(name), client);
-				Format(text[client], 512, "%s\n%t", text[client], "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
+				Format(text[client], 512, "%s\n%t", multi ? text[client] : "", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 				FormatEx(textChat, sizeof(textChat), "%t", "ff2_start", Boss[boss], name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), lives);
 				ReplaceString(textChat, sizeof(textChat), "\n", "");  //Get rid of newlines
 				FPrintToChat(client, textChat);
@@ -6635,6 +6636,8 @@ public Action MessageTimer(Handle timer)
 				FPrintToChatAll(textChat);
 				break;
 			}
+
+			multi = true;
 		}
 	}
 
@@ -9113,6 +9116,7 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 	{
 		char[][] text = new char[MaxClients+1][512];
 		static char name[64];
+		bool multi;
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(IsValidClient(Boss[boss]))
@@ -9126,10 +9130,11 @@ public Action Command_GetHP(int client)  //TODO: This can rarely show a very lar
 					if(IsValidClient(target))
 					{
 						GetBossSpecial(Special[boss], name, sizeof(name), target);
-						Format(text[target], 512, "%s\n%t", text[target], "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						Format(text[target], 512, "%s\n%t", multi ? text[target] : "", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 						FPrintToChat(target, "%t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
 					}
 				}
+				multi = true;
 				BossHealthLast[boss] = BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
 			}
 		}
