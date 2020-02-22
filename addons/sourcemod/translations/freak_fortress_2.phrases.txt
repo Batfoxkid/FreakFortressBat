@@ -590,7 +590,7 @@
 	}
 	"Spectator Damage Dealt"	// HUD
 	{
-		"#format"	"{1:N},{2:i}"
+		"#format"	"{1:s},{2:i}"
 		"en"		"{1}'s Damage: {2}"
 		"ru"		"Урон игрока {1}: {2}"
 	}
