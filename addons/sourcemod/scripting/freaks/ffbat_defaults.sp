@@ -56,7 +56,7 @@
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"6"
-#define STABLE_REVISION	"0"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -1568,9 +1568,9 @@ public Action SaveMinion(int client, int &attacker, int &inflictor, float &damag
 			bool otherTeamIsAlive;
 			for(int clone=1; clone<=MaxClients; clone++)
 			{
-				if(IsValidEntity(clone) && IsClientInGame(clone) && IsPlayerAlive(clone) && GetClientTeam(clone)!=GetClientTeam(CloneOwnerIndex[clone]))
+				if(IsValidEntity(clone) && IsClientInGame(clone) && IsPlayerAlive(clone) && CloneOwnerIndex[clone]>0 && CloneOwnerIndex[clone]<=MaxClients && IsClientInGame(CloneOwnerIndex[clone]) && IsPlayerAlive(CloneOwnerIndex[clone]) && GetClientTeam(clone)!=GetClientTeam(CloneOwnerIndex[clone]))
 				{
-					otherTeamIsAlive=true;
+					otherTeamIsAlive = true;
 					break;
 				}
 			}
