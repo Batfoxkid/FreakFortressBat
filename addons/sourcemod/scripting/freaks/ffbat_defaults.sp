@@ -99,7 +99,7 @@ int Players;
 int TotalPlayers;
 
 //	Clone Attack
-int CloneOwnerIndex[MAXTF2PLAYERS] = -1;
+int CloneOwnerIndex[MAXTF2PLAYERS];
 
 //	Difficulty
 bool NoCharge[MAXTF2PLAYERS];
@@ -542,7 +542,7 @@ public Action OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	for(int client; client<MaxClients; client++)
 	{
 		FF2Flags[client] = 0;
-		CloneOwnerIndex[client] = -1;
+		CloneOwnerIndex[client] = 0;
 		if(!client || !IsClientInGame(client))
 			continue;
 
@@ -605,9 +605,9 @@ public Action OnRoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		NoSlot[client] = -2;
 		Outline[client] = false;
 
-		if(client && IsClientInGame(client) && CloneOwnerIndex[client]!=-1)  //FIXME: IsClientInGame() shouldn't be needed
+		if(client && IsClientInGame(client) && CloneOwnerIndex[client]!=0)  //FIXME: IsClientInGame() shouldn't be needed
 		{
-			CloneOwnerIndex[client] = -1;
+			CloneOwnerIndex[client] = 0;
 			FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_CLASSTIMERDISABLED);
 		}
 	}
@@ -651,9 +651,9 @@ public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionTyp
 public void OnClientDisconnect(int client)
 {
 	FF2Flags[client] = 0;
-	if(CloneOwnerIndex[client] != -1)
+	if(CloneOwnerIndex[client] != 0)
 	{
-		CloneOwnerIndex[client] = -1;
+		CloneOwnerIndex[client] = 0;
 		FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_CLASSTIMERDISABLED);
 	}
 }
@@ -766,9 +766,9 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		{
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(CloneOwnerIndex[target] == boss)
+				if(CloneOwnerIndex[target] == client)
 				{
-					CloneOwnerIndex[target] = -1;
+					CloneOwnerIndex[target] = 0;
 					FF2_SetFF2flags(target, FF2_GetFF2flags(target) & ~FF2FLAG_CLASSTIMERDISABLED);
 					if(IsClientInGame(target) && GetClientTeam(target)==GetClientTeam(client))
 						ChangeClientTeam(target, (GetClientTeam(client)==view_as<int>(TFTeam_Blue)) ? (view_as<int>(TFTeam_Red)) : (view_as<int>(TFTeam_Blue)));
@@ -781,7 +781,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 	{
 		FF2_SetFF2flags(client, FF2_GetFF2flags(client) & ~FF2FLAG_CLASSTIMERDISABLED);
 		ChangeClientTeam(client, (TF2_GetClientTeam(CloneOwnerIndex[client])==TFTeam_Blue) ? (view_as<int>(TFTeam_Red)) : (view_as<int>(TFTeam_Blue)));
-		CloneOwnerIndex[client] = -1;
+		CloneOwnerIndex[client] = 0;
 	}
 }
 
