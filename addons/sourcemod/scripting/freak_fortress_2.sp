@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 //#define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 22, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -15270,7 +15270,8 @@ public bool PickCharacter(int boss, int companion)
 			static char companionName[64];
 			KvRewind(BossKV[Special[boss]]);
 			KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
-			if(KvGetNum(BossKV[Special[boss]], "blocked") ||
+			if(MapBlocked[Special[boss]] ||
+			   KvGetNum(BossKV[Special[boss]], "blocked") ||
 			   KvGetNum(BossKV[Special[boss]], "donator") ||
 			   KvGetNum(BossKV[Special[boss]], "admin") ||
 			   KvGetNum(BossKV[Special[boss]], "owner") ||
