@@ -80,7 +80,7 @@ last time or to encourage others to do the same.
 //#define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 22, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."003"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10074,6 +10074,10 @@ public Action ClientTimer(Handle timer)
 					GetClientName(observer, classname, sizeof(classname));
 				}
 			}
+			else
+			{
+				observer = 0;
+			}
 
 			if(StatHud>-1 && (CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) || StatHud>0))
 			{
@@ -10219,7 +10223,7 @@ public Action ClientTimer(Handle timer)
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
 			ShowSyncHudText(client, jumpHUD, "%t", "Sapper Cooldown", SapperAmount);
 		}
-		else if((class==TFClass_Sniper || class==TFClass_DemoMan) && (cvarShieldType.IntValue==3 || cvarShieldType.IntValue==4))
+		else if(shield[client] && (cvarShieldType.IntValue==3 || cvarShieldType.IntValue==4))
 		{
 			SetHudTextParams(-1.0, 0.83, 0.15, 255, 255, 255, 255, 0);
 			ShowSyncHudText(client, jumpHUD, "%t", "Shield HP", RoundToFloor(shieldHP[client]/cvarShieldHealth.FloatValue*100.0));
@@ -12082,7 +12086,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 			}
 			case 3:
 			{
-				if(GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee)!=weapon && shieldHP[client]>=0.0 && damage<preHealth)
+				if(GetPlayerWeaponSlot(attacker, TFWeaponSlot_Melee)!=weapon && shieldHP[client]>0 && damage<preHealth)
 				{
 					int damageresist = RoundFloat(float(damage)*shDmgReduction[client]);
 
@@ -12092,7 +12096,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 
 					shDmgReduction[client] = shieldHP[client]/cvarShieldHealth.FloatValue*(1.0-cvarShieldResist.FloatValue);
 
-					if(shieldHP[client] > 0.0)
+					if(shieldHP[client] > 0)
 					{
 						char ric[PLATFORM_MAX_PATH];
 						FormatEx(ric, sizeof(ric), "weapons/fx/rics/ric%i.wav", GetRandomInt(1,5));
