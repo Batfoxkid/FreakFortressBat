@@ -4,751 +4,888 @@
 	{
 		"en"		"The server does not have bots spawning."
 		"ru"		"На сервере нет спавна ботов."
+		"chi"		"服务器没有生成的机器人"
 	}
 	"type_ff2_to_open_menu"	// Chat
 	{
 		"en"		"Type {olive}/ff2{default} in chat to open the menu"
 		"ru"		"Введи {olive}/ff2{default} в чате, чтобы открыть меню"
+		"chi"		"聊天输入 {olive}/ff2{default} 打开菜单"
 	}
 	"nextmap_ff2"	// Deprecated, TODO: Use this?
 	{
 		"#format"	"{1:s}"
 		"en"		"The gamemode will be {olive}Freak Fortress 2{default} on {olive}{1}{default}"
 		"ru"		"{olive}Freak Fortress 2{default} будет запущен на карте {olive}{1}{default}"
+		"chi"		"游戏模式是 {olive}Freak Fortress 2{default} ，地图为{olive}{1}{default}"
 	}
 	"FF2 Disabled"	// Chat
 	{
 		"en"		"{olive}Freak Fortress 2{default} is currently disabled"
 		"ru"		"{olive}Freak Fortress 2{default} на данный момент отключен"
+		"chi"		"{olive}Freak Fortress 2{default} 当前已经关闭"
 	}
 	"wait_hp"	// Chat
 	{
 		"#format"	"{1:i},{2:s}"
 		"en"		"You cannot check the boss' HP right now. Wait {1} more second(s). Last known HP value was {2}"
 		"ru"		"Ты не можешь проверить ОЗ босса прямо сейчас. Подожди ещё {1} сек. Последнее известное - {2}"
+		"chi"		"你现在不能检查Boss的HP。再等待 {1} 秒。最后一次查到的HP是 {2}"
 	}
 	"damage"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Damage dealt by you - {1}"
 		"ru"		"Твой урон - {1}"
+		"chi"		"你造成的伤害 - {1}"
 	}
 	"point_enable"	// Hint
 	{
 		"#format"	"{1:i}"
 		"en"		"Only {1} player(s) left, the control point has been unlocked!"
 		"ru"		"Осталось {1} живых игроков, Контрольная Точка разблокирована!"
+		"chi"		"只剩下 {1} 名玩家了，控制点已经解锁！"
 	}
 	"top_3"	// HUD
 	{
 		"en"		"Most damage dealt by"
 		"ru"		"Наибольший урон"
+		"chi"		"造成最高伤害的玩家是"
 	}
 	"uber-charge"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Ubercharge rate: {1}"
 		"ru"		"Убер-заряд: {1}"
+		"chi"		"Ubercharge 比率: {1}"
 	}
 	"Shield HP"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Shield HP: {1} percent"
 		"ru"		"ОЗ Щита: {1} процентов"
+		"chi"		"盾牌HP: {1} 百分比"
 	}
 	"Sapper Cooldown"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Sapper Power: {1}%%"
 		"ru"		"Сила Жучка: {1}%%"
+		"chi"		"电子工兵能量: {1}%%"
 	}
 	"Boss Lives Left"	// HUD
 	{
 		"#format"	"{1:i},{2:i}"
 		"en"		"{1} out of {2} lives left"
 		"ru"		"осталось {1} из {2} жизней"
+		"chi"		"剩余生命{1} 总生命{2}" 
 	}
 	"Boss Life"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"{1} Lives"
 		"ru"		"{1} Жизней"
+		"chi"		"{1} 生命"
 	}
 	"do_rage"	// HUD
 	{
 		"en"		"Call for medic to activate your \"RAGE\" ability!"
 		"ru"		"Позови медика, чтобы активировать \"ЯРОСТЬ\"!"
+		"chi"		"呼叫医生来激活你的 \"愤怒\" 能力！"
 	}
 	"rage_meter"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Rage is {1} percent ready"
 		"ru"		"Ярость: {1} процентов готово"
+		"chi"		"愤怒已有 {1} 百分比就绪"
 	}
 	"super_duper_jump"	// HUD
 	{
 		"en"		"Super DUPER Jump ready!"
 		"ru"		"Супер Дупер прыжок готов!"
+		"chi"		"超级飞跃跳已准备好!"
 	}
 	"teleport_status"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Teleport is ready. {1} percent charged."
 		"ru"		"Телепорт готов. {1} процентов заряжено."
+		"chi"		"传送准备好了. {1} 百分比充能" 
 	}
 	"jump_status"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Super Jump is ready. {1} percent charged."
 		"ru"		"Прыжок готов. {1} процентов заряжено."
+		"chi"		"超级跳准备好了. {1} 百分比充能"
 	}
 	"teleport_status_2"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Teleport is not ready. {1} seconds remaining."
 		"ru"		"Телепорт снова будет доступен через {1} сек."
+		"chi"		"传说未准备好. {1} 秒剩余"
 	}
 	"jump_status_2"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Super Jump is not ready. {1} seconds remaining."
 		"ru"		"Супер Прыжок снова будет доступен через {1} сек."
+		"chi"		"超级跳未准备好. {1} 秒剩余"
 	}
 	"Solo Rage"	// Chat
 	{
 		"#format"	"{1:s}"
 		"en"		"{blue}{1}{default} used {red}solo rage{default}!"
 		"ru"		"{blue}{1}{default} использовал {red}ярость на одного{default}!"
+		"chi"		"{blue}{1}{default} 使用了{red}为你开大{default}!
 	}
 	"Solo Rage Fail"	// Chat
 	{
 		"en"		"It's {red}not{default} very effective..."
 		"ru"		"Это {red}не{default} очень эффективно..."
+		"chi"		"看上去{red}不是{default}特别有效..."
 	}
 	"Solo Rage Win"	// Chat
 	{
 		"en"		"It's {blue}super{default} effective..."
 		"ru"		"Это {blue}супер{default} эффективно..."
+		"chi"		"看上去{blue}是{default}特别有效..."
 	}
 	"help_scout"	// Deprecated
 	{
 		"en"		"Baby Face's Blaster drains boost.\nStock pistol always mini-crit.\nAll bleed damage is crit-boosted.\nCandy Cane drops a health pack on hit.\nFan O' War gives a slight speed boost, faster fire rate,\nbut lower damage and disables double jump."
 		"ru"		"Обрез малыша ускоряет.\nПистолет даёт мини-криты.\nКровоточащий урон критует.\nКарамельная трость выбивает аптечку.\nВеер Войны слегка ускоряет бег и скорострельность,\nно понижает урон и отменяет двойной прыжок."
+		"chi"		"娃娃脸的冲击波能量逐渐消失。\n原配手枪一直有迷你爆击。\n所有的流血伤害有爆击加成。\n糖果手杖击中敌人后掉落医疗包。\n军配扇有轻微的加速, 更快的开火速率，\n但伤害更低并且关闭二段跳。"
 	}
 	"help_soldier"	// Deprecated
 	{
 		"en"		"Airstrike gains a head on hit.\nBattalion's Backup heavily reduces damage to nearby players while active.\nBoth boots reduce fall damage but Mantreads create greater rocketjumps.\nPain Train acts like a Boston Basher."
 		"ru"		"Авиаудар считывает головы за удар.\nПоддержка батальона сильно снижает урон по ближайшим игрокам.\nОба предмета снижают урон от падения, а Людодавы улучшают ракетный прыжок.\nКостыль действует как Бостонский раздолбай."
+		"chi"		"空袭火箭筒击中获得头颅。\n军队的支援激活时大量地减少周围的玩家受到的伤害。\n两种靴子都减少掉落伤害但踏步靴能火箭跳更高。\n钉棍就像波士顿狼牙棒运作。"	
 	}
 	"help_pyro"	// Deprecated
 	{
 		"en"		"Airblasting causes the boss to build rage.\nThe Detonator has increased push force.\nGas Passer explodes the boss if hit.\nHomewrecker and Maul applies more knockback.\nThird Degree gives Uber on hit to the medic healing you.\nNeon Annihilator slows shortly on hit.\nSharpened Volcano Fragment removes your flamethrower."
 		"ru"		"Отталкивание босса заполняет ему шкалу ярости.\nУ Детонатора увеличена толкающая сила.\nЗапасной бак подрывает босса при ударе.\nКрушитель и Молот сильнее отбрасывают.\nТретья степень даёт Убер при ударе по лечащему вас медику.\nНеоновый аннигилятор ненадолго замедляет при ударе.\nЗаострённый осколок вулкана удаляет огнемёт."
+		"chi"		"压缩空气使boss获得愤怒。\n起爆者增加了推动力。\n纵火者的油桶击中boss时爆炸。\n拆迁者和破坏锤有更多的击退。\n三度烧伤击中时给治疗你的医生增加Uber。\n霓虹杀手击中时短暂减速敌人。\n熔岩战斧移除你的火焰喷射器。"
 	}
 	"help_demo"	// Deprecated
 	{
 		"en"		"All shields block one hit from the Boss.\nChargin' Targe gives faster melee swing.\nEyelander and reskins gain heads on hit.\nUllapool Caber explosion has increased damage.\nPain Train acts like a Boston Basher."
 		"ru"		"Все щиты блокируют 1 удар босса.\nШтурмовой щит ускоряет размах рукопашного оружия.\nОдноглазый горец и рескины считывают головы при ударе.\nУ взрыва Аллапульского бревна увеличен урон.\nКостыль действует как Бостонский раздолбай."
+		"chi"		"所有盾牌抵挡boss的一次攻击。\n冲锋盾给予更快近战攻速。\n苏格兰长剑及其皮肤武器击中时获得头颅。\n木柄手榴弹爆炸造成更多伤害。\n钉棍就像波士顿狼牙棒运作。"
 	}
 	"help_heavy"	// Deprecated
 	{
 		"en"		"Natascha gives faster movement speed while deployed.\nHuo-Long Heater fires flares instead of bullets.\nK.G.B. makes you a melee tank.\nGloves of Running Urently gives massive speed but decays HP.\nEviction Notice gives a passive speed boost.\nHoliday Punch gives you faster weapon switch."
 		"ru"		"Наташа ускоряет передвижение при раскрутке.\nОгненный дракон стреляет огнём вместо пуль.\nК.Г.Б. превращают тебя в рукопашного танка.\nГ.Р.У. сильно ускоряют, но отнимают ОЗ.\nУведомление о выселении даёт пассивное ускорение.\nПраздничный удар ускоряет смену оружия."
+		"chi"		"娜塔莎转轮机枪部署时给予更快的移速。\n火龙转轮机枪发射火焰而不是子弹。\n杀戮拳击手套让你变成近战坦克。\n紧急逃跑手套给予大量移速但减少HP。\n驱逐警告给予大量移速。\n欢乐拳套给你更快的武器切换速度。"
 	}
 	"help_eggineer"	// Deprecated
 	{
 		"en"		"Frontier Justice gains crits while your sentry is attacking.\nWrangler slows you down while deployed.\nPomson 6000 and Short Circuit slows on hit.\nEureka Effect has bi-teleporters but can't self-teleport."
 		"ru"		"Самосуд даёт криты, если турель видит босса.\nПоводырь замедляет бег при использовании.\nПомсон 6000 и Короткое замыкание замедляют при ударе.\nОзарение имеет би-телепорты, но нельзя телепортировать себя."
+		"chi"		"边境裁决者在步哨攻击时获得爆击。\n遥控手柄部署时使你减速。\n歼灭者 6000和短路发生器击中敌人时减速。\n传送扳手有双向传送的传送装置但不能传送自己。"
 	}
 	"help_medic"	// Deprecated
 	{
 		"en"		"Medi Guns give Uber, Crits, and no knockback on use.\nCan overheal to twice the max HP.\nSyringe Gun and Crossbow give ubercharge on hit."
 		"ru"		"Лечебные пушки дают Убер, криты, и имуннитет к отбрасыванию.\nСверхлечение дважды увеличивает ОЗ от макс.\nШприцемёт и Арбалет дают убер-заряд при ударе."
+		"chi"		"医疗枪使用时给予Uber，爆击和无击退。\n可以超量治疗到HP的两倍。\n注射枪和十字弩击中敌人时获得Uber。"
 	}
 	"help_sniper"	// Deprecated
 	{
 		"en"		"Stock sniper rifles causes the boss to glow based on charge.\nJarate throws a bomb instead.\nRazorback blocks a hit from the boss.\nDarwin's Danger Shield gives you +85 HP.\nCozy Camper gives you a modified SMG.\nAll melees can wall climb at the cost of 15 HP."
 		"ru"		"Обычные винтовки подсвечивают босса, основываясь на заряд.\nВместо Банкате бросается бомба.\nБронепанцирь блокирует 1 удар босса.\nДарвинистский щит даёт +85 ОЗ.\nНабор для кемпинга даёт ППМ.\nРукопашное оружие позволяет лазить по стенам, но стоит 15 ОЗ."
+		"chi"		"原配狙击步枪击中时基于充能度标记boss。\n瓶手道尿瓶变成炸弹。\n电击背脊盾阻挡来自boss的一次攻击。\n达尔文的危险之盾给你+85HP。\n惬意蹲坑汉给你一个自定义的SMG。\n所有的近战攻击可以爬墙消耗15HP。"
 		// Remove wall climb if your not using it
 	}
 	"help_spie"	// Deprecated
 	{
 		"en"		"All revolvers minicrit while not disguised.\nBut Enforcer deals crits while disguised.\nEnforcer, Ambassador, and Diamondback crits deal more damage.\nBackstabs does about 10%% of the boss's max HP.\nYour Eternal Reward/Wanga Prick backstabs disguise you instantly and silently.\nKunai backstabs will give you a health bonus.\nBig Earner gives you full cloak and speed on backstab."
 		"ru"		"Все револьверы мини-критуют вне маскировки.\nНо Принудитель критует в маскировке.\nКриты Принудителя, Амбассадора, и Алмазного змея усилены.\nУдары в спину сносят ~10%% от макс. ОЗ босса.\nУдар в спину Вечным Покоем/Иголкой Вуду замаскирует тебя.\nУдар в спину Кунаем даёт прирост ОЗ.\nУдар в спину Главным Дельцом даёт полный запас часов и скорость."
+		"chi"		"所有左轮手枪在未伪装时有迷你爆击。\n但执法者在伪装时造成爆击。\n执法者，大使手枪和菱背响尾蛇爆击造成更多伤害。\n背刺造成大约Boss的10%%的最大生命值。\n永生的回报/巫毒刺钉背刺使你瞬间并安静地伪装。\n密谋者的苦无背刺给你一次生命加成。\n暴利杀手背刺给你全部隐身能量和加速。"
 	}
 	"help_melee"	// Deprecated
 	{
 		"en"		"Most of melee weapons (except the Spy knives) deal critical hits.\nUse /ff2 menu to disable this notifications."
 		"ru"		"Многие рукопашные оружия (кроме ножей шпионов) наносят криты.\nДанное уведомление отключается в меню /ff2."
+		"chi"		"绝大多数近战武器(除了间谍的刀)造成爆击。\n使用 /ff2 菜单来关闭这个提示。"
 	}
 	"thequeue"	// Menu
 	{
 		"en"		"Boss Queue"
 		"ru"		"Очередь на босса"
+		"chi"		"Boss 队列"
 	}
 	"menu_1"	// Menu
 	{
 		"en"		"What's up?"
 		"ru"		"Что случилось?"
+		"chi"		"最近还好吗?"
 	}
 	"menu_2"	// Menu
 	{
 		"en"		"Investigate the boss's current HP level (/ff2hp)"
 		"ru"		"Хочу узнать текущие ОЗ босса (/ff2hp)"
+		"chi"		"检查Boss现在的生命值 (/ff2hp)"
 	}
 	"menu_3"	// Menu
 	{
 		"en"		"Boss Preferences (/ff2boss)"
 		"ru"		"Настройки Боссов (/ff2boss)"
+		"chi"		"Boss 偏好 (/ff2boss)"
 	}
 	"menu_4"	// Menu
 	{
 		"en"		"What's new? (/ff2new)"
 		"ru"		"Что нового? (/ff2new)"
+		"chi"		"有什么新的? (/ff2new)"
 	}
 	"menu_5"	// Menu
 	{
 		"en"		"Queue points (/ff2next)"
 		"ru"		"Очки очереди (/ff2next)"
+		"chi"		"队列点数 (/ff2next)"
 	}
 	"menu_6"	// Menu
 	{
 		"en"		"Exit"
 		"ru"		"Закрыть"
+		"chi"		"退出"
 	}
 	"whatsnew"	// Menu
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"What's new in {1} from {2}"
 		"ru"		"Новое в {1} от {2}"
+		"chi"		"从 {2} 到 {1} 有什么新的改动?"
 	}
 	"help_mode"	// Deprecated
 	{
 		"en"		"===Freak Fortress 2===\nOne (or more) players become one of the Bosses.\nWhile the other players have to defeat them."
 		"ru"		"===Freak Fortress 2===\nКто-то из игроков становится одним из боссов.\nДругие игроки должны его убить."
+		"chi"		"===Freak Fortress 2===\n一个(或多个)玩家变成Boss中的一个。\n同时其他的玩家要打败Ta。"
 	}
 	"older"	// Menu
 	{
 		"en"		"Display older"
 		"ru"		"Ранее"
+		"chi"		"显示更旧的"
 	}
 	"noolder"	// Menu
 	{
 		"en"		"No older versions available"
 		"ru"		"Первая версия"
+		"chi"		"没有更旧的版本"
 	}
 	"newer"	// Menu
 	{
 		"en"		"Display newer"
 		"ru"		"Новее"
+		"chi"		"显示更新的"
 	}
 	"nonewer"	// Menu
 	{
 		"en"		"No newer versions available"
 		"ru"		"Последняя версия"
+		"chi"		"没有更新的版本"
 	}
 	"menu_7"	// Menu
 	{
 		"en"		"Changes to my class in FF2 (/ff2classinfo)"
 		"ru"		"Изменения текущего класса в FF2 (/ff2classinfo)"
+		"chi"		"在FF2中我的兵种的改动 (/ff2classinfo)"
 	}
 	"menu_0"	// Menu
 	{
 		"en"		"Configure what your HUD looks like (/ff2hud)"
 		"ru"		"Настройте, как будет выглядеть ваш HUD (/ff2hud)"
+		"chi"		"设置你的HUD的样子 (/ff2hud)"
 	}
 	"damage_fx"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"You dealt {1} damage in this round"
 		"ru"		"Твой урон за раунд: {1}"
+		"chi"		"你在此回合造成伤害 {1}"
 	}
 	"scores"	// Chat, HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"You earned {1} points in this round"
 		"ru"		"Очков очереди за раунд: {1}"
+		"chi"		"你在此回合获得了点数 {1}"
 	}
 	"boss_win"	// HUD
 	{
 		"en"		"Congratulations!  You won!"
 		"ru"		"Поздравляем!  Ты победил!"
+		"chi"		"恭喜你！你胜利了！"
 	}
 	"boss_lose"	// HUD
 	{
 		"en"		"Oh no, you lost!  Don't worry, there's always next time"
 		"ru"		"О нет, ты проиграл!  Не волнуйся, повезёт в другой раз!"
+		"chi"		"哎呀，你输了！不用担心，总会有下一次的"
 	}
 	"ff2_start"	// Chat, HUD
 	{
 		"#format"	"{1:N},{2:s},{3:i},{4:s}"
 		"en"		"{1} became\n {2}\n with {3}{4} HP"
 		"ru"		"{1} становится\n {2}\n с {3}{4} ОЗ"
+		"chi"		"{1} 变成了\b {2}\n 拥有 {3}{4} HP"
 	}
 	"ff2_hp"	// Chat, HUD
 	{
 		"#format"	"{1:s},{2:i},{3:i},{4:s}"
 		"en"		"{1}'s HP: {2} of {3}{4}"
 		"ru"		"Текущие ОЗ {1}: {2} из {3}{4}"
+		"chi"		"{1}的HP: {2} 总量 {3}{4}"
 	}
 	"ff2_alive"	// Chat, HUD
 	{
 		"#format"	"{1:s},{2:N},{3:i},{4:i},{5:s}"
 		"en"		"{1} ({2}) won with {3} out of {4}{5} HP left."
 		"ru"		"{1} ({2}) выиграл с {3} из {4}{5} ОЗ."
+		"chi"		"{1} ({2}) 胜利了，剩余生命 {3} 总量 {4}{5}"
 	}
 	"select_charset"	// Menu
 	{
 		"en"		"Please vote for the boss pack for the next map."
 		"ru"		"Проголосуйте за набор персонажей для следующей карте."
+		"chi"		"请为下一个地图的Boss包投票"
 	}
 	"your_points"	// Menu
 	{
 		"#format"	"{1:i}"
 		"en"		"Your queue point(s) is {1}."
 		"ru"		"Твои очки очереди: {1}."
+		"chi"		"你的队列点数是 {1}。"
 	}
 	"add_points"	// Chat
 	{
 		"#format"	"{1:i}"
 		"en"		"You earned {1} queue point(s)."
 		"ru"		"Ты получил {1} очков очереди."
+		"chi"		"你获得了 {1} 队列点数。"
 	}
 	"to0"	// HUD
 	{
 		"en"		"set to 0"
 		"ru"		"обнулить"
+		"chi"		"设为0"
 	}
 	"to0_title"	// Menu
 	{
 		"en"		"Do you really want to set your queue points to 0?"
 		"ru"		"Ты действительно хочешь обнулить свои очки очереди?"
+		"chi"		"你真的要设置队列点数为0吗？"
 	}
 	"to0_title_admin"	// Menu
 	{
 		"#format"	"{1:N}"
 		"en"		"Do you really want to set {1}'s queue points to 0?"
 		"ru"		"Ты действительно хочешь обнулить очки очереди игрока {1}?"
+		"chi"		"你真的要设置{1}的点数为0吗？"
 	}
 	"to0_done"	// Chat
 	{
 		"en"		"Your queue points have been reset to {olive}0{default}"
 		"ru"		"Теперь у тебя {olive}0{default} очков очереди"
+		"chi"		"你的队列点数被重置为{olive}0{default}"
 	}
 	"to0_done_admin"	// Chat
 	{
 		"#format"	"{1:N}"
-		"en"		"{olive}{1}{default}'s queue points have been reset to {olive}0{default}"
+		"en"		"{olive}{1}{default}'s queue points have been reset to {olive}0{default}""
 		"ru"		"Теперь у {olive}{1}{default} 0 очков очереди"
+		"chi"		"{olive}{1}{default}的队列点数被重置为{olive}0{default}"
 	}
 	"to0_done_by_admin"	// Chat
 	{
 		"#format"	"{1:N}"
 		"en"		"{olive}{1}{default} reset your queue points to {olive}0{default}"
 		"ru"		"{olive}{1}{default} обнулил твои очки очереди"
+		"chi"		"{olive}{1}{default} 重置了你的队列点数为{olive}0{default}"
 	}
 	"to0_near"	// Chat
 	{
 		"en"		"You will become the boss soon. Type {olive}/ff2boss{default} to select a boss."
 		"ru"		"Ты скоро станешь Боссом. Введи {olive}/ff2boss{default}, чтобы выбрать босса."
+		"chi"		"你很快会变成boss。输入 {olive}/ff2boss{default} 来选择一个boss。"
 	}
 	"arena_round"	// Chat
 	{
 		"#format"	"{1:i}"
 		"en"		"Waiting for players to finish loading.  FF2 will start in {1} more round"
 		"ru"		"Ожидание игроков для завершения загрузки.  FF2 начнётся через {1} раундов"
+		"chi"		"等待玩家载入游戏。FF2会在 {1} 回合后开始。"
 	}
 	"Give Charge Add"	// Chat
 	{
 		"#format"	"{1:t},{2:i},{3:i}"
 		"en"		"gave {1} {2} more charge to slot {3}"
 		"ru"		"выдал для {1} ещё {2} заряда в слот {3}"
+		"chi"		"给予 {1} {2} 增加的充能到槽 {3}"
 	}
 	"Give Charge Set"	// Chat
 	{
 		"#format"	"{1:s},{2:i},{3:i}"
 		"en"		"gave {1} {2} charge to slot {3}"
 		"ru"		"выдал для {1} {2} заряда в слот {3}"
+		"chi"		"给予 {1} {2} 充能到槽 {3}"
 	}
 	"Give Infinite Off"	// Chat
 	{
 		"#format"	"{1:s}"
 		"en"		"deactivated infinite RAGE on {1}"
 		"ru"		"отключил бесконечную ЯРОСТЬ для {1}"
+		"chi"		"关闭了 {1} 的无限愤怒"
 	}
 	"Give Infinite On"	// Chat
 	{
 		"#format"	"{1:s}"
 		"en"		"activated infinite RAGE on {1}"
 		"ru"		"включил бесконечную ЯРОСТЬ для {1}"
+		"chi"		"开启了 {1} 的无限愤怒"
 	}
 	"Give Rage Add"	// Chat
 	{
 		"#format"	"{1:i},{2:s}"
 		"en"		"added {1} RAGE to {2}"
 		"ru"		"добавил {1} ЯРОСТИ для {2}" // i'm not sure about %% after {1}
+		"chi"		"添加 {1} 愤怒到 {2}"
 	}
 	"Give Rage Set"	// Chat
 	{
 		"#format"	"{1:i},{2:s}"
 		"en"		"set {1} RAGE to {2}"
 		"ru"		"установил {1} ЯРОСТИ для {2}"
+		"chi"		"设置 {1} 愤怒到 {2}"
 	}
 	"Self Charge Add"	// Chat
 	{
 		"#format"	"{1:i},{2:i}"
 		"en"		"gave themselves {1} more charge to slot {2}"
 		"ru"		"выдал себе ещё {1} заряда в слот {2}"
+		"chi"		"给予自己 {1} 增加的充能到槽 {2}"
 	}
 	"Self Charge Set"	// Chat
 	{
 		"#format"	"{1:i},{2:i}"
 		"en"		"gave themselves {1} charge to slot {2}"
 		"ru"		"выдал себе {1} заряда в слот {2}"
+		"chi"		"给予自己 {1} 充能到槽 {2}"
 	}
 	"Self Infinite Off"	// Chat
 	{
 		"en"		"deactivated infinite RAGE on themselves"
 		"ru"		"отключил бесконечную ЯРОСТЬ у себя"
+		"chi"		"关闭了自己的无限愤怒"
 	}
 	"Self Infinite On"	// Chat
 	{
 		"en"		"activated infinite RAGE on themselves"
 		"ru"		"включил бесконечную ЯРОСТЬ для себя"
+		"chi"		"开启了自己的无限愤怒"
 	}
 	"Self Rage Add"	// Chat
 	{
 		"#format"	"{1:i}"
 		"en"		"gave themselves {1} more RAGE"
 		"ru"		"выдал себе ещё {1} ЯРОСТИ"
+		"chi"		"给自己 {1} 增加的愤怒"
 	}
 	"Self Rage Set"	// Chat
 	{
 		"#format"	"{1:i}"
 		"en"		"gave themselves {1} RAGE"
 		"ru"		"выдал себе {1} ЯРОСТИ"
+		"chi"		"给自己 {2} 愤怒"
 	}
 	"used_weighdown"	// Deprecated
 	{
 		"en"		"You have used weighdown!"
 		"ru"		"Ты использовал супер-падение!"
+		"chi"		"你使用了重力下坠!"
 	}
 	"ff2_music"	// Chat
 	{
 		"#format"	"{1:s}"
 		"en"		"Boss's music is {1} now"
 		"ru"		"Музыка боссов: {1}"
+		"chi"		"Boss的音乐现在是 {1}"
 	}
 	"ff2_voice"	// Chat
 	{
 		"#format"	"{1:s}"
 		"en"		"Boss's voices is {1} now"
 		"ru"		"Монологи боссов: {1}"
+		"chi"		"Boss的声音现在是 {1}"
 	}
 	"ff2_voice2"	// Chat
 	{
 		"en"		"Custom boss plugin sounds may still play."
 		"ru"		"Звуки из других плагинов всё ещё могут воспроизводится."
+		"chi"		"自定义boss插件声音还可能播放。"
 	}
 	"menu_8"	// Menu
 	{
 		"en"		"Toggle music (/ff2music)"
 		"ru"		"Переключить музыку (/ff2music)"
+		"chi"		"开关音乐 (/ff2music)"
 	}
 	"menu_9"	// Menu
 	{
 		"en"		"Toggle monologues (/ff2voice)"
 		"ru"		"Переключить монологи боссов (/ff2voice)"
+		"chi"		"开关独白 (/ff2voice)"
 	}
 	"menu_9a"	// Menu
 	{
 		"en"		"Toggle info about changes of classes in FF2 (/ff2infotoggle)"
 		"ru"		"Переключить отображение изменений классов в FF2 (/ff2infotoggle)"
+		"chi"		"开关FF2中兵种的改动信息 (/ff2infotoggle)"
 	}
 	"ff2_classinfo"	// Chat
 	{
 		"#format"	"{1:s}"
 		"en"		"Info about changes of classes in FF2: {1}"
 		"ru"		"Информация об изменениях классов: {1}"
+		"chi"		"FF2中兵种的改动信息: {1}"
 	}
 	"ff2_last_update"	// Chat
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"What's new in {olive}{1}{default} ({olive}{2}{default})? Type {olive}/ff2new{default}."
 		"ru"		"Что нового в {olive}{1}{default} ({olive}{2}{default})? Введи {olive}/ff2new{default}."
+		"chi"		"有什么新改动在 {olive}{1}{default} ({olive}{2}{default})? 输入{olive}/ff2new{default}。"
 	}
 	"seeldier_rage_message"
 	{
 		"#format"	"{1:s}"
 		"en"		"Now you are {1}'s minion! Attack other team!"
 		"ru"		"Теперь ты помощник {1}! Атакуй вражескую команду!"
+		"chi"		"你现在是 {1} 的下属！攻击其他队伍！"
 	}
 	"charge_status"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Charge is ready! {1} percent charged."
 		"ru"		"Заряд готов! {1} процентов заряжено."
+		"chi"		"充能准备好了！{1} 百分比充能"
 	}
 	"nextmap_charset"	// Chat
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"The character set for {1} will be {2}."
 		"ru"		"На карте {1} будет набор персонажей {2}."
+		"chi"		"{1} 的角色组将被设为 {2}"
 	}
 	"ff2_buttons_reload"	// Deprecated
 	{
 		"en"		"Press RELOAD button to use an ability!"
 		"ru"		"Нажми ПЕРЕЗАРЯДКУ для исп-ния способности!"
+		"chi"		"按 装填键 使用一个能力!"
 	}
 	"ff2_buttons_rmb"	// Deprecated
 	{
 		"en"		"Press ALT-FIRE button to use an ability!"
 		"ru"		"Нажми ПКМ для исп-ния способности!"
+		"chi"		"按 次要开火键 使用一个能力!"
 	}
 	"ff2_lives_left"	// HUD
 	{
 		"#format"	"{1:s},{2:i}"
 		"en"		"{1} lost a life! There are {2} more!"
 		"ru"		"{1} теряет жизнь! Но впереди ещё {2}!"
+		"chi"		"{1} 失去了一条生命！还有 {2} 条多的生命！"
 	}
 	"ff2_life_left"	// HUD
 	{
 		"#format"	"{1:s}"
 		"en"		"{1} lost a life! There is 1 more!"
 		"ru"		"{1} теряет жизнь! Остался последний шанс!"
+		"chi"		"{1} 失去了一条生命！还剩下 1 条多的生命！"
 	}
 	"Boss Suicide Denied"	// Chat
 	{
 		"en"		"You are not allowed to suicide as the boss!"
 		"ru"		"Ты не можешь покончить с собой будучи играя за босса!"
+		"chi"		"你作为boss不允许自杀！"
 	}
 	"Boss Suicide Pre-round"	// Chat
 	{
 		"en"		"You are not allowed to suicide before the round starts!"
 		"ru"		"Ты не можешь покончить с собой перед началом раунда!"
+		"chi"		"你不能在回合开始之前自杀！"
 	}
 	"Boss Disconnected"	// Chat
 	{
 		"#format"	"{1:N},{2:N}"
 		"en"		"{1} has disconnected and now {2} is the new boss!"
 		"ru"		"{1} отключился и теперь {2} - новый босс!"
+		"chi"		"{1} 已经断开连接，现在 {2} 的新的Boss！"
 	}
 	"Replace Disconnected Boss"	// Chat
 	{
 		"en"		"Surprise! You are now the boss!"
 		"ru"		"Сюрприз! Теперь ты - босс!"
+		"chi"		"惊喜！你是新的boss！"
 	}
 	"Backstab"	// Hint, Annotation
 	{
 		"en"		"You just backstabbed the boss!"
 		"ru"		"Ты нанёс боссу удар в спину!"
+		"chi"		"你刚刚背刺了boss！"
 	}
 	"Backstabbed"	// Hint, Annotation
 	{
 		"en"		"Be careful! You just got backstabbed!"
 		"ru"		"Осторожнее! Тебе нанесли удар в спину!"
+		"chi"		"小心！你刚刚被背刺了！"
 	}
 	"Backstab Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"You backstabbed {1}!"
 		"ru"		"Ты нанёс удар в спину боссу {1}!"
+		"chi"		"你背刺了 {1}！"
 	}
 	"Backstabbed Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"{1} backstabbed you!"
 		"ru"		"{1} нанёс тебе удар в спину!"
+		"chi"		"{1} 背刺了你！"
 	}
 	"Market Gardener"	// Hint, Annotation
 	{
 		"en"		"You just market-gardened the boss!"
 		"ru"		"Ты ударил босса Землекопом в полёте!"
+		"chi"		"你刚刚花园铲了boss！"
 	}
 	"Market Gardened"	// Hint, Annotation
 	{
 		"en"		"Be careful! You just got market-gardened!"
 		"ru"		"Осторожнее! Тебя ударили Землекопом в полёте!"
+		"chi"		"小心！你被花园铲了！"
 	}
 	"Market Gardener Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"You market-gardened {1}!"
 		"ru"		"Ты нанёс удар Землекопом в полёте по боссу {1}!"
+		"chi"		"你花园铲了 {1}！
 	}
 	"Market Gardened Player"	// Hint, Annotation
 	{
 		"#format"	"{1:N}"
 		"en"		"{1} market-gardened you!"
 		"ru"		"{1} нанёс тебе удар Землекопом в полёте!"
+		"chi"		"{1} 花园铲了你！"
 	}
 	"Detonations Left"	// Deprecated
 	{
 		"#format"	"{1:i}"
 		"en"		"You have {1} detonations left!"
 		"ru"		"У тебя осталось {1} детонаций!"
+		"chi"		"你剩下 {1} 次爆炸！"
 	}
 	"Spectator Damage Dealt"	// HUD
 	{
 		"#format"	"{1:s},{2:i}"
 		"en"		"{1}'s Damage: {2}"
 		"ru"		"Урон игрока {1}: {2}"
+		"chi"		"{1}的伤害: {2}"
 	}
 	"Your Damage Dealt"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"Damage: {1}"
 		"ru"		"Урон: {1}"
+		"chi"		"伤害: {1}"
 	}
 	"Healing"	// HUD
 	{
 		"#format"	"{1:i}"
 		"en"		"(Healing: {1})"
 		"ru"		"(Лечение: {1})"
+		"chi"		"(治疗中: {1})"
 	}
 	"Caber"	// Hint, Annotation
 	{
 		"en"		"You just ullapool caber the boss!"
 		"ru"		"Ты подорвал босса!"
+		"chi"		"你刚刚手榴弹炸了boss！"
 	}
 	"Cabered"	// Hint, Annotation
 	{
 		"en"		"Be careful! You just got ullapool cabered!"
 		"ru"		"Осторожнее! Тебя подорвали!"
+		"chi"		"小心！你被手榴弹炸了！"
 	}
 	"Caber Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"You ullapool caber {1}!"
 		"ru"		"Ты подорвал босса {1}!"
+		"chi"		"你手榴弹炸了 {1}！"
 	}
 	"Cabered Player"	// Hint, Annotation
 	{
 		"#format"	"{1:N}"
 		"en"		"{1} ullapool cabered you!"
 		"ru"		"{1} подорвал тебя!"
+		"chi"		"{1} 手榴弹炸了你！"
 	}
 	"Goomba Stomp"	// Hint, Annotation
 	{
 		"en"		"You goomba stomped the boss!"
 		"ru"		"Ты раздавил босса!"
+		"chi"		"你踩了boss一下！"
 	}
 	"Goomba Stomp Boss"	// Hint, Annotation
 	{
 		"en"		"You goomba stomped somebody!"
 		"ru"		"Ты раздавил кого-то!"
+		"chi"		"你踩了一下某人！"
 	}
 	"Goomba Stomped"	// Hint, Annotation
 	{
 		"en"		"Ouch!  Watch your head!"
 		"ru"		"Ай!  Береги голову!"
+		"chi"		"哎呀！当心你的头！"
 	}
 	"Goomba Stomped Boss"	// Hint, Annotation
 	{
 		"en"		"You were just goomba stomped!"
 		"ru"		"Тебя раздавили!"
+		"chi"		"你刚刚被踩了一下！"
 	}
 	"Goomba Stomp Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"You goomba stomped {1}!"
 		"ru"		"Ты раздавил босса {1}!"
+		"chi"		"你踩头了 {1}！"
 	}
 	"Goomba Stomp Boss Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"You goomba stomped {1}!"
 		"ru"		"Ты раздавил игрока {1}!"
+		"chi"		"你踩头了 {1}！"
 	}
 	"Goomba Stomped Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"Ouch! {1} goomba stomped you! Watch your head!"
 		"ru"		"Ай! {1} раздавил тебя! Береги голову!"
+		"chi"		"哎呀！{1}踩头了你！当心你的头！"
 	}
 	"Goomba Stomped Boss Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"{1} goomba stomped you!"
 		"ru"		"{1} раздавил тебя!"
+		"chi"		"{1} 踩头了你！"
 	}
 	"Telefrag"	// Hint, Annotation
 	{
 		"en"		"TELEFRAG! You are a pro!"
 		"ru"		"ТЕЛЕФРАГ! Ты профессионал!"
+		"chi"		"传送杀！你是大佬！"
 	}
 	"Telefraged"	// Hint, Annotation
 	{
 		"en"		"TELEFRAG! Be careful around quantum tunneling devices!"
 		"ru"		"ТЕЛЕФРАГ! Будь осторожен с квантовыми туннельными устройствами!"
+		"chi"		"传送杀！当心那些传送装置！"
 	}
 	"Telefrag Assist"	// Hint, Annotation
 	{
 		"en"		"TELEFRAG ASSIST!  Nice job setting it up!"
 		"ru"		"ПОМОЩЬ ТЕЛЕФРАГУ!  Хорошая работа по установке!"
+		"chi"		"传送杀助攻！放的位置不错！"
 	}
 	"Telefrag Global"	// Hint, Annotation
 	{
 		"en"		"TELEFRAG!"
 		"ru"		"ТЕЛЕФРАГ!"
+		"chi"		"传送杀！"
 	}
 	"Telefrag Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"TELEFRAG! You telefraged {1}!"
 		"ru"		"ТЕЛЕФРАГ! Ты ранил босса {1}!"
+		"chi"		"传送杀！你传送杀了{1}！"
 	}
 	"Telefraged Player"	// Hint, Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"TELEFRAG! {1} telefraged you!"
 		"ru"		"ТЕЛЕФРАГ! {1} ранил тебя!"
+		"chi"		"传送杀！{1}传送杀了你！"
 	}
 	"Time Left"	// Annotation
 	{
 		"#format"	"{1:s}"
 		"en"		"Time Remaining: {1}"
 		"ru"		"Осталось времени: {1}"
+		"chi"		"剩余时间: {1}"
 	}
 	"Overtime"	// HUD, Annotation
 	{
 		"en"		"OVERTIME!"
 		"ru"		"ДОБАВОЧНОЕ ВРЕМЯ!"
+		"chi"		"超时！"
 	}
 	"Dead Ringer Ready"	// HUD
 	{
 		"en"		"Status: Feign Death Ready"
 		"ru"		"Статус: Симуляция смерти готова"
+		"chi"		"状态: 假死准备好了"
 	}
 	"Dead Ringer Inactive"	// HUD
 	{
 		"en"		"Status: Inactive"
 		"ru"		"Статус: Неактивно"
+		"chi"		"状态: 未激活"
 	}
 	"Dead Ringer Active"	// HUD
 	{
 		"en"		"Status: Active"
 		"ru"		"Статус: Активно"
+		"chi"		"状态: 激活"
 	}
 	"Prefix"	// Chat
 	{
 		"en"		"{olive}[FF2]{default} "
 		"ru"		"{olive}[FF2]{default} "
+		"chi"		"{olive}[FF2]{default} "
 	}
 	"ServerAd"	// Chat
 	{
 		"en"		"Gamers Freak Fortress group: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
 		"ru"		"Группа Gamers Freak Fortress: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
+		"chi"		"Gamers Freak Fortress 组: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
 	}
 	"ClassicAd"	// Chat
 	{
 		"en"		"Freak Fortress 2 is based on VS Saxton Hale Mode by {olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, and {blue}Chdata{default}"
 		"ru"		"Freak Fortress 2 основан на VS Saxton Hale Mode от {olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, и {blue}Chdata{default}"
+		"chi"		"Freak Fortress 2 是基于{olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, and {blue}Chdata{default}制作的VS Saxton Hale 模式而成。"
 	}
 	"DevAd"	// Chat
 	{
 		"#format"	"{1:s}"
 		"en"		"{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
 		"ru"		"{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
+		"chi"		"{olive}{1}{default} GitHub: {olive}https://github.com/Batfoxkid/FreakFortressBat{default}"
 	}
 }

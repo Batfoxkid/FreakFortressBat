@@ -5,75 +5,88 @@
 		"#format"	"{1:N},{2:d},{3:d}"
 		"en"		"{orange}{1}{default} has a total of {green}{2} wins {default}and {red}{3} losses{default}!"
 		"ru"		"У {orange}{1}{default} в итоге {green}{2} побед {default}и {red}{3} поражений{default}!"
+		"chi"		"{orange}{1}{default} 已经胜利了{green}{2}次{default}失败了{red}{3}次{default}!"
 	}
 	"Win To Lose Self"	// Chat
 	{
 		"#format"	"{1:d},{2:d}"
 		"en"		"You have a total of {green}{1} wins {default}and {red}{2} losses{default}!"
 		"ru"		"У вас в итоге {green}{1} побед {default}и {red}{2} поражений{default}!"
+		"chi"		"你已经胜利了{green}{1}次{default}失败了{red}{2}次{default}!"
 	}
 	"Cheats Used"	// Chat
 	{
 		"en"		"Cheat commands have been used this round, statistics aren't saved!"
 		"ru"		"Читы были использованы в этом раунде, статистика не сохранена!"
+		"chi"		"本回合使用了作弊指令！数据不会记录！"
 	}
 	"Low Players"	// Chat
 	{
 		"en"		"There is not enough players in this round, statistics aren't saved!"
 		"ru"		"В этом раунде недостаточно игроков, статистика не сохранена!"
+		"chi"		"没有足够的玩家，数据不会记录！"
 	}
 	"Stats"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d}"
 		"en"		"Damage: {1} | Bosses Slain: {2} | MVPs: {3}\n"
 		"ru"		"Урон: {1} | Боссов убито: {2} | СЦИ: {3}\n"
+		"chi"		"伤害：{1} | 杀死Boss数：{2} | MVP次数：{3}\n"
 	}
 	"Stats Healing"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}\n"
 		"ru"		"Урон: {1} | Лечение: {2} | Боссов убито: {3} | СЦИ: {4}\n"
+		"chi"		"伤害：{1} | 治疗：{2} | 杀死Boss数：{3} | MVP次数：{4}\n"
 	}
 	"Stats Boss"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}"
 		"ru"		"Побед: {1} | Поражений: {2} | Убийств: {3} | Смертей: {4}"
+		"chi"		"胜利：{1} | 失败：{2} | 击杀：{3} | 死亡：{4}\n"
 	}
 	"Self Stats"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d}"
 		"en"		"You - Damage: {1} | Bosses Slain: {2} | MVPs: {3}\n"
 		"ru"		"Вы - Урон: {1} | Боссов убито: {2} | СЦИ: {3}\n"
+		"chi"		"你 - 伤害：{1} | 杀死Boss数：{2} | MVP次数：{3}\n"
 	}
 	"Self Stats Healing"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"You - Damage: {1} | Healing: {2} | Bosses Slain: {3} | MVPs: {4}\n"
 		"ru"		"Вы - Урон: {1} | Лечение: {2} | Боссов убито: {3} | СЦИ: {4}\n"
+		"chi"		"你 - 伤害：{1} | 治疗：{2} | 杀死Boss数：{3} | MVP次数：{4}\n"
 	}
 	"Self Stats Boss"	// HUD
 	{
 		"#format"	"{1:d},{2:d},{3:d},{4:d}"
 		"en"		"You - Wins: {1} | Losses: {2} | Kills: {3} | Deaths: {4}\n"
 		"ru"		"Вы - Побед: {1} | Поражений: {2} | Убийств: {3} | Смертей: {4}\n"
+		"chi"		"你 - 胜利：{1} | 失败：{2} | 击杀：{3} | 死亡：{4}\n"
 	}
 	"Player Stats"	// HUD
 	{
 		"#format"	"{1:s},{2:d},{3:d},{4:d}"
 		"en"		"{1} - Damage: {2} | Bosses Slain: {3} | MVPs: {4}"
 		"ru"		"{1} - Урон: {2} | Боссов убито: {3} | СЦИ: {4}"
+		"chi"		"{1} - 伤害：{2} | 杀死Boss数：{3} | MVP次数：{4}"
 	}
 	"Player Stats Healing"	// HUD
 	{
 		"#format"	"{1:s},{2:d},{3:d},{4:d},{5:d}"
 		"en"		"{1} - Damage: {2} | Healing: {3} | Bosses Slain: {4} | MVPs: {5}"
 		"ru"		"{1} - Урон: {2} | Лечение: {3} | Боссов убито: {4} | СЦИ: {5}"
+		"chi"		"{1} - 伤害：{2} | 治疗：{3} | 杀死Boss数：{4} | MVP次数：{5}"
 	}
 	"Player Stats Boss"	// HUD
 	{
 		"#format"	"{1:s},{2:d},{3:d},{4:d},{5:d}"
 		"en"		"{1} - Wins: {2} | Losses: {3} | Kills: {4} | Deaths: {5}"
 		"ru"		"{1} - Побед: {2} | Поражений: {3} | Убийств: {4} | Смертей: {5}"
+		"chi"		"{1} - 胜利：{2} | 失败：{3} | 击杀：{4} | 死亡：{5}"
 	}
 }
