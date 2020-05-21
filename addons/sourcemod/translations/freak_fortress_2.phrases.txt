@@ -400,7 +400,7 @@
 	"to0_done_admin"	// Chat
 	{
 		"#format"	"{1:N}"
-		"en"		"{olive}{1}{default}'s queue points have been reset to {olive}0{default}""
+		"en"		"{olive}{1}{default}'s queue points have been reset to {olive}0{default}"
 		"ru"		"Теперь у {olive}{1}{default} 0 очков очереди"
 		"chi"		"{olive}{1}{default}的队列点数被重置为{olive}0{default}"
 	}
