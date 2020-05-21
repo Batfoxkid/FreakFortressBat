@@ -5,492 +5,588 @@
 		"#format"	"{1:i},{2:N}"
 		"en"		"You lost {1} queue points to {2}!"
 		"ru"		"Ты потерял {1} очков очереди, отдав их игроку {2}!"
+		"chi"		"你失去 {1} 点数给 {2}！"
 	}
 	"rps_won"
 	{	
 		"#format"	"{1:i},{2:N}"
 		"en"		"You won {1} queue points from {2}!"
 		"ru"		"Ты выиграл {1} очков очереди у игрока {2}!"
+		"chi"		"你从 {2} 赢得了点数 {1}！"
 	}
 	"ff2boss_enabled"
 	{
 		"en"		"Bosses: Enabled"
 		"ru"		"Боссы: включены"
+		"chi"		"Boss: 开启"
 	}
 	"ff2boss_disabled"
 	{
 		"en"		"Bosses: Disabled"
 		"ru"		"Боссы: отключены"
+		"chi"		"Boss: 关闭"
 	}
 	"ff2comp_enabled"
 	{
 		"en"		"Companion bosses: Enabled"
 		"ru"		"Компаньоны боссов: включены"
+		"chi"		"搭档Boss: 开启"
 	}
 	"ff2comp_disabled"
 	{
 		"en"		"Companion bosses: Disabled"
 		"ru"		"Компаньоны боссов: отключены"
+		"chi"		"搭档Boss: 关闭"
 	}
 	"ff2_boss_selection"
 	{
 		"#format"	"{1:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Selection: {1}"
 		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n \nТекущий выбор: {1}"
+		"chi"		"Freak Fortress 2 Boss选择器：\n设置你的偏好！\n \n当前选择：{1}"
 	}
 	"ff2_boss_selection_pack"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n\nYou can also do /ff2boss <bossname> to select a boss!\n \nCurrent Boss Pack: {1}\nCurrent Selection: {2}"
 		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n\nВы также можете ввести /ff2boss <имя босса>, чтобы выбрать босса!\n \nТекущий набор: {1}\nТекущий выбор: {2}"
+		"chi"	"Freak Fortress 2 Boss选择:\n在此设置你的偏好！\n\n你也可以使用 /ff2boss <bossname> 来选择Boss！\n \n现在的Boss包：{1}\n目前选择: {2}"
 	}
 	"ff2_boss_selection_diff"
 	{
 		"#format"	"{1:s}"
 		"en"		"\nCurrent Difficulty: {1}"
 		"ru"		"\nТекущая сложность: {1}"
+		"chi"		"\n当前难度: {1}"
 	}
 	"boss_selection_overridden"
 	{
 		"en"		"An admin overrode your boss selection!"
 		"ru"		"Администратор переопределил твой выбор босса!"
+		"chi"		"一个管理员覆盖了你的boss选择！"
 	}
 	"boss_selection_reset"
 	{
 		"en"		"Your boss selection has been reset!"
 		"ru"		"Ваш выбор босса был сброшен!"
+		"chi"		"你的boss选择已重置"
 	}
 	"to0_random"
 	{
 		"en"		"Random Boss"
 		"ru"		"Случайный босс"
+		"chi"		"随机Boss"
 	}
 	"to0_resetpts"
 	{
 		"en"		"Skip a turn"
 		"ru"		"Пропустить очередь"
+		"chi"		"跳过一个回合"
 	}
 	"to0_disablepts"
 	{
 		"en"		"Disable Bosses"
 		"ru"		"Отключить боссов"
+		"chi"		"关闭成为Boss"
 	}
 	"to0_enablepts"
 	{
 		"en"		"Enable Bosses"
 		"ru"		"Включить боссов"
+		"chi"		"开启成为Boss"
 	}
 	"to0_disableduo"
 	{
 		"en"		"Disable Companions"
 		"ru"		"Отключить компаньонов"
+		"chi"		"关闭搭档"
 	}
 	"to0_enableduo"
 	{
 		"en"		"Enable Companions"
 		"ru"		"Включить компаньонов"
+		"chi"		"开启搭档"
 	}
 	"to0_disablediff"
 	{
 		"en"		"Disable Specials"
 		"ru"		"Выключить спец.раунды"
+		"chi"		"关闭特殊回合"
 	}
 	"to0_enablediff"
 	{
 		"en"		"Enable Specials"
 		"ru"		"Включить спец.раунды"
+		"chi"		"开启特殊回合"
 	}
 	"to0_difficulty"
 	{
 		"en"		"Change Difficulty"
 		"ru"		"Выбрать сложность"
+		"chi"		"更改难度"
 	}
 	"to0_viewall"
 	{
 		"en"		"View All Bosses"
 		"ru"		"Посмотреть всех боссов"
+		"chi"		"查看所有Boss"
 	}
 	"to0_confirm"
 	{
 		"#format"	"{1:s}"
 		"en"		"Select {1}"
 		"ru"		"Выбрать {1}"
+		"chi"		"选择{1}"
 	}
 	"to0_confirmpack"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Select {1} for {2}"
 		"ru"		"Выбрать {1} для {2}"
+		"chi"		"为 {2} 选择 {1}"
 	}
 	"to0_cancel"
 	{
 		"en"		"Cancel"
 		"ru"		"Отмена"
+		"chi"		"取消"
 	}
 	"to0_nodesc"
 	{
 		"en"		"No Boss Description"
 		"ru"		"Описание босса отсутствует"
+		"chi"		"无Boss描述"
 	}
 	"to0_packmenu"
 	{
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \n"
 		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n \n"
+		"chi"		"Freak Fortress 2 Boss选择:\n在此设置你的偏好！\n \n"
 	}
 	"to0_viewpack"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Freak Fortress 2 Boss Selection:\nSet your preferences here!\n \nBoss Pack: {1}\nSelection: {2}"
 		"ru"		"Выбор босса Freak Fortress 2:\nУстанавливайте ваши настройки здесь!\n \nНабор персонажей: {1}\nВыбор: {2}"
+		"chi"		"Freak Fortress 2 Boss选择器：\n设置你的偏好！\n \nBoss包: {1}\n选择: {2}"
 	}
 	"to0_comfirmrandom"
 	{
 		"en"		"You will become a random boss. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to select a boss."
 		"ru"		"Ты станешь случайным боссом. Передумал? Введи {olive}/ff2boss{default} или {olive}/ff2boss <имя босса>{default}, чтобы выбрать босса."
+		"chi"		"你将成为随机Boss，要改变主意吗？输入{olive}/ff2boss{default}来选择Boss"
 	}
 	"to0_boss_selected"
 	{
 		"#format"	"{1:s}"
 		"en"		"You have selected {1}. Changed your mind? Do {olive}/ff2boss{default} or {olive}/ff2boss <bossname>{default} to change your boss."
 		"ru"		"Ты выбрал {1}. Передумал? Введи {olive}/ff2boss{default} или {olive}/ff2boss <имя босса>{default}, чтобы выбрать босса."
+		"chi"		"你选择了 {1} ，要改变主意吗？输入{olive}/ff2boss{default}来更改Boss"
 	}
 	"ff2_changedifficulty_denied"
 	{
 		"en"		"You cannot change your difficulty right now! Wait until the round ends and try again!"
 		"ru"		"Ты не можешь изменить свою сложность сейчас! Подожди конца раунда и попробуй снова!"
+		"chi"		"你现在不能更改难度！等待回合结束重试！"
 	}
 	"FF2 Toggle Enabled Notification"
 	{
 		"en"		"You are currently in the Boss queue. Want to disable queue points? Do /ff2toggle."
 		"ru"		"В данный момент, ты в очереди на босса. Хочешь отключить очки очереди? Введи /ff2toggle."
+		"chi"		"你当前在Boss队列中。想要关闭队列吗？输入/ff2toggle"
 	}
 	"FF2 Toggle Queue Notification"
 	{
 		"#format"	"{1:i},{2:i}"
 		"en"		"You are #{1} in the Boss queue with {2} points."
 		"ru"		"Ты на #{1} месте в очереди на босса с {2} очками."
+		"chi"		"你现在在Boss队列中第{green} {1} {default}位，有 {2} 点数"
 	}
 	"FF2 Toggle Disabled Notification"
 	{
 		"en"		"You are currently NOT in the Boss queue. Want to enable queue points? Do /ff2toggle"
 		"ru"		"В данный момент, ты НЕ в очереди на роль босса. Хочешь включить очки очереди? Введи /ff2toggle"
+		"chi"		"你当前不在Boss队列中。想要开启队列吗？输入/ff2toggle"
 	}
 	"FF2 Toggle Disabled Notification For Map"
 	{
 		"en"		"You are currently NOT in the Boss queue for the current map. Want to enable queue points? Do /ff2toggle"
 		"ru"		"В данный момент, ты НЕ в очереди на роль босса для этой карты. Хочешь включить очки очереди? Введи /ff2toggle"
+		"chi"		"你在当前地图没有开启Boss队列，要开启队列吗？输入/ff2toggle"
 	}
 	"FF2 Boss Toggle Notify"
 	{
 		"en"		"Please set your Boss queue preferences."
 		"ru"		"Пожалуйста, установи свои настройки очков очереди на босса."
+		"chi"		"请设置你的Boss队列偏好"
 	}
 	"FF2 Toggle Command"
 	{
 		"en"		"Use {olive}/ff2toggle{default} to toggle queue points on/off"
 		"ru"		"Используй {olive}/ff2toggle{default}, чтобы переключить очки очереди"
+		"chi"		"使用 {olive}/ff2toggle{default} 开关队列点数"
 	}
 	"FF2 Toggle Menu Title"
 	{
 		"en"		"Boss queue points preferences:"
 		"ru"		"Настройки очков очереди на босса:"
+		"chi"		"Boss队列点数偏好:"
 	}
 	"Enable Queue Points"
 	{
 		"en"		"Enable queue points"
 		"ru"		"Включить очки очереди"
+		"chi"		"开启队列点数"
 	}
 	"Disable Queue Points"
 	{
 		"en"		"Disable queue points"
 		"ru"		"Отключить очки очереди"
+		"chi"		"关闭队列点数"
 	}
 	"Disable Queue Points For This Map"
 	{
 		"en"		"Disable queue points for this map only"
 		"ru"		"Отключить очки очереди только на этой карте"
+		"chi"		"只在这个地图关闭队列点数"
 	}
 	"FF2 Special Menu Title"
 	{
 		"en"		"Boss special round preferences:"
 		"ru"		"Настройки специального раунда:"
+		"chi"		"Boss特殊回合偏好:"
 	}
 	"Enable Special"
 	{
 		"en"		"Enable special rounds"
 		"ru"		"Разрешить спец. раунды"
+		"chi"		"开启特殊回合"
 	}
 	"Disable Special"
 	{
 		"en"		"Disable special rounds"
 		"ru"		"Запретить спец. раунды"
+		"chi"		"关闭特殊回合"
 	}
 	"Disable Special For This Map"
 	{
 		"en"		"Disable special rounds for this map only"
 		"ru"		"Запретить спец. раунды на этой карте"
+		"chi"		"只在这个地图关闭特殊回合"
 	}
 	"FF2 Special Enabled"
 	{
 		"en"		"You will have a chance for special rounds. Don't want special rounds? Do {olive}/ff2difficulty{default}"
 		"ru"		"Спец. раунды разрешены для вас. Хотите запретить их? Введите {olive}/ff2difficulty{default}"
+		"chi"		"你将有机会获得特殊回合，不想要特殊回合? 使用{olive}/ff2difficulty{default}"
 	}
 	"FF2 Special Disabled"
 	{
 		"en"		"You will not have a chance for special rounds. Want special rounds? Do {olive}/ff2difficulty{default}"
 		"ru"		"Спец. раунды запрещены для вас. Хотите разрешить их? Введите {olive}/ff2difficulty{default}"
+		"chi"		"你将不会获得特殊回合，想要特殊回合吗?使用{olive}/ff2difficulty{default}"
 	}
 	"FF2 Special Disabled For Map"
 	{
 		"en"		"You will not have a chance for special rounds for this map only. Want special rounds? Do {olive}/ff2difficulty{default}"
 		"ru"		"Спец. раунды запрещены для вас на этой карте. Хотите разрешить их? Введите {olive}/ff2difficulty{default}"
+		"chi"		"你在此地图将不会获得特殊回合，想要特殊回合吗?使用{olive}/ff2difficulty{default}"
 	}
 	"FF2 Companion Toggle Notify"
 	{
 		"en"		"Please set your companion selection preferences."
 		"ru"		"Пожалуйста, установи свои настройки выбора компаньона."
+		"chi"		"选择你的搭档偏好"
 	}
 	"FF2 Companion Command"
 	{
 		"en"		"Use {olive}/ff2companion{default} to toggle being selected as a companion for companion bosses"
 		"ru"		"Используй {olive}/ff2companion{default}, чтобы переключить получение роли компаньона боссов"
+		"chi"		"使用 {olive}/ff2companion{default} 开关被选为搭档boss的搭档"
 	}
 	"FF2 Companion Toggle Menu Title"
 	{
 		"en"		"Companion Boss preferences:"
 		"ru"		"Настройки компаньона босса:"
+		"chi"		"搭档Boss偏好："
 	}
 	"Enable Companion Selection"
 	{
 		"en"		"Allow being selected as a companion of a boss"
 		"ru"		"Разрешить получение роли компаньона босса"
+		"chi"		"允许我成为别人的搭档Boss"
 	}
 	"Disable Companion Selection"
 	{
 		"en"		"Disallow being selected as a companion for a boss"
 		"ru"		"Запретить получение роли компаньона босса"
+		"chi"		"不允许我成为别人的搭档Boss"
 	}
 	"Disable Companion Selection For Map"
 	{
 		"en"		"Disallow being selected as a companion for a boss for this map only"
 		"ru"		"Запретить получение роли компаньона босса только на этой карте"
+		"chi"		"不允许我成为别人的多人Boss，仅限于当前的地图"
 	}
 	"FF2 Companion Enabled"
 	{
 		"en"		"You will be picked as a companion of a boss. Don't want to be picked as a companion? Do {olive}/ff2companion{default}"
 		"ru"		"Ты будешь выбран на роль компаньона босса. Не хочешь получать роль компаньона? Введи {olive}/ff2companion{default}"
+		"chi"		"你将会被选为Boss的搭档，不想成为搭档？输入{olive}/ff2companion{default}"
 	}
 	"FF2 Companion Disabled"
 	{
 		"en"		"You will not be picked as a companion of a boss. Want to be picked as a companion? Do {olive}/ff2companion{default}"
 		"ru"		"Ты не будешь выбран на роль компаньона босса. Хочешь получить роль компаньона? Введи {olive}/ff2companion{default}"
+		"chi"		"你不会成为别人的Boss搭档，想成为搭档一起战斗？输入{olive}/ff2companion{default}"
 	}
 	"FF2 Companion Disabled For Map"
 	{
 		"en"		"You will not be picked as a companion of a boss for this map only. Want to be picked as a companion? Do {olive}/ff2companion{default}"
 		"ru"		"Ты не будешь выбран на роль компаньона босса только на этой карте. Хочешь получить роль компаньона? Введи {olive}/ff2companion{default}"
+		"chi"		"你在当前地图不会成为别人的Boss搭档，想成为搭档一起战斗？输入{olive}/ff2companion{default}"
 	}
 	"FF2 Companion Toggle Command"
 	{
 		"en"		"Use {olive}/ff2companion{default} to toggle being selected as a companion of a boss on/off"
 		"ru"		"Используй {olive}/ff2companion{default}, чтобы переключить свою очередь на компаньона босса"
+		"chi"		"使用 {olive}/ff2companion{default} 开关成为Boss搭档"
 	}
 	"FF2 Difficulty Command"
 	{
 		"en"		"Use {olive}/ff2difficulty{default} to change your boss difficulty!"
 		"ru"		"Используй {olive}/ff2difficulty{default}, чтобы выбрать свою сложность!"
+		"chi"		"使用 {olive}/ff2difficulty{default} 更改Boss难度！"
 	}
 	"FF2 Boss Selection Command"
 	{
 		"en"		"To select a boss, type {olive}/ff2boss{default} to open boss selection menu, or {olive}/ff2boss <boss name>{default} to select a boss."
 		"ru"		"Чтобы выбрать босса, напиши {olive}/ff2boss{default} для открытия меню выбора босса, или {olive}/ff2boss <имя босса>{default} для выбора босса."
+		"chi"		"想选择Boss，输入{olive}/ff2boss{default}来打开菜单"
 	}
 	"ff2_compensation"
 	{
 		"#format"	"{1:i}"
 		"en"		"Your HP was increased by {1} percent due to missing companions!"
 		"ru"		"Твои ОЗ были увеличены на {1} процентов из-за отсутствия компаньонов!"
+		"chi"		"因为没有人愿意成为搭档，你的血量被提升 {1} 百分比！"
 	}
 	"ff2_difficulty_mod"
 	{
 		"#format"	"{1:i}"
 		"en"		"You have spawned with only {1} percent HP!"
 		"ru"		"Ты появился только с {1} процентами ОЗ!"
+		"chi"		"你当前只有 {1} 百分比的的HP！"
 	}
 	"FF2 Setup"
 	{
 		"en"		"Please configure the following:"
 		"ru"		"Пожалуйста, настрой следующее:"
+		"chi"		"请设置下列选项："
 	}
 	"Configure Boss Toggle"
 	{
 		"en"		"Configure boss preferences"
 		"ru"		"Установить настройки босса"
+		"chi"		"设置Boss偏好"
 	}
 	"Configure Companion Toggle"
 	{
 		"en"		"Configure companion preferences"
 		"ru"		"Установить настройки компаньона"
+		"chi"		"设置搭档偏好"
 	}
 	"Configure Difficulty Setting"
 	{
 		"en"		"Configure boss difficulty"
 		"ru"		"Установить сложность босса"
+		"chi"		"设置Boss难度"
 	}
 	"FF2 Difficulty Settings Menu Title"
 	{
 		"en"		"Up for a challenge? You can change your difficulty!"
 		"ru"		"Готов к испытанию? Тогда поменяй свой уровень сложности!"
+		"chi"		"想挑战一下？你可以更改你的难度!"
 	}
 	"ff2_please wait"
 	{
 		"en"		"Please wait until a round has started!"
 		"ru"		"Пожалуйста, подожди начала раунда!"
+		"chi"		"请等待回合开始！"
 	}
 	"track_skipped"
 	{
 		"en"		"Current track skipped! Playing next track..."
 		"ru"		"Текущий трек пропущен! Запуск следующего трека..."
+		"chi"		"跳过当前音轨，播放下一个中..."
 	}
 	"track_shuffle"
 	{
 		"en"		"Current track skipped! Playing random track..."
 		"ru"		"Текущий трек пропущен! Запуск случайного трека..."
+		"chi"		"跳过当前音轨，播放随机音轨中..."
 	}
 	"track_select"
 	{
 		"en"		"Select a boss theme!"
 		"ru"		"Выбери тему босса!"
+		"chi"		"选择一个Boss音轨！"
 	}
 	"themes_enable"
 	{
 		"en"		"Enable boss music"
 		"ru"		"Включить музыку босса"
+		"chi"		"开启Boss音乐"
 	}
 	"themes_disable"
 	{
 		"en"		"Disable boss music"
 		"ru"		"Отключить музыку босса"
+		"chi"		"关闭Boss音乐"
 	}
 	"themes_already_enabled"
 	{
 		"en"		"Boss music are already enabled."
 		"ru"		"Музыка босса уже включена."
+		"chi"		"Boss音乐已经开启了"
 	}
 	"theme_skip"
 	{
 		"en"		"Skip"
 		"ru"		"Пропустить"
+		"chi"		"跳过"
 	}
 	"theme_shuffle"
 	{
 		"en"		"Shuffle"
 		"ru"		"Перемешать"
+		"chi"		"随机播放"
 	}
 	"theme_select"
 	{
 		"en"		"Track selection"
 		"ru"		"Выбор трека"
+		"chi"		"选择音轨"
 	}
 	"theme_menu"
 	{
 		"en"		"Music Settings"
 		"ru"		"Настройки музыки"
+		"chi"		"音乐设置"
 	}
 	"track_info"
 	{
 		"#format"	"{1:s},{2:s}"
 		"en"		"Now Playing: {blue}{1}{default} - {orange}{2}{default}"
 		"ru"		"Сейчас играет: {blue}{1}{default} - {orange}{2}{default}"
+		"chi"		"现在播放：{blue}{1}{default} - {orange}{2}{default}"
 	}
 	"ff2_music_disabled"
 	{
 		"en"		"Boss themes are currently DISABLED."
 		"ru"		"Музыкальные темы боссов ВЫКЛЮЧЕНЫ."
+		"chi"		"Boss音乐已经关闭了"
 	}
 	"ff2_no_music"
 	{
 		"en"		"Could not find any themes for this boss!"
 		"ru"		"Невозможно найти какую-либо тему для этого босса!"
+		"chi"		"找不到这个Boss的音乐！"
 	}
 	"unknown_song"
 	{
 		"en"		"{snow}Unknown Song"
 		"ru"		"{snow}Неизвестная песня"
+		"chi"		"{default}{snow}未知歌曲"
 	}
 	"unknown_artist"
 	{
 		"en"		"{snow}Unknown Artist"
 		"ru"		"{snow}Неизвестный исполнитель"
+		"chi"		"{snow}未知艺术家"
 	}
 	"deny_nofirst"
 	{
 		"en"		"You can not select this boss before the first round!"
 		"ru"		"Ты не можешь выбрать этого босса до первого раунда!"
+		"chi"		"你不能在第一回合选择这个Boss"
 	}
 	"deny_donator"
 	{
 		"en"		"You do not have access to this boss!"
 		"ru"		"У тебя нету доступа для этого босса!"
+		"chi"		"你没有权限使用这个Boss"
 	}
 	"deny_duo_short"
 	{
 		"en"		"There is not enough players to play this boss!"
 		"ru"		"Недостаточно игроков, чтобы играть за этого босса!"
+		"chi"		"没有足够的玩家数量来玩这个Boss"
 	}
 	"deny_duo_off"
 	{
 		"en"		"You turned off companions, enable to play this boss!"
 		"ru"		"Нужно сперва включить выбор на роль компаньона, чтобы играть за этого босса!"
+		"chi"		"你关闭了搭档，请开启来选择这个Boss"
 	}
 	"deny_map"
 	{
 		"en"		"This boss can't be played on this map!"
 		"ru"		"Этим боссом нельзя играть на текущей карте!"
+		"chi"		"此Boss不能在此地图使用"
 	}
 	"deny_recent"
 	{
 		"en"		"You already played this boss on your round!"
 		"ru"		"Ты уже играл за этого босса в своём раунде!"
+		"chi"		"你的回合已经玩过这个Boss了"
 	}
 	"deny_unknown"
 	{
 		"en"		"Boss could not be found!"
 		"ru"		"Босс не найден!"
+		"chi"		"找不到Boss！"
 	}
 	"FF2 Hud Menu Title"
 	{
 		"en"		"Configure HUD preferences"
 		"ru"		"Настройки HUD'а"
+		"chi"		"设置HUD偏好"
 	}
 	"Hud Damage"
 	{
 		"en"		"Damage Dealt"
 		"ru"		"Нанесённый урон"
+		"chi"		"造成的伤害"
 	}
 	"Hud Extra"
 	{
 		"en"		"Item Status"
 		"ru"		"Состояние предметов"
+		"chi"		"物品状态"
 	}
 	"Hud Message"
 	{
 		"en"		"Messages"
 		"ru"		"Сообщения"
+		"chi"		"信息"
 	}
 	"Hud Countdown"
 	{
 		"en"		"Countdown Timer"
 		"ru"		"Таймер обратного отсчёта"
+		"chi"		"倒计时"
 	}
 	"Hud Health"
 	{
 		"en"		"Boss Health"
 		"ru"		"Здоровье Босса"
+		"chi"		"Boss生命值"
 	}
 	"Hud Ranking"
 	{
 		"en"		"Damage Tracker"
 		"ru"		"Отслеживатель урона"
+		"chi"		"伤害追踪器"
 	}
 }
