@@ -341,6 +341,7 @@ ConVar cvarTelefrag;
 ConVar cvarHealth;
 ConVar cvarRageDamage;
 ConVar cvarDifficulty;
+ConVar cvarEnableSandmanStun;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -828,6 +829,7 @@ public void OnPluginStart()
 	cvarHealth = CreateConVar("ff2_health_formula", "(((760.8+n)*(n-1))^1.0341)+2046", "Default boss health formula");
 	cvarRageDamage = CreateConVar("ff2_rage_formula", "1900.0", "Default boss ragedamage formula");
 	cvarDifficulty = CreateConVar("ff2_difficulty_random", "0.0", "0-Players can set their difficulty, #-Chance of difficulty", _, true, 0.0, true, 100.0);
+	cvarEnableSandmanStun = CreateConVar("ff2_enable_sandmanstun", "0", "0-Disable the Sandman stun ability, 1-Enable the Sandman stun ability", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -13360,6 +13362,52 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								damage/=2.0;
 								return Plugin_Changed;
 							}
+						}
+					}
+					case 44:	//Sandman
+					{
+						if(cvarEnableSandmanStun.BoolValue)
+						{
+							float fClientLocation[3];
+							float fClientEyePosition[3];
+							GetClientAbsOrigin(attacker, fClientEyePosition); 
+							GetClientAbsOrigin(client, fClientLocation); 
+							float fDistance[3]; 
+							MakeVectorFromPoints(fClientLocation, fClientEyePosition, fDistance); 
+							float dist = GetVectorLength(fDistance); 
+							if (dist >= 128.0 && dist <= 256.0) 
+							{
+								TF2_StunPlayer(client, 1.0, 0.0, TF_STUNFLAGS_SMALLBONK, attacker); 
+							}
+							else if (dist >= 256.0 && dist < 512.0) 
+							{
+								TF2_StunPlayer(client, 2.0, 0.0, TF_STUNFLAGS_SMALLBONK, attacker); 
+							}
+							else if (dist >= 512.0 && dist < 768.0)
+							{
+								TF2_StunPlayer(client, 3.0, 0.0, TF_STUNFLAGS_SMALLBONK, attacker); 
+							}
+							else if (dist >= 768.0 && dist < 1024.0)
+							{
+								TF2_StunPlayer(client, 4.0, 0.0, TF_STUNFLAGS_SMALLBONK, attacker); 
+							}
+							else if (dist >= 1024.0 && dist < 1280.0) 
+							{
+								TF2_StunPlayer(client, 5.0, 0.0, TF_STUNFLAGS_SMALLBONK, attacker); 
+							}
+							else if (dist >= 1280.0 && dist < 1536.0) 
+							{
+								TF2_StunPlayer(client, 6.0, 0.0, TF_STUNFLAGS_SMALLBONK, attacker); 
+							}
+							else if (dist >= 1536.0 && dist < 1792.0) 
+							{
+								TF2_StunPlayer(client, 7.0, 0.0, TF_STUNFLAGS_SMALLBONK, attacker); 
+							}
+							else if (dist >= 1792.0)
+							{
+								TF2_StunPlayer(client, 7.0, 0.0, TF_STUNFLAGS_BIGBONK, attacker); 
+							}
+							return Plugin_Changed; 
 						}
 					}
 				}
