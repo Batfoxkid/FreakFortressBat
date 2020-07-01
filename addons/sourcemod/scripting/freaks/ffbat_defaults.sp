@@ -360,7 +360,7 @@ public Action FF2_OnAbility2(int boss, const char[] plugin_name, const char[] ab
 		}
 		while(!IsValidEntity(target) || target==client || (FF2_GetFF2flags(target) & FF2FLAG_ALLOWSPAWNINBOSSTEAM) || !IsPlayerAlive(target));
 
-		if(strlen(particleEffect) > 0)
+		if(particleEffect[0])
 		{
 			CreateTimer(3.0, Timer_RemoveEntity, EntIndexToEntRef(AttachParticle(client, particleEffect)), TIMER_FLAG_NO_MAPCHANGE);
 			CreateTimer(3.0, Timer_RemoveEntity, EntIndexToEntRef(AttachParticle(client, particleEffect, _, false)), TIMER_FLAG_NO_MAPCHANGE);
@@ -1022,8 +1022,8 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
  // Particle Effect
 	char particleEffect[48];
 	FF2_GetArgS(boss, this_plugin_name, "rage_stun", "particle", 6, particleEffect, sizeof(particleEffect));
-	if(!strlen(particleEffect))
-		particleEffect = SPOOK;
+	if(!particleEffect[0])
+		strcopy(particleEffect, sizeof(particleEffect), SPOOK);
  // Ignore
 	int ignore = RoundFloat(GetArgF(boss, "rage_stun", "uber", 7, 0.0, 1));
  // Friendly Fire
@@ -1102,7 +1102,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
 			TF2_RemoveCondition(victim[victims], TFCond_Parachute);
 
 		TF2_StunPlayer(victim[victims], duration, slowdown, flagOverride, sounds ? client : 0);
-		if(strlen(particleEffect))
+		if(particleEffect[0])
 			CreateTimer(duration, Timer_RemoveEntity, EntIndexToEntRef(AttachParticle(victim[victims], particleEffect, 75.0)), TIMER_FLAG_NO_MAPCHANGE);
 	}
 	return Plugin_Continue;
@@ -1191,7 +1191,7 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
  // Particle Effect
 	char particleEffect[48];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "particle", 6, particleEffect, sizeof(particleEffect));
-	if(!strlen(particleEffect))
+	if(!particleEffect[0])
 		particleEffect = SPOOK;
  // Buildings
 	int buildings = RoundFloat(GetArgF(boss, ability_name, "building", 7, 1.0, 2));
@@ -1638,7 +1638,7 @@ void Rage_Bow(int boss)
 	static char attributes[64], classname[64];
 
 	FF2_GetArgS(boss, this_plugin_name, "rage_cbs_bowrage", "attributes", 1, attributes, sizeof(attributes));
-	if(!strlen(attributes))
+	if(!attributes[0])
 	{
 		if(GetConVarBool(cvarStrangeWep))
 		{
@@ -1654,7 +1654,7 @@ void Rage_Bow(int boss)
 	float ammo = GetArgF(boss, "rage_cbs_bowrage", "ammo", 3, 1.0, 2);
 	int clip = RoundFloat(GetArgF(boss, "rage_cbs_bowrage", "clip", 4, 1.0, 1));
 	FF2_GetArgS(boss, this_plugin_name, "rage_cbs_bowrage", "classname", 5, classname, sizeof(classname));
-	if(!strlen(classname))
+	if(!classname[0])
 		strcopy(classname, sizeof(classname), "tf_weapon_compound_bow");
 
 	int index = RoundFloat(GetArgF(boss, "rage_cbs_bowrage", "index", 6, 1005.0, 1));
@@ -1676,7 +1676,7 @@ void Rage_Bow(int boss)
 	ammo *= otherTeamAlivePlayers;	// Ammo multiplied by alive players
 	
 	if(ammo > maximum)		// Maximum or lower ammo
-		ammo = view_as<float>(maximum);
+		ammo = float(maximum);
 
 	ammo -= clip;			// Ammo subtracted by clip
 
@@ -1697,6 +1697,8 @@ public Action Timer_Prepare_Explosion_Rage(Handle timer, Handle data)
 {
 	int boss = ReadPackCell(data);
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
+	if(!client || !IsClientInGame(client))
+		return Plugin_Continue;
 
 	static char ability_name[64];
 	ReadPackString(data, ability_name, sizeof(ability_name));
@@ -1715,7 +1717,7 @@ public Action Timer_Prepare_Explosion_Rage(Handle timer, Handle data)
 
 	static char sound[PLATFORM_MAX_PATH];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "sound", 1, sound, PLATFORM_MAX_PATH);
-	if(strlen(sound))
+	if(sound[0])
 	{
 		FF2_EmitVoiceToAll(sound, client, _, _, _, _, _, client, position);
 		FF2_EmitVoiceToAll(sound, client, _, _, _, _, _, client, position);
@@ -1733,10 +1735,16 @@ public Action Timer_Prepare_Explosion_Rage(Handle timer, Handle data)
 
 public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 {
-	static int count;
+	static int count[MAXTF2PLAYERS];
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
-	count++;
-	if(count<=ExpCount[client] && IsPlayerAlive(client))
+	if(!client || !IsClientInGame(client))
+	{
+		count[client] = 0;
+		return Plugin_Stop;
+	}
+
+	count[client]++;
+	if(count[client]<=ExpCount[client] && IsPlayerAlive(client))
 	{
 		SetEntityMoveType(client, MOVETYPE_NONE);
 		static float bossPosition[3], explosionPosition[3];
@@ -1774,7 +1782,7 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 	else
 	{
 		SetEntityMoveType(client, MOVETYPE_WALK);
-		count = 0;
+		count[client] = 0;
 		return Plugin_Stop;
 	}
 	return Plugin_Continue;
@@ -1923,7 +1931,7 @@ public Action Timer_Rage_SlowMo_Attack(Handle timer, Handle data)
 {
 	int client = GetClientOfUserId(ReadPackCell(data));
 	int target = GetClientOfUserId(ReadPackCell(data));
-	if(client && target && IsClientInGame(client) && IsClientInGame(target))
+	if(client && target && IsClientInGame(client) && IsClientInGame(target) && GetClientTeam(client)!=GetClientTeam(target))
 	{
 		static float clientPosition[3], targetPosition[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", clientPosition);
@@ -1941,7 +1949,10 @@ public Action Timer_Rage_SlowMo_Attack(Handle timer, Handle data)
 
 public bool TraceRayDontHitSelf(int entity, int mask)
 {
-	return true;
+	if(!entity || entity>MaxClients)
+		return true;
+
+	return !(FF2Flags[entity] & FLAG_ONSLOWMO);
 }
 
 public Action Timer_SlowMoChange(Handle timer, any boss)
@@ -1968,7 +1979,7 @@ public float GetArgF(int boss, const char[] abilityName, const char[] argName, i
 	static char buffer[1024];
 	FF2_GetArgS(boss, this_plugin_name, abilityName, argName, argNumber, buffer, sizeof(buffer));
 
-	if(strlen(buffer))
+	if(buffer[0])
 	{
 		return ParseFormula(boss, buffer, defaultValue, abilityName, argName, argNumber, valueCheck); 
 	}
