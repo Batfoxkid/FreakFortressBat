@@ -1764,7 +1764,7 @@ public Action Timer_Rage_Explosive_Dance(Handle timer, any boss)
 
 			explosionPosition[0] = bossPosition[0]+GetRandomInt((ExpRange[client]*-1), ExpRange[client]);
 			explosionPosition[1] = bossPosition[1]+GetRandomInt((ExpRange[client]*-1), ExpRange[client]);
-			if(!(GetEntityFlags(boss) & FL_ONGROUND))
+			if(!(GetEntityFlags(client) & FL_ONGROUND))
 			{
 				range = RoundToFloor(view_as<float>(ExpRange[client])*3.0/7.0);
 				explosionPosition[2] = bossPosition[2]+GetRandomInt((range*-1), range);
