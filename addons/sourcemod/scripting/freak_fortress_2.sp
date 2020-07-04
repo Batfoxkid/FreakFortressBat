@@ -6931,7 +6931,7 @@ void EquipBoss(int boss)
 			}
 			else
 			{
-				SetEntProp(weapon, Prop_Send, "m_nModelIndexOverrides", -1, _, 0);
+				SetEntPropFloat(weapon, Prop_Send, "m_flModelScale", 0.001);
 			}
 
 			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
