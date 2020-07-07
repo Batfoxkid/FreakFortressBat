@@ -1006,7 +1006,7 @@ public Action Timer_Rage_Stun(Handle timer, any boss)
  // Initial Duration
 	float duration = GetArgF(boss, "rage_stun", "duration", 1, 5.0, 0);
  // Distance
-	float distance = GetArgF(boss, "rage_stun", "distance", 2, 0.0, 1);
+	float distance = GetArgF(boss, "rage_stun", "distance", 2, 0.0, 0);
 	if(distance <= 0)
 		distance = FF2_GetRageDist(boss, this_plugin_name, "rage_stun");
  // Stun Flags
