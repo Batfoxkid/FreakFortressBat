@@ -1181,7 +1181,7 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 		distance = FF2_GetRageDist(boss, this_plugin_name, ability_name);
  // Building Health
  	bool destory = false;
-	float health = GetArgF(boss, ability_name, "health", 3, 1.0, 1);
+	float health = GetArgF(boss, ability_name, "health", 3, 1.0, 1, true);
 	if(health <= 0)
 		destory = true;
  // Sentry Ammo
@@ -1376,7 +1376,7 @@ void Rage_Clone(const char[] ability_name, int boss)
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "attributes", 8, attributes, sizeof(attributes));
 	int ammo = RoundFloat(GetArgF(boss, ability_name, "ammo", 9, 0.0, 1));
 	int clip = RoundFloat(GetArgF(boss, ability_name, "clip", 10, 0.0, 1));
-	int health = RoundFloat(GetArgF(boss, ability_name, "health", 11, 0.0, 1));
+	int health = RoundFloat(GetArgF(boss, ability_name, "health", 11, 0.0, 1, true));
 
 	static float position[3], velocity[3];
 	GetEntPropVector(GetClientOfUserId(FF2_GetBossUserId(boss)), Prop_Data, "m_vecOrigin", position);
@@ -1974,11 +1974,16 @@ stock void UpdateClientCheatValue(int value)
 
 /*	Extras	*/
 
-public float GetArgF(int boss, const char[] abilityName, const char[] argName, int argNumber, float defaultValue, int valueCheck)
+float GetArgF(int boss, const char[] abilityName, const char[] argName, int argNumber, float defaultValue, int valueCheck, bool health = false)
 {
 	static char buffer[1024];
 	FF2_GetArgS(boss, this_plugin_name, abilityName, argName, argNumber, buffer, sizeof(buffer));
-
+	
+	if(!health) {
+		float val;
+		return StringToFloatEx(buffer, val) ? val:defaultValue;
+	}
+	
 	if(buffer[0])
 	{
 		return ParseFormula(boss, buffer, defaultValue, abilityName, argName, argNumber, valueCheck); 
@@ -1990,7 +1995,6 @@ public float GetArgF(int boss, const char[] abilityName, const char[] argName, i
 	}
 	return defaultValue;
 }
-
 stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
 {
 	float sum = GetArrayCell(sumArray, bracket);
