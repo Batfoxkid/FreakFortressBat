@@ -600,9 +600,10 @@ methodmap FF2Protected < ArrayList
 	
 	public void PushToTail(const char[] name, FF2Save& save)
 	{
-		save.SetString("__PROTECTED__", name);
+		StringMap actual = view_as<StringMap>(CloneHandle(gFF2PrecachedData));
+		actual.SetString("__PROTECTED__", name);
 		int idx = this.Push(save);
-		this.Set(idx, CloneHandle(gFF2PrecachedData), 1);
+		this.Set(idx, actual, 1);
 	}
 	
 	public FF2Save Request(int boss)
@@ -617,6 +618,7 @@ methodmap FF2Protected < ArrayList
 		}
 		
 		FF2Save save;
+		StringMap map;
 		char actual[24];
 		for(int i = 0; i < this.Length; i++)
 		{
@@ -627,8 +629,12 @@ methodmap FF2Protected < ArrayList
 				this.Erase(i--);
 				continue;
 			}
+			map = this.Get(i, 1);
+			if(!map) {
+				continue;
+			}
 			
-			save.GetString("__PROTECTED__", actual, sizeof(actual));
+			map.GetString("__PROTECTED__", actual, sizeof(actual));
 			if(StrEqual(actual, name)) {
 				return save;
 			}
@@ -641,12 +647,25 @@ methodmap FF2Protected < ArrayList
 	
 	public StringMap Find(FF2Save data)
 	{
+		KeyValues kv = BossKV[data.boss];
+		kv.Rewind();
+		char target[24]; kv.GetString("filename", target, sizeof(target));
+		char name[24];
 		StringMap actual = null;
-		int idx = this.FindValue(data);
-		if(idx >= 0) {
-			actual = this.Get(idx, 1);
+		
+		for(int i = 0; i < this.Length; i++)
+		{
+			actual = this.Get(i, 1);
+			if(!actual) {
+				continue;
+			}
+			
+			actual.GetString("__PROTECTED__", name, sizeof(name));
+			if(StrEqual(name, target)) {
+				return actual;
+			}
 		}
-		return actual;
+		return null;
 	}
 	
 	public void Cleanup()
@@ -685,7 +704,7 @@ methodmap FF2Data
 	property int client {
 		public get() { 
 			if(this.Invalid) {
-				return 0;
+				return -1;
 			}
 			
 			FF2Save save = g_FF2Saved[this.boss]; 
