@@ -598,14 +598,10 @@ methodmap FF2Protected < ArrayList
 		return view_as<FF2Protected>(new ArrayList(2));
 	}
 	
-	public void PushToTail(const char[] name, FF2Save save)
+	public void PushToTail(const char[] name, FF2Save& save)
 	{
-		if(this.FindValue(save) != -1) {
-			return;
-		}
-		
 		save.SetString("__PROTECTED__", name);
-		int idx = this.Push(CloneHandle(save));
+		int idx = this.Push(save);
 		this.Set(idx, CloneHandle(gFF2PrecachedData), 1);
 	}
 	
@@ -655,6 +651,11 @@ methodmap FF2Protected < ArrayList
 	
 	public void Cleanup()
 	{
+		while (this.Length) { 
+			delete view_as<StringMap>(this.Get(0, 1));
+			this.Erase(0);
+		}
+		
 		for(int i = 0; i < sizeof(g_FF2Saved); i++) { delete g_FF2Saved[i]; }
 		gFF2PrecachedData.Clear();
 	}
