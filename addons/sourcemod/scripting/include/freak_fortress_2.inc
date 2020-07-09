@@ -1133,7 +1133,7 @@ methodmap FF2Data
 	 * @param client
 	 * @return 			FF2Data, Invalid or error on failure
 	 */
-	public native FF2Data Unknown(int client);
+	public static native FF2Data Unknown(int client);
 	
 	/**
 	 * Get boss data given boss index
