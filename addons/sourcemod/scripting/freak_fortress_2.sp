@@ -2057,7 +2057,7 @@ public void OnMapStart()
 		KSpreeTimer[client] = 0.0;
 		FF2flags[client] = 0;
 		Incoming[client] = -1;
-		MusicTimer[client] = null;
+		delete MusicTimer[client];
 		RPSHealth[client] = -1;
 		RPSLosses[client] = 0;
 		RPSHealth[client] = 0;
@@ -2072,14 +2072,12 @@ public void OnMapStart()
 				continue;
 
 			delete PackKV[specials][i];
-			PackKV[specials][i] = null;
 		}
 
 		if(BossKV[specials] == null)
 			continue;
 
 		delete BossKV[specials];
-		BossKV[specials] = null;
 	}
 }
 
@@ -2253,7 +2251,6 @@ public void DisableFF2()
 		if(MusicTimer[client] != null)
 		{
 			delete MusicTimer[client];
-			MusicTimer[client] = null;
 		}
 	}
 
@@ -5244,7 +5241,6 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 	if(!Enabled || CheckRoundState()!=1 || !client || MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
 	{
 		delete MusicTimer[client];
-		MusicTimer[client] = null;
 		return;
 	}
 
@@ -5302,7 +5298,6 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			//PrintToConsoleAll("{red}MALFUNCTION! NEED INPUT!");
 			if(MusicTimer[client] != null) {
 				delete MusicTimer[client];
-				MusicTimer[client] = null;
 			}
 		}
 	}
@@ -5446,7 +5441,6 @@ void StopMusic(int client=0, bool permanent=false)
 				{
 					//PrintToConsoleAll("TERMINATING INPUT!");
 					delete MusicTimer[client];
-					MusicTimer[client] = null;
 				}
 			}
 
@@ -5464,7 +5458,6 @@ void StopMusic(int client=0, bool permanent=false)
 		{
 			//PrintToConsoleAll("END INPUT FOR %N!", client);
 			delete MusicTimer[client];
-			MusicTimer[client] = null;
 		}
 
 		strcopy(currentBGM[client], PLATFORM_MAX_PATH, "");
@@ -7657,8 +7650,8 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int ind
 	SetEntProp(wearable, Prop_Send, "m_bInitialized", 1);
 		
 	// Allow quality / level override by updating through the offset.
-	SetEntData(wearable, GetEntSendPropOffs(wearable, "m_iEntityQuality"), quality);
-	SetEntData(wearable, GetEntSendPropOffs(wearable, "m_iEntityLevel"), level);
+	SetEntData(wearable, GetEntSendPropOffs(wearable, "m_iEntityQuality", true), quality);
+	SetEntData(wearable, GetEntSendPropOffs(wearable, "m_iEntityLevel", true), level);
 
 	SetEntProp(wearable, Prop_Send, "m_iEntityQuality", quality);
 	SetEntProp(wearable, Prop_Send, "m_iEntityLevel", level);
@@ -10138,7 +10131,6 @@ public void OnClientDisconnect(int client)
 	if(MusicTimer[client] != null)
 	{
 		delete MusicTimer[client];
-		MusicTimer[client] = null;
 	}
 }
 
@@ -16630,7 +16622,6 @@ public Action Command_SkipSong(int client, int args)
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", lives, temp);
 			if(MusicTimer[client] != null) {
 				delete MusicTimer[client];
-				MusicTimer[client] = null;
 			}
 		}
 	}
