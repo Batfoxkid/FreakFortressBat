@@ -2057,7 +2057,7 @@ public void OnMapStart()
 		KSpreeTimer[client] = 0.0;
 		FF2flags[client] = 0;
 		Incoming[client] = -1;
-		MusicTimer[client] = INVALID_HANDLE;
+		MusicTimer[client] = null;
 		RPSHealth[client] = -1;
 		RPSLosses[client] = 0;
 		RPSHealth[client] = 0;
@@ -2072,12 +2072,14 @@ public void OnMapStart()
 				continue;
 
 			delete PackKV[specials][i];
+			PackKV[specials][i] = null;
 		}
 
 		if(BossKV[specials] == null)
 			continue;
 
 		delete BossKV[specials];
+		BossKV[specials] = null;
 	}
 }
 
@@ -2248,9 +2250,10 @@ public void DisableFF2()
 		if(IsValidClient(client))
 			SaveClientPreferences(client);
 
-		if(MusicTimer[client] != INVALID_HANDLE)
+		if(MusicTimer[client] != null)
 		{
 			delete MusicTimer[client];
+			MusicTimer[client] = null;
 		}
 	}
 
@@ -5240,7 +5243,8 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 	int client=GetClientOfUserId(userid);
 	if(!Enabled || CheckRoundState()!=1 || !client || MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
 	{
-		MusicTimer[client] = INVALID_HANDLE;
+		delete MusicTimer[client];
+		MusicTimer[client] = null;
 		return;
 	}
 
@@ -5296,8 +5300,10 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			//PrintToConsoleAll("{red}MALFUNCTION! NEED INPUT!");
-			if(MusicTimer[client] != INVALID_HANDLE)
-				KillTimer(MusicTimer[client]);
+			if(MusicTimer[client] != null) {
+				delete MusicTimer[client];
+				MusicTimer[client] = null;
+			}
 		}
 	}
 }
@@ -5436,11 +5442,11 @@ void StopMusic(int client=0, bool permanent=false)
 			if(IsValidClient(client))
 			{
 				StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
-				if(MusicTimer[client] != INVALID_HANDLE)
+				if(MusicTimer[client] != null)
 				{
 					//PrintToConsoleAll("TERMINATING INPUT!");
-					KillTimer(MusicTimer[client]);
-					MusicTimer[client] = INVALID_HANDLE;
+					delete MusicTimer[client];
+					MusicTimer[client] = null;
 				}
 			}
 
@@ -5454,11 +5460,11 @@ void StopMusic(int client=0, bool permanent=false)
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 
-		if(MusicTimer[client] != INVALID_HANDLE)
+		if(MusicTimer[client] != null)
 		{
 			//PrintToConsoleAll("END INPUT FOR %N!", client);
-			KillTimer(MusicTimer[client]);
-			MusicTimer[client] = INVALID_HANDLE;
+			delete MusicTimer[client];
+			MusicTimer[client] = null;
 		}
 
 		strcopy(currentBGM[client], PLATFORM_MAX_PATH, "");
@@ -10129,10 +10135,10 @@ public void OnClientDisconnect(int client)
 
 	CheckDuoMin();
 
-	if(MusicTimer[client] != INVALID_HANDLE)
+	if(MusicTimer[client] != null)
 	{
-		KillTimer(MusicTimer[client]);
-		MusicTimer[client] = INVALID_HANDLE;
+		delete MusicTimer[client];
+		MusicTimer[client] = null;
 	}
 }
 
@@ -16622,8 +16628,10 @@ public Action Command_SkipSong(int client, int args)
 		{
 			KvGetString(BossKV[Special[0]], "filename", lives, sizeof(lives));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", lives, temp);
-			if(MusicTimer[client] != INVALID_HANDLE)
-				KillTimer(MusicTimer[client]);
+			if(MusicTimer[client] != null) {
+				delete MusicTimer[client];
+				MusicTimer[client] = null;
+			}
 		}
 	}
 	return Plugin_Handled;
