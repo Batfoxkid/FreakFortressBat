@@ -632,6 +632,16 @@ native void FF2_RemoveClientShield(int client);
 native void FF2_LogError(const char[] message, any ...);
 
 /**
+ * Reports an error to FF2's error log with boss name
+ *
+ * @param boss		Boss index
+ * @param message	Message to error log
+ *
+ * @return			error on failure
+ */
+native void FF2_ReportError(int boss, const char[] message, any ...);
+
+/**
  * Returns whether or not debug is enabled
  *
  * @return		True if enabled, false otherwise
@@ -1115,6 +1125,103 @@ stock int FF2_GetArgS(int boss, const char[] plugin_name, const char[] ability_n
 	return strlen(buffer);
 }
 
+methodmap FF2Data
+{
+	/**
+	 * Get boss data given client index
+	 *
+	 * @param client
+	 * @return 			FF2Data, Invalid or error on failure
+	 */
+	public static native FF2Data Unknown(int client);
+	
+	/**
+	 * Get boss data given boss index
+	 *
+	 * @param boss
+	 * @param plugin	optional
+	 * @param ability	optional
+	 * @return 			FF2Data, Invalid or error on failure
+	 */
+	public native FF2Data(int boss, const char[] plugin = "", const char[] ability = "");
+	
+	/**
+	 *	Invalid index
+	 */
+	property bool Invalid {
+		public get() { return view_as<int>(this) == -1; }
+	}
+	/**
+	 *	boss index
+	 */
+	property int boss {
+		public native get();
+	}
+	/**
+	 *	client index
+	 */
+	property int client {
+		public native get();
+	}
+	/**
+	 * boss config file
+	 * @return config, or error
+	 */
+	property KeyValues Config {
+		public native get();
+	}
+	
+	/**
+	 * Change ability iterator 
+	 *
+	 * @param plugin
+	 * @param ability
+	 * @return error on failure
+	 */
+	public native void Change(const char[] plugin, const char[] ability);
+	
+	/**
+	 * similar FF2_GetArgNamedI 
+	 *
+	 * @param key		ability key
+	 * @param def		default value if lookup failed
+	 * @param base		retrieve the value as
+	 */
+	public native int GetArgI(const char[] key, int def = 0, int base = 10);
+	
+	/**
+	 * similar FF2_GetArgNamedF
+	 *
+	 * @param key		ability key
+	 * @param def		default value if lookup failed
+	 */
+	public native float GetArgF(const char[] key, float def = 0.0);
+	
+	/**
+	 * retrieve argument value as bool
+	 *
+	 * @param key		ability key
+	 * @param def		default value if lookup failed
+	 */
+	public native bool GetArgB(const char[] key, bool def = false);
+	
+	/**
+	 * similar to FF2_GetArgNamedS
+	 *
+	 * @param key		ability key
+	 * @param def		default value if lookup failed
+	 * @return 			number of bytes written
+	 */
+	public native int GetArgS(const char[] key, char[] res, int maxlen);
+	
+	/**
+	 * similar to FF2_HasAbility
+	 * @return 			error on failure
+	 */
+	public native bool HasAbility();
+}
+
+
 public SharedPlugin __pl_FF2 =
 {
 	name = "freak_fortress_2",
@@ -1179,6 +1286,7 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_SetCheats");
 	MarkNativeAsOptional("FF2_GetCheats");
 	MarkNativeAsOptional("FF2_MakeBoss");
+	MarkNativeAsOptional("FF2_ReportError");
 }
 #endif
 
