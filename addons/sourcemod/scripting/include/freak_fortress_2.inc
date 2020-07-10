@@ -1287,6 +1287,19 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_GetCheats");
 	MarkNativeAsOptional("FF2_MakeBoss");
 	MarkNativeAsOptional("FF2_ReportError");
+	
+	MarkNativeAsOptional("FF2Data.Unknown");
+	MarkNativeAsOptional("FF2Data.FF2Data");
+	MarkNativeAsOptional("FF2Data.Invalid");
+	MarkNativeAsOptional("FF2Data.boss.get");
+	MarkNativeAsOptional("FF2Data.client.get");
+	MarkNativeAsOptional("FF2Data.Config.get");
+	MarkNativeAsOptional("FF2Data.Change");
+	MarkNativeAsOptional("FF2Data.GetArgI");
+	MarkNativeAsOptional("FF2Data.GetArgF");
+	MarkNativeAsOptional("FF2Data.GetArgB");
+	MarkNativeAsOptional("FF2Data.GetArgS");
+	MarkNativeAsOptional("FF2Data.HasAbility");
 }
 #endif
 
