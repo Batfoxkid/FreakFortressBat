@@ -598,7 +598,7 @@ methodmap FF2Protected < ArrayList
 	
 	public void PushToTail(const char[] name, FF2Save& save)
 	{
-		StringMap actual = view_as<StringMap>(new StringMap());
+		StringMap actual = new StringMap();
 		actual.SetString("__PROTECTED__", name);
 		this.Push(actual);
 	}
@@ -663,7 +663,7 @@ methodmap FF2Protected < ArrayList
 	{
 		for(int i = 0; i < sizeof(g_FF2Saved); i++) { delete g_FF2Saved[i]; }
 		while (this.Length) { 
-			delete view_as<StringMap>(this.Get(0, 1));
+			delete view_as<StringMap>(this.Get(0));
 			this.Erase(0);
 		}
 	}
