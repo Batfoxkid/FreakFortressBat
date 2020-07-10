@@ -47,8 +47,6 @@ last time or to encourage others to do the same.
 #pragma semicolon 1
 
 #include <sourcemod>
-#include <freak_fortress_2>
-#include <adt_array>
 #include <clientprefs>
 #include <morecolors>
 #include <sdkhooks>
@@ -128,6 +126,26 @@ last time or to encourage others to do the same.
 #define BossLogPath "logs/freak_fortress_2/bosses"
 #define DebugLog "ff2_debug.log"
 #define ErrorLog "ff2_errors.log"
+
+/*< freak_fortress_2.inc >*/
+#define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
+#define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
+#define FF2FLAG_CLASSTIMERDISABLED 		(1<<3)		//Used to prevent clients' timer
+#define FF2FLAG_HUDDISABLED			(1<<4)		//Used to prevent custom hud from clients' timer
+#define FF2FLAG_BOTRAGE				(1<<5)		//Used by bots to use Boss's rage
+#define FF2FLAG_TALKING				(1<<6)		//Used by Bosses with "sound_block_vo" to disable block for some lines
+#define FF2FLAG_ALLOWSPAWNINBOSSTEAM		(1<<7)		//Used to allow spawn players in Boss's team
+#define FF2FLAG_USEBOSSTIMER			(1<<8)		//Used to prevent Boss's timer
+#define FF2FLAG_USINGABILITY			(1<<9)		//Used to prevent Boss's hints about abilities buttons
+#define FF2FLAG_CLASSHELPED			(1<<10)
+#define FF2FLAG_HASONGIVED			(1<<11)
+#define FF2FLAG_CHANGECVAR			(1<<12)		//Used to prevent SMAC from kicking bosses who are using certain rages (NYI)
+#define FF2FLAG_ALLOW_HEALTH_PICKUPS		(1<<13)		//Used to prevent bosses from picking up health
+#define FF2FLAG_ALLOW_AMMO_PICKUPS		(1<<14)		//Used to prevent bosses from picking up ammo
+#define FF2FLAG_ROCKET_JUMPING			(1<<15)		//Used when a soldier is rocket jumping
+#define FF2FLAG_ALLOW_BOSS_WEARABLES		(1<<16)		//Used to allow boss having wearables (only for Official FF2)
+#define FF2FLAGS_SPAWN				~FF2FLAG_UBERREADY & ~FF2FLAG_ISBUFFED & ~FF2FLAG_TALKING & ~FF2FLAG_ALLOWSPAWNINBOSSTEAM & ~FF2FLAG_CHANGECVAR & ~FF2FLAG_ROCKET_JUMPING & FF2FLAG_USEBOSSTIMER & FF2FLAG_USINGABILITY
+/*< >*/
 
 bool EnabledDesc = false;
 #if defined _steamtools_included
@@ -517,7 +535,7 @@ enum
 };
 
 int Specials;
-Handle BossKV[MAXSPECIALS];
+KeyValues BossKV[MAXSPECIALS];
 int PackSpecials[MAXCHARSETS];
 Handle PackKV[MAXSPECIALS][MAXCHARSETS];
 Handle PreAbility;
@@ -541,6 +559,247 @@ int chances[MAXSPECIALS*2];  //This is multiplied by two because it has to hold 
 int chancesIndex;
 
 bool LateLoaded;
+
+
+/*< Boss precached data >*/
+methodmap FF2Save < StringMap
+{
+	public FF2Save(int boss)
+	{
+		StringMap map = new StringMap();
+		map.SetValue("__ACTUAL__", boss);
+		map.SetValue("__CLIENT__", EntIndexToEntRef(Boss[boss]));
+		return view_as<FF2Save>(map);
+	}
+	
+	public void GetInfos(char[] pl, int maxlen1, char[] ab, int maxlen2)
+	{
+		this.GetString("plugin_name", pl, maxlen1);
+		this.GetString("ability_name", ab, maxlen2);
+	}
+	
+	property int client {
+		public get() { int me; return this.GetValue("__CLIENT__", me) ? EntRefToEntIndex(me):-1; }
+		public set(int me) { this.SetValue("__CLIENT__", EntIndexToEntRef(me)); }
+	}
+	
+	property int boss {
+		public get() { int boss; return this.GetValue("__ACTUAL__", boss) ? boss:-1; }
+	}
+}
+FF2Save g_FF2Saved[10];
+
+methodmap FF2Protected < ArrayList
+{
+	public FF2Protected()
+	{
+		return view_as<FF2Protected>(new ArrayList());
+	}
+	
+	public void PushToTail(const char[] name, FF2Save& save)
+	{
+		StringMap actual = new StringMap();
+		actual.SetString("__PROTECTED__", name);
+		this.Push(actual);
+	}
+	
+	public StringMap Find(FF2Save data)
+	{
+		KeyValues kv = BossKV[data.boss];
+		kv.Rewind();
+		char target[32]; kv.GetString("filename", target, sizeof(target));
+		char name[32];
+		StringMap actual = null;
+		
+		for(int i = 0; i < this.Length; i++)
+		{
+			actual = this.Get(i);
+			if(!actual) {
+				LogError("index: %i - null StringMap in FF2Protected!", i);
+				this.Erase(i--);
+				continue;
+			}
+			
+			actual.GetString("__PROTECTED__", name, sizeof(name));
+			if(StrEqual(name, target)) {
+				return actual;
+			}
+		}
+		return null;
+	}
+	
+	public FF2Save Request(int boss)
+	{
+		if(boss < 0 || boss >= sizeof(g_FF2Saved)) {
+			return null;
+		}
+		
+		char name[48]; BossKV[boss].Rewind(); BossKV[boss].GetString("filename", name, sizeof(name), NULL_STRING);
+		if(IsNullString(name)) {
+			return null;
+		}
+		
+		FF2Save save;
+		StringMap map;
+		for(int i = 0; i < sizeof(g_FF2Saved); i++)
+		{
+			save = g_FF2Saved[i];
+			if(!save) {
+				continue;
+			}
+			
+			map = this.Find(save);
+			if(map) {
+				return save;
+			}
+		}
+		
+		save = new FF2Save(boss);
+		this.PushToTail(name, save);
+		return save;
+	}
+	
+	public void Cleanup()
+	{
+		for(int i = 0; i < sizeof(g_FF2Saved); i++) { delete g_FF2Saved[i]; }
+		while (this.Length) { 
+			delete view_as<StringMap>(this.Get(0));
+			this.Erase(0);
+		}
+	}
+	
+	public void Purge()
+	{
+		for(int i = 0; i < sizeof(g_FF2Saved); i++) { delete g_FF2Saved[i]; }
+		while(this.Length) {
+			delete view_as<StringMap>(this.Get(0));
+			this.Erase(0);
+		}
+		delete this;
+	}
+}
+FF2Protected g_FF2Protected;
+
+methodmap FF2Data 
+{
+	property int boss {
+		public get() { return view_as<int>(this); }
+	}
+	property bool Invalid {
+		public get() { return this.boss == -1; }
+	}
+	
+	property int client {
+		public get() { 
+			if(this.Invalid) {
+				return -1;
+			}
+			
+			FF2Save save = g_FF2Saved[this.boss]; 
+			if(!save) {
+				return -1;
+			}
+			return save.client;
+		}
+	}
+	
+	public FF2Data Unknown(int client)
+	{
+		int index = GetBossIndex(client);
+		FF2Data data = view_as<FF2Data>(index);
+		if(!data.Invalid) {
+			g_FF2Saved[index] = g_FF2Protected.Request(index);
+		}
+		
+		return data;
+	}
+	
+	public FF2Data(int boss, const char[] _plugin, const char[] _ability)
+	{
+		if(boss < 0 || boss >= sizeof(g_FF2Saved)) {
+			return view_as<FF2Data>(-1);
+		}
+		
+		g_FF2Saved[boss] = g_FF2Protected.Request(boss);
+		
+		g_FF2Saved[boss].SetString("plugin_name", _plugin);
+		g_FF2Saved[boss].SetString("ability_name", _ability);
+		return view_as<FF2Data>(boss);
+	}
+	
+	public int GetArgI(const char[] arg, int def, int base = 10)
+	{
+		if(this.Invalid) {
+			return 0;
+		}
+		
+		FF2Save save = g_FF2Saved[this.boss];
+		if(!save) {
+			return def;
+		}
+		
+		char res[12];
+		if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
+			return def;
+		}
+		
+		return StringToInt(res, base);
+	}
+	public float GetArgF(const char[] arg, float def)
+	{
+		if(this.Invalid) {
+			return 0.0;
+		}
+		
+		FF2Save save = g_FF2Saved[this.boss];
+		if(!save) {
+			return def;
+		}
+		
+		char res[12];
+		if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
+			return def;
+		}
+		
+		return StringToFloat(res);
+	}
+	public int GetArgS(const char[] arg, char[] res, int maxlen)
+	{
+		if(this.Invalid) {
+			return 0;
+		}
+		
+		FF2Save save = g_FF2Saved[this.boss];
+		if(!save) {
+			return 0;
+		}
+		
+		if(!UTIL_FindCharArg(save, arg, res, maxlen)) {
+			return 0;
+		}
+		
+		return strlen(res);
+	}
+	public bool GetArgB(const char[] arg, bool def)
+	{
+		if(this.Invalid) {
+			return false;
+		}
+		
+		FF2Save save = g_FF2Saved[this.boss];
+		if(!save) {
+			return def;
+		}
+		
+		char res[1];
+		if(!UTIL_FindCharArg(save, arg, res, 1)) {
+			return def;
+		}
+		
+		return res[0] != '0';
+	}
+}
+/*<	>*/
 
 public Plugin myinfo =
 {
@@ -613,18 +872,31 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_GetCheats", Native_GetCheats);
 	CreateNative("FF2_MakeBoss", Native_MakeBoss);
 	CreateNative("FF2_SelectBoss", Native_ChooseBoss);
-
-	PreAbility = CreateGlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
-	OnAbility = CreateGlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
-	OnMusic = CreateGlobalForward("FF2_OnMusic", ET_Hook, Param_String, Param_FloatByRef);
-	OnMusic2 = CreateGlobalForward("FF2_OnMusic2", ET_Hook, Param_String, Param_FloatByRef, Param_String, Param_String);
-	OnTriggerHurt = CreateGlobalForward("FF2_OnTriggerHurt", ET_Hook, Param_Cell, Param_Cell, Param_FloatByRef);
-	OnSpecialSelected = CreateGlobalForward("FF2_OnSpecialSelected", ET_Hook, Param_Cell, Param_CellByRef, Param_String, Param_Cell);  //Boss, character index, character name, preset
-	OnAddQueuePoints = CreateGlobalForward("FF2_OnAddQueuePoints", ET_Hook, Param_Array);
-	OnLoadCharacterSet = CreateGlobalForward("FF2_OnLoadCharacterSet", ET_Hook, Param_CellByRef, Param_String);
-	OnLoseLife = CreateGlobalForward("FF2_OnLoseLife", ET_Hook, Param_Cell, Param_CellByRef, Param_Cell);  //Boss, lives left, max lives
-	OnAlivePlayersChanged = CreateGlobalForward("FF2_OnAlivePlayersChanged", ET_Hook, Param_Cell, Param_Cell);  //Players, bosses
-	OnBackstabbed = CreateGlobalForward("FF2_OnBackStabbed", ET_Hook, Param_Cell, Param_Cell, Param_Cell);  //Boss, client, attacker
+	CreateNative("FF2_ReportError", Native_ReportError);
+	
+	CreateNative("FF2Data.Unknown", FF2Data_Unknown);
+	CreateNative("FF2Data.FF2Data", FF2Data_FF2Data);
+	CreateNative("FF2Data.boss.get", FF2Data_boss);
+	CreateNative("FF2Data.client.get", FF2Data_client);
+	CreateNative("FF2Data.Config.get", FF2Data_GetConfig);
+	CreateNative("FF2Data.Change", FF2Data_Change);
+	CreateNative("FF2Data.GetArgI", FF2Data_GetArgI);
+	CreateNative("FF2Data.GetArgF", FF2Data_GetArgF);
+	CreateNative("FF2Data.GetArgB", FF2Data_GetArgB);
+	CreateNative("FF2Data.GetArgS", FF2Data_GetArgS);
+	CreateNative("FF2Data.HasAbility", FF2Data_HasAbility);
+	
+	PreAbility = new GlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
+	OnAbility = new GlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
+	OnMusic = new GlobalForward("FF2_OnMusic", ET_Hook, Param_String, Param_FloatByRef);
+	OnMusic2 = new GlobalForward("FF2_OnMusic2", ET_Hook, Param_String, Param_FloatByRef, Param_String, Param_String);
+	OnTriggerHurt = new GlobalForward("FF2_OnTriggerHurt", ET_Hook, Param_Cell, Param_Cell, Param_FloatByRef);
+	OnSpecialSelected = new GlobalForward("FF2_OnSpecialSelected", ET_Hook, Param_Cell, Param_CellByRef, Param_String, Param_Cell);  //Boss, character index, character name, preset
+	OnAddQueuePoints = new GlobalForward("FF2_OnAddQueuePoints", ET_Hook, Param_Array);
+	OnLoadCharacterSet = new GlobalForward("FF2_OnLoadCharacterSet", ET_Hook, Param_CellByRef, Param_String);
+	OnLoseLife = new GlobalForward("FF2_OnLoseLife", ET_Hook, Param_Cell, Param_CellByRef, Param_Cell);  //Boss, lives left, max lives
+	OnAlivePlayersChanged = new GlobalForward("FF2_OnAlivePlayersChanged", ET_Hook, Param_Cell, Param_Cell);  //Players, bosses
+	OnBackstabbed = new GlobalForward("FF2_OnBackStabbed", ET_Hook, Param_Cell, Param_Cell, Param_Cell);  //Boss, client, attacker
 
 	RegPluginLibrary("freak_fortress_2");
 
@@ -714,7 +986,9 @@ public void OnPluginStart()
 	BuildPath(Path_SM, eLog, sizeof(eLog), "%s/%s", LogPath, ErrorLog);
 	if(!FileExists(eLog))
 		OpenFile(eLog, "a+");
-
+	
+	g_FF2Protected = new FF2Protected();
+	
 	cvarVersion = CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	cvarCharset = CreateConVar("ff2_current", "0", "Freak Fortress 2 Current Boss Pack", FCVAR_SPONLY|FCVAR_DONTRECORD);
 	cvarPointType = CreateConVar("ff2_point_type", "0", "0-Use ff2_point_alive, 1-Use ff2_point_time, 2-Use both", _, true, 0.0, true, 2.0);
@@ -1791,7 +2065,7 @@ public void OnMapStart()
 		KSpreeTimer[client] = 0.0;
 		FF2flags[client] = 0;
 		Incoming[client] = -1;
-		MusicTimer[client] = INVALID_HANDLE;
+		delete MusicTimer[client];
 		RPSHealth[client] = -1;
 		RPSLosses[client] = 0;
 		RPSHealth[client] = 0;
@@ -1802,18 +2076,16 @@ public void OnMapStart()
 	{
 		for(int i; i<MAXCHARSETS; i++)
 		{
-			if(PackKV[specials][i] == INVALID_HANDLE)
+			if(PackKV[specials][i] == null)
 				continue;
 
 			delete PackKV[specials][i];
-			PackKV[specials][i] = INVALID_HANDLE;
 		}
 
-		if(BossKV[specials] == INVALID_HANDLE)
+		if(BossKV[specials] == null)
 			continue;
 
 		delete BossKV[specials];
-		BossKV[specials] = INVALID_HANDLE;
 	}
 }
 
@@ -1956,6 +2228,7 @@ public void DisableFF2()
 	Enabled3 = false;
 
 	DisableSubPlugins();
+	g_FF2Protected.Purge();
 
 	SetConVarInt(FindConVar("tf_arena_use_queue"), tf_arena_use_queue);
 	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
@@ -1980,10 +2253,9 @@ public void DisableFF2()
 		if(IsValidClient(client))
 			SaveClientPreferences(client);
 
-		if(MusicTimer[client] != INVALID_HANDLE)
+		if(MusicTimer[client] != null)
 		{
-			KillTimer(MusicTimer[client]);
-			MusicTimer[client] = INVALID_HANDLE;
+			delete MusicTimer[client];
 		}
 	}
 
@@ -3656,6 +3928,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 			{
 				bosses++;
 				boss = GetBossIndex(client);
+				g_FF2Protected.Request(boss);
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "command", command, sizeof(command));
 				if(command[0])
@@ -3876,7 +4149,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		HasSwitched = false;
 
 	CheckDuoMin();
-
+	
 	if(!Enabled)
 	{
 		Enabled3 = false;
@@ -3921,6 +4194,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			delete bossLog;
 		}
 	}
+	g_FF2Protected.Clear();
 
 	executed = false;
 	executed2 = false;
@@ -4971,7 +5245,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 	int client=GetClientOfUserId(userid);
 	if(!Enabled || CheckRoundState()!=1 || !client || MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
 	{
-		MusicTimer[client] = INVALID_HANDLE;
+		delete MusicTimer[client];
 		return;
 	}
 
@@ -5027,8 +5301,9 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			//PrintToConsoleAll("{red}MALFUNCTION! NEED INPUT!");
-			if(MusicTimer[client] != INVALID_HANDLE)
-				KillTimer(MusicTimer[client]);
+			if(MusicTimer[client] != null) {
+				delete MusicTimer[client];
+			}
 		}
 	}
 }
@@ -5167,11 +5442,10 @@ void StopMusic(int client=0, bool permanent=false)
 			if(IsValidClient(client))
 			{
 				StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
-				if(MusicTimer[client] != INVALID_HANDLE)
+				if(MusicTimer[client] != null)
 				{
 					//PrintToConsoleAll("TERMINATING INPUT!");
-					KillTimer(MusicTimer[client]);
-					MusicTimer[client] = INVALID_HANDLE;
+					delete MusicTimer[client];
 				}
 			}
 
@@ -5185,11 +5459,10 @@ void StopMusic(int client=0, bool permanent=false)
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
 
-		if(MusicTimer[client] != INVALID_HANDLE)
+		if(MusicTimer[client] != null)
 		{
 			//PrintToConsoleAll("END INPUT FOR %N!", client);
-			KillTimer(MusicTimer[client]);
-			MusicTimer[client] = INVALID_HANDLE;
+			delete MusicTimer[client];
 		}
 
 		strcopy(currentBGM[client], PLATFORM_MAX_PATH, "");
@@ -7382,10 +7655,8 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int ind
 	SetEntProp(wearable, Prop_Send, "m_bInitialized", 1);
 		
 	// Allow quality / level override by updating through the offset.
-	static char netClass[64];
-	GetEntityNetClass(wearable, netClass, sizeof(netClass));
-	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityQuality"), quality);
-	SetEntData(wearable, FindSendPropInfo(netClass, "m_iEntityLevel"), level);
+	SetEntData(wearable, GetEntSendPropOffs(wearable, "m_iEntityQuality", true), quality);
+	SetEntData(wearable, GetEntSendPropOffs(wearable, "m_iEntityLevel", true), level);
 
 	SetEntProp(wearable, Prop_Send, "m_iEntityQuality", quality);
 	SetEntProp(wearable, Prop_Send, "m_iEntityLevel", level);
@@ -9862,10 +10133,9 @@ public void OnClientDisconnect(int client)
 
 	CheckDuoMin();
 
-	if(MusicTimer[client] != INVALID_HANDLE)
+	if(MusicTimer[client] != null)
 	{
-		KillTimer(MusicTimer[client]);
-		MusicTimer[client] = INVALID_HANDLE;
+		delete MusicTimer[client];
 	}
 }
 
@@ -14899,33 +15169,20 @@ stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability
 {
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0;
-
-	KvRewind(BossKV[Special[index]]);
-	char s[10];
-	for(int i=1; i<=MAXRANDOMS; i++)
-	{
-		FormatEx(s, sizeof(s), "ability%i", i);
-		if(KvJumpToKey(BossKV[Special[index]], s))
-		{
-			static char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
-			if(strcmp(ability_name, ability_name2))
-			{
-				KvGoBack(BossKV[Special[index]]);
-				continue;
-			}
-
-			static char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
-			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
-			{
-				KvGoBack(BossKV[Special[index]]);
-				continue;
-			}
-			return KvGetNum(BossKV[Special[index]], arg, defvalue);
-		}
+	
+	char res[8];
+	FF2Save save = g_FF2Protected.Request(index);
+	if(!save) {
+		return 0;
 	}
-	return 0;
+	
+	save.SetString("plugin_name", plugin_name);
+	save.SetString("ability_name", ability_name);
+	if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
+		return defvalue;
+	}
+	
+	return StringToInt(res);
 }
 
 stock float GetArgumentF(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, float defvalue=0.0)
@@ -14933,67 +15190,38 @@ stock float GetArgumentF(int index, const char[] plugin_name, const char[] abili
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0.0;
 
-	KvRewind(BossKV[Special[index]]);
-	char s[10];
-	for(int i=1; i<=MAXRANDOMS; i++)
-	{
-		FormatEx(s, sizeof(s), "ability%i", i);
-		if(KvJumpToKey(BossKV[Special[index]], s))
-		{
-			static char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
-			if(strcmp(ability_name, ability_name2))
-			{
-				KvGoBack(BossKV[Special[index]]);
-				continue;
-			}
-
-			static char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
-			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
-			{
-				KvGoBack(BossKV[Special[index]]);
-				continue;
-			}
-			return KvGetFloat(BossKV[Special[index]], arg, defvalue);
-		}
+	char res[8];
+	FF2Save save = g_FF2Protected.Request(index);
+	if(!save) {
+		return 0.0;
 	}
-	return 0.0;
+	
+	save.SetString("plugin_name", plugin_name);
+	save.SetString("ability_name", ability_name);
+	if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
+		return defvalue;
+	}
+	
+	return StringToFloat(res);
 }
 
 stock void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen, const char[] defvalue="")
 {
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 	{
-		strcopy(buffer, buflen, "");
+		buffer[0] = '\0';
 		return;
 	}
 
-	KvRewind(BossKV[Special[index]]);
-	char s[10];
-	for(int i=1; i<=MAXRANDOMS; i++)
-	{
-		FormatEx(s, sizeof(s), "ability%i", i);
-		if(KvJumpToKey(BossKV[Special[index]], s))
-		{
-			static char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, sizeof(ability_name2));
-			if(strcmp(ability_name, ability_name2))
-			{
-				KvGoBack(BossKV[Special[index]]);
-				continue;
-			}
-
-			static char plugin_name2[64];
-			KvGetString(BossKV[Special[index]], "plugin_name", plugin_name2, sizeof(plugin_name2));
-			if(plugin_name[0] && plugin_name2[0] && strcmp(plugin_name, plugin_name2))
-			{
-				KvGoBack(BossKV[Special[index]]);
-				continue;
-			}
-			KvGetString(BossKV[Special[index]], arg, buffer, buflen, defvalue);
-		}
+	FF2Save save = g_FF2Protected.Request(index);
+	if(!save) {
+		buffer[0] = '\0';
+		return;
 	}
+	
+	save.SetString("plugin_name", plugin_name);
+	save.SetString("ability_name", ability_name);
+	UTIL_FindCharArg(save, arg, buffer, buflen);
 }
 
 stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
@@ -16397,8 +16625,9 @@ public Action Command_SkipSong(int client, int args)
 		{
 			KvGetString(BossKV[Special[0]], "filename", lives, sizeof(lives));
 			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", lives, temp);
-			if(MusicTimer[client] != INVALID_HANDLE)
-				KillTimer(MusicTimer[client]);
+			if(MusicTimer[client] != null) {
+				delete MusicTimer[client];
+			}
 		}
 	}
 	return Plugin_Handled;
@@ -17505,13 +17734,13 @@ public int Native_GetAbilityArgument(Handle plugin, int numParams)
 	return GetAbilityArgument(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
-public int Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
+public any Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
-	return view_as<int>(GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5)));
+	return GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
 public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
@@ -17537,7 +17766,7 @@ public int Native_GetArgNamedI(Handle plugin, int numParams)
 	return GetArgumentI(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
-public int Native_GetArgNamedF(Handle plugin, int numParams)
+public any Native_GetArgNamedF(Handle plugin, int numParams)
 {
 	static char plugin_name[64];
 	static char ability_name[64];
@@ -17545,7 +17774,7 @@ public int Native_GetArgNamedF(Handle plugin, int numParams)
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
 	GetNativeString(4, argument, sizeof(argument));
-	return view_as<int>(GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5)));
+	return GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
 public int Native_GetArgNamedS(Handle plugin, int numParams)
@@ -17815,6 +18044,177 @@ public int Native_ChooseBoss(Handle plugin, int numParams)
 
 public int Native_IsVSHMap(Handle plugin, int numParams)
 {
+	return false;
+}
+
+public int Native_ReportError(Handle plugin, int params)
+{
+	int boss = GetNativeCell(1);
+	char name[48] = "Unknown";
+	if(boss >= 0 && BossKV[boss])
+	{
+		BossKV[boss].Rewind();
+		BossKV[boss].GetString("name", name, sizeof(name), "Unknown");
+	}
+	
+	LogToFile(eLog, "[FF2] Exception reported: Boss: %i - Name: %s", boss, name);
+	char actual[PLATFORM_MAX_PATH];
+	
+	int error;
+	if((error = FormatNativeString(0, 2, 3, sizeof(actual), .out_string=actual)) != SP_ERROR_NONE)
+	{
+		return ThrowNativeError(error, "Failed to format");
+	}
+	Format(actual, sizeof(actual), "[FF2] %s", actual);
+	LogToFile(eLog, actual);
+	
+	return 1;
+}
+
+public any FF2Data_Unknown(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(!IsClientInGame(client)) {
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client: %i is not ingame", client);
+	}
+	
+	FF2Data unk;
+	return unk.Unknown(client);
+}
+
+public any FF2Data_FF2Data(Handle plugin, int params)
+{
+	int boss = GetNativeCell(1);
+	if(boss < 0 || boss > 12) {
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", boss);
+	}
+	
+	char plugin_name[64]; GetNativeString(2, plugin_name, sizeof(plugin_name));
+	char ability_name[64]; GetNativeString(3, ability_name, sizeof(ability_name));
+	
+	FF2Data data = FF2Data(boss, plugin_name, ability_name);
+	return data;
+}
+
+public int FF2Data_boss(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	return data.boss;
+}
+
+public int FF2Data_client(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	return data.client;
+}
+
+public any FF2Data_GetConfig(Handle plugin, int params)
+{
+	FF2Data boss = GetNativeCell(1);
+	if(boss.Invalid)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", boss);
+	
+	return BossKV[boss.boss];
+}
+
+public any FF2Data_Change(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	if(data.Invalid)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", data.boss);
+	
+	char plugin_name[64]; GetNativeString(2, plugin_name, sizeof(plugin_name));
+	char ability_name[64]; GetNativeString(3, ability_name, sizeof(ability_name));
+	
+	g_FF2Saved[data.boss].SetString("plugin_name", plugin_name);
+	g_FF2Saved[data.boss].SetString("ability_name", ability_name);
+	return 1;
+}
+
+public any FF2Data_GetArgI(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	char arg[32]; GetNativeString(2, arg, sizeof(arg));
+	return data.GetArgI(arg, GetNativeCell(3), GetNativeCell(4));
+}
+
+public any FF2Data_GetArgF(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	char arg[32]; GetNativeString(2, arg, sizeof(arg));
+	return data.GetArgF(arg, GetNativeCell(3));
+}
+
+public any FF2Data_GetArgB(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	char arg[32]; GetNativeString(2, arg, sizeof(arg));
+	return data.GetArgB(arg, GetNativeCell(3));
+}
+
+public any FF2Data_GetArgS(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	char arg[32]; GetNativeString(2, arg, sizeof(arg));
+	
+	int len = GetNativeCell(4);
+	char[] res = new char[len];
+	int bytes = data.GetArgS(arg, res, len);
+	SetNativeString(3, res, len);
+
+	return bytes;
+}
+
+public any FF2Data_HasAbility(Handle plugin, int params)
+{
+	FF2Data data = GetNativeCell(1);
+	if(data.Invalid) {
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", data.boss);
+	}
+	
+	char plugin_name[64]; g_FF2Saved[data.boss].GetString("plugin_name", plugin_name, sizeof(plugin_name));
+	char ability_name[64]; g_FF2Saved[data.boss].GetString("ability_name", ability_name, sizeof(ability_name));
+	
+	char key[124], abkey[24];
+	bool res;
+	FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
+	
+	StringMap actual = g_FF2Protected.Find(g_FF2Saved[data.boss]);
+	if(!actual) {
+		return false;
+	}
+	
+	if(actual.GetValue(key, res)) {
+		return res;
+	}
+	
+	KeyValues kv = BossKV[data.boss];
+	kv.Rewind();
+	for(int ab = 1; ab < MAXRANDOMS; ab++)
+	{
+		FormatEx(abkey, sizeof(abkey), "ability%i", ab);
+		if(!kv.JumpToKey(abkey))
+			continue;
+			
+		kv.GetString("name", key, sizeof(key));
+		if(!StrEqual(key, ability_name)){
+			kv.GoBack();
+			continue;
+		}
+		
+		kv.GetString("plugin_name", key, sizeof(key));
+		if(!StrEqual(key, plugin_name)) {
+			kv.GoBack();
+			continue;
+		}
+		
+		FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
+		actual.SetValue(key, true);
+		return true;
+	}
+	
+	FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
+	actual.SetValue(key, false);
 	return false;
 }
 
@@ -18138,6 +18538,206 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 		}
 	}
 }
+
+public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int maxlen)
+{
+	StringMap actual = g_FF2Protected.Find(save);
+	if(!actual) {
+		return false;
+	}
+	
+	static KeyValues kv;
+	static char plugin[64]; char ability[64]; 
+	save.GetInfos(plugin, sizeof(plugin), ability, sizeof(ability));
+	if(!ability[0]) {
+		return false;
+	}
+	
+	char abkey[24];
+	char[] key = new char[126];
+	FormatEx(key, 126, "%s/%s", plugin, ability);
+	kv = BossKV[save.boss];
+	kv.Rewind();
+
+	if(actual.GetString(key, abkey, sizeof(abkey)))
+	{
+		if(IsNullString(abkey)) {
+			// lookup failed, return default value.
+			return false;
+		}
+		
+		kv.Rewind();
+		kv.JumpToKey(abkey);
+		kv.GetString(args, res, maxlen);
+		return true;
+	}
+	
+	for(int ab = 1; ab <= MAXRANDOMS; ab++)
+	{
+		FormatEx(abkey, sizeof(abkey), "ability%i", ab);
+		if(!kv.JumpToKey(abkey)) {
+			continue;
+		}
+		
+		kv.GetString("name", key, 64);
+		if(!StrEqual(key, ability)) {
+			kv.GoBack();
+			continue;
+		}
+		
+		kv.GetString("plugin_name", key, 64);
+		if(!StrEqual(key, plugin) && plugin[0] != '\0') {
+			kv.GoBack();
+			continue;
+		}
+		
+		FormatEx(key, 126, "%s/%s", plugin, ability);
+		actual.SetString(key, abkey);
+		kv.GetString(args, res, maxlen);
+		
+		return true;
+	}
+	
+	FormatEx(key, 126, "%s/%s", plugin, ability);
+	actual.SetString(key, NULL_STRING);
+	return false;
+}
+
+
+/*< freak_fortress_2.inc >*/
+stock void FPrintToChat(int client, const char[] message, any ...)
+{
+	SetGlobalTransTarget(client);
+	char buffer[192];
+	VFormat(buffer, sizeof(buffer), message, 3);
+	CPrintToChat(client, "%t%s", "Prefix", buffer);
+}
+stock void FPrintToChatAll(const char[] message, any ...)
+{
+	char buffer[192];
+	VFormat(buffer, sizeof(buffer), message, 2);
+	CPrintToChatAll("%t%s", "Prefix", buffer);
+}
+stock void FReplyToCommand(int client, const char[] message, any ...)
+{
+	SetGlobalTransTarget(client);
+	char buffer[192];
+	VFormat(buffer, sizeof(buffer), message, 3);
+	if(!client)
+	{
+		CRemoveTags(buffer, sizeof(buffer));
+		PrintToServer("[FF2] %s", buffer);
+	}
+	else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		CRemoveTags(buffer, sizeof(buffer));
+		PrintToConsole(client, "[FF2] %s", buffer);
+	}
+	else
+	{
+		CPrintToChat(client, "%t%s", "Prefix", buffer);
+	}
+}
+stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qual, const char[] att, bool visible=true)
+{
+	#if defined _tf2items_included
+	if(StrEqual(name, "saxxy", false))	// if "saxxy" is specified as the name, replace with appropiate name
+	{ 
+		switch(TF2_GetPlayerClass(client))
+		{
+			case TFClass_Scout:	ReplaceString(name, 64, "saxxy", "tf_weapon_bat", false);
+			case TFClass_Pyro:	ReplaceString(name, 64, "saxxy", "tf_weapon_fireaxe", false);
+			case TFClass_DemoMan:	ReplaceString(name, 64, "saxxy", "tf_weapon_bottle", false);
+			case TFClass_Heavy:	ReplaceString(name, 64, "saxxy", "tf_weapon_fists", false);
+			case TFClass_Engineer:	ReplaceString(name, 64, "saxxy", "tf_weapon_wrench", false);
+			case TFClass_Medic:	ReplaceString(name, 64, "saxxy", "tf_weapon_bonesaw", false);
+			case TFClass_Sniper:	ReplaceString(name, 64, "saxxy", "tf_weapon_club", false);
+			case TFClass_Spy:	ReplaceString(name, 64, "saxxy", "tf_weapon_knife", false);
+			default:		ReplaceString(name, 64, "saxxy", "tf_weapon_shovel", false);
+		}
+	}
+	else if(StrEqual(name, "tf_weapon_shotgun", false))	// If using tf_weapon_shotgun for Soldier/Pyro/Heavy/Engineer
+	{
+		switch(TF2_GetPlayerClass(client))
+		{
+			case TFClass_Pyro:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_pyro", false);
+			case TFClass_Heavy:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_hwg", false);
+			case TFClass_Engineer:	ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_primary", false);
+			default:		ReplaceString(name, 64, "tf_weapon_shotgun", "tf_weapon_shotgun_soldier", false);
+		}
+	}
+
+	Handle hWeapon = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
+	if(hWeapon == INVALID_HANDLE)
+		return -1;
+
+	TF2Items_SetClassname(hWeapon, name);
+	TF2Items_SetItemIndex(hWeapon, index);
+	TF2Items_SetLevel(hWeapon, level);
+	TF2Items_SetQuality(hWeapon, qual);
+	char atts[32][32];
+	int count = ExplodeString(att, ";", atts, 32, 32);
+
+	if(count % 2)
+		--count;
+
+	if(count > 0)
+	{
+		TF2Items_SetNumAttributes(hWeapon, count/2);
+		int i2;
+		for(int i; i<count; i+=2)
+		{
+			int attrib = StringToInt(atts[i]);
+			if(!attrib)
+			{
+				LogError("Bad weapon attribute passed: %s ; %s", atts[i], atts[i+1]);
+				delete hWeapon;
+				return -1;
+			}
+
+			TF2Items_SetAttribute(hWeapon, i2, attrib, StringToFloat(atts[i+1]));
+			i2++;
+		}
+	}
+	else
+	{
+		TF2Items_SetNumAttributes(hWeapon, 0);
+	}
+
+	int entity = TF2Items_GiveNamedItem(client, hWeapon);
+	delete hWeapon;
+	if(entity == -1)
+		return -1;
+
+	EquipPlayerWeapon(client, entity);
+
+	if(visible)
+	{
+		SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", 1);
+	}
+	else
+	{
+		SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
+		SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+	}
+	return entity;
+	#else
+	return -1;
+	#endif
+}
+stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
+{
+	if(IsValidEntity(weapon))
+	{
+		if(clip > -1)
+			SetEntProp(weapon, Prop_Data, "m_iClip1", clip);
+
+		int ammoType = (ammo>-1 ? GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType") : -1);
+		if(ammoType != -1)
+			SetEntProp(client, Prop_Data, "m_iAmmo", ammo, _, ammoType);
+	}
+}
+/*< >*/
 
 #include <freak_fortress_2_vsh_feedback>
 
