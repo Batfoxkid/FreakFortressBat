@@ -5,15 +5,12 @@ addons:
 
 # Set the build environment
 env:
-    - SMVERSION=1.8  # Legacy
-    - SMVERSION=1.9  # Legacy
     - SMVERSION=1.10 # Stable
     - SMVERSION=1.11 # Unstable
 
 # Allow non-priority versions to fail
 jobs:
     allow_failures:
-        - env: SMVERSION=1.8
         - env: SMVERSION=1.11
 
 # And compile!
