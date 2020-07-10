@@ -718,7 +718,7 @@ public int OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 					FF2_GetBossName(boss, bossName, sizeof(bossName));
 					if(!FileExists(model, true))
 					{
-						FF2_LogError("[Boss] Model '%s' doesn't exist!  Please check %s's config", model, bossName);
+						FF2_ReportError(boss, "[Boss] Model '%s' doesn't exist!  Please check %s's config", model, bossName);
 						return;
 					}
 					else
@@ -832,9 +832,7 @@ public void OnProjectileSpawned(int entity)
 					}
 					else
 					{
-						static char bossName[64];
-						FF2_GetBossName(boss, bossName, sizeof(bossName));
-						FF2_LogError("[Boss] Model '%s' doesn't exist!  Please check %s's config", classname, bossName);
+						FF2_ReportError(boss, "[Boss] Model '%s' doesn't exist!  Please check config", classname);
 						return;
 					}
 				}
@@ -864,7 +862,7 @@ int SpawnManyObjects(char[] classname, int client, char[] model, int skin=0, int
 		int entity = CreateEntityByName(classname);
 		if(!IsValidEntity(entity))
 		{
-			FF2_LogError("[Boss] Invalid entity while spawning objects for %s-check your configs!", this_plugin_name);
+			FF2_ReportError(FF2_GetBossIndex(client), "[Boss] Invalid entity while spawning objects for %s-check your configs!", this_plugin_name);
 			continue;
 		}
 
@@ -1990,7 +1988,7 @@ float GetArgF(int boss, const char[] abilityName, const char[] argName, int argN
 	}
 	else if((valueCheck==1 && defaultValue<0) || (valueCheck==2 && defaultValue<=0))
 	{
-		FF2_LogError("[Boss] Formula at arg%i/%s for %s is not allowed to be blank.", argNumber, argName, abilityName);
+		FF2_ReportError(boss, "[Boss] Formula at arg%i/%s for %s is not allowed to be blank.", argNumber, argName, abilityName);
 		return 0.0;
 	}
 	return defaultValue;
@@ -2016,7 +2014,7 @@ stock int Operate(Handle sumArray, int &bracket, float value, Handle _operator)
 		{
 			if(!value)
 			{
-				FF2_LogError("[Boss] Detected a divide by 0 in a boss with %s!", this_plugin_name);
+				FF2_ReportError(-1, "[Boss] Detected a divide by 0 in a boss with %s!", this_plugin_name);
 				bracket = 0;
 				return;
 			}
@@ -2095,7 +2093,7 @@ public float ParseFormula(int boss, const char[] key, float defaultValue, const 
 				OperateString(sumArray, bracket, value, sizeof(value), _operator);
 				if(_operator.Get(bracket) != Operator_None)
 				{
-					FF2_LogError("[Boss] Formula at arg%i/%s for %s has an invalid operator at character %i", argNumber, argName, abilityName, i+1);
+					FF2_ReportError(boss, "[Boss] Formula at arg%i/%s for %s has an invalid operator at character %i", argNumber, argName, abilityName, i+1);
 					delete sumArray;
 					delete _operator;
 					return defaultValue;
@@ -2103,7 +2101,7 @@ public float ParseFormula(int boss, const char[] key, float defaultValue, const 
 
 				if(--bracket < 0)
 				{
-					FF2_LogError("[Boss] Formula at arg%i/%s for %s has an unbalanced parentheses at character %i", argNumber, argName, abilityName, i+1);
+					FF2_ReportError(boss, "[Boss] Formula at arg%i/%s for %s has an unbalanced parentheses at character %i", argNumber, argName, abilityName, i+1);
 					delete sumArray;
 					delete _operator;
 					return defaultValue;
@@ -2156,7 +2154,7 @@ public float ParseFormula(int boss, const char[] key, float defaultValue, const 
 	delete _operator;
 	if((valueCheck==1 && result<0) || (valueCheck==2 && result<=0))
 	{
-		FF2_LogError("[Boss] An invalid formula at arg%i/%s for %s!", argNumber, argName, abilityName);
+		FF2_ReportError(boss, "[Boss] An invalid formula at arg%i/%s for %s!", argNumber, argName, abilityName);
 		return defaultValue;
 	}
 	return result;
