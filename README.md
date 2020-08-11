@@ -16,6 +16,9 @@ Visit the [Issues tab](https://github.com/Batfoxkid/FreakFortressBat/issues "Iss
 SHADoW NiNE TR3S for FreakFortressBBG (and I use most of the code from)                                                
 [GitHub Profile](https://github.com/shadow93 "shadow93 (Koishi)") | [GitHub Repository](https://github.com/shadow93/FreakFortressBBG "shadow93/FreakFortressBBG: Fork formally used by Big Bang Gamers prior to its closing in November 2016.")
 
+01Pollux for new additions                                                                     
+[GitHub Profile](https://github.com/01Pollux "01Pollux (01Pollux.)") | [Pull Reqest](https://github.com/Batfoxkid/FreakFortressBat/pull/132 "Stuff by 01Pollux · Pull Request #132 · Batfoxkid/FreakFortressBat")
+
 Marxvee for healing, look-based teammate stats HUD, spies disguising as bosses, and backstab animation fix                       
 [Steam Profile](https://steamcommunity.com/profiles/76561198299989625/ "Steam Community :: marxvee❤")
 
