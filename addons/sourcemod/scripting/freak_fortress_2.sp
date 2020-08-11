@@ -72,8 +72,8 @@ last time or to encourage others to do the same.
     as opposed to the public FF2 versioning system
 */
 #define FORK_MAJOR_REVISION "1"
-#define FORK_MINOR_REVISION "19"
-#define FORK_STABLE_REVISION "9"
+#define FORK_MINOR_REVISION "20"
+#define FORK_STABLE_REVISION "0"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "development"
 #define FORK_DATE_REVISION "February 22, 2020"

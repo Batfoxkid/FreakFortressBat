@@ -986,9 +986,9 @@ int Rage_New_Weapon(int boss, const char[] ability_name)
 	if(GetArgF(boss, ability_name, "force switch", 6, 0.0, 0))
 		SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", weapon);
 
-	int ammo = RoundFloat(GetArgF(boss, ability_name, "ammo", 5, 0.0, 1));
-	int clip = RoundFloat(GetArgF(boss, ability_name, "clip", 7, 0.0, 1));
-	if(ammo || clip)
+	int ammo = RoundFloat(GetArgF(boss, ability_name, "ammo", 5, -1.0, 0));
+	int clip = RoundFloat(GetArgF(boss, ability_name, "clip", 7, -1.0, 0));
+	if(ammo>=0 || clip>=0)
 		FF2_SetAmmo(client, weapon, ammo, clip);
 }
 
@@ -1179,13 +1179,13 @@ void Rage_StunBuilding(const char[] ability_name, int boss)
 		distance = FF2_GetRageDist(boss, this_plugin_name, ability_name);
  // Building Health
  	bool destory = false;
-	float health = GetArgF(boss, ability_name, "health", 3, 1.0, 1, true);
+	float health = GetArgF(boss, ability_name, "health", 3, 1.0, 0, true);
 	if(health <= 0)
 		destory = true;
  // Sentry Ammo
-	float ammo = GetArgF(boss, ability_name, "ammo", 4, 1.0, 1);
+	float ammo = GetArgF(boss, ability_name, "ammo", 4, 1.0, 0);
  // Sentry Rockets
-	float rockets = GetArgF(boss, ability_name, "rocket", 5, 1.0, 1);
+	float rockets = GetArgF(boss, ability_name, "rocket", 5, 1.0, 0);
  // Particle Effect
 	char particleEffect[48];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "particle", 6, particleEffect, sizeof(particleEffect));
@@ -1372,9 +1372,9 @@ void Rage_Clone(const char[] ability_name, int boss)
 	int index = RoundFloat(GetArgF(boss, ability_name, "index", 7, 191.0, 1));
 	static char attributes[128];
 	FF2_GetArgS(boss, this_plugin_name, ability_name, "attributes", 8, attributes, sizeof(attributes));
-	int ammo = RoundFloat(GetArgF(boss, ability_name, "ammo", 9, 0.0, 1));
-	int clip = RoundFloat(GetArgF(boss, ability_name, "clip", 10, 0.0, 1));
-	int health = RoundFloat(GetArgF(boss, ability_name, "health", 11, 0.0, 1, true));
+	int ammo = RoundFloat(GetArgF(boss, ability_name, "ammo", 9, -1.0, 0));
+	int clip = RoundFloat(GetArgF(boss, ability_name, "clip", 10, -1.0, 0));
+	int health = RoundFloat(GetArgF(boss, ability_name, "health", 11, 0.0, 0, true));
 
 	static float position[3], velocity[3];
 	GetEntPropVector(GetClientOfUserId(FF2_GetBossUserId(boss)), Prop_Data, "m_vecOrigin", position);
@@ -1473,7 +1473,7 @@ void Rage_Clone(const char[] ability_name, int boss)
 					SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", -1);
 				}
 
-				if(ammo || clip)
+				if(ammo>=0 || clip>=0)
 					FF2_SetAmmo(clone, weapon, ammo, clip);
 			}
 		}
