@@ -24,4 +24,4 @@ jobs:
         run: |
           cd build/addons/sourcemod/scripting
           ./spcomp -E freak_fortress_2.sp -o ../plugins/freak_fortress_2.smx
-          ./spcomp -E freaks/ffbat_defaults.sp -o ../plugins/freaks/ffbat_defaults.ff2
+          ./spcomp -E freaks/ffbat_defaults.sp -o ../plugins/ffbat_defaults.ff2
