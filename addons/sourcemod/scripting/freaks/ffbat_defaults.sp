@@ -56,7 +56,7 @@
 
 #define MAJOR_REVISION	"0"
 #define MINOR_REVISION	"6"
-#define STABLE_REVISION	"1"
+#define STABLE_REVISION	"2"
 #define PLUGIN_VERSION MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 #define PROJECTILE	"model_projectile_replace"
@@ -166,29 +166,8 @@ public void OnPluginStart2()
 	cvarTimeScale = FindConVar("host_timescale");
 	cvarCheats = FindConVar("sv_cheats");
 
-	AddCommandListener(Listener_PreventCheats, "");
 	PrecacheSound("items/pumpkin_pickup.wav");
 	LoadTranslations("freak_fortress_2.phrases");
-
-	//Strip cheats flag from all cvars-don't reset them when sv_cheats 1 changes
-	Handle interator;
-	int flags;
-	bool isCommand;
-	char name[64];
-	interator = FindFirstConCommand(name, sizeof(name), isCommand, flags);
-	do 
-	{
-		if(!isCommand && (flags & FCVAR_CHEAT))
-		{
-			Handle cvar_ss = FindConVar(name);
-			if(cvar_ss == null)
-				continue;
-
-			SetConVarFlags(cvar_ss, flags&~FCVAR_CHEAT);
-			CloseHandle(cvar_ss);
-		}
-	} 
-	while(FindNextConCommand(interator, name, sizeof(name), isCommand, flags));
 
 	for(int boss; boss<=MaxClients; boss++)
 	{
@@ -233,21 +212,6 @@ public void OnLibraryRemoved(const char[] name)
 	}
 }
 #endif
-
-public Action Listener_PreventCheats(int client, const char[] command, int argc)
-{
-	if(IsSlowMoActive())
-	{
-		if(GetCommandFlags(command) & FCVAR_CHEAT)
-			return Plugin_Handled;
-
-		if(StrEqual(command, "addcond") || StrEqual(command, "removecond") || StrEqual(command, "give"))
-			return Plugin_Handled;
-
-		return Plugin_Continue;
-	}
-	return Plugin_Continue;
-}
 
 bool IsSlowMoActive()
 {
@@ -1799,7 +1763,7 @@ void Rage_Slowmo(int boss)
 	SlowMoTimer = CreateTimer(duration*timescale, Timer_StopSlowMo, boss, TIMER_FLAG_NO_MAPCHANGE);
 	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
 	FF2Flags[client] |= FLAG_SLOWMOREADYCHANGE|FLAG_ONSLOWMO;
-	UpdateClientCheatValue(1);
+	UpdateClientCheatValue("1");
 
 	if(client)
 		CreateTimer(duration*timescale, Timer_RemoveEntity, EntIndexToEntRef(AttachParticle(client, GetClientTeam(client)==view_as<int>(TFTeam_Blue) ? "scout_dodge_blue" : "scout_dodge_red", 75.0)), TIMER_FLAG_NO_MAPCHANGE);
@@ -1817,7 +1781,7 @@ public Action Timer_StopSlowMo(Handle timer, any boss)
 	oldTarget = 0;
 	float timescale = cvarTimeScale.FloatValue;
 	cvarTimeScale.FloatValue = 1.0;
-	UpdateClientCheatValue(0);
+	UpdateClientCheatValue("0");
 	if(boss != -1)
 	{
 		FF2_SetFF2flags(boss, FF2_GetFF2flags(boss) & ~FF2FLAG_CHANGECVAR);
@@ -1960,12 +1924,12 @@ public Action Timer_SlowMoChange(Handle timer, any boss)
 	return Plugin_Continue;
 }
 
-stock void UpdateClientCheatValue(int value)
+stock void UpdateClientCheatValue(const char[] value)
 {
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsClientInGame(client) && !IsFakeClient(client))
-			cvarCheats.ReplicateToClient(client, value ? "1" : "0");
+			cvarCheats.ReplicateToClient(client, value);
 	}
 }
 

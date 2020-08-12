@@ -53,9 +53,7 @@ last time or to encourage others to do the same.
 #include <tf2_stocks>
 #include <tf2items>
 #undef REQUIRE_EXTENSIONS
-#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=9
 #tryinclude <steamtools>
-#endif
 #tryinclude <SteamWorks>
 #define REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
@@ -73,12 +71,12 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "20"
-#define FORK_STABLE_REVISION "0"
+#define FORK_STABLE_REVISION "1"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 22, 2020"
+#define FORK_DATE_REVISION "February 23, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."004"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -16143,50 +16141,10 @@ public Action HelpPanelClass(int client)
 		return Plugin_Continue;
 	}
 
-	char text[512];
 	TFClassType class = TF2_GetPlayerClass(client);
+	char text[512], translation[64];
+
 	SetGlobalTransTarget(client);
-	#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=8
-	switch(class)
-	{
-		case TFClass_Scout:
-			FormatEx(text, sizeof(text), "%t", "help_scout");
-
-		case TFClass_Soldier:
-			FormatEx(text, sizeof(text), "%t", "help_soldier");
-
-		case TFClass_Pyro:
-			FormatEx(text, sizeof(text), "%t", "help_pyro");
-
-		case TFClass_DemoMan:
-			FormatEx(text, sizeof(text), "%t", "help_demo");
-
-		case TFClass_Heavy:
-			FormatEx(text, sizeof(text), "%t", "help_heavy");
-
-		case TFClass_Engineer:
-			FormatEx(text, sizeof(text), "%t", "help_eggineer");
-
-		case TFClass_Medic:
-			FormatEx(text, sizeof(text), "%t", "help_medic");
-
-		case TFClass_Sniper:
-			FormatEx(text, sizeof(text), "%t", "help_sniper");
-
-		case TFClass_Spy:
-			FormatEx(text, sizeof(text), "%t", "help_spie");
-	}
-
-	Format(text, sizeof(text), "%t\n%s", "help_melee", text);
-	Menu menu = new Menu(HintPanelH);
-	menu.SetTitle(text);
-	FormatEx(text, sizeof(text), "%t", "Exit");
-	menu.AddItem(text, text);
-	menu.ExitButton = false;
-	menu.OptionFlags |= MENUFLAG_NO_SOUND;
-	menu.Display(client, 25);
-	#else
-	char translation[64];
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 	if(IsValidEntity(weapon))
 	{
@@ -16354,7 +16312,6 @@ public Action HelpPanelClass(int client)
 		menu.OptionFlags |= MENUFLAG_NO_SOUND;
 		menu.Display(client, 25);
 	}
-	#endif
 	return Plugin_Continue;
 }
 
