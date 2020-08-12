@@ -4194,7 +4194,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			delete bossLog;
 		}
 	}
-	g_FF2Protected.Clear();
+	g_FF2Protected.Cleanup();
 
 	executed = false;
 	executed2 = false;
