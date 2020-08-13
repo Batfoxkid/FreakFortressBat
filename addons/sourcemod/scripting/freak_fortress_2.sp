@@ -2044,6 +2044,9 @@ public void OnMapStart()
 	doorCheckTimer = INVALID_HANDLE;
 	RoundCount = 0;
 	GetCurrentMap(currentmap, sizeof(currentmap));
+	
+	if(!g_FF2Protected)
+		g_FF2Protected = new FF2Protected();
 
 	for(int client; client<=MaxClients; client++)
 	{
@@ -2096,9 +2099,6 @@ public void EnableFF2()
 	Enabled = true;
 	Enabled2 = true;
 	Enabled3 = false;
-	
-	if(!g_FF2Protected)
-		g_FF2Protected = new FF2Protected();
 
 	//Cache cvars
 	SetConVarString(FindConVar("ff2_version"), PLUGIN_VERSION);
