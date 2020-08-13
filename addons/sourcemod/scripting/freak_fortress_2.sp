@@ -661,16 +661,6 @@ methodmap FF2Protected < ArrayList
 			this.Erase(0);
 		}
 	}
-	
-	public void Purge()
-	{
-		for(int i = 0; i < sizeof(g_FF2Saved); i++) { delete g_FF2Saved[i]; }
-		while(this.Length) {
-			delete view_as<StringMap>(this.Get(0));
-			this.Erase(0);
-		}
-		delete this;
-	}
 }
 FF2Protected g_FF2Protected;
 
@@ -980,8 +970,9 @@ public void OnPluginStart()
 	BuildPath(Path_SM, eLog, sizeof(eLog), "%s/%s", LogPath, ErrorLog);
 	if(!FileExists(eLog))
 		OpenFile(eLog, "a+");
-	
-	g_FF2Protected = new FF2Protected();
+		
+	if(!g_FF2Protected)
+		g_FF2Protected = new FF2Protected();
 	
 	cvarVersion = CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	cvarCharset = CreateConVar("ff2_current", "0", "Freak Fortress 2 Current Boss Pack", FCVAR_SPONLY|FCVAR_DONTRECORD);
@@ -2105,6 +2096,9 @@ public void EnableFF2()
 	Enabled = true;
 	Enabled2 = true;
 	Enabled3 = false;
+	
+	if(!g_FF2Protected)
+		g_FF2Protected = new FF2Protected();
 
 	//Cache cvars
 	SetConVarString(FindConVar("ff2_version"), PLUGIN_VERSION);
@@ -2222,7 +2216,8 @@ public void DisableFF2()
 	Enabled3 = false;
 
 	DisableSubPlugins();
-	g_FF2Protected.Purge();
+	g_FF2Protected.Cleanup();
+	delete g_FF2Protected;
 
 	SetConVarInt(FindConVar("tf_arena_use_queue"), tf_arena_use_queue);
 	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
