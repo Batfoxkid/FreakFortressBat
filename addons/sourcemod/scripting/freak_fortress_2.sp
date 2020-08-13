@@ -585,7 +585,7 @@ methodmap FF2Save < StringMap
 		public get() { int boss; return this.GetValue("__ACTUAL__", boss) ? boss:-1; }
 	}
 }
-FF2Save g_FF2Saved[MAXBOSSES];
+FF2Save g_FF2Saved[MAXTF2PLAYERS];
 
 methodmap FF2Protected < ArrayList
 {
