@@ -585,7 +585,7 @@ methodmap FF2Save < StringMap
 		public get() { int boss; return this.GetValue("__ACTUAL__", boss) ? boss:-1; }
 	}
 }
-FF2Save g_FF2Saved[10];
+FF2Save g_FF2Saved[MAXBOSSES];
 
 methodmap FF2Protected < ArrayList
 {
@@ -637,23 +637,19 @@ methodmap FF2Protected < ArrayList
 			return null;
 		}
 		
-		FF2Save save;
-		StringMap map;
-		for(int i = 0; i < sizeof(g_FF2Saved); i++)
+		FF2Save save = g_FF2Saved[boss];
+		if(!save)
 		{
-			save = g_FF2Saved[i];
-			if(!save) {
-				continue;
-			}
-			
-			map = this.Find(save);
-			if(map) {
-				return save;
-			}
+			g_FF2Saved[boss] = new FF2Save(boss);
+			this.PushToTail(name, save);
+			return g_FF2Saved[boss];
+		}
+		StringMap map = this.Find(save);
+		if(!map)
+		{
+			this.PushToTail(name, save);
 		}
 		
-		save = new FF2Save(boss);
-		this.PushToTail(name, save);
 		return save;
 	}
 	
