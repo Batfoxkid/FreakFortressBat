@@ -624,7 +624,7 @@ methodmap FF2Protected < ArrayList
 			}
 		}
 		
-		PrintToServer("Faik FF2Protected.Find(\"%s\"): no matching boss found (yet)", target);
+		LogError("Fail FF2Protected.Find(\"%s\"): no matching boss found (yet)", target);
 		return null;
 	}
 	
@@ -637,6 +637,7 @@ methodmap FF2Protected < ArrayList
 		
 		char name[48]; BossKV[Special[boss]].Rewind(); BossKV[Special[boss]].GetString("filename", name, sizeof(name), NULL_STRING);
 		if(IsNullString(name)) {
+			LogError("BAD Fail FF2Protected.Request(%i): boss with an empty name");
 			return null;
 		}
 		
@@ -18493,7 +18494,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 {
 	StringMap actual = g_FF2Protected.Find(save);
 	if(!actual) {
-		PrintToServer("BAD Fail UTIL_FindCharArg(): NULL StringMap!");
+		LogError("BAD Fail UTIL_FindCharArg(): NULL StringMap!");
 		return false;
 	}
 	
@@ -18501,7 +18502,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	static char plugin[64]; char ability[64]; 
 	save.GetInfos(plugin, sizeof(plugin), ability, sizeof(ability));
 	if(!ability[0]) {
-		PrintToServer("BAD Fail UTIL_FindCharArg(): NULL Ability");
+		LogError("BAD Fail UTIL_FindCharArg(): NULL Ability");
 		return false;
 	}
 	
@@ -18553,7 +18554,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	
 	FormatEx(key, 126, "%s/%s", plugin, ability);
 	actual.SetString(key, NULL_STRING);
-	PrintToServer("BAD Fail UTIL_FindCharArg(): Ability not found!");
+	LogError("BAD Fail UTIL_FindCharArg(): Ability not found!");
 	return false;
 }
 
