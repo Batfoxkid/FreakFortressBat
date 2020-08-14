@@ -18509,13 +18509,18 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	char abkey[24];
 	char[] key = new char[126];
 	FormatEx(key, 126, "%s/%s", plugin, ability);
-	kv = BossKV[save.boss];
+	kv = BossKV[Special[save.boss]];
 	kv.Rewind();
+	
+	char junk[48];
+	LogMessage("\nLooking for (%s)", key);
+	kv.GetString("name", junk, 48, "Bad KV");
+	LogMessage("~Safe check: Special (%s)", junk);
 
 	if(actual.GetString(key, abkey, sizeof(abkey)))
 	{
 		if(IsNullString(abkey)) {
-			PrintToServer("BAD Fail UTIL_FindCharArg(): Ability not found!");
+			LogError("BAD Fail UTIL_FindCharArg(): Ability not found!");
 			// lookup failed, return default value.
 			return false;
 		}
@@ -18523,6 +18528,8 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 		kv.Rewind();
 		kv.JumpToKey(abkey);
 		kv.GetString(args, res, maxlen);
+		
+		LogMessage("Results:  (%s)\n", res);
 		return true;
 	}
 	
@@ -18540,7 +18547,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 		}
 		
 		kv.GetString("plugin_name", key, 64);
-		if(!StrEqual(key, plugin) && plugin[0] != '\0') {
+		if(!StrEqual(key, plugin) && plugin[0]) {
 			kv.GoBack();
 			continue;
 		}
