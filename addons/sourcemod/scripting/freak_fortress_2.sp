@@ -623,12 +623,15 @@ methodmap FF2Protected < ArrayList
 				return actual;
 			}
 		}
+		
+		PrintToServer("Faik FF2Protected.Find(\"%s\"): no matching boss found (yet)", target);
 		return null;
 	}
 	
 	public FF2Save Request(int boss)
 	{
 		if(boss < 0 || boss >= sizeof(g_FF2Saved)) {
+			PrintToServer("BAD Fail FF2Orotected.Request(%i): boss out of range", boss);
 			return null;
 		}
 		
@@ -17998,10 +18001,10 @@ public int Native_ReportError(Handle plugin, int params)
 {
 	int boss = GetNativeCell(1);
 	char name[48] = "Unknown";
-	if(boss >= 0 && BossKV[boss])
+	if(boss >= 0 && BossKV[Special[boss]])
 	{
-		BossKV[boss].Rewind();
-		BossKV[boss].GetString("name", name, sizeof(name), "Unknown");
+		BossKV[Special[boss]].Rewind();
+		BossKV[Special[boss]].GetString("name", name, sizeof(name), "Unknown");
 	}
 	
 	LogToFile(eLog, "[FF2] Exception reported: Boss: %i - Name: %s", boss, name);
@@ -18490,6 +18493,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 {
 	StringMap actual = g_FF2Protected.Find(save);
 	if(!actual) {
+		PrintToServer("BAD Fail UTIL_FindCharArg(): NULL StringMap!");
 		return false;
 	}
 	
@@ -18497,6 +18501,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	static char plugin[64]; char ability[64]; 
 	save.GetInfos(plugin, sizeof(plugin), ability, sizeof(ability));
 	if(!ability[0]) {
+		PrintToServer("BAD Fail UTIL_FindCharArg(): NULL Ability");
 		return false;
 	}
 	
@@ -18509,6 +18514,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	if(actual.GetString(key, abkey, sizeof(abkey)))
 	{
 		if(IsNullString(abkey)) {
+			PrintToServer("BAD Fail UTIL_FindCharArg(): Ability not found!");
 			// lookup failed, return default value.
 			return false;
 		}
@@ -18547,6 +18553,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	
 	FormatEx(key, 126, "%s/%s", plugin, ability);
 	actual.SetString(key, NULL_STRING);
+	PrintToServer("BAD Fail UTIL_FindCharArg(): Ability not found!");
 	return false;
 }
 
