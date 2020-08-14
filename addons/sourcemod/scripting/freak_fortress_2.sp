@@ -603,7 +603,7 @@ methodmap FF2Protected < ArrayList
 	
 	public StringMap Find(FF2Save data)
 	{
-		KeyValues kv = BossKV[data.boss];
+		KeyValues kv = BossKV[Special[data.boss]];
 		kv.Rewind();
 		char target[32]; kv.GetString("filename", target, sizeof(target));
 		char name[32];
@@ -632,7 +632,7 @@ methodmap FF2Protected < ArrayList
 			return null;
 		}
 		
-		char name[48]; BossKV[boss].Rewind(); BossKV[boss].GetString("filename", name, sizeof(name), NULL_STRING);
+		char name[48]; BossKV[Special[boss]].Rewind(); BossKV[Special[boss]].GetString("filename", name, sizeof(name), NULL_STRING);
 		if(IsNullString(name)) {
 			return null;
 		}
