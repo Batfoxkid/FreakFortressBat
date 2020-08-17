@@ -1224,7 +1224,7 @@ methodmap FF2Data
 	property float Rage
 	{
 		public get() { return FF2_GetBossCharge(this.boss, 0); }
-		public set(const float c) { return FF2_SetBossCharge(this.boss, 0, c); }
+		public set(const float c) { FF2_SetBossCharge(this.boss, 0, c); }
 	}
 	
 	/**
