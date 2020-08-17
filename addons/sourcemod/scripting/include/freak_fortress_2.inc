@@ -1172,15 +1172,6 @@ methodmap FF2Data
 	}
 	
 	/**
-	 * wrapper to FF2_GetBossTeam()
-	 * @return 			boss team
-	 */
-	public static void BossTeam()
-	{
-		return FF2_GetBossTeam();
-	}
-	
-	/**
 	 * wrapper to FF2_GetBossHealth() / FF2_SetBossHealth
 	 * @return 			boss health
 	 */
@@ -1239,6 +1230,13 @@ methodmap FF2Data
 		public get() { return FF2_GetBossRageDamage(this.boss); }
 		public set(const int r) { FF2_SetBossRageDamage(this.boss, r); }
 	}
+	
+	
+	/**
+	 * similat to FF2_GetBossTeam()
+	 * @return 			boss team
+	 */
+	public static native int BossTeam();
 	
 	/**
 	 * Change ability iterator 
@@ -1369,6 +1367,7 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2Data.GetArgB");
 	MarkNativeAsOptional("FF2Data.GetArgS");
 	MarkNativeAsOptional("FF2Data.HasAbility");
+	MarkNativeAsOptional("FF2Data.BossTeam");
 }
 #endif
 
