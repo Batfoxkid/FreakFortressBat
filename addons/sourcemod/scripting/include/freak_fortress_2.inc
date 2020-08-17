@@ -1148,21 +1148,27 @@ methodmap FF2Data
 	/**
 	 *	Invalid index
 	 */
-	property bool Invalid {
+	property bool Invalid
+	{
 		public get() { return view_as<int>(this) == -1; }
 	}
+	
 	/**
 	 *	boss index
 	 */
-	property int boss {
+	property int boss
+	{
 		public native get();
 	}
+	
 	/**
 	 *	client index
 	 */
-	property int client {
+	property int client
+	{
 		public native get();
 	}
+	
 	/**
 	 * boss config file
 	 * @return config, or error
@@ -1172,68 +1178,68 @@ methodmap FF2Data
 	}
 	
 	/**
-	 * wrapper to FF2_GetBossHealth() / FF2_SetBossHealth
+	 * similar to FF2_GetBossHealth() / FF2_SetBossHealth
 	 * @return 			boss health
 	 */
 	property int Health
 	{
-		public get() { return FF2_GetBossHealth(this.boss); }
-		public set(const int h) { FF2_SetBossHealth(this.boss, h); }
+		public native get();
+		public native set(const int h);
 	}
 	
 	/**
-	 * wrapper to FF2_GetBossMaxHealth() / FF2_SetBossMaxHealth
+	 * similar to FF2_GetBossMaxHealth() / FF2_SetBossMaxHealth
 	 * @return 			boss max health
 	 */
 	property int MaxHealth
 	{
-		public get() { return FF2_GetBossMaxHealth(this.boss); }
-		public set(const int h) { FF2_SetBossMaxHealth(this.boss, h); }
+		public native get();
+		public native set(const int h);
 	}
 	
 	/**
-	 * wrapper to FF2_GetBossLives() / FF2_SetBossLives()
+	 * similar to FF2_GetBossLives() / FF2_SetBossLives()
 	 * @return 			boss lives
 	 */
 	property int Lives
 	{
-		public get() { return FF2_GetBossLives(this.boss); }
-		public set(const int l) { FF2_SetBossLives(this.boss, l); }
+		public native get();
+		public native set(const int l);
 	}
 	
 	/**
-	 * wrapper to FF2_GetBossMaxLives() / FF2_SetBossMaxLives()
+	 * similar to FF2_GetBossMaxLives() / FF2_SetBossMaxLives()
 	 * @return 			boss max lives
 	 */
 	property int MaxLives
 	{
-		public get() { return FF2_GetBossMaxLives(this.boss); }
-		public set(const int l) { FF2_SetBossMaxLives(this.boss, l); }
+		public native get();
+		public native set(const int l);
 	}
 
 	/**
-	 * wrapper to FF2_GetBossMaxLives() / FF2_SetBossMaxLives()
+	 * wrapper to FF2_GetBossCharge() / FF2_SetBossCharge()
 	 * @return 			boss rage
 	 */
 	property float Rage
 	{
-		public get() { return FF2_GetBossCharge(this.boss, 0); }
-		public set(const float c) { FF2_SetBossCharge(this.boss, 0, c); }
+		public native get() { return FF2_GetBossCharge(this.boss, 0); }
+		public native set(const float c) { return FF2_SetBossCharge(this.boss, 0, c); }
 	}
 	
 	/**
-	 * wrapper to FF2_GetBossRageDamage() / FF2_SetBossRageDamage()
+	 * similar to FF2_GetBossRageDamage() / FF2_SetBossRageDamage()
 	 * @return 			boss rage damage
 	 */
 	property int RageDmg
 	{
-		public get() { return FF2_GetBossRageDamage(this.boss); }
-		public set(const int r) { FF2_SetBossRageDamage(this.boss, r); }
+		public native get();
+		public native set(const int r);
 	}
 	
 	
 	/**
-	 * similat to FF2_GetBossTeam()
+	 * similar to FF2_GetBossTeam()
 	 * @return 			boss team
 	 */
 	public static native int BossTeam();
@@ -1361,6 +1367,16 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2Data.boss.get");
 	MarkNativeAsOptional("FF2Data.client.get");
 	MarkNativeAsOptional("FF2Data.Config.get");
+	MarkNativeAsOptional("FF2Data.Health.get");
+	MarkNativeAsOptional("FF2Data.Health.set");
+	MarkNativeAsOptional("FF2Data.MaxHealth.get");
+	MarkNativeAsOptional("FF2Data.MaxHealth.set");
+	MarkNativeAsOptional("FF2Data.Lives.get");
+	MarkNativeAsOptional("FF2Data.Lives.set");
+	MarkNativeAsOptional("FF2Data.MaxLives.get");
+	MarkNativeAsOptional("FF2Data.MaxLives.set");
+	MarkNativeAsOptional("FF2Data.RageDmg.get");
+	MarkNativeAsOptional("FF2Data.RageDmg.set");
 	MarkNativeAsOptional("FF2Data.Change");
 	MarkNativeAsOptional("FF2Data.GetArgI");
 	MarkNativeAsOptional("FF2Data.GetArgF");
