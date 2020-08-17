@@ -585,7 +585,7 @@ methodmap FF2Save < StringMap
 		public get() { int boss; return this.GetValue("__ACTUAL__", boss) ? boss:-1; }
 	}
 }
-FF2Save g_FF2Saved[10];
+FF2Save g_FF2Saved[MAXTF2PLAYERS];
 
 methodmap FF2Protected < ArrayList
 {
@@ -603,7 +603,7 @@ methodmap FF2Protected < ArrayList
 	
 	public StringMap Find(FF2Save data)
 	{
-		KeyValues kv = BossKV[data.boss];
+		KeyValues kv = BossKV[Special[data.boss]];
 		kv.Rewind();
 		char target[32]; kv.GetString("filename", target, sizeof(target));
 		char name[32];
@@ -613,7 +613,6 @@ methodmap FF2Protected < ArrayList
 		{
 			actual = this.Get(i);
 			if(!actual) {
-				LogError("index: %i - null StringMap in FF2Protected!", i);
 				this.Erase(i--);
 				continue;
 			}
@@ -623,6 +622,8 @@ methodmap FF2Protected < ArrayList
 				return actual;
 			}
 		}
+		
+		LogError("Fail FF2Protected.Find(\"%s\"): This shouldn't happen at all!", target);
 		return null;
 	}
 	
@@ -632,28 +633,26 @@ methodmap FF2Protected < ArrayList
 			return null;
 		}
 		
-		char name[48]; BossKV[boss].Rewind(); BossKV[boss].GetString("filename", name, sizeof(name), NULL_STRING);
+		KeyValues kv = BossKV[Special[boss]];
+		char name[48]; kv.Rewind(); kv.GetString("filename", name, sizeof(name), NULL_STRING);
 		if(IsNullString(name)) {
 			return null;
 		}
 		
-		FF2Save save;
-		StringMap map;
-		for(int i = 0; i < sizeof(g_FF2Saved); i++)
+		FF2Save save = g_FF2Saved[boss];
+		if(!save)
 		{
-			save = g_FF2Saved[i];
-			if(!save) {
-				continue;
-			}
-			
-			map = this.Find(save);
-			if(map) {
-				return save;
-			}
+			g_FF2Saved[boss] = new FF2Save(boss);
+			this.PushToTail(name, save);
+			return g_FF2Saved[boss];
 		}
 		
-		save = new FF2Save(boss);
-		this.PushToTail(name, save);
+		StringMap map = this.Find(save);
+		if(!map)
+		{
+			return null;
+		}
+		
 		return save;
 	}
 	
@@ -664,16 +663,6 @@ methodmap FF2Protected < ArrayList
 			delete view_as<StringMap>(this.Get(0));
 			this.Erase(0);
 		}
-	}
-	
-	public void Purge()
-	{
-		for(int i = 0; i < sizeof(g_FF2Saved); i++) { delete g_FF2Saved[i]; }
-		while(this.Length) {
-			delete view_as<StringMap>(this.Get(0));
-			this.Erase(0);
-		}
-		delete this;
 	}
 }
 FF2Protected g_FF2Protected;
@@ -984,7 +973,7 @@ public void OnPluginStart()
 	BuildPath(Path_SM, eLog, sizeof(eLog), "%s/%s", LogPath, ErrorLog);
 	if(!FileExists(eLog))
 		OpenFile(eLog, "a+");
-	
+		
 	g_FF2Protected = new FF2Protected();
 	
 	cvarVersion = CreateConVar("ff2_version", PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
@@ -2057,6 +2046,9 @@ public void OnMapStart()
 	doorCheckTimer = INVALID_HANDLE;
 	RoundCount = 0;
 	GetCurrentMap(currentmap, sizeof(currentmap));
+	
+	if(!g_FF2Protected)
+		g_FF2Protected = new FF2Protected();
 
 	for(int client; client<=MaxClients; client++)
 	{
@@ -2226,7 +2218,8 @@ public void DisableFF2()
 	Enabled3 = false;
 
 	DisableSubPlugins();
-	g_FF2Protected.Purge();
+	g_FF2Protected.Cleanup();
+	delete g_FF2Protected;
 
 	SetConVarInt(FindConVar("tf_arena_use_queue"), tf_arena_use_queue);
 	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
@@ -15156,11 +15149,11 @@ stock float GetAbilityArgumentFloat(int index, const char[] plugin_name, const c
 	return GetArgumentF(index, plugin_name, ability_name, str, defvalue);
 }
 
-stock void GetAbilityArgumentString(int index, const char[] plugin_name, const char[] ability_name, int arg, char[] buffer, int buflen, const char[] defvalue="")
+stock void GetAbilityArgumentString(int index, const char[] plugin_name, const char[] ability_name, int arg, char[] buffer, int buflen)
 {
 	char str[10];
 	FormatEx(str, sizeof(str), "arg%i", arg);
-	GetArgumentS(index, plugin_name, ability_name, str, buffer, buflen, defvalue);
+	GetArgumentS(index, plugin_name, ability_name, str, buffer, buflen);
 }
 
 stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, int defvalue=0)
@@ -15168,19 +15161,8 @@ stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0;
 	
-	char res[8];
-	FF2Save save = g_FF2Protected.Request(index);
-	if(!save) {
-		return 0;
-	}
-	
-	save.SetString("plugin_name", plugin_name);
-	save.SetString("ability_name", ability_name);
-	if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
-		return defvalue;
-	}
-	
-	return StringToInt(res);
+	FF2Data data = FF2Data(index, plugin_name, ability_name);
+	return data.Invalid ? 0:data.GetArgI(arg, 0);
 }
 
 stock float GetArgumentF(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, float defvalue=0.0)
@@ -15188,38 +15170,19 @@ stock float GetArgumentF(int index, const char[] plugin_name, const char[] abili
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0.0;
 
-	char res[8];
-	FF2Save save = g_FF2Protected.Request(index);
-	if(!save) {
-		return 0.0;
-	}
-	
-	save.SetString("plugin_name", plugin_name);
-	save.SetString("ability_name", ability_name);
-	if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
-		return defvalue;
-	}
-	
-	return StringToFloat(res);
+	FF2Data data = FF2Data(index, plugin_name, ability_name);
+	return data.Invalid ? 0.0:data.GetArgF(arg, 0.0);
 }
 
-stock void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen, const char[] defvalue="")
+stock void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen)
 {
+	buffer[0] = '\0';
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
-	{
-		buffer[0] = '\0';
 		return;
-	}
-
-	FF2Save save = g_FF2Protected.Request(index);
-	if(!save) {
-		buffer[0] = '\0';
-		return;
-	}
 	
-	save.SetString("plugin_name", plugin_name);
-	save.SetString("ability_name", ability_name);
-	UTIL_FindCharArg(save, arg, buffer, buflen);
+	FF2Data data = FF2Data(index, plugin_name, ability_name);
+	if(!data.Invalid)
+		data.GetArgS(arg, buffer, buflen);
 }
 
 stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
@@ -18008,10 +17971,10 @@ public int Native_ReportError(Handle plugin, int params)
 {
 	int boss = GetNativeCell(1);
 	char name[48] = "Unknown";
-	if(boss >= 0 && BossKV[boss])
+	if(boss >= 0 && BossKV[Special[boss]])
 	{
-		BossKV[boss].Rewind();
-		BossKV[boss].GetString("name", name, sizeof(name), "Unknown");
+		BossKV[Special[boss]].Rewind();
+		BossKV[Special[boss]].GetString("name", name, sizeof(name), "Unknown");
 	}
 	
 	LogToFile(eLog, "[FF2] Exception reported: Boss: %i - Name: %s", boss, name);
@@ -18129,14 +18092,16 @@ public any FF2Data_HasAbility(Handle plugin, int params)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", data.boss);
 	}
 	
-	char plugin_name[64]; g_FF2Saved[data.boss].GetString("plugin_name", plugin_name, sizeof(plugin_name));
-	char ability_name[64]; g_FF2Saved[data.boss].GetString("ability_name", ability_name, sizeof(ability_name));
+	FF2Save save = g_FF2Saved[data.boss];
+	
+	char plugin_name[64]; save.GetString("plugin_name", plugin_name, sizeof(plugin_name));
+	char ability_name[64]; save.GetString("ability_name", ability_name, sizeof(ability_name));
 	
 	char key[124], abkey[24];
 	bool res;
 	FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
 	
-	StringMap actual = g_FF2Protected.Find(g_FF2Saved[data.boss]);
+	StringMap actual = g_FF2Protected.Find(save);
 	if(!actual) {
 		return false;
 	}
@@ -18513,9 +18478,9 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	char abkey[24];
 	char[] key = new char[126];
 	FormatEx(key, 126, "%s/%s", plugin, ability);
-	kv = BossKV[save.boss];
+	kv = BossKV[Special[save.boss]];
 	kv.Rewind();
-
+	
 	if(actual.GetString(key, abkey, sizeof(abkey)))
 	{
 		if(IsNullString(abkey)) {
@@ -18526,6 +18491,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 		kv.Rewind();
 		kv.JumpToKey(abkey);
 		kv.GetString(args, res, maxlen);
+		
 		return true;
 	}
 	
@@ -18543,7 +18509,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 		}
 		
 		kv.GetString("plugin_name", key, 64);
-		if(!StrEqual(key, plugin) && plugin[0] != '\0') {
+		if(!StrEqual(key, plugin) && plugin[0]) {
 			kv.GoBack();
 			continue;
 		}
