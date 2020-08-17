@@ -1172,6 +1172,75 @@ methodmap FF2Data
 	}
 	
 	/**
+	 * wrapper to FF2_GetBossTeam()
+	 * @return 			boss team
+	 */
+	public static void BossTeam()
+	{
+		return FF2_GetBossTeam();
+	}
+	
+	/**
+	 * wrapper to FF2_GetBossHealth() / FF2_SetBossHealth
+	 * @return 			boss team
+	 */
+	property int Health
+	{
+		public get() { return FF2_GetBossHealth(this.boss); }
+		public set(const int h) { FF2_SetBossHealth(this.boss, h); }
+	}
+	
+	/**
+	 * wrapper to FF2_GetBossMaxHealth() / FF2_SetBossMaxHealth
+	 * @return 			boss team
+	 */
+	property int MaxHealth
+	{
+		public get() { return FF2_GetBossMaxHealth(this.boss); }
+		public set(const int h) { FF2_SetBossMaxHealth(this.boss, h); }
+	}
+	
+	/**
+	 * wrapper to FF2_GetBossLives() / FF2_SetBossLives()
+	 * @return 			boss team
+	 */
+	property int Lives
+	{
+		public get() { return FF2_GetBossLives(this.boss); }
+		public set(const int l) { FF2_SetBossLives(this.boss, l); }
+	}
+	
+	/**
+	 * wrapper to FF2_GetBossMaxLives() / FF2_SetBossMaxLives()
+	 * @return 			boss team
+	 */
+	property int MaxLives
+	{
+		public get() { return FF2_GetBossMaxLives(this.boss); }
+		public set(const int l) { FF2_SetBossMaxLives(this.boss, l); }
+	}
+
+	/**
+	 * wrapper to FF2_GetBossMaxLives() / FF2_SetBossMaxLives()
+	 * @return 			boss team
+	 */
+	property float Rage
+	{
+		public get() { return FF2_GetBossCharge(this.boss, 0); }
+		public set(const float c) { FF2_SetBossCharge(this.boss, 0, c); }
+	}
+	
+	/**
+	 * wrapper to FF2_GetBossRageDamage() / FF2_SetBossRageDamage()
+	 * @return 			boss team
+	 */
+	property int RageDmg
+	{
+		public get() { return FF2_GetBossRageDamage(this.boss); }
+		public set(const int r) { FF2_SetBossRageDamage(this.boss, r); }
+	}
+	
+	/**
 	 * Change ability iterator 
 	 *
 	 * @param plugin
