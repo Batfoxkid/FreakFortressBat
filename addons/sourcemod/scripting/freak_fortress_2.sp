@@ -653,6 +653,7 @@ methodmap FF2Protected < ArrayList
 		StringMap map = this.Find(save);
 		if(!map)
 		{
+			delete g_FF2Saved[boss];
 			g_FF2Saved[boss] = new FF2Save(boss);
 			this.PushToTail(name, save);
 			return g_FF2Saved[boss];
