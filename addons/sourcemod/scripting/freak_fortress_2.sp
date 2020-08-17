@@ -624,18 +624,19 @@ methodmap FF2Protected < ArrayList
 			}
 		}
 		
-		LogError("Fail FF2Protected.Find(\"%s\"): no matching boss found (yet)", target);
+		LogError("Fail FF2Protected.Find(\"%s\"): This shouldnt happen at all.", target);
 		return null;
 	}
 	
 	public FF2Save Request(int boss)
 	{
 		if(boss < 0 || boss >= sizeof(g_FF2Saved)) {
-			PrintToServer("BAD Fail FF2Orotected.Request(%i): boss out of range", boss);
+			LogError("BAD Fail FF2Orotected.Request(%i): boss out of range", boss);
 			return null;
 		}
 		
-		char name[48]; BossKV[Special[boss]].Rewind(); BossKV[Special[boss]].GetString("filename", name, sizeof(name), NULL_STRING);
+		KeyValues kv = BossKV[Special[boss]];
+		char name[48]; kv.Rewind(); kv.GetString("filename", name, sizeof(name), NULL_STRING);
 		if(IsNullString(name)) {
 			LogError("BAD Fail FF2Protected.Request(%i): boss with an empty name");
 			return null;
@@ -648,10 +649,13 @@ methodmap FF2Protected < ArrayList
 			this.PushToTail(name, save);
 			return g_FF2Saved[boss];
 		}
+		
 		StringMap map = this.Find(save);
 		if(!map)
 		{
+			g_FF2Saved[boss] = new FF2Save(boss);
 			this.PushToTail(name, save);
+			return g_FF2Saved[boss];
 		}
 		
 		return save;
@@ -15150,11 +15154,11 @@ stock float GetAbilityArgumentFloat(int index, const char[] plugin_name, const c
 	return GetArgumentF(index, plugin_name, ability_name, str, defvalue);
 }
 
-stock void GetAbilityArgumentString(int index, const char[] plugin_name, const char[] ability_name, int arg, char[] buffer, int buflen, const char[] defvalue="")
+stock void GetAbilityArgumentString(int index, const char[] plugin_name, const char[] ability_name, int arg, char[] buffer, int buflen)
 {
 	char str[10];
 	FormatEx(str, sizeof(str), "arg%i", arg);
-	GetArgumentS(index, plugin_name, ability_name, str, buffer, buflen, defvalue);
+	GetArgumentS(index, plugin_name, ability_name, str, buffer, buflen);
 }
 
 stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, int defvalue=0)
@@ -15162,19 +15166,8 @@ stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0;
 	
-	char res[8];
-	FF2Save save = g_FF2Protected.Request(index);
-	if(!save) {
-		return 0;
-	}
-	
-	save.SetString("plugin_name", plugin_name);
-	save.SetString("ability_name", ability_name);
-	if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
-		return defvalue;
-	}
-	
-	return StringToInt(res);
+	FF2Data data = FF2Data(index, plugin_name, ability_name);
+	return data.Invalid ? 0:data.GetArgI(arg, 0);
 }
 
 stock float GetArgumentF(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, float defvalue=0.0)
@@ -15182,38 +15175,19 @@ stock float GetArgumentF(int index, const char[] plugin_name, const char[] abili
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
 		return 0.0;
 
-	char res[8];
-	FF2Save save = g_FF2Protected.Request(index);
-	if(!save) {
-		return 0.0;
-	}
-	
-	save.SetString("plugin_name", plugin_name);
-	save.SetString("ability_name", ability_name);
-	if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
-		return defvalue;
-	}
-	
-	return StringToFloat(res);
+	FF2Data data = FF2Data(index, plugin_name, ability_name);
+	return data.Invalid ? 0.0:data.GetArgF(arg, 0.0);
 }
 
-stock void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen, const char[] defvalue="")
+stock void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen)
 {
+	buffer[0] = '\0';
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
-	{
-		buffer[0] = '\0';
 		return;
-	}
-
-	FF2Save save = g_FF2Protected.Request(index);
-	if(!save) {
-		buffer[0] = '\0';
-		return;
-	}
 	
-	save.SetString("plugin_name", plugin_name);
-	save.SetString("ability_name", ability_name);
-	UTIL_FindCharArg(save, arg, buffer, buflen);
+	FF2Data data = FF2Data(index, plugin_name, ability_name);
+	if(!data.Invalid)
+		data.GetArgS(arg, buffer, buflen);
 }
 
 stock bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
@@ -18123,14 +18097,16 @@ public any FF2Data_HasAbility(Handle plugin, int params)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", data.boss);
 	}
 	
-	char plugin_name[64]; g_FF2Saved[data.boss].GetString("plugin_name", plugin_name, sizeof(plugin_name));
-	char ability_name[64]; g_FF2Saved[data.boss].GetString("ability_name", ability_name, sizeof(ability_name));
+	FF2Save save = g_FF2Saved[data.boss];
+	
+	char plugin_name[64]; save.GetString("plugin_name", plugin_name, sizeof(plugin_name));
+	char ability_name[64]; save.GetString("ability_name", ability_name, sizeof(ability_name));
 	
 	char key[124], abkey[24];
 	bool res;
 	FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
 	
-	StringMap actual = g_FF2Protected.Find(g_FF2Saved[data.boss]);
+	StringMap actual = g_FF2Protected.Find(save);
 	if(!actual) {
 		return false;
 	}
@@ -18512,15 +18488,10 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	kv = BossKV[Special[save.boss]];
 	kv.Rewind();
 	
-	char junk[48];
-	LogMessage("\nLooking for (%s)", key);
-	kv.GetString("name", junk, 48, "Bad KV");
-	LogMessage("~Safe check: Special (%s)", junk);
-
 	if(actual.GetString(key, abkey, sizeof(abkey)))
 	{
 		if(IsNullString(abkey)) {
-			LogError("BAD Fail UTIL_FindCharArg(): Ability not found!");
+			LogError("BAD Fail UTIL_FindCharArg(): %s Ability not found!", key);
 			// lookup failed, return default value.
 			return false;
 		}
@@ -18529,7 +18500,6 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 		kv.JumpToKey(abkey);
 		kv.GetString(args, res, maxlen);
 		
-		LogMessage("Results:  (%s)\n", res);
 		return true;
 	}
 	
@@ -18561,7 +18531,7 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 	
 	FormatEx(key, 126, "%s/%s", plugin, ability);
 	actual.SetString(key, NULL_STRING);
-	LogError("BAD Fail UTIL_FindCharArg(): Ability not found!");
+	LogError("BAD Fail UTIL_FindCharArg(): %s Ability not found!", key);
 	return false;
 }
 
