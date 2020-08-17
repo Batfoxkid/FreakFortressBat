@@ -1182,7 +1182,7 @@ methodmap FF2Data
 	
 	/**
 	 * wrapper to FF2_GetBossHealth() / FF2_SetBossHealth
-	 * @return 			boss team
+	 * @return 			boss health
 	 */
 	property int Health
 	{
@@ -1192,7 +1192,7 @@ methodmap FF2Data
 	
 	/**
 	 * wrapper to FF2_GetBossMaxHealth() / FF2_SetBossMaxHealth
-	 * @return 			boss team
+	 * @return 			boss max health
 	 */
 	property int MaxHealth
 	{
@@ -1202,7 +1202,7 @@ methodmap FF2Data
 	
 	/**
 	 * wrapper to FF2_GetBossLives() / FF2_SetBossLives()
-	 * @return 			boss team
+	 * @return 			boss lives
 	 */
 	property int Lives
 	{
@@ -1212,7 +1212,7 @@ methodmap FF2Data
 	
 	/**
 	 * wrapper to FF2_GetBossMaxLives() / FF2_SetBossMaxLives()
-	 * @return 			boss team
+	 * @return 			boss max lives
 	 */
 	property int MaxLives
 	{
@@ -1222,7 +1222,7 @@ methodmap FF2Data
 
 	/**
 	 * wrapper to FF2_GetBossMaxLives() / FF2_SetBossMaxLives()
-	 * @return 			boss team
+	 * @return 			boss rage
 	 */
 	property float Rage
 	{
@@ -1232,7 +1232,7 @@ methodmap FF2Data
 	
 	/**
 	 * wrapper to FF2_GetBossRageDamage() / FF2_SetBossRageDamage()
-	 * @return 			boss team
+	 * @return 			boss rage damage
 	 */
 	property int RageDmg
 	{
