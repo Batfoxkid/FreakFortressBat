@@ -872,6 +872,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2Data.GetArgB", FF2Data_GetArgB);
 	CreateNative("FF2Data.GetArgS", FF2Data_GetArgS);
 	CreateNative("FF2Data.HasAbility", FF2Data_HasAbility);
+	CreateNative("FF2Data.BossTeam", Native_GetTeam);
 	
 	PreAbility = new GlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);  //Boss, plugin name, ability name, slot, enabled
 	OnAbility = new GlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);  //Boss, plugin name, ability name, status
