@@ -866,6 +866,16 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2Data.boss.get", FF2Data_boss);
 	CreateNative("FF2Data.client.get", FF2Data_client);
 	CreateNative("FF2Data.Config.get", FF2Data_GetConfig);
+	CreateNative("FF2Data.Health.get", Native_GetBossHealth);
+	CreateNative("FF2Data.Health.set", Native_SetBossHealth);
+	CreateNative("FF2Data.MaxHealth.get", Native_GetBossMaxHealth);
+	CreateNative("FF2Data.MaxHealth.set", Native_SetBossMaxHealth);
+	CreateNative("FF2Data.Lives.get", Native_SetBossLives);
+	CreateNative("FF2Data.Lives.set", Native_GetBossLives);
+	CreateNative("FF2Data.MaxLives.get", Native_GetBossMaxLives);
+	CreateNative("FF2Data.MaxLives.set", Native_SetBossMaxLives);
+	CreateNative("FF2Data.RageDmg.get", Native_GetBossRageDamage);
+	CreateNative("FF2Data.RageDmg.set", Native_SetBossRageDamage);
 	CreateNative("FF2Data.Change", FF2Data_Change);
 	CreateNative("FF2Data.GetArgI", FF2Data_GetArgI);
 	CreateNative("FF2Data.GetArgF", FF2Data_GetArgF);
