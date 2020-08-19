@@ -743,7 +743,7 @@ methodmap FF2Data
 		int index = GetBossIndex(client);
 		FF2Data data = view_as<FF2Data>(index);
 		if(!data.Invalid) {
-			g_FF2Saved[index] = g_FF2Cache.Request(client);
+			g_FF2Saved[index] = g_FF2Cache.Request(index);
 		}
 		
 		return data;
