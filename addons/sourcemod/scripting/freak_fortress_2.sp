@@ -2825,6 +2825,7 @@ public void LoadCharacter(const char[] character)
 				LogToFile(eLog, "[Boss] Character %s needs plugin %s!", character, plugin_name);
 				return;
 			}
+			KvRewind(BossKV[Specials]);
 		}
 		else
 		{
