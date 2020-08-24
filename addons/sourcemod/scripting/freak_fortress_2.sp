@@ -2832,7 +2832,7 @@ public void LoadCharacter(const char[] character)
 			break;
 		}
 	}
-	KvRewind(BossKV[Specials]);
+
 
 	char key[PLATFORM_MAX_PATH];
 	static char section[64];
