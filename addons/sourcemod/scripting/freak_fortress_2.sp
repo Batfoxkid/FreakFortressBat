@@ -71,12 +71,12 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "20"
-#define FORK_STABLE_REVISION "1"
+#define FORK_STABLE_REVISION "2"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 23, 2020"
+#define FORK_DATE_REVISION "September 29, 2020"
 
-#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."001"
+#define BUILD_NUMBER FORK_MINOR_REVISION...""...FORK_STABLE_REVISION..."002"
 
 #if !defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION
@@ -10543,7 +10543,7 @@ public Action ClientTimer(Handle timer)
 		else if(HudSettings[client][1] || (FF2flags[client] & FF2FLAG_HUDDISABLED) || (buttons & IN_SCORE))
 		{
 		}
-		else if(SapperEnabled && SapperCooldown[client]>0.0)
+		else if(class==TFClass_Spy && SapperEnabled && SapperCooldown[client]>0.0)
 		{
 			SapperAmount = RoundToFloor((SapperCooldown[client]-cvarSapperCooldown.FloatValue)*(Pow(cvarSapperCooldown.FloatValue, -1.0)*-100.0));
 			if(SapperAmount < 0)
@@ -12284,7 +12284,7 @@ public Action Timer_DrawGame(Handle timer)
 			{
 				ShowGameText(client, "ico_notify_thirty_seconds", _, "%s | %s", message[client], timeDisplay);
 			}
-			else if(timeleft<countdownTime/6 && timeleft>0)
+			else if(timeleft<countdownTime/6 && timeleft>=0)
 			{
 				ShowGameText(client, "ico_notify_ten_seconds", _, "%s | %s", message[client], timeDisplay);
 			}
