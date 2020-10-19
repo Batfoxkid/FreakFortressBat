@@ -8927,16 +8927,8 @@ stock Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const 
 	if(!dontPreserve)
 		flags |= PRESERVE_ATTRIBUTES;
 
-	weapon = TF2Items_CreateItem(flags);
-
-	/*if(weapon == INVALID_HANDLE)
-	{
-		weapon = TF2Items_CreateItem(flags);
-	}
-	else
-	{
-		TF2Items_SetFlags(weapon, flags);
-	}*/
+	if(!weapon)	weapon = TF2Items_CreateItem(flags);
+	else		TF2Items_SetFlags(weapon, flags);
 
 	if(item != INVALID_HANDLE)
 	{
