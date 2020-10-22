@@ -5480,8 +5480,11 @@ void StartMusic(int client=0)
 		for(int target; target<=MaxClients; target++)
 		{
 			playBGM[target] = true;  //This includes the 0th index
+			if(target>0)	//GetClientUserId(target) will not work with target = 0
+			{
+				CreateTimer(0.2, Timer_PrepareBGM, GetClientUserId(target), TIMER_FLAG_NO_MAPCHANGE);
+			}
 		}
-		CreateTimer(0.1, Timer_PrepareBGM, 0, TIMER_FLAG_NO_MAPCHANGE);
 	}
 	else
 	{
