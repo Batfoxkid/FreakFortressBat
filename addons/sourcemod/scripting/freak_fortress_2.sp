@@ -5323,9 +5323,10 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		while(KvGetFloat(BossKV[Special[0]], music)>1);
 
 		char lives[256];
+		int topIndex = index;
 		for(int i; i<19; i++)
 		{
-			index = GetRandomInt(1, index-1);
+			index = GetRandomInt(1, topIndex-1);
 			FormatEx(lives, sizeof(lives), "life%i", index);
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(StringToInt(lives))
