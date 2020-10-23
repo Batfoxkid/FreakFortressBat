@@ -5323,9 +5323,10 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		while(KvGetFloat(BossKV[Special[0]], music)>1);
 
 		char lives[256];
+		int topIndex = index;
 		for(int i; i<19; i++)
 		{
-			index = GetRandomInt(1, index-1);
+			index = GetRandomInt(1, topIndex-1);
 			FormatEx(lives, sizeof(lives), "life%i", index);
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(StringToInt(lives))
@@ -5480,8 +5481,12 @@ void StartMusic(int client=0)
 		for(int target; target<=MaxClients; target++)
 		{
 			playBGM[target] = true;  //This includes the 0th index
+			if(IsValidClient(target))
+
+			{
+				CreateTimer(0.2, Timer_PrepareBGM, GetClientUserId(target), TIMER_FLAG_NO_MAPCHANGE);
+			}
 		}
-		CreateTimer(0.1, Timer_PrepareBGM, 0, TIMER_FLAG_NO_MAPCHANGE);
 	}
 	else
 	{
