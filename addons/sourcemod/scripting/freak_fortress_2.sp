@@ -5331,7 +5331,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(StringToInt(lives))
 			{
-				if(StringToInt(lives) != BossLives[Special[0]])
+				if(StringToInt(lives) != BossLives[0])
 					continue;
 			}
 			break;
@@ -5482,7 +5482,6 @@ void StartMusic(int client=0)
 		{
 			playBGM[target] = true;  //This includes the 0th index
 			if(IsValidClient(target))
-
 			{
 				CreateTimer(0.2, Timer_PrepareBGM, GetClientUserId(target), TIMER_FLAG_NO_MAPCHANGE);
 			}
@@ -16578,11 +16577,11 @@ public Action Command_SkipSong(int client, int args)
 		KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 		if(lives[0])
 		{
-			if(StringToInt(lives) != BossLives[Special[0]])
+			if(StringToInt(lives) != BossLives[0])
 			{
 				for(int i; i<index-1; i++)
 				{
-					if(StringToInt(lives) != BossLives[Special[0]])
+					if(StringToInt(lives) != BossLives[0])
 					{
 						cursongId[client] = i;
 						continue;
@@ -16711,7 +16710,7 @@ public Action Command_Tracklist(int client, int args)
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(lives[0])
 			{
-				if(StringToInt(lives) != BossLives[Special[0]])
+				if(StringToInt(lives) != BossLives[0])
 					continue;
 			}
 			FormatEx(id3[0], sizeof(id3[]), "name%i", trackIdx);
@@ -16825,7 +16824,7 @@ public int Command_TrackListH(Menu menu, MenuAction action, int param1, int para
 					KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 					if(lives[0])
 					{
-						if(StringToInt(lives) != BossLives[Special[0]])
+						if(StringToInt(lives) != BossLives[0])
 						{
 							if(MusicTimer[param1] != INVALID_HANDLE)
 								KillTimer(MusicTimer[param1]);
