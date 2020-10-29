@@ -5482,7 +5482,6 @@ void StartMusic(int client=0)
 		{
 			playBGM[target] = true;  //This includes the 0th index
 			if(IsValidClient(target))
-
 			{
 				CreateTimer(0.2, Timer_PrepareBGM, GetClientUserId(target), TIMER_FLAG_NO_MAPCHANGE);
 			}
