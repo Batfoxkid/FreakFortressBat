@@ -869,12 +869,6 @@
 		"ru"		"{olive}[FF2]{default} "
 		"chi"		"{olive}[FF2]{default} "
 	}
-	"ServerAd"	// Chat
-	{
-		"en"		"Gamers Freak Fortress group: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
-		"ru"		"Группа Gamers Freak Fortress: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
-		"chi"		"Gamers Freak Fortress 组: {olive}https://steamcommunity.com/groups/GamersFreakFortress{default}"
-	}
 	"ClassicAd"	// Chat
 	{
 		"en"		"Freak Fortress 2 is based on VS Saxton Hale Mode by {olive}RainBolt Dash{default}, {olive}FlaminSarge{default}, and {blue}Chdata{default}"

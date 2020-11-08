@@ -3299,17 +3299,13 @@ public Action Timer_Announce(Handle timer)
 			{
 				case 1:
 				{
-					FPrintToChatAll("%t", "ServerAd");
+					FPrintToChatAll("%t", "ff2_last_update", PLUGIN_VERSION, FORK_DATE_REVISION);
 				}
 				case 2:
 				{
-					FPrintToChatAll("%t", "ff2_last_update", PLUGIN_VERSION, FORK_DATE_REVISION);
-				}
-				case 3:
-				{
 					FPrintToChatAll("%t", "ClassicAd");
 				}
-				case 4:
+				case 3:
 				{
 					if(cvarToggleBoss.BoolValue)	// Toggle Command?
 					{
@@ -3321,11 +3317,11 @@ public Action Timer_Announce(Handle timer)
 						FPrintToChatAll("%t", "DevAd", PLUGIN_VERSION);
 					}
 				}
-				case 5:
+				case 4:
 				{
 					FPrintToChatAll("%t", "DevAd", PLUGIN_VERSION);
 				}
-				case 6:
+				case 5:
 				{
 					if(cvarDuoBoss.BoolValue)	// Companion Toggle?
 					{
