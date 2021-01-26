@@ -687,6 +687,18 @@ methodmap FF2Cache < StringMap
 		this.Cleanup();
 		this.Purge();
 	}
+	
+	//sizeof(plugin_name)<64> + '/'<1> + sizeof(ability_name)<64> + '['<1> + sizeof(key)<24> + ']'<1> + '\0'<1> = 156
+	public static void FormatToKey(char[] str, const char[] plugin_name, const char[] ability_name, const char[] key)
+	{
+		Format(str, 156, "%s/%s[%s]", plugin_name, ability_name, key);
+	}
+	
+	//sizeof(plugin_name)<64> + '/'<1> + sizeof(ability_name)<64> + '\0'<1> = 130
+	public static void FormatToHasAbility(char[] str, const char[] plugin_name, const char[] ability_name)
+	{
+		Format(str, 132, "%s/%s", plugin_name, ability_name);
+	}
 }
 FF2Cache g_FF2Cache;
 
@@ -783,14 +795,14 @@ methodmap FF2Data
 	public float GetArgF(const char[] arg, float def)
 	{
 		if(this.Invalid) {
-			return 0.0;
+			return def;
 		}
 		
 		FF2Save save = g_FF2Saved[this.boss];
 		if(!save) {
 			return def;
 		}
-		
+	
 		char res[12];
 		if(!UTIL_FindCharArg(save, arg, res, sizeof(res))) {
 			return def;
@@ -15221,19 +15233,19 @@ stock void GetAbilityArgumentString(int index, const char[] plugin_name, const c
 stock int GetArgumentI(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, int defvalue=0)
 {
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
-		return 0;
+		return defvalue;
 	
 	FF2Data data = FF2Data(index, plugin_name, ability_name);
-	return data.Invalid ? 0:data.GetArgI(arg, 0);
+	return data.Invalid ? defvalue:data.GetArgI(arg, defvalue);
 }
 
 stock float GetArgumentF(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, float defvalue=0.0)
 {
 	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
-		return 0.0;
+		return defvalue;
 
 	FF2Data data = FF2Data(index, plugin_name, ability_name);
-	return data.Invalid ? 0.0:data.GetArgF(arg, 0.0);
+	return data.Invalid ? defvalue:data.GetArgF(arg, defvalue);
 }
 
 stock void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen)
@@ -16573,11 +16585,11 @@ public Action Command_SkipSong(int client, int args)
 		KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 		if(lives[0])
 		{
-			if(StringToInt(lives) != BossLives[0])
+			if(StringToInt(lives) != BossLives[Special[0]])
 			{
 				for(int i; i<index-1; i++)
 				{
-					if(StringToInt(lives) != BossLives[0])
+					if(StringToInt(lives) != BossLives[Special[0]])
 					{
 						cursongId[client] = i;
 						continue;
@@ -16706,7 +16718,7 @@ public Action Command_Tracklist(int client, int args)
 			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 			if(lives[0])
 			{
-				if(StringToInt(lives) != BossLives[0])
+				if(StringToInt(lives) != BossLives[Special[0]])
 					continue;
 			}
 			FormatEx(id3[0], sizeof(id3[]), "name%i", trackIdx);
@@ -16820,7 +16832,7 @@ public int Command_TrackListH(Menu menu, MenuAction action, int param1, int para
 					KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
 					if(lives[0])
 					{
-						if(StringToInt(lives) != BossLives[0])
+						if(StringToInt(lives) != BossLives[Special[0]])
 						{
 							if(MusicTimer[param1] != INVALID_HANDLE)
 								KillTimer(MusicTimer[param1]);
@@ -17660,42 +17672,70 @@ public int Native_GetRageDist(Handle plugin, int numParams)
 	return view_as<int>(0.0);
 }
 
+bool _HasAbility(int boss, const char[] plugin_name, const char[] ability_name)
+{
+	StringMap actual = g_FF2Cache.Request(boss).hidden;
+	if(!actual) {
+		return false;
+	}
+	
+	KeyValues kv;
+	
+	char abkey[24];
+	const int size_of_lookup = 132;
+	char[] key = new char[size_of_lookup];
+	
+	FF2Cache.FormatToHasAbility(key, plugin_name, ability_name);
+	
+	bool res;
+	
+	if(actual.GetValue(key, res))
+		return res;
+	
+	kv = BossKV[Special[boss]];
+	kv.Rewind();
+	
+	for(int ab = 1; ab <= MAXRANDOMS; ab++)
+	{
+		FormatEx(abkey, sizeof(abkey), "ability%i", ab);
+		if(!kv.JumpToKey(abkey)) {
+			continue;
+		}
+		
+		kv.GetString("name", key, 64);
+		if(!StrEqual(key, ability_name)) {
+			kv.GoBack();
+			continue;
+		}
+		
+		kv.GetString("plugin_name", key, 64);
+		if(!StrEqual(key, plugin_name) && plugin_name[0]) {
+			kv.GoBack();
+			continue;
+		}
+		
+		FF2Cache.FormatToHasAbility(key, plugin_name, ability_name);
+		actual.SetValue(key, true);
+		return true;
+	}
+	
+	FF2Cache.FormatToHasAbility(key, plugin_name, ability_name);
+	actual.SetValue(key, false);
+	return false;
+}
+
 public int Native_HasAbility(Handle plugin, int numParams)
 {
-	static char pluginName[64], abilityName[64];
-
 	int boss = GetNativeCell(1);
-	GetNativeString(2, pluginName, sizeof(pluginName));
-	GetNativeString(3, abilityName, sizeof(abilityName));
 	if(boss==-1 || boss>=MAXTF2PLAYERS || Special[boss]==-1 || !BossKV[Special[boss]])
 		return false;
+	
+	char pluginName[64], abilityName[64];
 
-	KvRewind(BossKV[Special[boss]]);
-	if(!BossKV[Special[boss]])
-	{
-		LogToFile(eLog, "[Boss] Failed KV: %i %i", boss, Special[boss]);
-		return false;
-	}
-
-	char ability[12];
-	for(int i=1; i<=MAXRANDOMS; i++)
-	{
-		FormatEx(ability, sizeof(ability), "ability%i", i);
-		if(KvJumpToKey(BossKV[Special[boss]], ability))  //Does this ability number exist?
-		{
-			static char abilityName2[64];
-			KvGetString(BossKV[Special[boss]], "name", abilityName2, sizeof(abilityName2));
-			if(StrEqual(abilityName, abilityName2))  //Make sure the ability names are equal
-			{
-				static char pluginName2[64];
-				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName2, sizeof(pluginName2));
-				if(!pluginName[0] || !pluginName2[0] || StrEqual(pluginName, pluginName2))  //Make sure the plugin names are equal
-					return true;
-			}
-			KvGoBack(BossKV[Special[boss]]);
-		}
-	}
-	return false;
+	GetNativeString(2, pluginName, sizeof(pluginName));
+	GetNativeString(3, abilityName, sizeof(abilityName));
+	
+	return _HasAbility(boss, pluginName, abilityName);
 }
 
 public int Native_DoAbility(Handle plugin, int numParams)
@@ -18156,58 +18196,12 @@ public any FF2Data_HasAbility(Handle plugin, int params)
 	
 	FF2Save save = g_FF2Cache.Request(data.boss);
 	
-	char plugin_name[64]; save.GetString("plugin_name", plugin_name, sizeof(plugin_name));
+	char plugin_name[64]; 
 	char ability_name[64];
-	if(!save.GetString("ability_name", ability_name, sizeof(ability_name)))
-	{
-		KeyValues kv = BossKV[data.boss];
-		kv.Rewind();
-		kv.GetString("name", ability_name, sizeof(ability_name), "Unknown");
-		LogError("Empty \"ability_name\"- Special: %s", ability_name);
-		return false;
-	}
+	save.GetString("plugin_name", plugin_name, sizeof(plugin_name));
+	save.GetString("ability_name", ability_name, sizeof(ability_name));
 	
-	char key[124], abkey[24];
-	bool res;
-	FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
-	
-	StringMap hidden = save.hidden;
-	if(!hidden) {
-		return false;
-	}
-	
-	if(hidden.GetValue(key, res)) {
-		return res;
-	}
-	
-	KeyValues kv = BossKV[data.boss];
-	kv.Rewind();
-	for(int ab = 1; ab < MAXRANDOMS; ab++)
-	{
-		FormatEx(abkey, sizeof(abkey), "ability%i", ab);
-		if(!kv.JumpToKey(abkey))
-			continue;
-			
-		kv.GetString("name", key, sizeof(key));
-		if(!StrEqual(key, ability_name)){
-			kv.GoBack();
-			continue;
-		}
-		
-		kv.GetString("plugin_name", key, sizeof(key));
-		if(!StrEqual(key, plugin_name)) {
-			kv.GoBack();
-			continue;
-		}
-		
-		FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
-		hidden.SetValue(key, true);
-		return true;
-	}
-	
-	FormatEx(key, sizeof(key), "%s;%s", plugin_name, ability_name);
-	hidden.SetValue(key, false);
-	return false;
+	return _HasAbility(data.boss, plugin_name, ability_name);
 }
 
 public Action VSH_OnIsSaxtonHaleModeEnabled(int &result)
@@ -18538,27 +18532,30 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 		return false;
 	}
 	
-	static KeyValues kv;
+	KeyValues kv;
 	static char plugin[64]; char ability[64]; 
 	save.GetInfos(plugin, sizeof(plugin), ability, sizeof(ability));
 	if(!ability[0]) {
 		return false;
 	}
 	
-	char abkey[24];
-	char[] key = new char[126];
-	FormatEx(key, 126, "%s/%s", plugin, ability);
+	const int size_of_key = 24;
+	const int size_of_lookup = 64 + 1 + 64 + 1 + size_of_key + 2;
+	
+	char abkey[size_of_key];
+	char[] key = new char[size_of_lookup];
+	FF2Cache.FormatToKey(key, plugin, ability, args);
+	
 	kv = BossKV[Special[save.boss]];
 	kv.Rewind();
 	
 	if(actual.GetString(key, abkey, sizeof(abkey)))
 	{
-		if(IsNullString(abkey)) {
+		if(!abkey[0]) {
 			// lookup failed, return default value.
 			return false;
 		}
 		
-		kv.Rewind();
 		kv.JumpToKey(abkey);
 		kv.GetString(args, res, maxlen);
 		
@@ -18584,15 +18581,19 @@ public bool UTIL_FindCharArg(FF2Save save, const char[] args, char[] res, int ma
 			continue;
 		}
 		
-		FormatEx(key, 126, "%s/%s", plugin, ability);
-		actual.SetString(key, abkey);
+		FF2Cache.FormatToKey(key, plugin, ability, args);
 		kv.GetString(args, res, maxlen);
+		if(!res[0]) {
+			actual.SetString(key, "");
+			return false;
+		}
+		actual.SetString(key, abkey);
 		
 		return true;
 	}
 	
-	FormatEx(key, 126, "%s/%s", plugin, ability);
-	actual.SetString(key, NULL_STRING);
+	FF2Cache.FormatToKey(key, plugin, ability, args);
+	actual.SetString(key, "");
 	return false;
 }
 
