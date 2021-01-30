@@ -6017,7 +6017,14 @@ public Action Command_SetMyBoss(int client, int args)
 
 			if(MapBlocked[config])
 			{
-				FReplyToCommand(client, "%t", "deny_map");
+				if(!cvarShowBossBlocked.BoolValue)
+				{
+					FReplyToCommand(client, "%t", "deny_unknown");
+				}
+				else 
+				{
+					FReplyToCommand(client, "%t", "deny_map");
+				}
 				return Plugin_Handled;
 			}
 
