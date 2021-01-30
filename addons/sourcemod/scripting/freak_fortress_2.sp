@@ -6227,10 +6227,10 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 		else if(MapBlocked[config])
 		{
-            if(cvarShowBossBlocked.BoolValue)
-            {
-                menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
-            }
+			if(cvarShowBossBlocked.BoolValue)
+			{
+				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
+			}
 		}
 		else if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 		{
