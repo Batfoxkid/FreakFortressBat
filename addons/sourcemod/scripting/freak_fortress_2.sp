@@ -2830,6 +2830,33 @@ public void LoadCharacter(const char[] character)
 	FileToKeyValues(BossKV[Specials], config);
 
 	MapBlocked[Specials] = false;
+	if(KvJumpToKey(BossKV[Specials], "map_only"))
+	{
+		char item[6];
+		static char buffer[34];
+		bool shouldBlock = true;
+		for(int size=1; ; size++)
+		{
+			FormatEx(item, sizeof(item), "map%d", size);
+			KvGetString(BossKV[Specials], item, buffer, sizeof(buffer));
+			if(!buffer[0])
+			{
+				if(size==1)
+				{
+					shouldBlock = false;
+				}
+				break;
+			}
+            
+			if(StrContains(currentmap, buffer)>=0)
+			{
+				shouldBlock = false;
+				break;
+			}
+		}
+		MapBlocked[Specials] = shouldBlock;
+	}
+	KvRewind(BossKV[Specials]);
 	if(KvJumpToKey(BossKV[Specials], "map_exclude"))
 	{
 		char item[6];
