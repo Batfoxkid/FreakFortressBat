@@ -357,6 +357,7 @@ ConVar cvarRageDamage;
 ConVar cvarDifficulty;
 ConVar cvarEnableSandmanStun;
 ConVar cvarCacheDeletion;
+ConVar cvarShowBossBlocked;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -1161,6 +1162,7 @@ public void OnPluginStart()
 	cvarDifficulty = CreateConVar("ff2_difficulty_random", "0.0", "0-Players can set their difficulty, #-Chance of difficulty", _, true, 0.0, true, 100.0);
 	cvarEnableSandmanStun = CreateConVar("ff2_enable_sandmanstun", "0", "0-Disable the Sandman stun ability, 1-Enable the Sandman stun ability", _, true, 0.0, true, 1.0);
 	cvarCacheDeletion = CreateConVar("ff2_cache_deletion_time", "0.0", "0.0-Every map change, any other value in minutes", _, true, 0.0, true, 45.0);
+	cvarShowBossBlocked = CreateConVar("ff2_boss_show_in_blocked_maps", "1.0", "0-Bosses will not appear in !ff2boss if their config blocked the map. 1-Bosses will appear in !ff2boss as a disabled option.", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -6225,7 +6227,10 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 		else if(MapBlocked[config])
 		{
-			menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
+            if(cvarShowBossBlocked.BoolValue)
+            {
+                menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
+            }
 		}
 		else if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 		{
