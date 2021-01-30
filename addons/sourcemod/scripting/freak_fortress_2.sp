@@ -2221,9 +2221,9 @@ public void EnableFF2()
 	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
 	cvarTags = FindConVar("sv_tags");
-        MyAddServerTag("ff2");
-        MyAddServerTag("hale");
-        MyAddServerTag("vsh");
+	MyAddServerTag("ff2");
+	MyAddServerTag("hale");
+	MyAddServerTag("vsh");
 
 	float time = Announce;
 	if(time > 1.0)
@@ -2306,9 +2306,9 @@ public void DisableFF2()
 	SetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team);
 	hostName.SetString(oldName);
 
-        MyRemoveServerTag("ff2");
-        MyRemoveServerTag("hale");
-        MyRemoveServerTag("vsh");
+	MyRemoveServerTag("ff2");
+	MyRemoveServerTag("hale");
+	MyRemoveServerTag("vsh");
 
 	if(doorCheckTimer != INVALID_HANDLE)
 	{
@@ -3947,7 +3947,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				else
 				{
 					FPrintToChat(client, "%t", "FF2 Toggle Enabled Notification");
-   				}
+				}
 				continue;
 			}
 		}
@@ -13384,7 +13384,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					case 307:  //Ullapool Caber
 					{
 						if(!GetEntProp(weapon, Prop_Send, "m_iDetonated") && allowedDetonations<4)	// If using ullapool caber, only trigger if bomb hasn't been detonated
-                        			{
+						{
 							if(TimesTen)
 							{
 								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(cvarTimesTen.FloatValue*allowedDetonations*3)))*bosses;
@@ -13568,7 +13568,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(RemoveCond(attacker, TFCond_BlastJumping) && cvarMarket.FloatValue)	// New way to check explosive jumping status
 						//if((FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING) && cvarMarket.FloatValue)
-                        			{
+						{
 							if(TimesTen)
 							{
 								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(cvarTimesTen.FloatValue*3))*bosses*cvarMarket.FloatValue;
@@ -16591,7 +16591,7 @@ public Action Command_SkipSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-    	FReplyToCommand(client, "%t", "track_skipped");
+	FReplyToCommand(client, "%t", "track_skipped");
 
 	StopMusic(client, true);
 
