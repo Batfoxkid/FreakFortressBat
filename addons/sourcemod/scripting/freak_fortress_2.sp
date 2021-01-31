@@ -357,6 +357,7 @@ ConVar cvarRageDamage;
 ConVar cvarDifficulty;
 ConVar cvarEnableSandmanStun;
 ConVar cvarCacheDeletion;
+ConVar cvarShowBossBlocked;
 
 Handle FF2Cookies;
 Handle StatCookies;
@@ -1161,6 +1162,7 @@ public void OnPluginStart()
 	cvarDifficulty = CreateConVar("ff2_difficulty_random", "0.0", "0-Players can set their difficulty, #-Chance of difficulty", _, true, 0.0, true, 100.0);
 	cvarEnableSandmanStun = CreateConVar("ff2_enable_sandmanstun", "0", "0-Disable the Sandman stun ability, 1-Enable the Sandman stun ability", _, true, 0.0, true, 1.0);
 	cvarCacheDeletion = CreateConVar("ff2_cache_deletion_time", "0.0", "0.0-Every map change, any other value in minutes", _, true, 0.0, true, 45.0);
+	cvarShowBossBlocked = CreateConVar("ff2_boss_show_in_blocked_maps", "1.0", "0-Bosses will not appear in !ff2boss if their config blocked the map. 1-Bosses will appear in !ff2boss as a disabled option.", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
 	CreateConVar("ff2_oldjump", "1", "Use old Saxton Hale jump equations", _, true, 0.0, true, 1.0);
@@ -2219,9 +2221,9 @@ public void EnableFF2()
 	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
 	cvarTags = FindConVar("sv_tags");
-        MyAddServerTag("ff2");
-        MyAddServerTag("hale");
-        MyAddServerTag("vsh");
+	MyAddServerTag("ff2");
+	MyAddServerTag("hale");
+	MyAddServerTag("vsh");
 
 	float time = Announce;
 	if(time > 1.0)
@@ -2304,9 +2306,9 @@ public void DisableFF2()
 	SetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team);
 	hostName.SetString(oldName);
 
-        MyRemoveServerTag("ff2");
-        MyRemoveServerTag("hale");
-        MyRemoveServerTag("vsh");
+	MyRemoveServerTag("ff2");
+	MyRemoveServerTag("hale");
+	MyRemoveServerTag("vsh");
 
 	if(doorCheckTimer != INVALID_HANDLE)
 	{
@@ -2830,6 +2832,33 @@ public void LoadCharacter(const char[] character)
 	FileToKeyValues(BossKV[Specials], config);
 
 	MapBlocked[Specials] = false;
+	if(KvJumpToKey(BossKV[Specials], "map_only"))
+	{
+		char item[6];
+		static char buffer[34];
+		bool shouldBlock = true;
+		for(int size=1; ; size++)
+		{
+			FormatEx(item, sizeof(item), "map%d", size);
+			KvGetString(BossKV[Specials], item, buffer, sizeof(buffer));
+			if(!buffer[0])
+			{
+				if(size==1)
+				{
+					shouldBlock = false;
+				}
+				break;
+			}
+            
+			if(StrContains(currentmap, buffer)>=0)
+			{
+				shouldBlock = false;
+				break;
+			}
+		}
+		MapBlocked[Specials] = shouldBlock;
+	}
+	KvRewind(BossKV[Specials]);
 	if(KvJumpToKey(BossKV[Specials], "map_exclude"))
 	{
 		char item[6];
@@ -3918,7 +3947,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				else
 				{
 					FPrintToChat(client, "%t", "FF2 Toggle Enabled Notification");
-   				}
+				}
 				continue;
 			}
 		}
@@ -5988,7 +6017,14 @@ public Action Command_SetMyBoss(int client, int args)
 
 			if(MapBlocked[config])
 			{
-				FReplyToCommand(client, "%t", "deny_map");
+				if(!cvarShowBossBlocked.BoolValue)
+				{
+					FReplyToCommand(client, "%t", "deny_unknown");
+				}
+				else 
+				{
+					FReplyToCommand(client, "%t", "deny_map");
+				}
 				return Plugin_Handled;
 			}
 
@@ -6198,7 +6234,10 @@ public Action Command_SetMyBoss(int client, int args)
 		}
 		else if(MapBlocked[config])
 		{
-			menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
+			if(cvarShowBossBlocked.BoolValue)
+			{
+				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
+			}
 		}
 		else if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && CheckRoundState()!=1)))
 		{
@@ -13345,7 +13384,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					case 307:  //Ullapool Caber
 					{
 						if(!GetEntProp(weapon, Prop_Send, "m_iDetonated") && allowedDetonations<4)	// If using ullapool caber, only trigger if bomb hasn't been detonated
-                        			{
+						{
 							if(TimesTen)
 							{
 								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(cvarTimesTen.FloatValue*allowedDetonations*3)))*bosses;
@@ -13529,7 +13568,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(RemoveCond(attacker, TFCond_BlastJumping) && cvarMarket.FloatValue)	// New way to check explosive jumping status
 						//if((FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING) && cvarMarket.FloatValue)
-                        			{
+						{
 							if(TimesTen)
 							{
 								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(cvarTimesTen.FloatValue*3))*bosses*cvarMarket.FloatValue;
@@ -16552,7 +16591,7 @@ public Action Command_SkipSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-    	FReplyToCommand(client, "%t", "track_skipped");
+	FReplyToCommand(client, "%t", "track_skipped");
 
 	StopMusic(client, true);
 
