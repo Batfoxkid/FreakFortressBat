@@ -356,7 +356,6 @@ ConVar cvarHealth;
 ConVar cvarRageDamage;
 ConVar cvarDifficulty;
 ConVar cvarEnableSandmanStun;
-ConVar cvarCacheDeletion;
 ConVar cvarShowBossBlocked;
 
 Handle FF2Cookies;
@@ -563,15 +562,15 @@ bool LateLoaded;
 enum struct FF2QueryData
 {
 	StringMap cache;
-	
+
 	int client_serial;
 	int char_idx;
-	
+
 	char key_name[48];
-	
+
 	char current_plugin_name[64];
 	char current_ability_name[64];
-	
+
 	int GetClient()
 	{
 		return GetClientFromSerial(this.client_serial);
@@ -584,53 +583,46 @@ methodmap FF2Save < StringMap
 	{
 		return view_as<FF2Save>(new StringMap());
 	}
-	
+
 	public bool GetInfos(const char[] name, FF2QueryData data)
 	{
 		return this.GetArray(name, data, sizeof(FF2QueryData));
 	}
-	
+
 	public bool SetInfos(const char[] name, const FF2QueryData data)
 	{
-		__WalkPreviousFrames();
 		return this.SetArray(name, data, sizeof(FF2QueryData));
 	}
-	
-	public void RegisterCharacter(const char[] name, int charidx)
+
+	public void RegisterCharacter(const char[] name, int boss)
 	{
-		__WalkPreviousFrames();
-		
 		FF2QueryData data;
 		if (this.GetInfos(name, data))
 			return;
 
 		data.cache = new StringMap();
-		data.client_serial = GetClientSerial(Boss[charidx]);
-		data.char_idx = charidx;
+		data.client_serial = GetClientSerial(Boss[boss]);
+		data.char_idx = Special[boss];
 		strcopy(data.key_name, sizeof(FF2QueryData::key_name), name);
 
 		this.SetInfos(name, data);
 	}
-	
+
 	public void ClearAll()
 	{
-		__WalkPreviousFrames();
-		
 		StringMapSnapshot snap = this.Snapshot();
 		int size = snap.Length;
-		
+
 		FF2QueryData data;
 		char key[48];
-		
+
 		for (int i = 0; i < size; i++)
 		{
 			snap.GetKey(i, key, sizeof(key));
 			this.GetInfos(key, data);
-			PrintToServer("Deleting: %s", key);
 			delete data.cache;
 		}
-		
-		PrintToServer("Deleted All");
+
 		delete snap;
 		this.Clear();
 	}
@@ -643,78 +635,87 @@ methodmap FF2Cache < StringMap
 	{
 		return view_as<FF2Cache>(new StringMap());
 	}
-	
+
 	//FF2Cache.Request() 
 	//retrieve boss' cache by filename
 	public static bool Request(int boss, FF2QueryData data)
 	{
 		if (boss < 0 || Special[boss] < 0 || !BossKV[Special[boss]])
 			return false;
-		
-		char name[48];
+
+		static char name[48];
+		static KeyValues last_kv;
 		KeyValues kv = BossKV[Special[boss]];
+
+		if (kv == last_kv)
+			return _FF2Save.GetInfos(name, data);
+
 		kv.Rewind();
 		kv.GetString("filename", name, sizeof(name), NULL_STRING);
-		
-		PrintToServer("Request: %s", name);
-		if (IsNullString(name))
+
+		if (IsNullString(name)) {
 			return false;
-		
+		}
+
+		last_kv = kv;
 		return _FF2Save.GetInfos(name, data);
 	}
-	
+
 	public static void Update(const FF2QueryData data)
 	{
 		_FF2Save.SetInfos(data.key_name, data);
 	}
 	
-	//sizeof(plugin_name)<64> + '/'<1> + sizeof(ability_name)<64> + '['<1> + sizeof(key)<24> + ']'<1> + '\0'<1> = 156
-	public static void FormatToKey(char[] str, const char[] plugin_name, const char[] ability_name, const char[] key)
+	//sizeof(plugin_name)<64> + '.'<1> + sizeof(ability_name)<64> + '\0'<1> = 130
+	public static void FormatToKey(char[] str, const char[] plugin_name, const char[] ability_name)
 	{
-		Format(str, 156, "%s/%s[%s]", plugin_name, ability_name, key);
+		Format(str, 132, "%s.%s", plugin_name, ability_name);
 	}
-	
+
 	//sizeof(plugin_name)<64> + '/'<1> + sizeof(ability_name)<64> + '\0'<1> = 130
 	public static void FormatToHasAbility(char[] str, const char[] plugin_name, const char[] ability_name)
 	{
 		Format(str, 132, "%s/%s", plugin_name, ability_name);
 	}
-	
+
+	#if 0
+	//For debug
 	public bool GetValue(const char[] name, any& val)
 	{
 		__WalkPreviousFrames();
 		return this.GetValue(name, val);
 	}
-	
+
 	public bool GetString(const char[] name, char[] str, int maxlen)
 	{
 		__WalkPreviousFrames();
 		return this.GetString(name, str, maxlen);
 	}
-	
+
 	public bool GetArray(const char[] name, any[] arr, int size)
 	{
 		__WalkPreviousFrames();
 		return this.GetArray(name, arr, size);
 	}
-	
+
 	public bool SetValue(const char[] name, any val)
 	{
 		__WalkPreviousFrames();
 		return this.SetValue(name, val);
 	}
-	
+
 	public bool SetString(const char[] name, const  char[] str)
 	{
 		__WalkPreviousFrames();
 		return this.SetString(name, str);
 	}
-	
+
 	public bool SetArray(const char[] name, any[] arr, int size)
 	{
 		__WalkPreviousFrames();
 		return this.SetArray(name, arr, size);
 	}
+	#endif
 }
 
 methodmap FF2Data 
@@ -722,59 +723,60 @@ methodmap FF2Data
 	property int boss {
 		public get() { return view_as<int>(this); }
 	}
+
 	property bool Invalid {
 		public get() { return this.boss == -1; }
 	}
-	
+
 	property int client {
 		public get() { 
 			if (this.Invalid) {
 				return -1;
 			}
-			
+
 			FF2QueryData data;
 			if ((FF2Cache.Request(this.boss, data)))
 				return data.GetClient();
 			else return -1;
 		}
 	}
-	
+
 	public static FF2Data Unknown(int client)
 	{
 		return view_as<FF2Data>(GetBossIndex(client));
 	}
-	
+
 	public FF2Data(int boss, const char[] _plugin, const char[] _ability)
 	{
 		if (boss < 0) {
 			return view_as<FF2Data>(-1);
 		}
-		
+
 		FF2QueryData data;
-		
+
 		if (!FF2Cache.Request(boss, data)) {
 			return view_as<FF2Data>(-1);
 		}
-		
+
 		strcopy(data.current_plugin_name, sizeof(FF2QueryData::current_plugin_name), _plugin);
 		strcopy(data.current_ability_name, sizeof(FF2QueryData::current_ability_name), _ability);
-		
+
 		FF2Cache.Update(data);
-		
+
 		return view_as<FF2Data>(boss);
 	}
 	
 	public void Change(const char[] _plugin, const char[] _ability)
 	{
 		FF2QueryData data;
-		
+
 		if (!FF2Cache.Request(this.boss, data)) {
 			return;
 		}
-		
+
 		strcopy(data.current_plugin_name, sizeof(FF2QueryData::current_plugin_name), _plugin);
 		strcopy(data.current_ability_name, sizeof(FF2QueryData::current_ability_name), _ability);
-		
+
 		FF2Cache.Update(data);
 	}
 	
@@ -783,17 +785,17 @@ methodmap FF2Data
 		if (this.Invalid) {
 			return 0;
 		}
-		
+
 		FF2QueryData data;
 		if (!FF2Cache.Request(this.boss, data)) {
 			return def;
 		}
-		
+
 		char res[12];
 		if (!UTIL_FindCharArg(data, arg, res, sizeof(res))) {
 			return def;
 		}
-		
+
 		return StringToInt(res, base);
 	}
 	public float GetArgF(const char[] arg, float def)
@@ -801,17 +803,17 @@ methodmap FF2Data
 		if (this.Invalid) {
 			return def;
 		}
-		
+
 		FF2QueryData data;
 		if (!FF2Cache.Request(this.boss, data)) {
 			return def;
 		}
-		
+
 		char res[12];
 		if (!UTIL_FindCharArg(data, arg, res, sizeof(res))) {
 			return def;
 		}
-		
+
 		return StringToFloat(res);
 	}
 	public int GetArgS(const char[] arg, char[] res, int maxlen)
@@ -819,16 +821,16 @@ methodmap FF2Data
 		if (this.Invalid) {
 			return 0;
 		}
-		
+
 		FF2QueryData data;
 		if (!FF2Cache.Request(this.boss, data)) {
 			return 0;
 		}
-		
+
 		if (!UTIL_FindCharArg(data, arg, res, maxlen)) {
 			return 0;
 		}
-		
+
 		return strlen(res);
 	}
 	public bool GetArgB(const char[] arg, bool def)
@@ -836,17 +838,17 @@ methodmap FF2Data
 		if (this.Invalid) {
 			return false;
 		}
-		
+
 		FF2QueryData data;
 		if (!FF2Cache.Request(this.boss, data)) {
 			return def;
 		}
-		
+
 		char res[1];
 		if (!UTIL_FindCharArg(data, arg, res, 1)) {
 			return def;
 		}
-		
+
 		return res[0] != '0';
 	}
 }
@@ -924,6 +926,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_MakeBoss", Native_MakeBoss);
 	CreateNative("FF2_SelectBoss", Native_ChooseBoss);
 	CreateNative("FF2_ReportError", Native_ReportError);
+	CreateNative("FF2_HPBarUpdate", Native_UpdateHP);
 	
 	CreateNative("FF2Data.Unknown", FF2Data_Unknown);
 	CreateNative("FF2Data.FF2Data", FF2Data_FF2Data);
@@ -1166,7 +1169,6 @@ public void OnPluginStart()
 	cvarRageDamage = CreateConVar("ff2_rage_formula", "1900.0", "Default boss ragedamage formula");
 	cvarDifficulty = CreateConVar("ff2_difficulty_random", "0.0", "0-Players can set their difficulty, #-Chance of difficulty", _, true, 0.0, true, 100.0);
 	cvarEnableSandmanStun = CreateConVar("ff2_enable_sandmanstun", "0", "0-Disable the Sandman stun ability, 1-Enable the Sandman stun ability", _, true, 0.0, true, 1.0);
-	cvarCacheDeletion = CreateConVar("ff2_cache_deletion_time", "0.0", "0.0-Every map change, any other value in minutes", _, true, 0.0, true, 45.0);
 	cvarShowBossBlocked = CreateConVar("ff2_boss_show_in_blocked_maps", "1.0", "0-Bosses will not appear in !ff2boss if their config blocked the map. 1-Bosses will appear in !ff2boss as a disabled option.", _, true, 0.0, true, 1.0);
 
 	//The following are used in various subplugins
@@ -1246,7 +1248,6 @@ public void OnPluginStart()
 	cvarHealth.AddChangeHook(CvarChange);
 	cvarRageDamage.AddChangeHook(CvarChange);
 	(cvarNextmap=FindConVar("sm_nextmap")).AddChangeHook(CvarChangeNextmap);
-	cvarCacheDeletion.AddChangeHook(CvarChange);
 
 	RegConsoleCmd("ff2", FF2Panel, "Menu of FF2 commands");
 	RegConsoleCmd("ff2_hp", Command_GetHPCmd, "View the boss's current HP");
@@ -3021,7 +3022,6 @@ public void PrecacheCharacter(int characterIndex)
 	KvRewind(BossKV[characterIndex]);
 	KvGetString(BossKV[characterIndex], "filename", bossName, sizeof(bossName));
 	KvGotoFirstSubKey(BossKV[characterIndex]);
-	_FF2Save.RegisterCharacter(bossName, characterIndex);
 	while(KvGotoNextKey(BossKV[characterIndex]))
 	{
 		KvGetSectionName(BossKV[characterIndex], section, sizeof(section));
@@ -15464,6 +15464,7 @@ void ForceTeamWin(int team)
 
 public bool PickCharacter(int boss, int companion)
 {
+	static char characterName[64];
 	if(boss == companion)
 	{
 		Special[boss] = Incoming[boss];
@@ -15486,7 +15487,6 @@ public bool PickCharacter(int boss, int companion)
 			{
 				if(newName[0])
 				{
-					static char characterName[64];
 					int foundExactMatch = -1;
 					int foundPartialMatch = -1;
 					for(int character; BossKV[character] && character<MAXSPECIALS; character++)
@@ -15512,7 +15512,7 @@ public bool PickCharacter(int boss, int companion)
 						}
 						else if(StrContains(newName, characterName, false) != -1)
 						{
-							foundPartialMatch  =character;
+							foundPartialMatch = character;
 						}
 					}
 
@@ -15528,10 +15528,13 @@ public bool PickCharacter(int boss, int companion)
 					{
 						return false;
 					}
+					_FF2Save.RegisterCharacter(characterName, boss);
 					PrecacheCharacter(Special[boss]);
 					return true;
 				}
 				Special[boss] = characterIndex;
+				KvGetString(BossKV[Special[boss]], "filename", characterName, sizeof(characterName));
+				_FF2Save.RegisterCharacter(characterName, boss);
 				PrecacheCharacter(Special[boss]);
 				return true;
 			}
@@ -15589,6 +15592,8 @@ public bool PickCharacter(int boss, int companion)
 				return true;
 			}*/
 			
+			KvGetString(BossKV[Special[boss]], "filename", characterName, sizeof(characterName));
+			_FF2Save.RegisterCharacter(characterName, boss);
 			PrecacheCharacter(Special[boss]);
 			return true;
 		}
@@ -15679,7 +15684,6 @@ public bool PickCharacter(int boss, int companion)
 	{
 		if(newName[0])
 		{
-			static char characterName[64];
 			int foundExactMatch = -1;
 			int foundPartialMatch = -1;
 			for(int character; BossKV[character] && character<MAXSPECIALS; character++)
@@ -15721,13 +15725,19 @@ public bool PickCharacter(int boss, int companion)
 			{
 				return false;
 			}
+			KvGetString(BossKV[Special[companion]], "filename", characterName, sizeof(characterName));
+			_FF2Save.RegisterCharacter(characterName, companion);
 			PrecacheCharacter(Special[companion]);
 			return true;
 		}
 		Special[companion] = characterIndex;
+		KvGetString(BossKV[Special[companion]], "filename", characterName, sizeof(characterName));
+		_FF2Save.RegisterCharacter(characterName, companion);
 		PrecacheCharacter(Special[companion]);
 		return true;
 	}
+	KvGetString(BossKV[Special[companion]], "filename", characterName, sizeof(characterName));
+	_FF2Save.RegisterCharacter(characterName, companion);
 	PrecacheCharacter(Special[companion]);
 	return true;
 }
@@ -17711,48 +17721,48 @@ bool _HasAbility(int boss, const char[] plugin_name, const char[] ability_name)
 	if (!FF2Cache.Request(boss, data)) {
 		return false;
 	}
-	
+
 	KeyValues kv;
-	
+
 	char abkey[24];
 	const int size_of_lookup = 132;
 	char[] key = new char[size_of_lookup];
-	
+
 	FF2Cache.FormatToHasAbility(key, plugin_name, ability_name);
 	FF2Cache actual = view_as<FF2Cache>(data.cache);
-	
+
 	bool res;
-	
+
 	if (actual.GetValue(key, res))
 		return res;
-	
+
 	kv = BossKV[Special[boss]];
 	kv.Rewind();
-	
+
 	for (int ab = 1; ab <= MAXRANDOMS; ab++)
 	{
 		FormatEx(abkey, sizeof(abkey), "ability%i", ab);
 		if (!kv.JumpToKey(abkey)) {
 			continue;
 		}
-		
+
 		kv.GetString("name", key, 64);
 		if (!StrEqual(key, ability_name)) {
 			kv.GoBack();
 			continue;
 		}
-		
+
 		kv.GetString("plugin_name", key, 64);
 		if (!StrEqual(key, plugin_name) && plugin_name[0]) {
 			kv.GoBack();
 			continue;
 		}
-		
+
 		FF2Cache.FormatToHasAbility(key, plugin_name, ability_name);
 		actual.SetValue(key, true);
 		return true;
 	}
-	
+
 	FF2Cache.FormatToHasAbility(key, plugin_name, ability_name);
 	actual.SetValue(key, false);
 	return false;
@@ -18125,6 +18135,11 @@ public int Native_ReportError(Handle plugin, int params)
 	LogToFile(eLog, actual);
 	
 	return 1;
+}
+
+public any Native_UpdateHP(Handle plugin, int params)
+{
+	UpdateHealthBar();
 }
 
 public any FF2Data_Unknown(Handle plugin, int params)
@@ -18556,62 +18571,58 @@ void SetClientGlow(int client, float time1, float time2=-1.0)
 public bool UTIL_FindCharArg(FF2QueryData data, const char[] args, char[] res, int maxlen)
 {
 	KeyValues kv;
-	
+
 	const int size_of_key = 24;
-	const int size_of_lookup = 64 + 1 + 64 + 1 + size_of_key + 2;
-	
+
 	char abkey[size_of_key];
-	char[] key = new char[size_of_lookup];
-	FF2Cache.FormatToKey(key, data.current_plugin_name, data.current_ability_name, args);
+	char[] key = new char[132];
+	FF2Cache.FormatToKey(key, data.current_plugin_name, data.current_ability_name);
 	FF2Cache actual = view_as<FF2Cache>(data.cache);
-	
+
 	kv = BossKV[data.char_idx];
 	kv.Rewind();
-	
+
 	if (actual.GetString(key, abkey, sizeof(abkey)))
 	{
-		if(!abkey[0]) {
+		if (!abkey[0]) {
 			// lookup failed, return default value.
 			return false;
 		}
-		
+
 		kv.JumpToKey(abkey);
 		kv.GetString(args, res, maxlen);
 		
-		return true;
+		return res[0] != '\0';
 	}
-	
-	for(int ab = 1; ab <= MAXRANDOMS; ab++)
+
+	for (int ab = 1; ab <= MAXRANDOMS; ab++)
 	{
 		FormatEx(abkey, sizeof(abkey), "ability%i", ab);
-		if(!kv.JumpToKey(abkey)) {
+		if (!kv.JumpToKey(abkey)) {
 			continue;
 		}
-		
+
 		kv.GetString("name", key, 64);
-		if(!StrEqual(key, data.current_ability_name)) {
+		if (!StrEqual(key, data.current_ability_name)) {
 			kv.GoBack();
 			continue;
 		}
-		
+
 		kv.GetString("plugin_name", key, 64);
-		if(!StrEqual(key, data.current_plugin_name) && data.current_plugin_name[0]) {
+		if (!StrEqual(key, data.current_plugin_name) && data.current_plugin_name[0]) {
 			kv.GoBack();
 			continue;
 		}
-		
-		FF2Cache.FormatToKey(key, data.current_plugin_name, data.current_ability_name, args);
+
 		kv.GetString(args, res, maxlen);
-		if(!res[0]) {
-			actual.SetString(key, "");
-			return false;
-		}
+
+		FF2Cache.FormatToKey(key, data.current_plugin_name, data.current_ability_name);
 		actual.SetString(key, abkey);
-		
-		return true;
+
+		return res[0] != '\0';
 	}
-	
-	FF2Cache.FormatToKey(key, data.current_plugin_name, data.current_ability_name, args);
+
+	FF2Cache.FormatToKey(key, data.current_plugin_name, data.current_ability_name);
 	actual.SetString(key, "");
 	return false;
 }
