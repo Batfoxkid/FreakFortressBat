@@ -151,8 +151,6 @@ native int FF2_GetBossHealth(int boss=0);
  * @param health	New health value
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_SetBossHealth(int boss, int health);
 
@@ -174,8 +172,6 @@ native int FF2_GetBossMaxHealth(int boss=0);
  * @param health	New max health value
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_SetBossMaxHealth(int boss, int health);
 
@@ -197,8 +193,6 @@ native int FF2_GetBossLives(int boss);
  * @param lives		New number of lives
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_SetBossLives(int boss, int lives);
 
@@ -220,8 +214,6 @@ native int FF2_GetBossMaxLives(int boss);
  * @param lives		New max number of lives
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_SetBossMaxLives(int boss, int lives);
 
@@ -251,8 +243,6 @@ native float FF2_GetBossCharge(int boss, int slot);
  * @param value		New value of charge
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_SetBossCharge(int boss, int slot, float value);
 
@@ -274,8 +264,6 @@ native int FF2_GetBossRageDamage(int boss);
  * @param damage	New damage value
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_SetBossRageDamage(int boss, int damage);
 
@@ -330,8 +318,6 @@ native bool FF2_HasAbility(int boss, const char[] pluginName, const char[] abili
  *				2 - by reload button
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_DoAbility(int boss, const char[] pluginName, const char[] abilityName, int slot, int buttonMode=0);
 
@@ -376,8 +362,6 @@ native float FF2_GetAbilityArgumentFloat(int boss, const char[] plugin_name, con
  * @param bufferLength	Length of buffer string
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_GetAbilityArgumentString(int boss, const char[] pluginName, const char[] abilityName, int argument, char[] buffer, int bufferLength);
 
@@ -423,8 +407,6 @@ native float FF2_GetArgNamedF(int boss, const char[] plugin_name, const char[] a
  * @param bufferLength	Length of buffer string
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_GetArgNamedS(int boss, const char[] pluginName, const char[] abilityName, const char[] argument, char[] buffer, int bufferLength);
 
@@ -468,8 +450,6 @@ stock bool FF2_NamedArgumentsUsed(int boss, const char[] pluginName, const char[
  * @param dir		Sound direction.
  * @param updatePos	Unknown (updates positions?)
  * @param soundtime	Alternate time to play sound for.
- *
- * @noreturn
  */
 native void FF2_EmitVoiceToAll(const char[] sample, int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0);
 
@@ -494,8 +474,6 @@ native bool FF2_RandomSound(const char[] keyvalue, char[] buffer, int bufferLeng
  * @param client	Client's index (0 for all clients)
  *
  * @error		Invalid client index
- *
- * @noreturn
  */
 native void FF2_StartMusic(int client=0);
 
@@ -505,8 +483,6 @@ native void FF2_StartMusic(int client=0);
  * @param client	Client's index (0 for all clients)
  *
  * @error		Invalid client index
- *
- * @noreturn
  */
 native void FF2_StopMusic(int client=0);
 
@@ -544,8 +520,6 @@ native int FF2_GetFF2flags(int client);
  * @param flags		New flag values
  *
  * @error		Invalid client index
- *
- * @noreturn
  */
 native void FF2_SetFF2flags(int client, int flags);
 
@@ -567,8 +541,6 @@ native int FF2_GetQueuePoints(int client);
  * @param value		New value of client's queue points
  *
  * @error		Invalid client index
- *
- * @noreturn
  */
 native void FF2_SetQueuePoints(int client, int value);
 
@@ -587,8 +559,6 @@ native int FF2_GetClientGlow(int client);
  * @param client	Client's index
  * @param time1		Number of seconds to add to the glow timer (can be negative)
  * @param time2		New value of glow timer
- *
- * @noreturn
  */
 native void FF2_SetClientGlow(int client, float time1, float time2=-1.0);
 
@@ -608,8 +578,6 @@ native float FF2_GetClientShield(int client);
  * @param entity	Shield entity
  * @param health	Shield's health out of 100
  * @param reduction	Shield's damage reduction
- *
- * @noreturn
  */
 native void FF2_SetClientShield(int client, int entity=0, float health=-1.0, float reduction=-1.0);
 
@@ -617,8 +585,6 @@ native void FF2_SetClientShield(int client, int entity=0, float health=-1.0, flo
  * Removes a client's shield
  *
  * @param client	Client's index
- *
- * @noreturn
  */
 native void FF2_RemoveClientShield(int client);
 
@@ -626,8 +592,6 @@ native void FF2_RemoveClientShield(int client);
  * Reports an error to FF2's error log
  *
  * @param message	Message to error log
- *
- * @noreturn
  */
 native void FF2_LogError(const char[] message, any ...);
 
@@ -642,9 +606,12 @@ native void FF2_LogError(const char[] message, any ...);
 native void FF2_ReportError(int boss, const char[] message, any ...);
 
 /**
+ * Updates healthbar without taking damage
+ */
+native void FF2_HPBarUpdate();
+
+/**
  * Returns whether or not debug is enabled
- *
- * @return		True if enabled, false otherwise
  */
 native bool FF2_Debug();
 
@@ -652,8 +619,6 @@ native bool FF2_Debug();
  * Sets the cheat status to turn off logging and statistics
  *
  * @param status	Disable statistics if true
- *
- * @noreturn
  */
 native void FF2_SetCheats(bool status=true);
 
@@ -673,8 +638,6 @@ native bool FF2_GetCheats();
  * @param rival		Have boss on non-boss team
  *
  * @error		Invalid boss index
- *
- * @noreturn
  */
 native void FF2_MakeBoss(int client, int boss, int special=-1, bool rival=false);
 
@@ -790,8 +753,6 @@ forward Action FF2_OnLoseLife(int boss, int &lives, int maxLives);
  *
  * @param players	Number of alive players left on the non-boss team
  * @param bosses	Number of alive players left on the boss team (this includes minions as well)
- *
- * @noreturn
  */
 forward void FF2_OnAlivePlayersChanged(int players, int bosses);
 
@@ -816,8 +777,6 @@ forward Action FF2_OnBackStabbed(int boss, int client, int attacker);
  * @param boss		Boss index
  * @param difficulty	Name of the difficulty/special
  * @param kv		KeyValues handle of difficulty config
- *
- * @noreturn
  */
 forward void FF2_OnDifficulty(int boss, const char[] difficulty, Handle kv);
 
@@ -830,8 +789,6 @@ forward void FF2_OnDifficulty(int boss, const char[] difficulty, Handle kv);
  * @param clip		Clip
  *
  * @error		Invalid client index or client not in game
- *
- * @noreturn
  */
 stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
 {
@@ -897,8 +854,6 @@ stock void Debug(const char[] buffer, any ...)
  *
  * @param buffer	Debug string to display
  * @param ...		Formatting rules
- *
- * @noreturn
  */
 stock void FF2Dbg(const char[] buffer, any ...)
 {
@@ -1360,6 +1315,7 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_GetCheats");
 	MarkNativeAsOptional("FF2_MakeBoss");
 	MarkNativeAsOptional("FF2_ReportError");
+	MarkNativeAsOptional("FF2_HPBarUpdate");
 	
 	MarkNativeAsOptional("FF2Data.Unknown");
 	MarkNativeAsOptional("FF2Data.FF2Data");
