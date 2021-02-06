@@ -677,45 +677,6 @@ methodmap FF2Cache < StringMap
 	{
 		Format(str, 132, "%s/%s", plugin_name, ability_name);
 	}
-
-	#if 0
-	//For debug
-	public bool GetValue(const char[] name, any& val)
-	{
-		__WalkPreviousFrames();
-		return this.GetValue(name, val);
-	}
-
-	public bool GetString(const char[] name, char[] str, int maxlen)
-	{
-		__WalkPreviousFrames();
-		return this.GetString(name, str, maxlen);
-	}
-
-	public bool GetArray(const char[] name, any[] arr, int size)
-	{
-		__WalkPreviousFrames();
-		return this.GetArray(name, arr, size);
-	}
-
-	public bool SetValue(const char[] name, any val)
-	{
-		__WalkPreviousFrames();
-		return this.SetValue(name, val);
-	}
-
-	public bool SetString(const char[] name, const  char[] str)
-	{
-		__WalkPreviousFrames();
-		return this.SetString(name, str);
-	}
-
-	public bool SetArray(const char[] name, any[] arr, int size)
-	{
-		__WalkPreviousFrames();
-		return this.SetArray(name, arr, size);
-	}
-	#endif
 }
 
 methodmap FF2Data 
@@ -926,7 +887,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("FF2_MakeBoss", Native_MakeBoss);
 	CreateNative("FF2_SelectBoss", Native_ChooseBoss);
 	CreateNative("FF2_ReportError", Native_ReportError);
-	CreateNative("FF2_HPBarUpdate", Native_UpdateHP);
 	
 	CreateNative("FF2Data.Unknown", FF2Data_Unknown);
 	CreateNative("FF2Data.FF2Data", FF2Data_FF2Data);
@@ -17614,6 +17574,7 @@ public int Native_GetBossHealth(Handle plugin, int numParams)
 public int Native_SetBossHealth(Handle plugin, int numParams)
 {
 	BossHealth[GetNativeCell(1)] = GetNativeCell(2);
+	UpdateHealthBar();
 }
 
 public int Native_GetBossMaxHealth(Handle plugin, int numParams)
@@ -17624,6 +17585,7 @@ public int Native_GetBossMaxHealth(Handle plugin, int numParams)
 public int Native_SetBossMaxHealth(Handle plugin, int numParams)
 {
 	BossHealthMax[GetNativeCell(1)] = GetNativeCell(2);
+	UpdateHealthBar();
 }
 
 public int Native_GetBossLives(Handle plugin, int numParams)
@@ -18137,11 +18099,6 @@ public int Native_ReportError(Handle plugin, int params)
 	return 1;
 }
 
-public any Native_UpdateHP(Handle plugin, int params)
-{
-	UpdateHealthBar();
-}
-
 public any FF2Data_Unknown(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
@@ -18636,12 +18593,14 @@ stock void FPrintToChat(int client, const char[] message, any ...)
 	VFormat(buffer, sizeof(buffer), message, 3);
 	CPrintToChat(client, "%t%s", "Prefix", buffer);
 }
+
 stock void FPrintToChatAll(const char[] message, any ...)
 {
 	char buffer[192];
 	VFormat(buffer, sizeof(buffer), message, 2);
 	CPrintToChatAll("%t%s", "Prefix", buffer);
 }
+
 stock void FReplyToCommand(int client, const char[] message, any ...)
 {
 	SetGlobalTransTarget(client);
@@ -18662,6 +18621,7 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 		CPrintToChat(client, "%t%s", "Prefix", buffer);
 	}
 }
+
 stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qual, const char[] att, bool visible=true)
 {
 	#if defined _tf2items_included
@@ -18749,6 +18709,7 @@ stock int FF2_SpawnWeapon(int client, char[] name, int index, int level, int qua
 	return -1;
 	#endif
 }
+
 stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
 {
 	if(IsValidEntity(weapon))
@@ -18764,24 +18725,5 @@ stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
 /*< >*/
 
 #include <freak_fortress_2_vsh_feedback>
-
-//Delete me
-void __WalkPreviousFrames()
-{
-	PrintToServer("\n\n\n");
-	FrameIterator frame = new FrameIterator();
-	
-	char stack[48];
-	char file[PLATFORM_MAX_PATH];
-	
-	while(frame.Next())
-	{
-		frame.GetFunctionName(stack, sizeof(stack));
-		frame.GetFilePath(file, sizeof(file));
-		PrintToServer("\t%s:\t%s", file, stack);
-	}
-		
-	delete frame;
-}
 
 #file "Unofficial Freak Fortress"
