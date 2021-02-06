@@ -606,11 +606,6 @@ native void FF2_LogError(const char[] message, any ...);
 native void FF2_ReportError(int boss, const char[] message, any ...);
 
 /**
- * Updates healthbar without taking damage
- */
-native void FF2_HPBarUpdate();
-
-/**
  * Returns whether or not debug is enabled
  */
 native bool FF2_Debug();
@@ -1315,7 +1310,6 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2_GetCheats");
 	MarkNativeAsOptional("FF2_MakeBoss");
 	MarkNativeAsOptional("FF2_ReportError");
-	MarkNativeAsOptional("FF2_HPBarUpdate");
 	
 	MarkNativeAsOptional("FF2Data.Unknown");
 	MarkNativeAsOptional("FF2Data.FF2Data");
