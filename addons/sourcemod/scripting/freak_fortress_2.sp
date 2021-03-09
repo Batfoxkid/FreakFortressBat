@@ -4096,6 +4096,7 @@ void LoadDifficulty(int boss)
 		{
 			static char buffer[80];
 			KvGetSectionName(kvDiffMods, plugin, sizeof(plugin));
+			Format(plugin, sizeof(plugin), "%s.smx", plugin);
 			Handle iter = GetPluginIterator();
 			Handle pl = INVALID_HANDLE;
 			while(MorePlugins(iter))
@@ -17198,9 +17199,13 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 {
 	int client = Boss[boss];
 	bool enabled = true;
+
+	char plugin_name2[64];
+	FormatEx(plugin_name2, sizeof(plugin_name2), "%s.smx", plugin_name);
+
 	Call_StartForward(PreAbility);
 	Call_PushCell(boss);
-	Call_PushString(plugin_name);
+	Call_PushString(plugin_name2);
 	Call_PushString(ability_name);
 	Call_PushCell(slot);
 	Call_PushCellRef(enabled);
@@ -17212,7 +17217,7 @@ bool UseAbility(const char[] ability_name, const char[] plugin_name, int boss, i
 	Action action = Plugin_Continue;
 	Call_StartForward(OnAbility);
 	Call_PushCell(boss);
-	Call_PushString(plugin_name);
+	Call_PushString(plugin_name2);
 	Call_PushString(ability_name);
 	if(slot<0 || slot>3)
 	{
@@ -17635,8 +17640,6 @@ public int Native_GetRoundState(Handle plugin, int numParams)
 public int Native_GetRageDist(Handle plugin, int numParams)
 {
 	int index = GetNativeCell(1);
-	static char plugin_name[64];
-	GetNativeString(2, plugin_name, 64);
 	static char ability_name[64];
 	GetNativeString(3, ability_name, 64);
 
@@ -17736,6 +17739,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 
 	GetNativeString(2, pluginName, sizeof(pluginName));
 	GetNativeString(3, abilityName, sizeof(abilityName));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	
 	return _HasAbility(boss, pluginName, abilityName);
 }
@@ -17746,6 +17750,7 @@ public int Native_DoAbility(Handle plugin, int numParams)
 	static char ability_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	UseAbility(ability_name, plugin_name, GetNativeCell(1), GetNativeCell(4), GetNativeCell(5));
 }
 
@@ -17755,6 +17760,7 @@ public int Native_GetAbilityArgument(Handle plugin, int numParams)
 	static char ability_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	return GetAbilityArgument(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
@@ -17764,6 +17770,7 @@ public any Native_GetAbilityArgumentFloat(Handle plugin, int numParams)
 	static char ability_name[64];
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	return GetAbilityArgumentFloat(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), GetNativeCell(5));
 }
 
@@ -17773,6 +17780,7 @@ public int Native_GetAbilityArgumentString(Handle plugin, int numParams)
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	static char ability_name[64];
 	GetNativeString(3, ability_name, sizeof(ability_name));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	int dstrlen = GetNativeCell(6);
 	char[] s = new char[dstrlen+1];
 	GetAbilityArgumentString(GetNativeCell(1), plugin_name, ability_name, GetNativeCell(4), s, dstrlen);
@@ -17787,6 +17795,7 @@ public int Native_GetArgNamedI(Handle plugin, int numParams)
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
 	GetNativeString(4, argument, sizeof(argument));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	return GetArgumentI(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
@@ -17798,6 +17807,7 @@ public any Native_GetArgNamedF(Handle plugin, int numParams)
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
 	GetNativeString(4, argument, sizeof(argument));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	return GetArgumentF(GetNativeCell(1), plugin_name, ability_name, argument, GetNativeCell(5));
 }
 
@@ -17809,6 +17819,7 @@ public int Native_GetArgNamedS(Handle plugin, int numParams)
 	GetNativeString(2, plugin_name, sizeof(plugin_name));
 	GetNativeString(3, ability_name, sizeof(ability_name));
 	GetNativeString(4, argument, sizeof(argument));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	int dstrlen = GetNativeCell(6);
 	char[] s = new char[dstrlen+1];
 	GetArgumentS(GetNativeCell(1), plugin_name, ability_name, argument, s, dstrlen);
@@ -18113,6 +18124,7 @@ public any FF2Data_FF2Data(Handle plugin, int params)
 	}
 	
 	char plugin_name[64]; GetNativeString(2, plugin_name, sizeof(plugin_name));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	char ability_name[64]; GetNativeString(3, ability_name, sizeof(ability_name));
 	
 	FF2Data data = FF2Data(boss, plugin_name, ability_name);
@@ -18147,6 +18159,7 @@ public any FF2Data_Change(Handle plugin, int params)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", data.boss);
 	
 	char plugin_name[64]; GetNativeString(2, plugin_name, sizeof(plugin_name));
+	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
 	char ability_name[64]; GetNativeString(3, ability_name, sizeof(ability_name));
 	
 	data.Change(plugin_name, ability_name);
