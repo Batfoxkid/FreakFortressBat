@@ -17739,7 +17739,7 @@ public int Native_HasAbility(Handle plugin, int numParams)
 
 	GetNativeString(2, pluginName, sizeof(pluginName));
 	GetNativeString(3, abilityName, sizeof(abilityName));
-	ReplaceString(plugin_name, sizeof(plugin_name), ".smx", "");
+	ReplaceString(pluginName, sizeof(pluginName), ".smx", "");
 	
 	return _HasAbility(boss, pluginName, abilityName);
 }
