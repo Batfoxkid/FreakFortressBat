@@ -71,10 +71,10 @@ last time or to encourage others to do the same.
 */
 #define FORK_MAJOR_REVISION "1"
 #define FORK_MINOR_REVISION "20"
-#define FORK_STABLE_REVISION "4"
+#define FORK_STABLE_REVISION "5"
 #define FORK_SUB_REVISION "Unofficial"
 //#define FORK_DEV_REVISION "development"
-#define FORK_DATE_REVISION "February 7, 2021"
+#define FORK_DATE_REVISION "March 8, 2021"
 
 #if defined FORK_DEV_REVISION
 	#define PLUGIN_VERSION FORK_SUB_REVISION..." "...FORK_MAJOR_REVISION..."."...FORK_MINOR_REVISION..."."...FORK_STABLE_REVISION..." "...FORK_DEV_REVISION
@@ -828,7 +828,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	char plugin[PLATFORM_MAX_PATH];
 	GetPluginFilename(myself, plugin, sizeof(plugin));
-	if(!StrContains(plugin, "freaks/"))  //Prevent plugins/freaks/freak_fortress_2.ff2 from loading if it exists -.-
+	if(!StrContains(plugin, "freaks/"))  //Prevent plugins/freaks/freak_fortress_2 from loading if it exists -.-
 	{
 		strcopy(error, err_max, "There is a duplicate copy of Freak Fortress 2 inside the /plugins/freaks folder.  Please remove it");
 		return APLRes_Failure;
@@ -2683,21 +2683,15 @@ void EnableSubPlugins(bool force=false)
 	Handle directory = OpenDirectory(path);
 	while(ReadDirEntry(directory, filename, sizeof(filename), filetype))
 	{
-		if(filetype==FileType_File && StrContains(filename, ".smx", false)!=-1)
+		if(filetype==FileType_File && StrContains(filename, ".ff2", false)!=-1)
 		{
 			FormatEx(filename_old, sizeof(filename_old), "%s/%s", path, filename);
-			ReplaceString(filename, sizeof(filename), ".smx", ".ff2", false);
+			ReplaceString(filename, sizeof(filename), ".ff2", ".smx", false);
 			Format(filename, sizeof(filename), "%s/%s", path, filename);
-			DeleteFile(filename); // Just in case filename.ff2 also exists: delete it and replace it with the new .smx version
+			DeleteFile(filename); // Just in case filename.smx also exists: delete it and replace it with the new .smx version
 			RenameFile(filename, filename_old);
-		}
-	}
-
-	directory = OpenDirectory(path);
-	while(ReadDirEntry(directory, filename, sizeof(filename), filetype))
-	{
-		if(filetype==FileType_File && StrContains(filename, ".ff2", false)!=-1)
 			ServerCommand("sm plugins load freaks/%s", filename);
+		}
 	}
 }
 
@@ -2712,8 +2706,13 @@ void DisableSubPlugins(bool force=false)
 	Handle directory = OpenDirectory(path);
 	while(ReadDirEntry(directory, filename, sizeof(filename), filetype))
 	{
-		if(filetype==FileType_File && StrContains(filename, ".ff2", false)!=-1)
-			InsertServerCommand("sm plugins unload freaks/%s", filename);  //ServerCommand will not work when switching maps
+		if(filetype==FileType_File && StrContains(filename, ".smx", false)!=-1)
+		{
+			InsertServerCommand("sm plugins unload freaks/%s", filename);  // ServerCommand will not work when switching maps
+
+			Format(filename, sizeof(filename), "%s/%s", path, filename);
+			DeleteFile(filename);	// Remove smx so we don't load it in automatically
+		}
 	}
 	ServerExecute();
 	areSubPluginsEnabled = false;
@@ -2873,7 +2872,7 @@ public void LoadCharacter(const char[] character)
 		{
 			static char plugin_name[64];
 			KvGetString(BossKV[Specials], "plugin_name", plugin_name, 64);
-			BuildPath(Path_SM, config, sizeof(config), "plugins/freaks/%s.ff2", plugin_name);
+			BuildPath(Path_SM, config, sizeof(config), "plugins/freaks/%s.smx", plugin_name);
 			if(!FileExists(config))
 			{
 				LogToFile(eLog, "[Boss] Character %s needs plugin %s!", character, plugin_name);
@@ -4076,7 +4075,6 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 
 void LoadDifficulty(int boss)
 {
-	char plugin[68];
 	KvRewind(kvDiffMods);
 	KvGotoFirstSubKey(kvDiffMods);
 	do
@@ -4086,6 +4084,7 @@ void LoadDifficulty(int boss)
 		if(!StrEqual(section, dIncoming[Boss[boss]]))
 			continue;
 
+		static char plugin[80];
 		KvRewind(BossKV[Special[boss]]);
 		KvGetString(BossKV[Special[boss]], "filename", plugin, sizeof(plugin));
 		if(!KvGetNum(kvDiffMods, plugin, KvGetNum(kvDiffMods, "default", 1)))
@@ -4095,9 +4094,8 @@ void LoadDifficulty(int boss)
 		KvGotoFirstSubKey(kvDiffMods);
 		do
 		{
-			static char buffer[PLATFORM_MAX_PATH];
-			KvGetSectionName(kvDiffMods, buffer, sizeof(buffer));
-			FormatEx(plugin, sizeof(plugin), "%s.ff2", buffer);
+			static char buffer[80];
+			KvGetSectionName(kvDiffMods, plugin, sizeof(plugin));
 			Handle iter = GetPluginIterator();
 			Handle pl = INVALID_HANDLE;
 			while(MorePlugins(iter))
@@ -10032,18 +10030,16 @@ public Action Command_ReloadSubPlugins(int client, int args)
 		return Plugin_Handled;
 	}
 
-	static char pluginName[PLATFORM_MAX_PATH];
+	static char pluginName[80], filepath[PLATFORM_MAX_PATH];
 	GetCmdArg(1, pluginName, sizeof(pluginName));
-	BuildPath(Path_SM, pluginName, sizeof(pluginName), "plugins/freaks/%s.ff2", pluginName);
-	if(!FileExists(pluginName))
+	BuildPath(Path_SM, filepath, sizeof(filepath), "plugins/freaks/%s.smx", pluginName);
+	if(!FileExists(filepath))
 	{
 		FReplyToCommand(client, "Subplugin %s does not exist!", pluginName);
 		return Plugin_Handled;
 	}
-	ReplaceString(pluginName, sizeof(pluginName), "addons/sourcemod/plugins/freaks/", "freaks/", false);
-	ServerCommand("sm plugins unload %s", pluginName);
-	ServerCommand("sm plugins load %s", pluginName);
-	ReplaceString(pluginName, sizeof(pluginName), "freaks/", " ", false);
+	ServerCommand("sm plugins unload freaks/%s", pluginName);
+	ServerCommand("sm plugins load freaks/%s", pluginName);
 	FReplyToCommand(client, "Reloaded subplugin %s!", pluginName);
 	return Plugin_Handled;
 }
