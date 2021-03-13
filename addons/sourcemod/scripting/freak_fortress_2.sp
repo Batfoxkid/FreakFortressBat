@@ -4255,39 +4255,40 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	int team = event.GetInt("team");
 	if(cvarBossLog.IntValue>0 && cvarBossLog.IntValue<=playing2 && !CheatsUsed && !SpecialRound)
 	{
-		File bossLog = OpenFile(bLog, "a+");
-		if(bossLog != INVALID_HANDLE)
-		{
-			static char bossName[64], FormatedTime[64], Result[64], PlayerName[64], Authid[64];
-			int CurrentTime = GetTime();
-			int boss;
+		File bossLog;
+		static char bossName[64], FormatedTime[64], Result[64], PlayerName[64], Authid[64];
+		int CurrentTime = GetTime();
+		int boss;
 
-			FormatTime(FormatedTime, sizeof(FormatedTime), "%X", CurrentTime);
-			strcopy(Result, sizeof(Result), team==BossTeam ? "won" : "loss");
-			for(int client=1; client<=MaxClients; client++)
+		FormatTime(FormatedTime, sizeof(FormatedTime), "%X", CurrentTime);
+		strcopy(Result, sizeof(Result), team==BossTeam ? "won" : "loss");
+		for(int client=1; client<=MaxClients; client++)
+		{
+			boss = GetBossIndex(client);
+			if(boss != -1)
 			{
-				boss = GetBossIndex(client);
-				if(boss != -1)
+				if(IsFakeClient(client))
 				{
-					if(IsFakeClient(client))
-					{
-						strcopy(PlayerName, sizeof(PlayerName), "Bot");
-						strcopy(Authid, sizeof(Authid), "Bot");
-					}
-					else
-					{
-						GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
-						GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
-					}
-					KvRewind(BossKV[Special[boss]]);
-					KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
-					BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+					strcopy(PlayerName, sizeof(PlayerName), "Bot");
+					strcopy(Authid, sizeof(Authid), "Bot");
+				}
+				else
+				{
+					GetClientName(Boss[boss], PlayerName, sizeof(PlayerName));
+					GetClientAuthId(Boss[boss], AuthId_Steam2, Authid, sizeof(Authid), false);
+				}
+				KvRewind(BossKV[Special[boss]]);
+				KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
+				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
+				
+				bossLog = OpenFile(bLog, "a+");
+				if(bossLog != INVALID_HANDLE)
+				{
+					bossLog.WriteLine("%s on %s - %s <%s> has %s", FormatedTime, currentmap, PlayerName, Authid, Result);
+					bossLog.WriteLine("");
+					delete bossLog;
 				}
 			}
-
-			bossLog.WriteLine("%s on %s - %s <%s> has %s", FormatedTime, currentmap, PlayerName, Authid, Result);
-			bossLog.WriteLine("");
-			delete bossLog;
 		}
 	}
 	g_FF2Cache.Cleanup();
