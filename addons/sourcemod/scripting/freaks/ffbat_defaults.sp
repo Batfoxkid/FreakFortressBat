@@ -1122,7 +1122,10 @@ stock int ReadHexOrDecInt(char hexOrDecString[12])	// Credits to sarysa
 
 public Action Timer_StopUber(Handle timer, any boss)
 {
-	SetEntProp(GetClientOfUserId(FF2_GetBossUserId(boss)), Prop_Data, "m_takedamage", 2);
+	int client = GetClientOfUserId(FF2_GetBossUserId(boss));
+	if(client && IsClientInGame(client))
+		SetEntProp(client, Prop_Data, "m_takedamage", 2);
+
 	return Plugin_Continue;
 }
 
