@@ -1336,5 +1336,3 @@ public void __pl_FF2_SetNTVOptional()
 	MarkNativeAsOptional("FF2Data.BossTeam");
 }
 #endif
-
-#file "Freak Fortress 2 Include"
