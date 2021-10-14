@@ -964,9 +964,9 @@ Handle LastPlayedCookie = INVALID_HANDLE;
 Handle SelectionCookie = INVALID_HANDLE;
 Handle DiffCookie = INVALID_HANDLE;
 
-ClientPoint[MAXTF2PLAYERS];
-ClientID[MAXTF2PLAYERS];
-ClientQueue[MAXTF2PLAYERS][2];
+int ClientPoint[MAXTF2PLAYERS];
+int ClientID[MAXTF2PLAYERS];
+int ClientQueue[MAXTF2PLAYERS][2];
 bool InfiniteRageActive[MAXTF2PLAYERS] = false;
 
 // Boss Log
@@ -5108,7 +5108,7 @@ public int ConfirmDiffH(Menu menu, MenuAction action, int param1, int param2)
 	}
 }
 
-public int SortQueueDesc(const x[], const y[], const array[][], Handle data)
+public int SortQueueDesc(const int[] x, const int[] y, const int[][] array, Handle data)
 {
 	if(x[1] > y[1])
 	{
@@ -18735,5 +18735,3 @@ stock void FF2_SetAmmo(int client, int weapon, int ammo=-1, int clip=-1)
 /*< >*/
 
 #include <freak_fortress_2_vsh_feedback>
-
-#file "Unofficial Freak Fortress"

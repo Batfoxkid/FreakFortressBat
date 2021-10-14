@@ -639,5 +639,3 @@ stock bool TeleMeToYou(int entity, int target, bool angles=false)
 	TeleportEntity(entity, pos, ang, NULL_VECTOR);
 	return ducked;
 }
-
-#file "FF2 Include: Stocks"
