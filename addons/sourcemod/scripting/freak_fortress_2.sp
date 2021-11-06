@@ -4690,7 +4690,7 @@ public Action OnWinPanel(Event event, const char[] name, bool dontBroadcast)
 
 public Action BossMenuTimer(Handle timer, int userid)
 {
-	int client = GetClientOfUserId(client);
+	int client = GetClientOfUserId(userid);
 	if(IsValidClient(client) && ToggleBoss[client]!=Setting_On && ToggleBoss[client]!=Setting_Off)
 		BossMenu(client, 0);
 
