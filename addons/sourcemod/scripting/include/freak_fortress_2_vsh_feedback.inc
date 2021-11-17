@@ -12,48 +12,48 @@ void AskPluginLoad_VSH()
 	RegPluginLibrary("saxtonhale");
 }
 
-public int Native_VSHIsVSHMap(Handle plugin, int numParams)
+int Native_VSHIsVSHMap(Handle plugin, int numParams)
 {
-	return IsFF2Map(currentmap);
+	return Utils_IsFF2Map(currentmap);
 }
 
-public int Native_VSHIsEnabled(Handle plugin, int numParams)
+int Native_VSHIsEnabled(Handle plugin, int numParams)
 {
 	return (Enabled ? 2 : 0);
 }
 
-public int Native_VSHGetHale(Handle plugin, int numParams)
+int Native_VSHGetHale(Handle plugin, int numParams)
 {
-	return (IsValidClient(Boss[0]) ? GetClientUserId(Boss[0]) : -1);
+	return (Utils_IsValidClient(Boss[0]) ? GetClientUserId(Boss[0]) : -1);
 }
 
-public int Native_VSHGetTeam(Handle plugin, int numParams)
+int Native_VSHGetTeam(Handle plugin, int numParams)
 {
 	return BossTeam;
 }
 
-public int Native_VSHGetSpecial(Handle plugin, int numParams)
+int Native_VSHGetSpecial(Handle plugin, int numParams)
 {
 	return Special[0];
 }
 
-public int Native_VSHGetHealth(Handle plugin, int numParams)
+int Native_VSHGetHealth(Handle plugin, int numParams)
 {
 	return BossHealth[0];
 }
 
-public int Native_VSHGetHealthMax(Handle plugin, int numParams)
+int Native_VSHGetHealthMax(Handle plugin, int numParams)
 {
 	return BossHealthMax[0];
 }
 
-public int Native_VSHGetRoundState(Handle plugin, int numParams)
+int Native_VSHGetRoundState(Handle plugin, int numParams)
 {
-	return CheckRoundState();
+	return Utils_CheckRoundState();
 }
 
-public int Native_VSHGetDamage(Handle plugin, int numParams)
+int Native_VSHGetDamage(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
-	return (IsValidClient(client) ? Damage[client] : 0);
+	return (Utils_IsValidClient(client) ? Damage[client] : 0);
 }
