@@ -1,9 +1,9 @@
 public void OnMapStart()
 {
-	HPTime = 0.0;
+	FF2Globals.HPTime = 0.0;
 	doorCheckTimer = INVALID_HANDLE;
-	RoundCount = 0;
-	GetCurrentMap(currentmap, sizeof(currentmap));
+	FF2Globals.RoundCount = 0;
+	GetCurrentMap(FF2Globals.CurrentMap, sizeof(FF2Globals.CurrentMap));
 
 	for(int client; client<=MaxClients; client++)
 	{
@@ -36,7 +36,7 @@ public void OnMapStart()
 
 public void OnMapEnd()
 {
-	if(Enabled || Enabled2)
+	if(FF2Globals.Enabled || FF2Globals.Enabled2)
 		DisableFF2();
 }
 
@@ -83,19 +83,19 @@ public void OnClientPostAdminCheck(int client)
 	if(AreClientCookiesCached(client))
 	{
 		static char buffer[24];
-		GetClientCookie(client, FF2Cookies, buffer, sizeof(buffer));
+		GetClientCookie(client, FF2DataBase.PlayerPref, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, FF2Cookies, "0 1 1 1 0 0 0 3");
+			SetClientCookie(client, FF2DataBase.PlayerPref, "0 1 1 1 0 0 0 3");
 			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | special toggle | UNUSED
 
-		GetClientCookie(client, StatCookies, buffer, sizeof(buffer));
+		GetClientCookie(client, FF2DataBase.Stat_c, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, StatCookies, "0 0 0 0 0 0 0 0");
+			SetClientCookie(client, FF2DataBase.Stat_c, "0 0 0 0 0 0 0 0");
 			//Boss wins | boss losses | boss kills | boss deaths | player kills | player MVPs | UNUSED | UNUSED
 
-		GetClientCookie(client, HudCookies, buffer, sizeof(buffer));
+		GetClientCookie(client, FF2DataBase.Hud, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, HudCookies, "0 0 0 0 0 0 0 0");
+			SetClientCookie(client, FF2DataBase.Hud, "0 0 0 0 0 0 0 0");
 			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED | UNUSED
 
 		DataBase_SetupClientCookies(client);
@@ -106,7 +106,7 @@ public void OnClientPostAdminCheck(int client)
 	if(playBGM[0])
 	{
 		playBGM[client] = true;
-		if(Enabled)
+		if(FF2Globals.Enabled)
 			CreateTimer(0.1, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 	else
@@ -117,16 +117,16 @@ public void OnClientPostAdminCheck(int client)
 
 public void OnClientDisconnect(int client)
 {
-	if(Utils_IsBoss(client) && !Utils_CheckRoundState() && cvarPreroundBossDisconnect.BoolValue)
+	if(Utils_IsBoss(client) && !Utils_CheckRoundState() && ConVars.PreroundBossDisconnect.BoolValue)
 	{
 		int boss = Utils_GetBossIndex(client);
 		bool[] omit = new bool[MaxClients+1];
 		omit[client] = true;
-		Boss[boss] = Utils_GetClientWithoutBlacklist(omit, BossSwitched[boss] ? BossTeam : OtherTeam);
+		Boss[boss] = Utils_GetClientWithoutBlacklist(omit, BossSwitched[boss] ? FF2Globals.BossTeam : FF2Globals.OtherTeam);
 		HasEquipped[boss] = false;
 		PickCharacter(boss, boss);
 		if((Special[boss]<0) || !BossKV[Special[boss]])
-			LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", boss);
+			LogToFile(FF2LogsPaths.Errors, "[!!!] Couldn't find a boss for index %i!", boss);
 
 		if(Boss[boss])
 		{
@@ -139,7 +139,7 @@ public void OnClientDisconnect(int client)
 	if(Utils_IsBoss(client) && (!Utils_CheckRoundState() || Utils_CheckRoundState()==1))
 		DataBase_AddClientStats(client, Cookie_BossLosses, 1);
 
-	if(Enabled && IsClientInGame(client) && IsPlayerAlive(client) && Utils_CheckRoundState()==1)
+	if(FF2Globals.Enabled && IsClientInGame(client) && IsPlayerAlive(client) && Utils_CheckRoundState()==1)
 		CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 
 	FF2flags[client] = 0;
@@ -162,7 +162,7 @@ public void OnClientDisconnect(int client)
 
 public void TF2_OnConditionAdded(int client, TFCond condition)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return;
 
 	if(Utils_IsBoss(client) && (condition==TFCond_Jarated || condition==TFCond_MarkedForDeath || (condition==TFCond_Dazed && TF2_IsPlayerInCondition(client, view_as<TFCond>(42)))))
@@ -181,7 +181,7 @@ public void TF2_OnConditionAdded(int client, TFCond condition)
 
 public void TF2_OnConditionRemoved(int client, TFCond condition)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return;
 
 	if(TF2_GetPlayerClass(client)==TFClass_Scout && condition==TFCond_CritHype)
@@ -206,7 +206,7 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 		return Plugin_Changed;
 	}
 
-	if(Enabled && !Utils_IsBoss(client) && Utils_CheckRoundState()==1 && IsValidEntity(weapon) && SniperClimbDelay!=0)
+	if(FF2Globals.Enabled && !Utils_IsBoss(client) && Utils_CheckRoundState()==1 && IsValidEntity(weapon) && FF2GlobalsCvars.SniperClimpDelay!=0)
 	{
 		if(!StrContains(weaponname, "tf_weapon_club"))
 			Utils_SickleClimbWalls(client, weapon);
@@ -217,12 +217,12 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
-	if(!Enabled || Utils_CheckRoundState()!=1)
+	if(!FF2Globals.Enabled || Utils_CheckRoundState()!=1)
 		return Plugin_Continue;
 
 	int index = -1;
 	int entity = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	if(IsValidEntity(entity) && IsValidEdict(entity) && (GetClientTeam(client)==OtherTeam || Enabled3) && SapperCooldown[client]<=0)
+	if(IsValidEntity(entity) && IsValidEdict(entity) && (GetClientTeam(client)==FF2Globals.OtherTeam || FF2Globals.Enabled3) && SapperCooldown[client]<=0)
 	{
 		index = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
 
@@ -233,7 +233,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(Utils_IsValidClient(target) && IsPlayerAlive(target) && (GetClientTeam(target)==BossTeam || Enabled3))
+				if(Utils_IsValidClient(target) && IsPlayerAlive(target) && (GetClientTeam(target)==FF2Globals.BossTeam || FF2Globals.Enabled3))
 				{
 					boss = Utils_GetBossIndex(target);
 					GetEntPropVector(target, Prop_Send, "m_vecOrigin", position2);
@@ -259,7 +259,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_AddCondition(target, TFCond_Sapped, 3.0);
 							}
 
-							SapperCooldown[client] = cvarSapperCooldown.FloatValue;
+							SapperCooldown[client] = ConVars.SapperCooldown.FloatValue;
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
 							SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
@@ -278,7 +278,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_AddCondition(target, TFCond_Sapped, 4.0);
 							}
 
-							SapperCooldown[client] = cvarSapperCooldown.FloatValue;
+							SapperCooldown[client] = ConVars.SapperCooldown.FloatValue;
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
 							SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
@@ -308,7 +308,7 @@ public Action OnGetMaxHealth(int client, int &maxHealth)
 
 public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
-	if(!Enabled || !IsValidEntity(attacker))
+	if(!FF2Globals.Enabled || !IsValidEntity(attacker))
 		return Plugin_Continue;
 
 	if((attacker<1 || client==attacker) && Utils_IsBoss(client) && damagetype & DMG_FALL)
@@ -331,7 +331,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		int boss = Utils_GetBossIndex(client);
 		if(boss==-1 && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
 		{
-			if(shield[client] && cvarShieldType.IntValue==1)
+			if(shield[client] && ConVars.ShieldType.IntValue==1)
 			{
 				Utils_RemoveShield(client, attacker);
 				return Plugin_Handled;
@@ -352,27 +352,27 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 			if(GetEntProp(client, Prop_Send, "m_bFeignDeathReady") || TF2_IsPlayerInCondition(client, TFCond_DeadRingered))
 			{
-				if(cvarRinger.FloatValue < 1)
+				if(ConVars.Ringer.FloatValue < 1)
 				{
-					damage *= cvarRinger.FloatValue;
+					damage *= ConVars.Ringer.FloatValue;
 					return Plugin_Changed;
 				}
-				else if(cvarRinger.FloatValue > 1)
+				else if(ConVars.Ringer.FloatValue > 1)
 				{
-					damage = cvarRinger.FloatValue;
+					damage = ConVars.Ringer.FloatValue;
 					return Plugin_Changed;
 				}
 			}
 			else if(TF2_IsPlayerInCondition(client, TFCond_Cloaked))
 			{
-				if(cvarCloak.FloatValue < 1)
+				if(ConVars.Cloak.FloatValue < 1)
 				{
-					damage *= cvarCloak.FloatValue;
+					damage *= ConVars.Cloak.FloatValue;
 					return Plugin_Changed;
 				}
-				else if(cvarCloak.FloatValue > 1)
+				else if(ConVars.Cloak.FloatValue > 1)
 				{
-					damage = cvarCloak.FloatValue;
+					damage = ConVars.Cloak.FloatValue;
 					return Plugin_Changed;
 				}
 			}
@@ -407,13 +407,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 			if(bIsBackstab)
 			{
-				if(TimesTen)
+				if(FF2Globals.Isx10)
 				{
-					damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(cvarTimesTen.FloatValue*3);
+					damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(ConVars.TimesTen.FloatValue*3);
 				}
-				else if(cvarLowStab.BoolValue)
+				else if(ConVars.LowStab.BoolValue)
 				{
-					damage = (BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(750/float(playing)))/5;
+					damage = (BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(750/float(FF2Globals.TotalPlayers)))/5;
 				}
 				else
 				{
@@ -433,7 +433,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 				SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+1.5);
 				SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", GetGameTime()+1.5);
-				SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+(cvarCloakStun.FloatValue*0.75));
+				SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+(ConVars.CloakStun.FloatValue*0.75));
 
 				int viewmodel = GetEntPropEnt(attacker, Prop_Send, "m_hViewModel");
 				if(viewmodel>MaxClients && IsValidEntity(viewmodel) && TF2_GetPlayerClass(attacker)==TFClass_Spy)
@@ -451,13 +451,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
 				}
 
-				if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+				if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 				{
-					if(TellName)
+					if(FF2GlobalsCvars.TellName)
 					{
 						char spcl[64];
 						Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
-						switch(Annotations)
+						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
 								CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Backstab Player", spcl);
@@ -471,7 +471,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					else
 					{
-						switch(Annotations)
+						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
 								CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Backstab");
@@ -522,13 +522,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 					EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 
-					if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 					{
-						if(TellName)
+						if(FF2GlobalsCvars.TellName)
 						{
 							char spcl[64];
 							Utils_GetBossSpecial(Special[Utils_GetBossIndex(attacker)], spcl, sizeof(spcl), attacker);
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed Player", spcl);
@@ -542,7 +542,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						else
 						{
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed");
@@ -600,9 +600,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				{
 					if(Utils_IsValidClient(all) && IsPlayerAlive(all))
 					{
-						if(!HudSettings[all][2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
+						if(!FF2PlayerCookie[all].HudSettings[2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
 						{
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(all, client, true, 5.0, "%t", "Telefrag Global");
@@ -623,9 +623,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(GetClientTeam(teleowner) == GetClientTeam(attacker))
 						Damage[teleowner] += BossHealth[boss]*3/5;
 
-					if(!HudSettings[teleowner][2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[teleowner].HudSettings[2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 					{
-						switch(Annotations)
+						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
 								CreateAttachedAnnotation(teleowner, client, true, 5.0, "%t", "Telefrag Assist");
@@ -640,12 +640,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				}
 
 				static char spcl[64];
-				if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+				if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 				{
-					if(TellName)
+					if(FF2GlobalsCvars.TellName)
 					{
 						Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
-						switch(Annotations)
+						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
 								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
@@ -659,7 +659,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					else
 					{
-						switch(Annotations)
+						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
 								CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag");
@@ -673,12 +673,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 				}
 
-				if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+				if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 				{
-					if(TellName)
+					if(FF2GlobalsCvars.TellName)
 					{
 						Utils_GetBossSpecial(Special[Utils_GetBossIndex(attacker)], spcl, sizeof(spcl), client);
-						switch(Annotations)
+						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
 								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged Player", spcl);
@@ -692,7 +692,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					else
 					{
-						switch(Annotations)
+						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
 								CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged");
@@ -824,15 +824,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed))
 							{
-								damage *= SniperMiniDamage;
+								damage *= FF2GlobalsCvars.SniperMiniDmg;
 							}
 							else if(index!=230 || BossCharge[boss][0]>90.0)  //Sydney Sleeper
 							{
-								damage *= SniperDamage;
+								damage *= FF2GlobalsCvars.SniperDmg;
 							}
 							else
 							{
-								damage *= (SniperDamage*0.8);
+								damage *= (FF2GlobalsCvars.SniperDmg*0.8);
 							}
 							return Plugin_Changed;
 						}
@@ -844,20 +844,20 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if((damagetype & DMG_CRIT))
 						{
-							damage *= BowDamage;
+							damage *= FF2GlobalsCvars.BowDmg;
 							return Plugin_Changed;
 						}
 						else if(TF2_IsPlayerInCondition(attacker, TFCond_CritCola) || TF2_IsPlayerInCondition(attacker, TFCond_Buffed))
 						{
-							if(BowDamageMini > 0)
+							if(FF2GlobalsCvars.BowDmgMini > 0)
 							{
-								damage *= BowDamageMini;
+								damage *= FF2GlobalsCvars.BowDmgMini;
 								return Plugin_Changed;
 							}
 						}
-						else if(BowDamageNon>0)
+						else if(FF2GlobalsCvars.BowDmgNon>0)
 						{
-							damage *= BowDamageNon;
+							damage *= FF2GlobalsCvars.BowDmgNon;
 							return Plugin_Changed;
 						}
 					}
@@ -867,7 +867,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				{
 					case 61, 1006:  //Ambassador, Festive Ambassador
 					{
-						if(kvWeaponMods == null || cvarHardcodeWep.IntValue>0)
+						if(FF2ModsInfo.WeaponCfg == null || ConVars.HardcodeWep.IntValue>0)
 						{
 							if(damagecustom == TF_CUSTOM_HEADSHOT)
 							{
@@ -882,7 +882,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 214:  //Powerjack
 					{
-						if(kvWeaponMods == null || cvarHardcodeWep.IntValue>0)
+						if(FF2ModsInfo.WeaponCfg == null || ConVars.HardcodeWep.IntValue>0)
 						{
 							int health = GetClientHealth(attacker);
 							int newhealth = health+25;
@@ -892,34 +892,34 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 307:  //Ullapool Caber
 					{
-						if(!GetEntProp(weapon, Prop_Send, "m_iDetonated") && allowedDetonations<4)	// If using ullapool caber, only trigger if bomb hasn't been detonated
+						if(!GetEntProp(weapon, Prop_Send, "m_iDetonated") && FF2GlobalsCvars.AllowedDetonation<4)	// If using ullapool caber, only trigger if bomb hasn't been detonated
 						{
-							if(TimesTen)
+							if(FF2Globals.Isx10)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(cvarTimesTen.FloatValue*allowedDetonations*3)))*bosses;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(ConVars.TimesTen.FloatValue*FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
 							}
-							else if(cvarLowStab.BoolValue)
+							else if(ConVars.LowStab.BoolValue)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(playing))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*bosses;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(FF2Globals.TotalPlayers))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
 							}
 							else
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(allowedDetonations*3)))*bosses;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
 							}
 							damagetype |= DMG_CRIT;
 
 							if(Cabered[client] < 5)
 								Cabered[client]++;
 
-							if(allowedDetonations < 3)
+							if(FF2GlobalsCvars.AllowedDetonation < 3)
 							{
-								if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+								if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 								{
-									if(TellName)
+									if(FF2GlobalsCvars.TellName)
 									{
 										static char spcl[64];
 										Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
-										switch(Annotations)
+										switch(FF2GlobalsCvars.Annotations)
 										{
 											case 1:
 												CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Caber Player", spcl);
@@ -933,7 +933,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									}
 									else
 									{
-										switch(Annotations)
+										switch(FF2GlobalsCvars.Annotations)
 										{
 											case 1:
 												CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Caber");
@@ -946,11 +946,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 										}
 									}
 								}
-								if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+								if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 								{
-									if(TellName)
+									if(FF2GlobalsCvars.TellName)
 									{
-										switch(Annotations)
+										switch(FF2GlobalsCvars.Annotations)
 										{
 											case 1:
 												CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Cabered Player", attacker);
@@ -964,7 +964,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 									}
 									else
 									{
-										switch(Annotations)
+										switch(FF2GlobalsCvars.Annotations)
 										{
 											case 1:
 												CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Cabered");
@@ -996,7 +996,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 310:  //Warrior's Spirit
 					{
-						if(kvWeaponMods == null || cvarHardcodeWep.IntValue>0)
+						if(FF2ModsInfo.WeaponCfg == null || ConVars.HardcodeWep.IntValue>0)
 						{
 							int health = GetClientHealth(attacker);
 							int newhealth = health+50;
@@ -1010,7 +1010,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 327:  //Claidheamh Mor
 					{
-						if(kvWeaponMods == null || cvarHardcodeWep.IntValue>0)
+						if(FF2ModsInfo.WeaponCfg == null || ConVars.HardcodeWep.IntValue>0)
 						{
 							float charge=GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter");
 							if(charge+25.0 >= 100.0)
@@ -1025,7 +1025,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 348:  //Sharpened Volcano Fragment
 					{
-						if(kvWeaponMods == null || cvarHardcodeWep.IntValue>0)
+						if(FF2ModsInfo.WeaponCfg == null || ConVars.HardcodeWep.IntValue>0)
 						{
 							int health = GetClientHealth(attacker);
 							int max = GetEntProp(attacker, Prop_Data, "m_iMaxHealth");
@@ -1075,20 +1075,20 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 416:  //Market Gardener (courtesy of Chdata)
 					{
-						if(Utils_RemoveCond(attacker, TFCond_BlastJumping) && cvarMarket.FloatValue)	// New way to check explosive jumping status
-						//if((FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING) && cvarMarket.FloatValue)
+						if(Utils_RemoveCond(attacker, TFCond_BlastJumping) && ConVars.Market.FloatValue)	// New way to check explosive jumping status
+						//if((FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING) && ConVars.Market.FloatValue)
 						{
-							if(TimesTen)
+							if(FF2Globals.Isx10)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(cvarTimesTen.FloatValue*3))*bosses*cvarMarket.FloatValue;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(ConVars.TimesTen.FloatValue*3))*FF2Globals.Bosses*ConVars.Market.FloatValue;
 							}
-							else if(cvarLowStab.BoolValue)
+							else if(ConVars.LowStab.BoolValue)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(playing))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses*cvarMarket.FloatValue;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(FF2Globals.TotalPlayers))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*FF2Globals.Bosses*ConVars.Market.FloatValue;
 							}
 							else
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*bosses*cvarMarket.FloatValue;
+								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*FF2Globals.Bosses*ConVars.Market.FloatValue;
 							}
 							damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 
@@ -1100,11 +1100,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 							if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 							{
-								if(TellName)
+								if(FF2GlobalsCvars.TellName)
 								{
 									static char spcl[64];
 									Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
-									switch(Annotations)
+									switch(FF2GlobalsCvars.Annotations)
 									{
 										case 1:
 											CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Market Gardener Player", spcl);
@@ -1118,7 +1118,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								}
 								else
 								{
-									switch(Annotations)
+									switch(FF2GlobalsCvars.Annotations)
 									{
 										case 1:
 											CreateAttachedAnnotation(attacker, client, true, 3.0, "%t", "Market Gardener");
@@ -1134,9 +1134,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
 							{
-								if(TellName)
+								if(FF2GlobalsCvars.TellName)
 								{
-									switch(Annotations)
+									switch(FF2GlobalsCvars.Annotations)
 									{
 										case 1:
 											CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Market Gardened Player", attacker);
@@ -1150,7 +1150,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								}
 								else
 								{
-									switch(Annotations)
+									switch(FF2GlobalsCvars.Annotations)
 									{
 										case 1:
 											CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Market Gardened");
@@ -1182,7 +1182,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 525, 595:  //Diamondback, Manmelter
 					{
-						if(kvWeaponMods == null || cvarHardcodeWep.IntValue>0)
+						if(FF2ModsInfo.WeaponCfg == null || ConVars.HardcodeWep.IntValue>0)
 						{
 							if(GetEntProp(attacker, Prop_Send, "m_iRevengeCrits"))  //If a revenge crit was used, give a damage bonus
 							{
@@ -1193,9 +1193,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 528:  //Short Circuit
 					{
-						if(circuitStun)
+						if(FF2GlobalsCvars.CircuitStun)
 						{
-							TF2_StunPlayer(client, circuitStun, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, attacker);
+							TF2_StunPlayer(client, FF2GlobalsCvars.CircuitStun, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, attacker);
 							EmitSoundToAll("weapons/barret_arm_zap.wav", client);
 							EmitSoundToClient(client, "weapons/barret_arm_zap.wav");
 						}
@@ -1236,7 +1236,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 594:  //Phlogistinator
 					{
-						if(kvWeaponMods == null || cvarHardcodeWep.IntValue>0)
+						if(FF2ModsInfo.WeaponCfg == null || ConVars.HardcodeWep.IntValue>0)
 						{
 							if(!TF2_IsPlayerInCondition(attacker, TFCond_CritMmmph))
 							{
@@ -1247,7 +1247,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 					case 44:	//Sandman
 					{
-						if(cvarEnableSandmanStun.BoolValue)
+						if(ConVars.EnableSandmanStun.BoolValue)
 						{
 							float fClientLocation[3];
 							float fClientEyePosition[3];
@@ -1295,32 +1295,32 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 				if(bIsBackstab)
 				{
-					if(Enabled3)
+					if(FF2Globals.Enabled3)
 					{
-						if(TimesTen)
+						if(FF2Globals.Isx10)
 						{
-							damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(cvarTimesTen.FloatValue*3);
+							damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(ConVars.TimesTen.FloatValue*3);
 						}
-						else if(cvarLowStab.BoolValue)
+						else if(ConVars.LowStab.BoolValue)
 						{
-							damage = (BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/3;
+							damage = (BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(FF2Globals.TotalPlayers)))/3;
 						}
 						else
 						{
 							damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 						}
 					}
-					else if(TimesTen)
+					else if(FF2Globals.Isx10)
 					{
-						damage = BossHealthMax[boss]*bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(cvarTimesTen.FloatValue*3);
+						damage = BossHealthMax[boss]*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(ConVars.TimesTen.FloatValue*3);
 					}
-					else if(cvarLowStab.BoolValue)
+					else if(ConVars.LowStab.BoolValue)
 					{
-						damage = (BossHealthMax[boss]*bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(playing)))/3;
+						damage = (BossHealthMax[boss]*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(FF2Globals.TotalPlayers)))/3;
 					}
 					else
 					{
-						damage = BossHealthMax[boss]*bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
+						damage = BossHealthMax[boss]*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
 					}
 					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 					damagecustom = 0;
@@ -1336,7 +1336,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 					SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+2.0);
 					SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", GetGameTime()+2.0);
-					SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+cvarCloakStun.FloatValue);
+					SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+ConVars.CloakStun.FloatValue);
 
 					int viewmodel = GetEntPropEnt(attacker, Prop_Send, "m_hViewModel");
 					if(viewmodel>MaxClients && IsValidEntity(viewmodel) && TF2_GetPlayerClass(attacker)==TFClass_Spy)
@@ -1354,13 +1354,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
 					}
 
-					if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 					{
-						if(TellName)
+						if(FF2GlobalsCvars.TellName)
 						{
 							static char spcl[64];
 							Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab Player", spcl);
@@ -1374,7 +1374,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						else
 						{
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Backstab");
@@ -1393,13 +1393,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 
-						if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+						if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 						{
-							if(TellName)
+							if(FF2GlobalsCvars.TellName)
 							{
 								static char spcl[64];
 								GetClientName(attacker, spcl, sizeof(spcl));
-								switch(Annotations)
+								switch(FF2GlobalsCvars.Annotations)
 								{
 									case 1:
 										CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed Player", spcl);
@@ -1413,7 +1413,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							}
 							else
 							{
-								switch(Annotations)
+								switch(FF2GlobalsCvars.Annotations)
 								{
 									case 1:
 										CreateAttachedAnnotation(client, attacker, true, 3.0, "%t", "Backstabbed");
@@ -1446,8 +1446,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						case 356:	//Conniver's Kunai
 						{
-							int overheal = cvarKunaiMax.IntValue;
-							int health = GetClientHealth(attacker)+cvarKunai.IntValue;
+							int overheal = ConVars.KunaiMax.IntValue;
+							int health = GetClientHealth(attacker)+ConVars.Kunai.IntValue;
 							if(health > overheal)
 								health = overheal;
 
@@ -1461,7 +1461,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 
 					if(Utils_GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Primary) == 525)  //Diamondback
-						SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+cvarDiamond.IntValue);
+						SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+ConVars.Diamond.IntValue);
 
 					ActivateAbilitySlot(boss, 6);
 
@@ -1484,15 +1484,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						damage = 1.0;
 						return Plugin_Changed;
 					}
-					damage = (TimesTen ? cvarTelefrag.FloatValue*cvarTimesTen.FloatValue : cvarTelefrag.FloatValue);
+					damage = (FF2Globals.Isx10 ? ConVars.Telefrag.FloatValue*ConVars.TimesTen.FloatValue : ConVars.Telefrag.FloatValue);
 
 					for(int all=1; all<=MaxClients; all++)
 					{
 						if(Utils_IsValidClient(all) && IsPlayerAlive(all))
 						{
-							if(!HudSettings[all][2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
+							if(!FF2PlayerCookie[all].HudSettings[2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
 							{
-								switch(Annotations)
+								switch(FF2GlobalsCvars.Annotations)
 								{
 									case 1:
 										CreateAttachedAnnotation(all, client, true, 5.0, "%t", "Telefrag Global");
@@ -1512,11 +1512,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(GetClientTeam(teleowner) == GetClientTeam(attacker))
 						{
-							Damage[teleowner] += RoundFloat(TimesTen ? 3000.0*cvarTimesTen.FloatValue : 5401.0);
+							Damage[teleowner] += RoundFloat(FF2Globals.Isx10 ? 3000.0*ConVars.TimesTen.FloatValue : 5401.0);
 
-							if(!HudSettings[teleowner][2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
+							if(!FF2PlayerCookie[teleowner].HudSettings[2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
 							{
-								switch(Annotations)
+								switch(FF2GlobalsCvars.Annotations)
 								{
 									case 1:
 										CreateAttachedAnnotation(teleowner, client, true, 5.0, "%t", "Telefrag Assist");
@@ -1532,12 +1532,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 
 					static char spcl[64];
-					if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 					{
-						if(TellName)
+						if(FF2GlobalsCvars.TellName)
 						{
 							Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag Player", spcl);
@@ -1551,7 +1551,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						else
 						{
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(attacker, client, true, 5.0, "%t", "Telefrag");
@@ -1565,12 +1565,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 					}
 
-					if(!HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 					{
-						if(TellName)
+						if(FF2GlobalsCvars.TellName)
 						{
 							GetClientName(attacker, spcl, sizeof(spcl));
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged Player", spcl);
@@ -1584,7 +1584,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						else
 						{
-							switch(Annotations)
+							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
 									CreateAttachedAnnotation(client, attacker, true, 5.0, "%t", "Telefraged");
@@ -1625,7 +1625,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(SpawnTeleOnTriggerHurt && Utils_IsBoss(client) && Utils_CheckRoundState()==1)
 					{
 						HazardDamage[client] += damage;
-						if(HazardDamage[client] >= cvarDamageToTele.FloatValue)
+						if(HazardDamage[client] >= ConVars.DamageToTele.FloatValue)
 						{
 							TeleportToMultiMapSpawn(client);
 							HazardDamage[client] = 0.0;
@@ -1664,16 +1664,16 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		}
 		else
 		{
-			if(allowedDetonations != 1)
+			if(FF2GlobalsCvars.AllowedDetonation != 1)
 			{
 				int index = (IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") && attacker<=MaxClients) ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1;
 				if(index == 307)  //Ullapool Caber
 				{
-					if(allowedDetonations<1 || allowedDetonations-detonations[attacker]>1)
+					if(FF2GlobalsCvars.AllowedDetonation<1 || FF2GlobalsCvars.AllowedDetonation-detonations[attacker]>1)
 					{
 						detonations[attacker]++;
-						if(allowedDetonations > 1)
-							PrintHintText(attacker, "%t", "Detonations Left", allowedDetonations-detonations[attacker]);
+						if(FF2GlobalsCvars.AllowedDetonation > 1)
+							PrintHintText(attacker, "%t", "Detonations Left", FF2GlobalsCvars.AllowedDetonation-detonations[attacker]);
 	
 						SetEntProp(weapon, Prop_Send, "m_bBroken", 0);
 						SetEntProp(weapon, Prop_Send, "m_iDetonated", 0);
@@ -1694,11 +1694,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				}
 			}
 
-			if(Enabled3 && cvarBvBMerc.FloatValue!=1 && RedAliveBosses && BlueAliveBosses)
+			if(FF2Globals.Enabled3 && ConVars.BvBMerc.FloatValue!=1 && FF2Globals.AliveRedPlayers && FF2Globals.AliveBluePlayers)
 			{
 				if(Utils_IsValidClient(client) && Utils_IsValidClient(attacker) && GetClientTeam(attacker)!=GetClientTeam(client))
 				{
-					damage *= cvarBvBMerc.FloatValue;
+					damage *= ConVars.BvBMerc.FloatValue;
 					return Plugin_Changed;
 				}
 			}
@@ -1718,12 +1718,12 @@ public Action TF2_OnPlayerTeleport(int client, int teleporter, bool &result)
 {
 	if(Utils_IsBoss(client))
 	{
-		switch(bossTeleportation)
+		switch(FF2GlobalsCvars.BossTeleportation)
 		{
-			case -1:  //No bosses are allowed to use teleporters
+			case -1:  //No FF2Globals.Bosses are allowed to use teleporters
 				result = false;
 
-			case 1:  //All bosses are allowed to use teleporters
+			case 1:  //All FF2Globals.Bosses are allowed to use teleporters
 				result = true;
 		}
 		return Plugin_Changed;
@@ -1733,16 +1733,16 @@ public Action TF2_OnPlayerTeleport(int client, int teleporter, bool &result)
 
 public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDefinitionIndex, Handle &item)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return Plugin_Continue;
 
-	if(!ConfigWeapons)
+	if(!FF2Globals.HasWeaponCfg)
 	{
 		// Nothin
 	}
-	else if(kvWeaponMods == null)
+	else if(FF2ModsInfo.WeaponCfg == null)
 	{
-		LogToFile(eLog, "[Weapons] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
+		LogToFile(FF2LogsPaths.Errors, "[Weapons] Critical Error! Unable to configure weapons from '%s!", WeaponCFG);
 	}
 	else
 	{
@@ -1750,15 +1750,15 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 		char weapon[64];
 		for(int i=1; ; i++)
 		{
-			KvRewind(kvWeaponMods);
+			KvRewind(FF2ModsInfo.WeaponCfg);
 			FormatEx(weapon, sizeof(weapon), "weapon%i", i);
-			if(KvJumpToKey(kvWeaponMods, weapon))
+			if(KvJumpToKey(FF2ModsInfo.WeaponCfg, weapon))
 			{
 				static char wepIndexStr[768], attributes[768];
-				isOverride = KvGetNum(kvWeaponMods, "mode");
-				KvGetString(kvWeaponMods, "classname", weapon, sizeof(weapon));
-				KvGetString(kvWeaponMods, "index", wepIndexStr, sizeof(wepIndexStr));
-				KvGetString(kvWeaponMods, "attributes", attributes, sizeof(attributes));
+				isOverride = KvGetNum(FF2ModsInfo.WeaponCfg, "mode");
+				KvGetString(FF2ModsInfo.WeaponCfg, "classname", weapon, sizeof(weapon));
+				KvGetString(FF2ModsInfo.WeaponCfg, "index", wepIndexStr, sizeof(wepIndexStr));
+				KvGetString(FF2ModsInfo.WeaponCfg, "attributes", attributes, sizeof(attributes));
 
 				if(isOverride)
 				{
@@ -1817,10 +1817,10 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 				break;
 			}
 		}
-		KvGoBack(kvWeaponMods);
+		KvGoBack(FF2ModsInfo.WeaponCfg);
 	}
 
-	if(cvarHardcodeWep.IntValue > 0)
+	if(ConVars.HardcodeWep.IntValue > 0)
 	{
 		switch(iItemDefinitionIndex)
 		{
@@ -1880,7 +1880,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 57:  //Razorback
 			{
-				if(cvarShieldType.IntValue > 1)
+				if(ConVars.ShieldType.IntValue > 1)
 				{
 					Handle itemOverride = PrepareItemHandle(item, _, _, _, true);
 					if(itemOverride != INVALID_HANDLE)
@@ -2190,7 +2190,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 416:  //Market Gardener
 			{
 				Handle itemOverride;
-				if(cvarMarket.FloatValue)
+				if(ConVars.Market.FloatValue)
 				{
 					itemOverride = PrepareItemHandle(item, _, _, "5 ; 2");
 				}
@@ -2226,7 +2226,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			case 444:  //Mantreads
 			{
 				#if defined _tf2attributes_included
-				if(tf2attributes)
+				if(FF2Globals.TF2Attrib)
 				{
 					TF2Attrib_SetByDefIndex(client, 58, 1.5);
 				}
@@ -2268,7 +2268,7 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 			}
 			case 589:  //Eureka Effect
 			{
-				if(!cvarEnableEurekaEffect.BoolValue)  //Disabled
+				if(!ConVars.EnableEurekaEffect.BoolValue)  //Disabled
 				{
 					Handle itemOverride = PrepareItemHandle(item, _, _, "93 ; 0.75 ; 276 ; 1 ; 790 ; 0.5 ; 732 ; 0.9", true);
 					if(itemOverride != INVALID_HANDLE)
@@ -2465,13 +2465,13 @@ public Action TF2Items_OnGiveNamedItem(int client, char[] classname, int iItemDe
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if(cvarHealthBar.IntValue > 0)
+	if(ConVars.HealthBar.IntValue > 0)
 	{
 		if(StrEqual(classname, HEALTHBAR_CLASS))
-			healthBar = entity;
+			FF2Globals.HealthBar = entity;
 
-		if(!IsValidEntity(g_Monoculus) && StrEqual(classname, MONOCULUS))
-			g_Monoculus = entity;
+		if(!IsValidEntity(FF2Globals.EntMonoculus) && StrEqual(classname, MONOCULUS))
+			FF2Globals.EntMonoculus = entity;
 	}
 
 	if(StrContains(classname, "item_healthkit")!=-1 || StrContains(classname, "item_ammopack")!=-1 || StrEqual(classname, "tf_ammo_pack"))
@@ -2480,13 +2480,13 @@ public void OnEntityCreated(int entity, const char[] classname)
 
 public void OnEntityDestroyed(int entity)
 {
-	if(entity == g_Monoculus)
+	if(entity == FF2Globals.EntMonoculus)
 	{
-		g_Monoculus = Utils_FindEntityByClassname2(-1, MONOCULUS);
-		if(g_Monoculus == entity)
+		FF2Globals.EntMonoculus = Utils_FindEntityByClassname2(-1, MONOCULUS);
+		if(FF2Globals.EntMonoculus == entity)
 		{
-			g_Monoculus = Utils_FindEntityByClassname2(entity, MONOCULUS);
-			if(!IsValidEntity(g_Monoculus) || g_Monoculus==-1)
+			FF2Globals.EntMonoculus = Utils_FindEntityByClassname2(entity, MONOCULUS);
+			if(!IsValidEntity(FF2Globals.EntMonoculus) || FF2Globals.EntMonoculus==-1)
 				FindHealthBar();
 		}
 	}
@@ -2500,7 +2500,7 @@ public void OnItemSpawned(int entity)
 
 public Action OnPickup(int entity, int client)  //Thanks friagram!
 {
-	if(Enabled && Utils_IsValidClient(client))
+	if(FF2Globals.Enabled && Utils_IsValidClient(client))
 	{
 		static char classname[32];
 		GetEntityClassname(entity, classname, sizeof(classname));
@@ -2519,7 +2519,7 @@ public Action OnPickup(int entity, int client)  //Thanks friagram!
 
 public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
 {
-	if(!Enabled || !Utils_IsValidClient(attacker) || !Utils_IsValidClient(victim) || attacker==victim)
+	if(!FF2Globals.Enabled || !Utils_IsValidClient(attacker) || !Utils_IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
 
 	switch(GoombaMode)
@@ -2530,12 +2530,12 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		}
 		case GOOMBA_BOSSTEAM:				// boss team only
 		{
-			if(!Enabled3 && GetClientTeam(attacker)==OtherTeam)	// they are on non-boss team
+			if(!FF2Globals.Enabled3 && GetClientTeam(attacker)==FF2Globals.OtherTeam)	// they are on non-boss team
 				return Plugin_Handled;
 		}
 		case GOOMBA_OTHERTEAM:				// non boss team only
 		{
-			if(!Enabled3 && GetClientTeam(attacker)==BossTeam)		// they are on boss team
+			if(!FF2Globals.Enabled3 && GetClientTeam(attacker)==FF2Globals.BossTeam)		// they are on boss team
 				return Plugin_Handled;
 		}
 		case GOOMBA_NOTBOSS:				// all but boss
@@ -2545,7 +2545,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		}
 		case GOOMBA_NOMINION:				// all but minions
 		{
-			if(!Enabled3 && !Utils_IsBoss(attacker) && GetClientTeam(attacker)==BossTeam)	// they are a minion
+			if(!FF2Globals.Enabled3 && !Utils_IsBoss(attacker) && GetClientTeam(attacker)==FF2Globals.BossTeam)	// they are a minion
 				return Plugin_Handled;
 		}
 		case GOOMBA_BOSS:					// boss only
@@ -2557,11 +2557,11 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 
 	if(Utils_IsBoss(victim))
 	{
-		damageMultiplier = GoombaDamage;
-		JumpPower = reboundPower;
-		if(TimesTen)
+		damageMultiplier = FF2GlobalsCvars.GoombaDmg;
+		JumpPower = FF2GlobalsCvars.ReboundPower;
+		if(FF2Globals.Isx10)
 		{
-			damageMultiplier /= cvarTimesTen.FloatValue;
+			damageMultiplier /= ConVars.TimesTen.FloatValue;
 			JumpPower *= 2.0;
 		}
 		return Plugin_Changed;
@@ -2591,13 +2591,13 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 	static char spcl[64];
 	if(Utils_IsBoss(victim))
 	{
-		if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 		{
-			if(TellName)
+			if(FF2GlobalsCvars.TellName)
 			{
 				boss = Utils_GetBossIndex(victim);
 				Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(attacker, victim, true, 3.0, "%t", "Goomba Stomp Player", spcl);
@@ -2611,7 +2611,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 			else
 			{
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(attacker, victim, true, 3.0, "%t", "Goomba Stomp");
@@ -2625,9 +2625,9 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 		}
 
-		if(!HudSettings[victim][2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[victim].HudSettings[2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
-			if(TellName)
+			if(FF2GlobalsCvars.TellName)
 			{
 				if(Utils_IsBoss(attacker))
 				{
@@ -2638,7 +2638,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				{
 					GetClientName(attacker, spcl, sizeof(spcl));
 				}
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped Boss Player", spcl);
@@ -2652,7 +2652,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 			else
 			{
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped Boss");
@@ -2671,9 +2671,9 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 	}
 	else if(Utils_IsBoss(attacker))
 	{
-		if(!HudSettings[attacker][2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
 		{
-			if(TellName)
+			if(FF2GlobalsCvars.TellName)
 			{
 				if(Utils_IsBoss(victim))
 				{
@@ -2684,7 +2684,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				{
 					GetClientName(victim, spcl, sizeof(spcl));
 				}
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(attacker, victim, true, 3.0, "%t", "Goomba Stomp Boss Player", spcl);
@@ -2698,7 +2698,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 			else
 			{
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(attacker, victim, true, 3.0, "%t", "Goomba Stomp Boss");
@@ -2712,13 +2712,13 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 		}
 
-		if(!HudSettings[victim][2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[victim].HudSettings[2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
 		{
-			if(TellName)
+			if(FF2GlobalsCvars.TellName)
 			{
 				boss = Utils_GetBossIndex(attacker);
 				Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), victim);
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped Player", spcl);
@@ -2732,7 +2732,7 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 			else
 			{
-				switch(Annotations)
+				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
 						CreateAttachedAnnotation(victim, attacker, true, 3.0, "%t", "Goomba Stomped");
@@ -2761,27 +2761,27 @@ public Action OnCPTouch(int entity, int client)
 			}
 			case CAP_BOSS_ONLY:
 			{
-				if(!Utils_IsBoss(client))			// non bosses can't cap
+				if(!Utils_IsBoss(client))			// non FF2Globals.Bosses can't cap
 					return Plugin_Handled;
 			}
 			case CAP_BOSS_TEAM:
 			{
-				if(!Enabled3 && GetClientTeam(client)==OtherTeam)	// merc team can't cap
+				if(!FF2Globals.Enabled3 && GetClientTeam(client)==FF2Globals.OtherTeam)	// merc team can't cap
 					return Plugin_Handled;
 			}
 			case CAP_NOT_BOSS:
 			{
-				if(Utils_IsBoss(client))			// bosses can't cap
+				if(Utils_IsBoss(client))			// FF2Globals.Bosses can't cap
 					return Plugin_Handled;
 			}
 			case CAP_MERC_TEAM:
 			{
-				if(!Enabled3 && GetClientTeam(client)==BossTeam)	// boss team can't cap
+				if(!FF2Globals.Enabled3 && GetClientTeam(client)==FF2Globals.BossTeam)	// boss team can't cap
 					return Plugin_Handled;
 			}
 			case CAP_NO_MINIONS:
 			{
-				if(!Enabled3 && GetClientTeam(client)==BossTeam && !Utils_IsBoss(client))
+				if(!FF2Globals.Enabled3 && GetClientTeam(client)==FF2Globals.BossTeam && !Utils_IsBoss(client))
 					return Plugin_Handled;
 			}
 		}
@@ -2791,7 +2791,7 @@ public Action OnCPTouch(int entity, int client)
 
 public Action RTD_CanRollDice(int client)
 {
-	if(Utils_IsBoss(client) && !canBossRTD)
+	if(Utils_IsBoss(client) && !FF2GlobalsCvars.CanBossRTD)
 		return Plugin_Handled;
 
 	return Plugin_Continue;
@@ -2799,7 +2799,7 @@ public Action RTD_CanRollDice(int client)
 
 public Action RTD2_CanRollDice(int client)
 {
-	if(Utils_IsBoss(client) && !canBossRTD)
+	if(Utils_IsBoss(client) && !FF2GlobalsCvars.CanBossRTD)
 		return Plugin_Handled;
 
 	return Plugin_Continue;
@@ -2819,7 +2819,7 @@ public void CW3_OnWeaponSpawned(int weapon, int slot, int client)
 
 public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-	if(!Enabled || !Utils_IsValidClient(client) || channel<1)
+	if(!FF2Globals.Enabled || !Utils_IsValidClient(client) || channel<1)
 		return Plugin_Continue;
 
 	if(TF2_IsPlayerInCondition(client, TFCond_Disguised))
@@ -2953,7 +2953,7 @@ static Handle PrepareItemHandle(Handle item, char[] name="", int index=-1, const
 			int attrib = StringToInt(weaponAttribsArray[i]);
 			if(!attrib)
 			{
-				LogToFile(eLog, "[Weapons] Bad weapon attribute passed: %s ; %s", weaponAttribsArray[i], weaponAttribsArray[i+1]);
+				LogToFile(FF2LogsPaths.Errors, "[Weapons] Bad weapon attribute passed: %s ; %s", weaponAttribsArray[i], weaponAttribsArray[i+1]);
 				delete weapon;
 				return INVALID_HANDLE;
 			}

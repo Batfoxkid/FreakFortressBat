@@ -2,7 +2,7 @@
 public Action Timer_PrepareBGM(Handle timer, any userid)
 {
 	int client=GetClientOfUserId(userid);
-	if(!Enabled || Utils_CheckRoundState()!=1 || !client || Utils_MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
+	if(!FF2Globals.Enabled || Utils_CheckRoundState()!=1 || !client || Utils_MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
 	{
 		delete MusicTimer[client];
 		return;
@@ -59,7 +59,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			char bossName[64];
 			KvRewind(BossKV[Special[0]]);
 			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
+			LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			//PrintToConsoleAll("{red}MALFUNCTION! NEED INPUT!");
 			if(MusicTimer[client] != null) {
 				delete MusicTimer[client];
@@ -118,7 +118,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 	{
 		bool unknown1 = true;
 		bool unknown2 = true;
-		if(ToggleMusic[client])
+		if(FF2PlayerCookie[client].MusicOn)
 		{
 			strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
 
@@ -144,7 +144,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 			unknown2 = false;
 		}
 
-		if(cvarSongInfo.IntValue==1 || ((unknown1 || unknown2) && !cvarSongInfo.IntValue))
+		if(ConVars.SongInfo.IntValue==1 || ((unknown1 || unknown2) && !ConVars.SongInfo.IntValue))
 		{
 			FPrintToChat(client, "%t", "track_info", artist, name);
 		}
@@ -154,13 +154,13 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 		char bossName[64];
 		KvRewind(BossKV[Special[0]]);
 		KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-		LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, music);
+		LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", bossName, music);
 	}
 }
 
 void StartMusic(int client=0)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return;
 
 	if(client < 1)  //Start music for all clients

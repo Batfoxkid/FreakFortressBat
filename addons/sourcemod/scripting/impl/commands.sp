@@ -145,13 +145,13 @@ Action Command_Points(int client, int args)
 			if(IsClientSourceTV(targets[target]) || IsClientReplay(targets[target]))
 				continue;
 
-			QueuePoints[targets[target]] += points;
+			FF2PlayerCookie[targets[target]].QueuePoints += points;
 			LogAction(client, targets[target], "\"%L\" added %d queue points to \"%L\"", client, points, targets[target]);
 		}
 	}
 	else
 	{
-		QueuePoints[targets[0]] += points;
+		FF2PlayerCookie[targets[0]].QueuePoints += points;
 		LogAction(client, targets[0], "\"%L\" added %d queue points to \"%L\"", client, points, targets[0]);
 	}
 	FReplyToCommand(client, "Added %d queue points to %s", points, targetName);
@@ -160,7 +160,7 @@ Action Command_Points(int client, int args)
 
 Action Command_StartMusic(int client, int args)
 {
-	if(Enabled2)
+	if(FF2Globals.Enabled2)
 	{
 		if(args)
 		{
@@ -200,7 +200,7 @@ Action Command_StartMusic(int client, int args)
 
 Action Command_StopMusic(int client, int args)
 {
-	if(!Enabled2)
+	if(!FF2Globals.Enabled2)
 		return Plugin_Handled;
 
 	if(args)
@@ -295,7 +295,7 @@ Action Command_Charset(int client, int args)
 		{
 			FReplyToCommand(client, "Charset for nextmap is %s", config);
 			isCharSetSelected = true;
-			cvarCharset.IntValue = i;
+			ConVars.Charset.IntValue = i;
 			break;
 		}
 
@@ -319,10 +319,10 @@ int Command_CharsetH(Menu menu, MenuAction action, int client, int choice)
 		}
 		case MenuAction_Select:
 		{
-			cvarCharset.IntValue = choice;
+			ConVars.Charset.IntValue = choice;
 
 			static char nextmap[32];
-			cvarNextmap.GetString(nextmap, sizeof(nextmap));
+			ConVars.Nextmap.GetString(nextmap, sizeof(nextmap));
 			menu.GetItem(choice, FF2CharSetString, sizeof(FF2CharSetString));
 			FPrintToChat(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
 			isCharSetSelected = true;
@@ -387,8 +387,8 @@ Action Command_LoadCharset(int client, int args)
 		KvGetSectionName(Kv, config, sizeof(config));
 		if(StrContains(config, charset, false) >= 0)
 		{
-			cvarCharset.IntValue = i;
-			LoadCharset = true;
+			ConVars.Charset.IntValue = i;
+			FF2Globals.LoadCharset = true;
 			if(!Utils_CheckRoundState() || Utils_CheckRoundState()==1)
 			{
 				FReplyToCommand(client, "The current character set is set to be switched to %s!", config);
@@ -398,7 +398,7 @@ Action Command_LoadCharset(int client, int args)
 			FReplyToCommand(client, "Character set has been switched to %s", config);
 			FindCharacters();
 			FF2CharSetString[0] = 0;
-			LoadCharset = false;
+			FF2Globals.LoadCharset = false;
 			break;
 		}
 
@@ -414,33 +414,33 @@ Action Command_LoadCharset(int client, int args)
 
 Action Command_ReloadFF2(int client, int args)
 {
-	if(ReloadFF2)
+	if(FF2Globals.ReloadFF2)
 	{
 		FReplyToCommand(client, "The plugin is no longer set to reload.");
-		ReloadFF2 = false;
+		FF2Globals.ReloadFF2 = false;
 		return Plugin_Handled;
 	}
-	ReloadFF2 = true;
+	FF2Globals.ReloadFF2 = true;
 	if(!Utils_CheckRoundState() || Utils_CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "The plugin is set to reload.");
 		return Plugin_Handled;
 	}
 	FReplyToCommand(client, "The plugin has been reloaded.");
-	ReloadFF2 = false;
+	FF2Globals.ReloadFF2 = false;
 	ServerCommand("sm plugins reload freak_fortress_2");
 	return Plugin_Handled;
 }
 
 Action Command_ReloadCharset(int client, int args)
 {
-	if(LoadCharset)
+	if(FF2Globals.LoadCharset)
 	{
 		FReplyToCommand(client, "Current character set no longer set to reload!");
-		LoadCharset = false;
+		FF2Globals.LoadCharset = false;
 		return Plugin_Handled;
 	}
-	LoadCharset = true;
+	FF2Globals.LoadCharset = true;
 	if(!Utils_CheckRoundState() || Utils_CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "Current character set is set to reload!");
@@ -449,19 +449,19 @@ Action Command_ReloadCharset(int client, int args)
 	FReplyToCommand(client, "Current character set has been reloaded!");
 	FindCharacters();
 	FF2CharSetString[0] = 0;
-	LoadCharset = false;
+	FF2Globals.LoadCharset = false;
 	return Plugin_Handled;
 }
 
 Action Command_ReloadFF2Weapons(int client, int args)
 {
-	if(ReloadWeapons)
+	if(FF2Globals.ReloadWeapons)
 	{
 		FReplyToCommand(client, "%s is no longer set to reload!", WeaponCFG);
-		ReloadWeapons = false;
+		FF2Globals.ReloadWeapons = false;
 		return Plugin_Handled;
 	}
-	ReloadWeapons = true;
+	FF2Globals.ReloadWeapons = true;
 	if(!Utils_CheckRoundState() || Utils_CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "%s is set to reload!", WeaponCFG);
@@ -469,19 +469,19 @@ Action Command_ReloadFF2Weapons(int client, int args)
 	}
 	FReplyToCommand(client, "%s has been reloaded!", WeaponCFG);
 	CacheWeapons();
-	ReloadWeapons = false;
+	FF2Globals.ReloadWeapons = false;
 	return Plugin_Handled;
 }
 
 Action Command_ReloadFF2Configs(int client, int args)
 {
-	if(ReloadConfigs)
+	if(FF2Globals.ReloadConfigs)
 	{
 		FReplyToCommand(client, "All configs are no longer set to be reloaded!");
-		ReloadConfigs = false;
+		FF2Globals.ReloadConfigs = false;
 		return Plugin_Handled;
 	}
-	ReloadConfigs = true;
+	FF2Globals.ReloadConfigs = true;
 	if(!Utils_CheckRoundState() || Utils_CheckRoundState()==1)
 	{
 		FReplyToCommand(client, "All configs are set to be reloaded!");
@@ -493,13 +493,13 @@ Action Command_ReloadFF2Configs(int client, int args)
 	Utils_CheckToTeleportToSpawn();
 	FindCharacters();
 	FF2CharSetString[0] = 0;
-	ReloadConfigs = false;
+	FF2Globals.ReloadConfigs = false;
 	return Plugin_Handled;
 }
 
 Action Command_ReloadSubPlugins(int client, int args)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 	{
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
@@ -529,7 +529,7 @@ Action Command_ReloadSubPlugins(int client, int args)
 
 Action Command_Point_Disable(int client, int args)
 {
-	if(Enabled)
+	if(FF2Globals.Enabled)
 	{
 		Utils_SetControlPoint(false);
 		return Plugin_Handled;
@@ -540,7 +540,7 @@ Action Command_Point_Disable(int client, int args)
 
 Action Command_Point_Enable(int client, int args)
 {
-	if(Enabled)
+	if(FF2Globals.Enabled)
 	{
 		Utils_SetControlPoint(true);
 		return Plugin_Handled;
@@ -557,13 +557,13 @@ Action Command_GetHPCmd(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!Enabled2)
+	if(!FF2Globals.Enabled2)
 	{
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
-	if(Utils_CheckRoundState()!=1 || cvarHealthHud.IntValue>1)
+	if(Utils_CheckRoundState()!=1 || ConVars.HealthHud.IntValue>1)
 		return Plugin_Handled;
 
 	Command_GetHP(client);
@@ -572,7 +572,7 @@ Action Command_GetHPCmd(int client, int args)
 
 Action Command_GetHP(int client)  //TODO: This can rarely show a very large negative number if you time it right
 {
-	if(Utils_IsBoss(client) || GetGameTime()>=HPTime)
+	if(Utils_IsBoss(client) || GetGameTime()>=FF2Globals.HPTime)
 	{
 		char[][] text = new char[MaxClients+1][512];
 		static char name[64];
@@ -599,13 +599,13 @@ Action Command_GetHP(int client)  //TODO: This can rarely show a very large nega
 			}
 		}
 
-		if((IsPlayerAlive(client) || IsClientObserver(client)) && !HudSettings[client][4] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+		if((IsPlayerAlive(client) || IsClientObserver(client)) && !FF2PlayerCookie[client].HudSettings[4] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
 		{
 			for(int target; target<=MaxClients; target++)
 			{
 				if(Utils_IsValidClient(target))
 				{
-					if(bosses<2 && cvarGameText.IntValue>0)
+					if(FF2Globals.Bosses<2 && ConVars.GameText.IntValue>0)
 					{
 						if(BossIcon[0])
 						{
@@ -624,10 +624,10 @@ Action Command_GetHP(int client)  //TODO: This can rarely show a very large nega
 			}
 		}
 
-		if(GetGameTime() >= HPTime)
+		if(GetGameTime() >= FF2Globals.HPTime)
 		{
-			healthcheckused++;
-			HPTime = GetGameTime()+(healthcheckused<3 ? 20.0 : 80.0);
+			FF2Globals.HealthCheckCounter++;
+			FF2Globals.HPTime = GetGameTime()+(FF2Globals.HealthCheckCounter<3 ? 20.0 : 80.0);
 		}
 		return Plugin_Continue;
 	}
@@ -638,7 +638,7 @@ Action Command_GetHP(int client)  //TODO: This can rarely show a very large nega
 		if(Utils_IsBoss(target))
 			Format(waitTime, sizeof(waitTime), "%s %i,", waitTime, BossHealthLast[Boss[target]]);
 	}
-	FPrintToChat(client, "%t", "wait_hp", RoundFloat(HPTime-GetGameTime()), waitTime);
+	FPrintToChat(client, "%t", "wait_hp", RoundFloat(FF2Globals.HPTime-GetGameTime()), waitTime);
 	return Plugin_Continue;
 }
 
@@ -646,7 +646,7 @@ Action QueuePanelCmd(int client, int args)
 {
 	bool[] added = new bool[MaxClients+1];
 	for(int boss; boss<=MaxClients; boss++)
-	{	// Don't want the bosses to show up again in the actual queue list
+	{	// Don't want the FF2Globals.Bosses to show up again in the actual queue list
 		if(Utils_IsBoss(boss))
 			added[boss] = true;
 	}
@@ -663,12 +663,12 @@ Action QueuePanelCmd(int client, int args)
 			continue;
 		}
 
-		FormatEx(text, sizeof(text), "%N-%i", target, QueuePoints[target]);
+		FormatEx(text, sizeof(text), "%N-%i", target, FF2PlayerCookie[target].QueuePoints);
 		menu.AddItem(text, text, client==target ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 		added[target] = true;
 	}
 
-	FormatEx(text, sizeof(text), "%T (%T)", "your_points", client, QueuePoints[client], "to0", client);  //"Your queue point(s) is {1} (set to 0)"
+	FormatEx(text, sizeof(text), "%T (%T)", "your_points", client, FF2PlayerCookie[client].QueuePoints, "to0", client);  //"Your queue point(s) is {1} (set to 0)"
 	menu.AddItem(text, text);
 
 	menu.Pagination = false;
@@ -775,7 +775,7 @@ Action NewPanelCmd(int client, int args)
 	}
 
 	static char url[192];
-	cvarChangelog.GetString(url, sizeof(url));
+	ConVars.Changelog.GetString(url, sizeof(url));
 	Format(url, sizeof(url), "%s#%s.%s.%s", url, FORK_MAJOR_REVISION, FORK_MINOR_REVISION, FORK_STABLE_REVISION);
 	KeyValues kv = CreateKeyValues("data");
 	kv.SetString("title", "Unofficial FF2 Changelog");
@@ -795,7 +795,7 @@ Action HelpPanel3Cmd(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!cvarAdvancedMusic.BoolValue)
+	if(!ConVars.AdvancedMusic.BoolValue)
 	{
 		HelpPanel3(client);
 	}
@@ -815,7 +815,7 @@ Action Command_HelpPanelClass(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!Enabled2)
+	if(!FF2Globals.Enabled2)
 	{
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
@@ -843,14 +843,14 @@ Action MusicTogglePanelCmd(int client, int args)
 		}
 		else if(StrContains(cmd, "on", false)!=-1 || StrContains(cmd, "enable", false)!=-1 || StrContains(cmd, "1", false)!=-1)
 		{
-			if(ToggleMusic[client])
+			if(FF2PlayerCookie[client].MusicOn)
 			{
 				FReplyToCommand(client, "You already have boss themes enabled...");
 				return Plugin_Handled;
 			}
 			ToggleBGM(client, true);
 		}
-		FPrintToChat(client, "%t", "ff2_music", ToggleMusic[client] ? "on" : "off");	// TODO: Make this more multi-language friendly
+		FPrintToChat(client, "%t", "ff2_music", FF2PlayerCookie[client].MusicOn ? "on" : "off");	// TODO: Make this more multi-language friendly
 		return Plugin_Handled;
 	}
 
@@ -866,16 +866,16 @@ Action Command_SkipSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!cvarAdvancedMusic.BoolValue)
+	if(!ConVars.AdvancedMusic.BoolValue)
 		return Plugin_Continue;
 
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 	{
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !ToggleMusic[client])
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
 	{
 		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -951,7 +951,7 @@ Action Command_SkipSong(int client, int args)
 		else
 		{
 			KvGetString(BossKV[Special[0]], "filename", lives, sizeof(lives));
-			LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", lives, temp);
+			LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", lives, temp);
 			if(MusicTimer[client] != null) {
 				delete MusicTimer[client];
 			}
@@ -968,16 +968,16 @@ Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!cvarAdvancedMusic.BoolValue)
+	if(!ConVars.AdvancedMusic.BoolValue)
 		return Plugin_Continue;
 
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 	{
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !ToggleMusic[client])
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
 	{
 		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -1002,16 +1002,16 @@ Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!cvarAdvancedMusic.BoolValue || cvarSongInfo.IntValue<0)
+	if(!ConVars.AdvancedMusic.BoolValue || ConVars.SongInfo.IntValue<0)
 		return Plugin_Continue;
 
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 	{
 		FReplyToCommand(client, "%t", "FF2 Disabled");
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !ToggleMusic[client])
+	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
 	{
 		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -1084,20 +1084,20 @@ Action VoiceTogglePanelCmd(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!cvarAdvancedMusic.BoolValue)
+	if(!ConVars.AdvancedMusic.BoolValue)
 	{
 		VoiceTogglePanel(client);
 	}
 	else
 	{
-		if(ToggleVoice[client])
+		if(FF2PlayerCookie[client].VoiceOn)
 		{
-			ToggleVoice[client] = false;
+			FF2PlayerCookie[client].VoiceOn = false;
 			FPrintToChat(client, "%t", "ff2_voice", "off");	// TODO: Make this more multi-language friendly
 		}
 		else
 		{
-			ToggleVoice[client] = true;
+			FF2PlayerCookie[client].VoiceOn = true;
 			FPrintToChat(client, "%t", "ff2_voice", "on");	// TODO: Make this more multi-language friendly
 		}
 	}
@@ -1109,7 +1109,7 @@ Action Command_Nextmap(int client, int args)
 	if(FF2CharSetString[0])
 	{
 		static char nextmap[42];
-		cvarNextmap.GetString(nextmap, sizeof(nextmap));
+		ConVars.Nextmap.GetString(nextmap, sizeof(nextmap));
 		FReplyToCommand(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
 	}
 	return Plugin_Handled;
@@ -1158,7 +1158,7 @@ Action Command_SetRage(int client, int args)
 			BossCharge[Utils_GetBossIndex(client)][0] = rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
-			CheatsUsed = true;
+			FF2Globals.CheatsUsed = true;
 		}
 		return Plugin_Handled;
 	}
@@ -1193,7 +1193,7 @@ Action Command_SetRage(int client, int args)
 		BossCharge[Utils_GetBossIndex(target_list[target])][0] = rageMeter;
 		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Set %d rage to %s", RoundFloat(rageMeter), target_name);
-		CheatsUsed = true;
+		FF2Globals.CheatsUsed = true;
 	}
 	return Plugin_Handled;
 }
@@ -1227,7 +1227,7 @@ Action Command_AddRage(int client, int args)
 			BossCharge[Utils_GetBossIndex(client)][0] += rageMeter;
 			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
-			CheatsUsed = true;
+			FF2Globals.CheatsUsed = true;
 		}
 		return Plugin_Handled;
 	}
@@ -1262,7 +1262,7 @@ Action Command_AddRage(int client, int args)
 		BossCharge[Utils_GetBossIndex(target_list[target])][0] += rageMeter;
 		LogAction(client, target_list[target], "\"%L\" added %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
-		CheatsUsed = true;
+		FF2Globals.CheatsUsed = true;
 	}
 	return Plugin_Handled;
 }
@@ -1300,7 +1300,7 @@ Action Command_AddCharge(int client, int args)
 				BossCharge[Utils_GetBossIndex(client)][abilitySlot] += rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(client)][abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
-				CheatsUsed = true;
+				FF2Globals.CheatsUsed = true;
 			}
 			else
 			{
@@ -1344,7 +1344,7 @@ Action Command_AddCharge(int client, int args)
 			BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot] += rageMeter;
 			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot]), RoundFloat(rageMeter));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
-			CheatsUsed = true;
+			FF2Globals.CheatsUsed = true;
 		}
 		else
 		{
@@ -1387,7 +1387,7 @@ Action Command_SetCharge(int client, int args)
 				BossCharge[Utils_GetBossIndex(client)][abilitySlot] = rageMeter;
 				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(client)][abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
-				CheatsUsed = true;
+				FF2Globals.CheatsUsed = true;
 			}
 			else
 			{
@@ -1431,7 +1431,7 @@ Action Command_SetCharge(int client, int args)
 			BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot] = rageMeter;
 			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot]));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
-			CheatsUsed = true;
+			FF2Globals.CheatsUsed = true;
 		}
 		else
 		{
@@ -1511,7 +1511,7 @@ Action Command_MakeBoss(int client, int args)
 
 			if(team > 1)
 			{
-				BossSwitched[boss] = team==OtherTeam ? true : false;
+				BossSwitched[boss] = team==FF2Globals.OtherTeam ? true : false;
 			}
 			else if(team > 0)
 			{
@@ -1532,7 +1532,7 @@ Action Command_MakeBoss(int client, int args)
 				Boss[index] = target_list[target];
 				if(team > 1)
 				{
-					BossSwitched[index] = team==OtherTeam ? true : false;
+					BossSwitched[index] = team==FF2Globals.OtherTeam ? true : false;
 				}
 				else if(team > 0)
 				{
@@ -1555,7 +1555,7 @@ Action Command_MakeBoss(int client, int args)
 						Boss[boss2] = target_list[target];
 						if(team > 1)
 						{
-							BossSwitched[boss] = team==OtherTeam;
+							BossSwitched[boss] = team==FF2Globals.OtherTeam;
 						}
 						else if(team > 0)
 						{
@@ -1613,14 +1613,14 @@ Action Command_SetInfiniteRage(int client, int args)
 				FReplyToCommand(client, "Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, GetClientUserId(client), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-				CheatsUsed = true;
+				FF2Globals.CheatsUsed = true;
 			}
 			else
 			{
 				InfiniteRageActive[client] = false;
 				FReplyToCommand(client, "Infinite RAGE deactivated");
 				LogAction(client, client, "\"%L\" deactivated infinite RAGE on themselves", client);
-				CheatsUsed = true;
+				FF2Globals.CheatsUsed = true;
 			}
 		}
 		return Plugin_Handled;
@@ -1657,7 +1657,7 @@ Action Command_SetInfiniteRage(int client, int args)
 			FReplyToCommand(client, "Infinite RAGE activated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
 			CreateTimer(0.2, Timer_InfiniteRage, GetClientUserId(target_list[target]), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-			CheatsUsed = true;
+			FF2Globals.CheatsUsed = true;
 		}
 		else
 		{
@@ -1671,7 +1671,7 @@ Action Command_SetInfiniteRage(int client, int args)
 
 Action CompanionMenu(int client, int args)
 {
-	if(Utils_IsValidClient(client) && cvarDuoBoss.BoolValue)
+	if(Utils_IsValidClient(client) && ConVars.ToggleBoss.BoolValue)
 	{
 		Menu menu = new Menu(MenuHandlerCompanion);
 		SetGlobalTransTarget(client);
@@ -1683,7 +1683,7 @@ Action CompanionMenu(int client, int args)
 		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection");
 		menu.AddItem("FF2 Companion Toggle Menu", menuoption);
 		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Companion Selection For Map");
-		if(Enabled2)
+		if(FF2Globals.Enabled2)
 		{
 			menu.AddItem("FF2 Companion Toggle Menu", menuoption);
 		}
@@ -1713,11 +1713,11 @@ Action Command_HudMenu(int client, int args)
 	char menuOption[64];
 	for(int i; i<(HUDTYPES-1); i++)
 	{
-		FormatEx(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], HudSettings[client][i] ? "Off" : "On");
+		FormatEx(menuOption, sizeof(menuOption), "%t [%t]", HudTypes[i], FF2PlayerCookie[client].HudSettings[i] ? "Off" : "On");
 		menu.AddItem(menuOption, menuOption);
 	}
 
-	int value = HudSettings[client][HUDTYPES-1] ? HudSettings[client][HUDTYPES-1] : cvarDamageHud.IntValue;
+	int value = FF2PlayerCookie[client].HudSettings[HUDTYPES-1] ? FF2PlayerCookie[client].HudSettings[HUDTYPES-1] : ConVars.DamageHud.IntValue;
 	FormatEx(menuOption, sizeof(menuOption), "%t [%i]", HudTypes[HUDTYPES-1], value<3 ? 0 : value);
 	menu.AddItem(menuOption, menuOption);
 
@@ -1728,7 +1728,7 @@ Action Command_HudMenu(int client, int args)
 
 public Action BossMenu(int client, int args)
 {
-	if(Utils_IsValidClient(client) && cvarToggleBoss.BoolValue)
+	if(Utils_IsValidClient(client) && ConVars.ToggleBoss.BoolValue)
 	{
 		Menu menu = new Menu(MenuHandlerBoss);
 		SetGlobalTransTarget(client);
@@ -1740,7 +1740,7 @@ public Action BossMenu(int client, int args)
 		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Queue Points");
 		menu.AddItem("Boss Toggle", menuoption);
 		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Queue Points For This Map");
-		if(Enabled2)
+		if(FF2Globals.Enabled2)
 		{
 			menu.AddItem("Boss Toggle", menuoption);
 		}
@@ -1764,7 +1764,7 @@ Action DiffMenu(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(cvarDifficulty.BoolValue)
+	if(ConVars.Difficulty.BoolValue)
 	{
 		Menu menu = new Menu(MenuHandlerDifficulty);
 		SetGlobalTransTarget(client);
@@ -1776,7 +1776,7 @@ Action DiffMenu(int client, int args)
 		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Special");
 		menu.AddItem("FF2 Special Toggle Menu", menuoption);
 		FormatEx(menuoption, sizeof(menuoption), "%t", "Disable Special For This Map");
-		if(Enabled2 && kvDiffMods!=null)
+		if(FF2Globals.Enabled2 && FF2ModsInfo.DiffCfg!=null)
 		{
 			menu.AddItem("FF2 Special Toggle Menu", menuoption);
 		}
@@ -1790,7 +1790,7 @@ Action DiffMenu(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(kvDiffMods == null)
+	if(FF2ModsInfo.DiffCfg == null)
 		return Plugin_Handled;
 
 	if(!CheckCommandAccess(client, "ff2_difficulty", 0, true))
@@ -1799,7 +1799,7 @@ Action DiffMenu(int client, int args)
 		return Plugin_Handled;
 	}
 
-	bool denyAll = (!cvarBossDesc.BoolValue || !ToggleInfo[client]) && (Utils_IsBoss(client) && Utils_CheckRoundState()!=2);
+	bool denyAll = (!ConVars.BossDesc.BoolValue || !FF2PlayerCookie[client].InfoOn) && (Utils_IsBoss(client) && Utils_CheckRoundState()!=2);
 
 	char name[64];
 	Menu menu = new Menu(DiffMenuH);
@@ -1809,13 +1809,13 @@ Action DiffMenu(int client, int args)
 
 	FormatEx(name, sizeof(name), "%t", "Off");
 	menu.AddItem("", name, (!dIncoming[client][0] || denyAll || (Utils_IsBoss(client) && Utils_CheckRoundState()!=2)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	KvRewind(kvDiffMods);
-	KvGotoFirstSubKey(kvDiffMods);
+	KvRewind(FF2ModsInfo.DiffCfg);
+	KvGotoFirstSubKey(FF2ModsInfo.DiffCfg);
 	do
 	{
-		KvGetSectionName(kvDiffMods, name, sizeof(name));
+		KvGetSectionName(FF2ModsInfo.DiffCfg, name, sizeof(name));
 		menu.AddItem(name, name, denyAll ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
-	} while(KvGotoNextKey(kvDiffMods));
+	} while(KvGotoNextKey(FF2ModsInfo.DiffCfg));
 
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
@@ -1831,7 +1831,7 @@ Action Command_SetMyBoss(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(!cvarSelectBoss.BoolValue)
+	if(!ConVars.SelectBoss.BoolValue)
 		return Plugin_Handled;
 
 	if(!CheckCommandAccess(client, "ff2_boss", 0, true))
@@ -1842,7 +1842,7 @@ Action Command_SetMyBoss(int client, int args)
 
 	if(args)
 	{
-		if(!Enabled2)
+		if(!FF2Globals.Enabled2)
 		{
 			FReplyToCommand(client, "%t", "FF2 Disabled");
 			return Plugin_Handled;
@@ -1923,7 +1923,7 @@ Action Command_SetMyBoss(int client, int args)
 
 			if(MapBlocked[config])
 			{
-				if(!cvarShowBossBlocked.BoolValue)
+				if(!ConVars.ShowBossBlocked.BoolValue)
 				{
 					FReplyToCommand(client, "%t", "deny_unknown");
 				}
@@ -1934,30 +1934,30 @@ Action Command_SetMyBoss(int client, int args)
 				return Plugin_Handled;
 			}
 
-			if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && Utils_CheckRoundState()!=1)))
+			if(KvGetNum(BossKV[config], "nofirst") && (FF2Globals.RoundCount < FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
 			{
 				FReplyToCommand(client, "%t", "deny_nofirst");
 				return Plugin_Handled;
 			}
 
 			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-			if(companionName[0] && !DuoMin)
+			if(companionName[0] && !FF2GlobalsCvars.DuoMin)
 			{
 				FReplyToCommand(client, "%t", "deny_duo_short");
 				return Plugin_Handled;
 			}
 
-			if(companionName[0] && cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1)
+			if(companionName[0] && ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Duo)>1)
 			{
 				FReplyToCommand(client, "%t", "deny_duo_off");
 				return Plugin_Handled;
 			}
 
-			if(AreClientCookiesCached(client) && cvarKeepBoss.IntValue<0)
+			if(AreClientCookiesCached(client) && ConVars.KeepBoss.IntValue<0)
 			{
 				static char cookie1[64], cookie2[64];
 				KvGetString(BossKV[config], "name", cookie1, sizeof(cookie1));
-				GetClientCookie(client, LastPlayedCookie, cookie2, sizeof(cookie2));
+				GetClientCookie(client, FF2DataBase.LastPlayer, cookie2, sizeof(cookie2));
 				if(StrEqual(cookie1, cookie2, false))
 				{
 					FReplyToCommand(client, "%t", "deny_recent");
@@ -1978,7 +1978,7 @@ Action Command_SetMyBoss(int client, int args)
 	static char bossName[64];
 	Menu menu = new Menu(Command_SetMyBossH);
 	SetGlobalTransTarget(client);
-	if(ToggleBoss[client] == Setting_On)
+	if(FF2PlayerCookie[client].Boss == Setting_On)
 	{
 		for(int config; config<=Specials; config++)
 		{
@@ -1995,7 +1995,7 @@ Action Command_SetMyBoss(int client, int args)
 			KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
 			if(StrEqual(bossName, xIncoming[client], false))
 			{
-				if(IgnoreValid[client] || Utils_CheckValidBoss(client, xIncoming[client], !DuoMin))
+				if(IgnoreValid[client] || Utils_CheckValidBoss(client, xIncoming[client], !FF2GlobalsCvars.DuoMin))
 					Utils_GetBossSpecial(config, boss, sizeof(boss), client);
 
 				break;
@@ -2003,9 +2003,9 @@ Action Command_SetMyBoss(int client, int args)
 		}
 	}
 
-	if(Enabled2 && HasCharSets && CurrentCharSet<MAXCHARSETS)
+	if(FF2Globals.Enabled2 && HasCharSets && CurrentCharSet<MAXCHARSETS)
 	{
-		if(kvDiffMods!=null && !cvarDifficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
+		if(FF2ModsInfo.DiffCfg!=null && !ConVars.Difficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
 		{
 			menu.SetTitle("%t%t", "ff2_boss_selection_pack", CharSetString[CurrentCharSet], boss, "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
 		}
@@ -2016,7 +2016,7 @@ Action Command_SetMyBoss(int client, int args)
 	}
 	else
 	{
-		if(kvDiffMods!=null && !cvarDifficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
+		if(FF2ModsInfo.DiffCfg!=null && !ConVars.Difficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
 		{
 			menu.SetTitle("%t%t", "ff2_boss_selection", boss, "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
 		}
@@ -2027,7 +2027,7 @@ Action Command_SetMyBoss(int client, int args)
 	}
 
 	FormatEx(boss, sizeof(boss), "%t", "to0_random");
-	if(!Enabled2)
+	if(!FF2Globals.Enabled2)
 	{
 		menu.AddItem(boss, boss, ITEMDRAW_DISABLED);
 	}
@@ -2036,9 +2036,9 @@ Action Command_SetMyBoss(int client, int args)
 		menu.AddItem(boss, boss);
 	}
 
-	if(cvarToggleBoss.BoolValue)
+	if(ConVars.ToggleBoss.BoolValue)
 	{
-		if(view_as<int>(ToggleBoss[client]) < 2)
+		if(view_as<int>(FF2PlayerCookie[client].Boss) < 2)
 		{
 			FormatEx(boss, sizeof(boss), "%t", "to0_disablepts");
 		}
@@ -2049,9 +2049,9 @@ Action Command_SetMyBoss(int client, int args)
 		menu.AddItem(boss, boss);
 	}
 
-	if(cvarDuoBoss.BoolValue)
+	if(ConVars.ToggleBoss.BoolValue)
 	{
-		if(view_as<int>(ToggleDuo[client]) < 2)
+		if(view_as<int>(FF2PlayerCookie[client].Duo) < 2)
 		{
 			FormatEx(boss, sizeof(boss), "%t", "to0_disableduo");
 		}
@@ -2062,11 +2062,11 @@ Action Command_SetMyBoss(int client, int args)
 		menu.AddItem(boss, boss);
 	}
 
-	if(kvDiffMods!=null && CheckCommandAccess(client, "ff2_difficulty", 0, true))
+	if(FF2ModsInfo.DiffCfg!=null && CheckCommandAccess(client, "ff2_difficulty", 0, true))
 	{
-		if(cvarDifficulty.BoolValue)
+		if(ConVars.Difficulty.BoolValue)
 		{
-			if(view_as<int>(ToggleDiff[client]) < 2)
+			if(view_as<int>(FF2PlayerCookie[client].Diff) < 2)
 			{
 				FormatEx(boss, sizeof(boss), "%t", "to0_disablediff");
 			}
@@ -2082,10 +2082,10 @@ Action Command_SetMyBoss(int client, int args)
 		menu.AddItem(boss, boss);
 	}
 
-	if(cvarSkipBoss.BoolValue)
+	if(ConVars.SkipBoss.BoolValue)
 	{
 		FormatEx(boss, sizeof(boss), "%t", "to0_resetpts");
-		if(QueuePoints[client]<10 || !Enabled2)
+		if(FF2PlayerCookie[client].QueuePoints<10 || !FF2Globals.Enabled2)
 		{
 			menu.AddItem(boss, boss, ITEMDRAW_DISABLED);
 		}
@@ -2101,7 +2101,7 @@ Action Command_SetMyBoss(int client, int args)
 		menu.AddItem(boss, boss);
 	}
 
-	if(!Enabled2)
+	if(!FF2Globals.Enabled2)
 	{
 		menu.ExitButton = true;
 		menu.Display(client, MENU_TIME_FOREVER);
@@ -2140,24 +2140,24 @@ Action Command_SetMyBoss(int client, int args)
 		}
 		else if(MapBlocked[config])
 		{
-			if(cvarShowBossBlocked.BoolValue)
+			if(ConVars.ShowBossBlocked.BoolValue)
 			{
 				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 			}
 		}
-		else if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && Utils_CheckRoundState()!=1)))
+		else if(KvGetNum(BossKV[config], "nofirst") && (FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
 		{
 			menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(companionName[0] && ((cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1) || !DuoMin))
+		else if(companionName[0] && ((ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Duo)>1) || !FF2GlobalsCvars.DuoMin))
 		{
 			menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 		}
 		else
 		{
-			if(AreClientCookiesCached(client) && cvarKeepBoss.IntValue<0 && !CheckCommandAccess(client, "ff2_replay_bosses", ADMFLAG_CHEATS, true))
+			if(AreClientCookiesCached(client) && ConVars.KeepBoss.IntValue<0 && !CheckCommandAccess(client, "ff2_replay_bosses", ADMFLAG_CHEATS, true))
 			{
-				GetClientCookie(client, LastPlayedCookie, companionName, sizeof(companionName));
+				GetClientCookie(client, FF2DataBase.LastPlayer, companionName, sizeof(companionName));
 				if(StrEqual(boss, companionName, false))
 				{
 					menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
@@ -2206,7 +2206,7 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(IsClientInGame(target) && target!=Boss[boss] && ToggleVoice[target])
+				if(IsClientInGame(target) && target!=Boss[boss] && FF2PlayerCookie[target].VoiceOn)
 				{
 					EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
 					EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
@@ -2222,7 +2222,7 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 
 Action OnSuicide(int client, const char[] command, int args)
 {
-	bool canBossSuicide = cvarBossSuicide.BoolValue;
+	bool canBossSuicide = ConVars.BossSuicide.BoolValue;
 	if(Utils_IsBoss(client) && (!canBossSuicide || !Utils_CheckRoundState()) && Utils_CheckRoundState()!=2)
 	{
 		FPrintToChat(client, "%t", canBossSuicide ? "Boss Suicide Pre-round" : "Boss Suicide Denied");
@@ -2234,25 +2234,25 @@ Action OnSuicide(int client, const char[] command, int args)
 Action OnJoinTeam(int client, const char[] command, int args)
 {
 	// Only block the commands when FF2 is actively running
-	if(!Enabled || RoundCount<arenaRounds || Utils_CheckRoundState()==-1)
+	if(!FF2Globals.Enabled || FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds || Utils_CheckRoundState()==-1)
 		return Plugin_Continue;
 
 	int boss = Utils_GetBossIndex(client);
 	// autoteam doesn't come with arguments
 	if(StrEqual(command, "autoteam", false))
 	{
-		if(Enabled3)
+		if(FF2Globals.Enabled3)
 			return IsPlayerAlive(client) ? Plugin_Handled : Plugin_Continue;
 
 		int team = view_as<int>(TFTeam_Unassigned);
 		int oldTeam = GetClientTeam(client);
 		if(Utils_IsBoss(client) && !BossSwitched[boss])
 		{
-			team = BossTeam;
+			team = FF2Globals.BossTeam;
 		}
 		else
 		{
-			team = OtherTeam;
+			team = FF2Globals.OtherTeam;
 		}
 
 		if(team != oldTeam)
@@ -2261,7 +2261,7 @@ Action OnJoinTeam(int client, const char[] command, int args)
 		return Plugin_Handled;
 	}
 
-	if(!args || (Enabled3 && !Utils_IsBoss(client)))
+	if(!args || (FF2Globals.Enabled3 && !Utils_IsBoss(client)))
 		return Plugin_Continue;
 
 	int team = view_as<int>(TFTeam_Unassigned);
@@ -2279,20 +2279,20 @@ Action OnJoinTeam(int client, const char[] command, int args)
 	}
 	else if(StrEqual(teamString, "auto", false))
 	{
-		team = OtherTeam;
+		team = FF2Globals.OtherTeam;
 	}
 	else if(StrEqual(teamString, "spectate", false) && !Utils_IsBoss(client) && GetConVarBool(FindConVar("mp_allowspectators")))
 	{
 		team = view_as<int>(TFTeam_Spectator);
 	}
 
-	if(team==BossTeam && (!Utils_IsBoss(client) || BossSwitched[boss]))
+	if(team==FF2Globals.BossTeam && (!Utils_IsBoss(client) || BossSwitched[boss]))
 	{
-		team = OtherTeam;
+		team = FF2Globals.OtherTeam;
 	}
-	else if(team==OtherTeam && (Utils_IsBoss(client) && !BossSwitched[boss]))
+	else if(team==FF2Globals.OtherTeam && (Utils_IsBoss(client) && !BossSwitched[boss]))
 	{
-		team = BossTeam;
+		team = FF2Globals.BossTeam;
 	}
 
 	if(team>view_as<int>(TFTeam_Unassigned) && team!=oldTeam)

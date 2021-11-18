@@ -29,7 +29,7 @@ stock int Operate(ArrayList sumArray, int &bracket, float value, ArrayList _oper
 		{
 			if(!value)
 			{
-				LogToFile(eLog, "[Boss] Detected a divide by 0!");
+				LogToFile(FF2LogsPaths.Errors, "[Boss] Detected a divide by 0!");
 				bracket = 0;
 				return;
 			}
@@ -64,20 +64,20 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
 
 	float players = 1.0;
-	if(Enabled3)
+	if(FF2Globals.Enabled3)
 	{
 		if(BossSwitched[boss])
 		{
-			players += bosses + playingboss - playingmerc*0.75;
+			players += FF2Globals.Bosses + FF2Globals.BossTeamPlayers - FF2Globals.MercsPlayers*0.75;
 		}
 		else
 		{
-			players += bosses + playingmerc - playingboss*0.75;
+			players += FF2Globals.Bosses + FF2Globals.MercsPlayers - FF2Globals.BossTeamPlayers*0.75;
 		}
 	}
 	else
 	{
-		players += playing;
+		players += FF2Globals.TotalPlayers;
 	}
 
 	int size = 1;
@@ -128,7 +128,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 				OperateString(sumArray, bracket, value, sizeof(value), _operator);
 				if(_operator.Get(bracket) != Operator_None)  //Something like (5*)
 				{
-					LogToFile(eLog, "[Boss] %s's %s formula has an invalid operator at character %i", bossName, key, i+1);
+					LogToFile(FF2LogsPaths.Errors, "[Boss] %s's %s formula has an invalid operator at character %i", bossName, key, i+1);
 					delete sumArray;
 					delete _operator;
 					return defaultValue;
@@ -136,7 +136,7 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 
 				if(--bracket<0)  //Something like (5))
 				{
-					LogToFile(eLog, "[Boss] %s's %s formula has an unbalanced parentheses at character %i", bossName, key, i+1);
+					LogToFile(FF2LogsPaths.Errors, "[Boss] %s's %s formula has an unbalanced parentheses at character %i", bossName, key, i+1);
 					delete sumArray;
 					delete _operator;
 					return defaultValue;
@@ -190,22 +190,22 @@ stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, 
 	delete sumArray;
 	delete _operator;
 
-	float addition = cvarTimesTen.FloatValue;
+	float addition = ConVars.TimesTen.FloatValue;
 	if(result < 1)
 	{
-		LogToFile(eLog, "[Boss] %s has an invalid %s, using default!", bossName, key);
-		if(TimesTen && addition!=1 && addition>0)
+		LogToFile(FF2LogsPaths.Errors, "[Boss] %s has an invalid %s, using default!", bossName, key);
+		if(FF2Globals.Isx10 && addition!=1 && addition>0)
 			return RoundFloat(defaultValue*addition);
 
 		return defaultValue;
 	}
 
-	if(TimesTen && addition!=1 && addition>0)
+	if(FF2Globals.Isx10 && addition!=1 && addition>0)
 		result *= addition;
 
 	if(StrContains(key, "ragedamage", false))
 	{
-		if(bMedieval)
+		if(FF2Globals.IsMedival)
 			return RoundFloat(result/3.6);  //TODO: Make this configurable
 	}
 	return RoundFloat(result);

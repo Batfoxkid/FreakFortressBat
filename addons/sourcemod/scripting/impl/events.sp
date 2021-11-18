@@ -34,81 +34,81 @@ void Events_HookGameEvents()
 public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	teamplay_round_start_TeleportToMultiMapSpawn(); // Cache spawns
-	isCapping = false;
+	FF2Globals.IsCapping = false;
 	SpecialRound = false;
-	if(changeGamemode == 1)
+	if(FF2ModsInfo.ChangeGamemode == 1)
 	{
 		EnableFF2();
 	}
-	else if(changeGamemode == 2)
+	else if(FF2ModsInfo.ChangeGamemode == 2)
 	{
 		DisableFF2();
 	}
 
-	if(!cvarEnabled.BoolValue)
+	if(!ConVars.Enabled.BoolValue)
 	{
-		Enabled2 = false;
-		Enabled3 = false;
-		if(EnabledDesc && cvarSteamTools.BoolValue)
+		FF2Globals.Enabled2 = false;
+		FF2Globals.Enabled3 = false;
+		if(FF2Globals.ChangedDescription && ConVars.SteamTools.BoolValue)
 		{
 			#if defined _SteamWorks_Included
-			if(steamworks)
+			if(FF2Globals.SteamWorks)
 			{
 				SteamWorks_SetGameDescription("Team Fortress");
-				Enabled = false;
-				EnabledDesc = false;
+				FF2Globals.Enabled = false;
+				FF2Globals.ChangedDescription = false;
 				return;
 			}
 			#endif
 
 			#if defined _steamtools_included
-			if(steamtools)
+			if(FF2Globals.SteamTools)
 				Steam_SetGameDescription("Team Fortress");
 			#endif
 		}
-		EnabledDesc = false;
+		FF2Globals.ChangedDescription = false;
 	}
 
-	Enabled = Enabled2;
-	if(!Enabled)
+	FF2Globals.Enabled = FF2Globals.Enabled2;
+	if(!FF2Globals.Enabled)
 		return;
 
 	if(FileExists("bNextMapToFF2"))
 		DeleteFile("bNextMapToFF2");
 
-	currentBossTeam = GetRandomInt(1, 2);
-	switch(cvarForceBossTeam.IntValue)
+	FF2Globals.CurrentBossTeam = GetRandomInt(1, 2);
+	switch(ConVars.ForceBossTeam.IntValue)
 	{
 		case 1:
-			blueBoss = view_as<bool>(GetRandomInt(0, 1));
+			FF2Globals.IsBossBlue = view_as<bool>(GetRandomInt(0, 1));
 
 		case 2:
-			blueBoss = false;
+			FF2Globals.IsBossBlue = false;
 
 		default:
-			blueBoss = true;
+			FF2Globals.IsBossBlue = true;
 	}
 
-	if(blueBoss)
+	if(FF2Globals.IsBossBlue)
 	{
-		SetTeamScore(view_as<int>(TFTeam_Red), GetTeamScore(OtherTeam));
-		SetTeamScore(view_as<int>(TFTeam_Blue), GetTeamScore(BossTeam));
-		OtherTeam = view_as<int>(TFTeam_Red);
-		BossTeam = view_as<int>(TFTeam_Blue);
+		SetTeamScore(view_as<int>(TFTeam_Red), GetTeamScore(FF2Globals.OtherTeam));
+		SetTeamScore(view_as<int>(TFTeam_Blue), GetTeamScore(FF2Globals.BossTeam));
+		FF2Globals.OtherTeam = view_as<int>(TFTeam_Red);
+		FF2Globals.BossTeam = view_as<int>(TFTeam_Blue);
 	}
 	else
 	{
-		SetTeamScore(view_as<int>(TFTeam_Red), GetTeamScore(BossTeam));
-		SetTeamScore(view_as<int>(TFTeam_Blue), GetTeamScore(OtherTeam));
-		OtherTeam = view_as<int>(TFTeam_Blue);
-		BossTeam = view_as<int>(TFTeam_Red);
+		SetTeamScore(view_as<int>(TFTeam_Red), GetTeamScore(FF2Globals.BossTeam));
+		SetTeamScore(view_as<int>(TFTeam_Blue), GetTeamScore(FF2Globals.OtherTeam));
+		FF2Globals.OtherTeam = view_as<int>(TFTeam_Blue);
+		FF2Globals.BossTeam = view_as<int>(TFTeam_Red);
 	}
 
-	playing = 0;
-	playing2 = 0;
-	playingboss = 0;
-	playingmerc = 0;
-	bosses = 0;
+	FF2Globals.TotalPlayers = 0;
+	FF2Globals.TotalRealPlayers = 0;
+	FF2Globals.BossTeamPlayers = 0;
+	FF2Globals.MercsPlayers = 0;
+	FF2Globals.Bosses = 0;
 	for(int client; client<=MaxClients; client++)
 	{
 		Damage[client] = 0;
@@ -119,37 +119,37 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 		KillstreakDamage[client] = 0.0;
 		if(Utils_IsValidClient(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 		{
-			playing++;
+			FF2Globals.TotalPlayers++;
 			if(!IsFakeClient(client))
-				playing2++;
+				FF2Globals.TotalRealPlayers++;
 
 			if(Utils_IsBoss(client))
-				bosses++;
+				FF2Globals.Bosses++;
 
-			if(GetClientTeam(client)==BossTeam)
+			if(GetClientTeam(client)==FF2Globals.BossTeam)
 			{
-				playingboss++;
+				FF2Globals.BossTeamPlayers++;
 			}
 			else
 			{
-				playingmerc++;
+				FF2Globals.MercsPlayers++;
 			}
 		}
 	}
 
-	if(GetClientCount()<=1 || playing<=1)  //Not enough players D:
+	if(GetClientCount()<=1 || FF2Globals.TotalPlayers<=1)  //Not enough players D:
 	{
 		FPrintToChatAll("%t", "needmoreplayers");
-		hostName.SetString(oldName);
-		Enabled = false;
+		FF2ModsInfo.cvarHostName.SetString(FF2ModsInfo.OldHostName);
+		FF2Globals.Enabled = false;
 		DisableSubPlugins();
 		Utils_SetControlPoint(true);
 		return;
 	}
-	else if(RoundCount<arenaRounds)  //We're still in arena mode
+	else if(FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds)  //We're still in arena mode
 	{
-		FPrintToChatAll("%t", "arena_round", arenaRounds-RoundCount);
-		Enabled = false;
+		FPrintToChatAll("%t", "arena_round", FF2GlobalsCvars.ArenaRounds-FF2Globals.RoundCount);
+		FF2Globals.Enabled = false;
 		DisableSubPlugins();
 		Utils_SetArenaCapEnableTime(60.0);
 		CreateTimer(71.0, Timer_EnableCap, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -185,34 +185,34 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 			TF2_RespawnPlayer(client);
 	}
 
-	Enabled = true;
+	FF2Globals.Enabled = true;
 	EnableSubPlugins();
 	CheckArena();
 	StopMusic();
 
 	bool[] omit = new bool[MaxClients+1];
-	Boss[0] = Utils_GetClientWithMostQueuePoints(omit, OtherTeam);
+	Boss[0] = Utils_GetClientWithMostQueuePoints(omit, FF2Globals.OtherTeam);
 	omit[Boss[0]] = true;
-	if(Enabled3)
+	if(FF2Globals.Enabled3)
 	{
-		Boss[MAXBOSSES] = Utils_GetClientWithoutBlacklist(omit, BossTeam);
+		Boss[MAXBOSSES] = Utils_GetClientWithoutBlacklist(omit, FF2Globals.BossTeam);
 		omit[Boss[MAXBOSSES]] = true;
 		BossSwitched[MAXBOSSES] = true;
 
-		if(cvarBvBChaos.IntValue > 1)
+		if(ConVars.BvBChaos.IntValue > 1)
 		{
 			int bossCount = 0;
-			while(bossCount < (cvarBvBChaos.IntValue-1))
+			while(bossCount < (ConVars.BvBChaos.IntValue-1))
 			{
 				bossCount++;
-				Boss[bossCount] = Utils_GetClientWithMostQueuePoints(omit, OtherTeam);
+				Boss[bossCount] = Utils_GetClientWithMostQueuePoints(omit, FF2Globals.OtherTeam);
 				omit[Boss[bossCount]] = true;
-				Boss[MAXBOSSES+bossCount] = Utils_GetClientWithoutBlacklist(omit, BossTeam);
+				Boss[MAXBOSSES+bossCount] = Utils_GetClientWithoutBlacklist(omit, FF2Globals.BossTeam);
 				omit[Boss[MAXBOSSES+bossCount]] = true;
 				BossSwitched[MAXBOSSES+bossCount] = true;
 			}
 		}
-		CheatsUsed = true;
+		FF2Globals.CheatsUsed = true;
 	}
 
 	bool teamHasPlayers[2];
@@ -234,12 +234,12 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 		for(int boss; boss<=MaxClients; boss++)
 		{
 			if(Utils_IsValidClient(Boss[boss]))
-				Utils_AssignTeam(Boss[boss], BossSwitched[boss] ? OtherTeam : BossTeam);
+				Utils_AssignTeam(Boss[boss], BossSwitched[boss] ? FF2Globals.OtherTeam : FF2Globals.BossTeam);
 		}
 
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(Utils_IsValidClient(client) && !Utils_IsBoss(client) && (GetClientTeam(client)!=OtherTeam && !Enabled3))
+			if(Utils_IsValidClient(client) && !Utils_IsBoss(client) && (GetClientTeam(client)!=FF2Globals.OtherTeam && !FF2Globals.Enabled3))
 				CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		}
 		return;  //NOTE: This is needed because OnRoundSetup gets fired a second time once both teams have players
@@ -248,54 +248,54 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 	PickCharacter(0, 0);
 	if((Special[0]<0) || !BossKV[Special[0]])
 	{
-		LogToFile(eLog, "[!!!] Couldn't find a boss for index 0!");
+		LogToFile(FF2LogsPaths.Errors, "[!!!] Couldn't find a boss for index 0!");
 		return;
 	}
 
-	if(Enabled3)
+	if(FF2Globals.Enabled3)
 	{
 		PickCharacter(MAXBOSSES, MAXBOSSES);
 		if((Special[MAXBOSSES]<0) || !BossKV[Special[MAXBOSSES]])
 		{
-			LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", MAXBOSSES);
+			LogToFile(FF2LogsPaths.Errors, "[!!!] Couldn't find a boss for index %i!", MAXBOSSES);
 			return;
 		}
 
-		if(cvarBvBChaos.IntValue > 1)
+		if(ConVars.BvBChaos.IntValue > 1)
 		{
 			int bossCount = 0;
-			while(bossCount<(cvarBvBChaos.IntValue-1) && bossCount<(playing-1))
+			while(bossCount<(ConVars.BvBChaos.IntValue-1) && bossCount<(FF2Globals.TotalPlayers-1))
 			{
 				bossCount++;
 				PickCharacter(bossCount, bossCount);
 				if((Special[bossCount]<0) || !BossKV[Special[bossCount]])
 				{
-					LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", bossCount);
+					LogToFile(FF2LogsPaths.Errors, "[!!!] Couldn't find a boss for index %i!", bossCount);
 					return;
 				}
 
 				PickCharacter(MAXBOSSES+bossCount, MAXBOSSES+bossCount);
 				if((Special[MAXBOSSES+bossCount]<0) || !BossKV[Special[MAXBOSSES+bossCount]])
 				{
-					LogToFile(eLog, "[!!!] Couldn't find a boss for index %i!", MAXBOSSES+bossCount);
+					LogToFile(FF2LogsPaths.Errors, "[!!!] Couldn't find a boss for index %i!", MAXBOSSES+bossCount);
 					return;
 				}
 			}
 		}
 	}
 
-	FindCompanion(0, playing, omit);  //Find companions for the boss!
-	if(Enabled3)
+	FindCompanion(0, FF2Globals.TotalPlayers, omit);  //Find companions for the boss!
+	if(FF2Globals.Enabled3)
 	{
-		FindCompanion(MAXBOSSES, playing, omit);
-		if(cvarBvBChaos.IntValue > 1)
+		FindCompanion(MAXBOSSES, FF2Globals.TotalPlayers, omit);
+		if(ConVars.BvBChaos.IntValue > 1)
 		{
 			int bossCount = 0;
-			while(bossCount<(cvarBvBChaos.IntValue-1) && bossCount<(playing-1))
+			while(bossCount<(ConVars.BvBChaos.IntValue-1) && bossCount<(FF2Globals.TotalPlayers-1))
 			{
 				bossCount++;
-				FindCompanion(bossCount, playing, omit);
-				FindCompanion(MAXBOSSES+bossCount, playing, omit);
+				FindCompanion(bossCount, FF2Globals.TotalPlayers, omit);
+				FindCompanion(MAXBOSSES+bossCount, FF2Globals.TotalPlayers, omit);
 			}
 		}
 	}
@@ -326,7 +326,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(cvarToggleBoss.BoolValue)
+	if(ConVars.ToggleBoss.BoolValue)
 	{
 		for(int client=1; client<=MaxClients; client++)
 		{
@@ -334,7 +334,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				continue;
 
 			ClientQueue[client][0] = client;
-			ClientQueue[client][1] = QueuePoints[client];
+			ClientQueue[client][1] = FF2PlayerCookie[client].QueuePoints;
 		}
 
 		SortCustom2D(ClientQueue, sizeof(ClientQueue), Utils_SortQueueDesc);
@@ -344,21 +344,21 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 			if(!Utils_IsValidClient(client) || Utils_IsBoss(client))
 				continue;
 
-			if(ToggleBoss[client] != Setting_On)
+			if(FF2PlayerCookie[client].Boss != Setting_On)
 			{
 				static char nick[64];
 				GetClientName(client, nick, sizeof(nick));
-				if(ToggleBoss[client] == Setting_Off)
+				if(FF2PlayerCookie[client].Boss == Setting_Off)
 				{
 					FPrintToChat(client, "%t", "FF2 Toggle Disabled Notification");
 				}
-				else if(ToggleBoss[client] == Setting_Temp)
+				else if(FF2PlayerCookie[client].Boss == Setting_Temp)
 				{
 					FPrintToChat(client, "%t", "FF2 Toggle Disabled Notification For Map");
 				}
 				else
 				{
-					CreateTimer(cvarFF2TogglePrefDelay.FloatValue, BossMenuTimer, GetClientUserId(client));
+					CreateTimer(ConVars.FF2TogglePrefDelay.FloatValue, BossMenuTimer, GetClientUserId(client));
 				}
 				continue;
 			}
@@ -366,7 +366,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 			ClientID[client] = ClientQueue[client][0];
 			ClientPoint[client] = ClientQueue[client][1];
 
-			if(ToggleBoss[client] == Setting_On)
+			if(FF2PlayerCookie[client].Boss == Setting_On)
 			{
 				int index = -1;
 				for(int i=1; i<MAXTF2PLAYERS; i++)
@@ -379,26 +379,26 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				}
 				if(index > 0)
 				{
-					FPrintToChat(client, "%t", "FF2 Toggle Queue Notification", index, QueuePoints[client]);
+					FPrintToChat(client, "%t", "FF2 Toggle Queue Notification", index, FF2PlayerCookie[client].QueuePoints);
 				}
 				else
 				{
-					FPrintToChat(client, "%t", "FF2 Toggle Enabled Notification");
+					FPrintToChat(client, "%t", "FF2 Toggle FF2Globals.Enabled Notification");
 				}
 				continue;
 			}
 		}
 	}
 
-	healthcheckused = 0;
-	firstBlood = true;
-	CheatsUsed = false;
+	FF2Globals.HealthCheckCounter = 0;
+	FF2Globals.FirstBlood = true;
+	FF2Globals.CheatsUsed = false;
 	ShowHealthText = false;
 }
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return;
 
 	CreateTimer(0.5, MessageTimer, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -423,11 +423,11 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 		SDKHook(point, SDKHook_Touch, OnCPTouch);
 	}
 
-	playing = 0;
-	playing2 = 0;
-	playingboss = 0;
-	playingmerc = 0;
-	bosses = 0;
+	FF2Globals.TotalPlayers = 0;
+	FF2Globals.TotalRealPlayers = 0;
+	FF2Globals.BossTeamPlayers = 0;
+	FF2Globals.MercsPlayers = 0;
+	FF2Globals.Bosses = 0;
 	int medigun, boss;
 	static char command[512];
 	for(int client=1; client<=MaxClients; client++)
@@ -437,30 +437,30 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 			CreateTimer(2.0, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 			if(!Utils_IsBoss(client) && IsPlayerAlive(client))
 			{
-				playing++;
+				FF2Globals.TotalPlayers++;
 				CreateTimer(0.15, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);  //TODO:  Is this needed?
 				if(!IsFakeClient(client))
-					playing2++;
+					FF2Globals.TotalRealPlayers++;
 
 				if(TF2_GetPlayerClass(client) == TFClass_Medic)
 				{
 					medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 					if(IsValidEntity(medigun))
-						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", StartingUber/100.0);
+						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", FF2GlobalsCvars.StartingUber/100.0);
 				}
 
-				if(GetClientTeam(client) == BossTeam)
+				if(GetClientTeam(client) == FF2Globals.BossTeam)
 				{
-					playingboss++;
+					FF2Globals.BossTeamPlayers++;
 				}
 				else
 				{
-					playingmerc++;
+					FF2Globals.MercsPlayers++;
 				}
 			}
 			else if(Utils_IsBoss(client))
 			{
-				bosses++;
+				FF2Globals.Bosses++;
 				boss = Utils_GetBossIndex(client);
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "command", command, sizeof(command));
@@ -471,21 +471,21 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	}
 
 	float players = 1.0;
-	if(Enabled3)
+	if(FF2Globals.Enabled3)
 	{
-		players += playingmerc + bosses - playingboss*0.75;
-		float players2 = playingboss + 1 + bosses - playingmerc*0.75;
+		players += FF2Globals.MercsPlayers + FF2Globals.Bosses - FF2Globals.BossTeamPlayers*0.75;
+		float players2 = FF2Globals.BossTeamPlayers + 1 + FF2Globals.Bosses - FF2Globals.MercsPlayers*0.75;
 		for(boss=0; boss<=MaxClients; boss++)
 		{
 			if(Utils_IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 			{
 				if(BossSwitched[boss])
 				{
-					BossHealthMax[boss] = ParseFormula(boss, "health_formula", HealthFormula, RoundFloat(Pow((760.8+players2)*(players2-1.0), 1.0341)+2046.0));
+					BossHealthMax[boss] = ParseFormula(boss, "health_formula", FF2GlobalsCvars.HealthFormula, RoundFloat(Pow((760.8+players2)*(players2-1.0), 1.0341)+2046.0));
 				}
 				else
 				{
-					BossHealthMax[boss] = ParseFormula(boss, "health_formula", HealthFormula, RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
+					BossHealthMax[boss] = ParseFormula(boss, "health_formula", FF2GlobalsCvars.HealthFormula, RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
 				}
 				if(BossHealthMax[boss]*BossLivesMax[boss] < 350)
 					BossHealthMax[boss] = RoundToFloor(350.0/BossLivesMax[boss]);
@@ -497,44 +497,44 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	}
 	else
 	{
-		players += playing;
+		players += FF2Globals.TotalPlayers;
 		for(boss=0; boss<=MaxClients; boss++)
 		{
 			if(Utils_IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 			{
-				BossHealthMax[boss] = ParseFormula(boss, "health_formula", HealthFormula, RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
+				BossHealthMax[boss] = ParseFormula(boss, "health_formula", FF2GlobalsCvars.HealthFormula, RoundFloat(Pow((760.8+players)*(players-1.0), 1.0341)+2046.0));
 				BossHealth[boss] = BossHealthMax[boss]*BossLivesMax[boss];
 				BossHealthLast[boss] = BossHealth[boss];
 			}
 		}
 	}
 
-	if(bosses==1 && kvDiffMods!=null && Utils_IsValidClient(Boss[0]) && IsPlayerAlive(Boss[0]))
+	if(FF2Globals.Bosses==1 && FF2ModsInfo.DiffCfg!=null && Utils_IsValidClient(Boss[0]) && IsPlayerAlive(Boss[0]))
 	{
-		if(!IsFakeClient(Boss[0]) && !cvarDifficulty.BoolValue && dIncoming[Boss[0]][0])
+		if(!IsFakeClient(Boss[0]) && !ConVars.Difficulty.BoolValue && dIncoming[Boss[0]][0])
 		{
 			LoadDifficulty(0);
 		}
-		else if((IsFakeClient(Boss[0]) && !cvarDifficulty.BoolValue && !GetRandomInt(0, 9)) || (GetRandomFloat(0.0, 100.0)<cvarDifficulty.FloatValue && ToggleDiff[Boss[0]]!=Setting_Off  && ToggleDiff[Boss[0]]!=Setting_Temp))
+		else if((IsFakeClient(Boss[0]) && !ConVars.Difficulty.BoolValue && !GetRandomInt(0, 9)) || (GetRandomFloat(0.0, 100.0)<ConVars.Difficulty.FloatValue && FF2PlayerCookie[Boss[0]].Diff!=Setting_Off  && FF2PlayerCookie[Boss[0]].Diff!=Setting_Temp))
 		{
 			int count;
-			KvRewind(kvDiffMods);
-			KvGotoFirstSubKey(kvDiffMods);
-			while(KvGotoNextKey(kvDiffMods))
+			KvRewind(FF2ModsInfo.DiffCfg);
+			KvGotoFirstSubKey(FF2ModsInfo.DiffCfg);
+			while(KvGotoNextKey(FF2ModsInfo.DiffCfg))
 			{
 				count++;
 			}
 
 			if(count)
 			{
-				KvRewind(kvDiffMods);
-				KvGotoFirstSubKey(kvDiffMods);
+				KvRewind(FF2ModsInfo.DiffCfg);
+				KvGotoFirstSubKey(FF2ModsInfo.DiffCfg);
 				for(count=GetRandomInt(0, count-1); count>0; count--)
 				{
-					KvGotoNextKey(kvDiffMods);
+					KvGotoNextKey(FF2ModsInfo.DiffCfg);
 				}
 
-				KvGetSectionName(kvDiffMods, dIncoming[Boss[0]], sizeof(dIncoming[]));
+				KvGetSectionName(FF2ModsInfo.DiffCfg, dIncoming[Boss[0]], sizeof(dIncoming[]));
 				LoadDifficulty(0);
 			}
 		}
@@ -546,48 +546,47 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	CreateTimer(0.2, ClientTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.2, GlobalTimer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
-	if(!PointType)
+	if(!FF2GlobalsCvars.PointType)
 		Utils_SetControlPoint(false);
 
-	if(cvarNameChange.IntValue == 1)
+	if(ConVars.NameChange.IntValue == 1)
 	{
 		char newName[256];
 		static char bossName[64];
 		Utils_GetBossSpecial(Special[0], bossName, 64);
-		FormatEx(newName, 256, "%s | %s", oldName, bossName);
-		hostName.SetString(newName);
+		FormatEx(newName, 256, "%s | %s", FF2ModsInfo.OldHostName, bossName);
+		FF2ModsInfo.cvarHostName.SetString(newName);
 	}
 }
 
 public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
-	RoundCount++;
+	FF2Globals.RoundCount++;
 	SapperMinion = false;
-	LastMan = true;
-	if(HasSwitched)
-		HasSwitched = false;
+	FF2Globals.IsLastMan = true;
+	if(FF2Globals.HasSwitched)
+		FF2Globals.HasSwitched = false;
 
 	CheckDuoMin();
 	
-	if (_FF2Save)
-		_FF2Save.ClearAll();
+	if (FF2SavedAbility)
+		FF2SavedAbility.ClearAll();
 	
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 	{
-		Enabled3 = false;
+		FF2Globals.Enabled3 = false;
 		return;
 	}
 
 	int team = event.GetInt("team");
-	if(cvarBossLog.IntValue>0 && cvarBossLog.IntValue<=playing2 && !CheatsUsed && !SpecialRound)
+	if(ConVars.BossLog.IntValue>0 && ConVars.BossLog.IntValue<=FF2Globals.TotalRealPlayers && !FF2Globals.CheatsUsed && !SpecialRound)
 	{
-		File bossLog;
 		static char bossName[64], FormatedTime[64], Result[64], PlayerName[64], Authid[64];
 		int CurrentTime = GetTime();
 		int boss;
 
 		FormatTime(FormatedTime, sizeof(FormatedTime), "%X", CurrentTime);
-		strcopy(Result, sizeof(Result), team==BossTeam ? "won" : "loss");
+		strcopy(Result, sizeof(Result), team==FF2Globals.BossTeam ? "won" : "loss");
 		for(int client=1; client<=MaxClients; client++)
 		{
 			boss = Utils_GetBossIndex(client);
@@ -605,25 +604,17 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 				}
 				KvRewind(BossKV[Special[boss]]);
 				KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
-				BuildPath(Path_SM, bLog, sizeof(bLog), "%s/%s.txt", BossLogPath, bossName);
-				
-				bossLog = OpenFile(bLog, "a+");
-				if(bossLog != INVALID_HANDLE)
-				{
-					bossLog.WriteLine("%s on %s - %s <%s> has %s", FormatedTime, currentmap, PlayerName, Authid, Result);
-					bossLog.WriteLine("");
-					delete bossLog;
-				}
+				FF2LogsPaths.WriteRoundInfo(bossName, FormatedTime, PlayerName, Authid, Result);
 			}
 		}
 	}
 
-	FF2Executed = false;
-	FF2Executed2 = false;
+	FF2Globals.FF2Executed = false;
+	FF2Globals.FF2Executed2 = false;
 	int bossWin = 0;
 	float bonusRoundTime = GetConVarFloat(FindConVar("mp_bonusroundtime"))-0.5;
 	static char sound[PLATFORM_MAX_PATH];
-	if(team == BossTeam)
+	if(team == FF2Globals.BossTeam)
 	{
 		bossWin = 1;
 		if(RandomSound("sound_win", sound, sizeof(sound)))
@@ -638,9 +629,9 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			EmitMusicToAllExcept(sound);
 		}
 	}
-	else if(team == OtherTeam)
+	else if(team == FF2Globals.OtherTeam)
 	{
-		if(Enabled3)
+		if(FF2Globals.Enabled3)
 		{
 			if(RandomSound("sound_win", sound, sizeof(sound), MAXBOSSES))
 				EmitSoundToAllExcept(sound);
@@ -675,7 +666,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(Enabled3 && bossWin>-1)
+	if(FF2Globals.Enabled3 && bossWin>-1)
 	{
 		int target;
 		char[][] text = new char[MaxClients+1][128];
@@ -717,7 +708,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(Utils_IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
+			if(Utils_IsValidClient(client) && !FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
 				ShowHudText(client, -1, text[client]);
 		}
 	}
@@ -750,7 +741,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			AirstrikeDamage[client] = 0.0;
 			KillstreakDamage[client] = 0.0;
 			HazardDamage[client] = 0.0;
-			SapperCooldown[client] = cvarSapperStart.FloatValue;
+			SapperCooldown[client] = ConVars.SapperStart.FloatValue;
 			DataBase_SaveClientStats(client);
 		}
 	}
@@ -766,8 +757,8 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	}
 
 	bool gainedPoint[MAXTF2PLAYERS];
-	int statPlayers = cvarStatPlayers.IntValue;
-	if(!botBoss && statPlayers<=playing2 && statPlayers>0)
+	int statPlayers = ConVars.StatPlayers.IntValue;
+	if(!botBoss && statPlayers<=FF2Globals.TotalRealPlayers && statPlayers>0)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -787,7 +778,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	int StatWin2Lose = cvarStatWin2Lose.IntValue;
+	int StatWin2Lose = ConVars.StatWin2Lose.IntValue;
 	if(StatWin2Lose==2 || StatWin2Lose>3)
 	{
 		for(int boss=1; boss<=MaxClients; boss++)
@@ -796,16 +787,16 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			{
 				if(gainedPoint[boss] || StatWin2Lose>2)
 				{
-					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
+					FPrintToChat(boss, "%t", "Win To Lose Self", FF2PlayerCookie[boss].BossWins, FF2PlayerCookie[boss].BossLosses);
 					CSkipNextClient(boss);
-					FPrintToChatAll("%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+					FPrintToChatAll("%t", "Win To Lose", boss, FF2PlayerCookie[boss].BossWins, FF2PlayerCookie[boss].BossLosses);
 				}
 				else
 				{
 					for(int client=1; client<=MaxClients; client++)
 					{
 						if(Utils_IsValidClient(client) && CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true))
-							FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+							FPrintToChat(client, "%t", "Win To Lose", boss, FF2PlayerCookie[boss].BossWins, FF2PlayerCookie[boss].BossLosses);
 					}
 				}
 			}
@@ -819,18 +810,18 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			{
 				if(StatWin2Lose>0 && (gainedPoint[boss] || StatWin2Lose>2))
 				{
-					FPrintToChat(boss, "%t", "Win To Lose Self", BossWins[boss], BossLosses[boss]);
+					FPrintToChat(boss, "%t", "Win To Lose Self", FF2PlayerCookie[boss].BossWins, FF2PlayerCookie[boss].BossLosses);
 				}
 				for(int client=1; client<=MaxClients; client++)
 				{
 					if(CheckCommandAccess(client, "ff2_stats_bosses", ADMFLAG_BAN, true) && Utils_IsValidClient(client) && (client!=boss || !(StatWin2Lose>0 && (gainedPoint[boss] || StatWin2Lose>3))))
-						FPrintToChat(client, "%t", "Win To Lose", boss, BossWins[boss], BossLosses[boss]);
+						FPrintToChat(client, "%t", "Win To Lose", boss, FF2PlayerCookie[boss].BossWins, FF2PlayerCookie[boss].BossLosses);
 				}
 			}
 		}
 	}
 
-	if(!Enabled3 && isBossAlive)
+	if(!FF2Globals.Enabled3 && isBossAlive)
 	{
 		int target;
 		char[][] text = new char[MaxClients+1][128];
@@ -863,7 +854,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		SetHudTextParams(-1.0, 0.25, bonusRoundTime, 255, 255, 255, 255);
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(Utils_IsValidClient(client) && !HudSettings[client][2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
+			if(Utils_IsValidClient(client) && !FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED) && !(GetClientButtons(client) & IN_SCORE))
 				ShowHudText(client, -1, text[client]);
 		}
 
@@ -895,18 +886,18 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		}
 	}
 
-	if(!TimesTen && Damage[top[0]]>9000)
+	if(!FF2Globals.Isx10 && Damage[top[0]]>9000)
 		CreateTimer(1.0, Timer_NineThousand, _, TIMER_FLAG_NO_MAPCHANGE);
 
 	if(!botBoss && statPlayers>0)
 	{
-		if(statPlayers <= playing2)
+		if(statPlayers <= FF2Globals.TotalRealPlayers)
 			DataBase_AddClientStats(top[0], Cookie_PlayerMvps, 1);
 
-		if(statPlayers*2 <= playing2)
+		if(statPlayers*2 <= FF2Globals.TotalRealPlayers)
 			DataBase_AddClientStats(top[1], Cookie_PlayerMvps, 1);
 
-		if(statPlayers*3 <= playing2)
+		if(statPlayers*3 <= FF2Globals.TotalRealPlayers)
 			DataBase_AddClientStats(top[2], Cookie_PlayerMvps, 1);
 	}
 
@@ -936,21 +927,21 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		SetGlobalTransTarget(client);
 		if(Utils_IsBoss(client) && GetClientTeam(client)==team)
 		{
-			ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_win");
+			ShowSyncHudText(client, FF2Huds.PlayerInfo, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_win");
 		}
 		else if(Utils_IsBoss(client))
 		{
-			ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_lose");
+			ShowSyncHudText(client, FF2Huds.PlayerInfo, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "boss_lose");
 		}
 		else
 		{
-			ShowSyncHudText(client, infoHUD, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/PointsInterval2));
+			ShowSyncHudText(client, FF2Huds.PlayerInfo, "%s\n%t:\n1) %i-%s\n2) %i-%s\n3) %i-%s\n\n%t\n%t", text, "top_3", Damage[top[0]], leaders[0], Damage[top[1]], leaders[1], Damage[top[2]], leaders[2], "damage_fx", Damage[client], "scores", RoundFloat(Damage[client]/FF2GlobalsCvars.PointsInterval2));
 		}
 	}
 
-	if(cvarBossVsBoss.IntValue > 0)
+	if(ConVars.BossVsBoss.IntValue > 0)
 	{
-		if(GetRandomInt(0, 99) < cvarBossVsBoss.IntValue)
+		if(GetRandomInt(0, 99) < ConVars.BossVsBoss.IntValue)
 		{
 			CreateTimer(bonusRoundTime-0.1, Timer_SetEnabled3, true, TIMER_FLAG_NO_MAPCHANGE);
 		}
@@ -961,16 +952,16 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	}
 	else
 	{
-		Enabled3 = false;
+		FF2Globals.Enabled3 = false;
 	}
 
-	if(ReloadFF2)
+	if(FF2Globals.ReloadFF2)
 	{
 		ServerCommand("sm plugins reload freak_fortress_2");
 		return;
 	}
 
-	if(ReloadConfigs)
+	if(FF2Globals.ReloadConfigs)
 	{
 		CacheWeapons();
 		CacheDifficulty();
@@ -978,22 +969,22 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		Utils_CheckToTeleportToSpawn();
 		FindCharacters();
 		FF2CharSetString[0] = 0;
-		ReloadConfigs = false;
-		LoadCharset = false;
-		ReloadWeapons = false;
+		FF2Globals.ReloadConfigs = false;
+		FF2Globals.LoadCharset = false;
+		FF2Globals.ReloadWeapons = false;
 	}
 
-	if(LoadCharset)
+	if(FF2Globals.LoadCharset)
 	{
 		FindCharacters();
 		FF2CharSetString[0] = 0;
-		LoadCharset = false;
+		FF2Globals.LoadCharset = false;
 	}
 
-	if(ReloadWeapons)
+	if(FF2Globals.ReloadWeapons)
 	{
 		CacheWeapons();
-		ReloadWeapons = false;
+		FF2Globals.ReloadWeapons = false;
 	}
 
 	CreateTimer(3.0, Timer_CalcQueuePoints, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -1004,20 +995,20 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 // Control Point Events
 public void OnStartCapture(Event event, const char[] name, bool dontBroadcast)
 {
-	isCapping = true;
+	FF2Globals.IsCapping = true;
 }
 
 public void OnBreakCapture(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!event.GetFloat("time_remaining"))
-		isCapping = false;
+		FF2Globals.IsCapping = false;
 }
 
 
 // Player Events
 public Action OnPostInventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return Plugin_Continue;
 
 	int userid = event.GetInt("userid");
@@ -1056,7 +1047,7 @@ public Action OnPostInventoryApplication(Event event, const char[] name, bool do
 
 public Action OnPlayerHealed(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled || Utils_CheckRoundState()!=1)
+	if(!FF2Globals.Enabled || Utils_CheckRoundState()!=1)
 		return Plugin_Continue;
 
 	int client = GetClientOfUserId(event.GetInt("patient"));
@@ -1100,7 +1091,7 @@ public Action OnPlayerHealed(Event event, const char[] name, bool dontBroadcast)
 
 public Action OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return Plugin_Continue;
 
 	if(Utils_CheckRoundState() == 1)
@@ -1120,7 +1111,7 @@ public Action OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 
 public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return Plugin_Continue;
 
 	int userid = event.GetInt("userid");
@@ -1129,13 +1120,13 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 
 	int flags = event.GetInt("death_flags");
-	if(Enabled3 && !(flags & TF_DEATHFLAG_DEADRINGER)) // Because those damn subplugins
+	if(FF2Globals.Enabled3 && !(flags & TF_DEATHFLAG_DEADRINGER)) // Because those damn subplugins
 	{
 		int reds, blus;
 		if(Utils_CheckRoundState() == 1)
 		{
-			reds = MercAlivePlayers;
-			blus = BossAlivePlayers;
+			reds = FF2Globals.AliveMercPlayers;
+			blus = FF2Globals.AliveBossPlayers;
 		}
 		else
 		{
@@ -1144,11 +1135,11 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				if(!Utils_IsValidClient(target))
 					continue;
 
-				if(GetClientTeam(target) == OtherTeam)
+				if(GetClientTeam(target) == FF2Globals.OtherTeam)
 				{
 					reds++;
 				}
-				else if(GetClientTeam(target) == BossTeam)
+				else if(GetClientTeam(target) == FF2Globals.BossTeam)
 				{
 					blus++;
 				}
@@ -1157,11 +1148,11 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 		if(reds>blus || (reds==blus && GetRandomInt(0, 1))) // More reds or their equal with 50/50 chance
 		{
-			TF2_ChangeClientTeam(client, view_as<TFTeam>(BossTeam));
+			TF2_ChangeClientTeam(client, view_as<TFTeam>(FF2Globals.BossTeam));
 		}
 		else
 		{
-			TF2_ChangeClientTeam(client, view_as<TFTeam>(OtherTeam));
+			TF2_ChangeClientTeam(client, view_as<TFTeam>(FF2Globals.OtherTeam));
 		}
 	}
 
@@ -1175,24 +1166,24 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 	if(!Utils_IsBoss(client))
 	{
-		if(!(flags & TF_DEATHFLAG_DEADRINGER) && (Enabled3 || GetClientTeam(client)!=BossTeam))
+		if(!(flags & TF_DEATHFLAG_DEADRINGER) && (FF2Globals.Enabled3 || GetClientTeam(client)!=FF2Globals.BossTeam))
 			CreateTimer(1.0, Timer_Damage, userid, TIMER_FLAG_NO_MAPCHANGE);
 
 		if(Utils_IsBoss(attacker))
 		{
 			int boss = Utils_GetBossIndex(attacker);
 			bool firstBloodSound = true;
-			if(firstBlood)	//TF_DEATHFLAG_FIRSTBLOOD is broken
+			if(FF2Globals.FirstBlood)	//TF_DEATHFLAG_FIRSTBLOOD is broken
 			{
 				if(RandomSound("sound_first_blood", sound, sizeof(sound), boss))
 				{
 					EmitSoundToAllExcept(sound);
 					firstBloodSound = false;
 				}
-				firstBlood = false;
+				FF2Globals.FirstBlood = false;
 			}
 
-			int alivePlayers = GetClientTeam(attacker)==BossTeam ? MercAlivePlayers : BossAlivePlayers;
+			int alivePlayers = GetClientTeam(attacker)==FF2Globals.BossTeam ? FF2Globals.AliveMercPlayers : FF2Globals.AliveBossPlayers;
 			if(alivePlayers>2 && KSpreeCount[boss]<2 && firstBloodSound)  //Don't conflict with end-of-round sounds, killing spree, or first blood
 			{
 				if(GetRandomInt(0, 1))
@@ -1238,7 +1229,7 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 			if(!IsFakeClient(client) || IsFakeClient(attacker))
 			{
-				BossKillsF[attacker]++;
+				FF2PlayerCookie[attacker].BossKillsF++;
 				if(!(flags & TF_DEATHFLAG_DEADRINGER))
 					DataBase_AddClientStats(attacker, Cookie_BossKills, 1);
 			}
@@ -1298,7 +1289,7 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled || Utils_CheckRoundState()!=1)
+	if(!FF2Globals.Enabled || Utils_CheckRoundState()!=1)
 		return Plugin_Continue;
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -1310,7 +1301,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	{
 		int preHealth = GetClientHealth(client)+damage;
 		int health = GetClientHealth(client);
-		switch(cvarShieldType.IntValue)
+		switch(ConVars.ShieldType.IntValue)
 		{
 			case 2:
 			{
@@ -1331,7 +1322,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 
 					SetEntityHealth(client, health+damageresist);
 
-					shDmgReduction[client] = shieldHP[client]/cvarShieldHealth.FloatValue*(1.0-cvarShieldResist.FloatValue);
+					shDmgReduction[client] = shieldHP[client]/ConVars.ShieldHealth.FloatValue*(1.0-ConVars.ShieldResist.FloatValue);
 
 					if(shieldHP[client] > 0)
 					{
@@ -1356,7 +1347,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 
 				SetEntityHealth(client, health+damageresist);
 
-				shDmgReduction[client] = shieldHP[client]/cvarShieldHealth.FloatValue*(1.0-cvarShieldResist.FloatValue);
+				shDmgReduction[client] = shieldHP[client]/ConVars.ShieldHealth.FloatValue*(1.0-ConVars.ShieldResist.FloatValue);
 
 				if(shieldHP[client]<=0.0 || (health+damageresist)<=damage)
 				{
@@ -1382,7 +1373,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	int custom = event.GetInt("custom");
 	if(custom == TF_CUSTOM_TELEFRAG)
 	{
-		damage = IsPlayerAlive(attacker) ? TimesTen ? RoundFloat(cvarTelefrag.IntValue*cvarTimesTen.FloatValue) : cvarTelefrag.IntValue : 1;
+		damage = IsPlayerAlive(attacker) ? FF2Globals.Isx10 ? RoundFloat(ConVars.Telefrag.IntValue*ConVars.TimesTen.FloatValue) : ConVars.Telefrag.IntValue : 1;
 	}
 	else if(custom == TF_CUSTOM_BOOTS_STOMP)
 	{
@@ -1424,13 +1415,13 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 			strcopy(ability, sizeof(ability), BossLives[boss]==1 ? "ff2_life_left" : "ff2_lives_left");
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(!Utils_IsValidClient(target) || HudSettings[target][2] || (FF2flags[target] & FF2FLAG_HUDDISABLED) || (!IsPlayerAlive(target) && !IsClientObserver(target)))
+				if(!Utils_IsValidClient(target) || FF2PlayerCookie[target].HudSettings[2] || (FF2flags[target] & FF2FLAG_HUDDISABLED) || (!IsPlayerAlive(target) && !IsClientObserver(target)))
 					continue;
 	
-				if(cvarGameText.IntValue > 0)
+				if(ConVars.GameText.IntValue > 0)
 				{
 					Utils_GetBossSpecial(Special[boss], bossName, sizeof(bossName), target);
-					Utils_ShowGameText(target, "ico_notify_flag_moving_alt", Enabled3 ? GetClientTeam(client) : 0, "%t", ability, bossName, BossLives[boss]);
+					Utils_ShowGameText(target, "ico_notify_flag_moving_alt", FF2Globals.Enabled3 ? GetClientTeam(client) : 0, "%t", ability, bossName, BossLives[boss]);
 				}
 				else
 				{
@@ -1486,29 +1477,29 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	if(Utils_IsValidClient(attacker) && Utils_IsValidClient(client) && client!=attacker && damage>0 && !Utils_IsBoss(attacker))
 	{
 		int i;
-		if(cvarAirStrike.FloatValue > 0)  //Air Strike-moved from OTD
+		if(ConVars.AirStrike.FloatValue > 0)  //Air Strike-moved from OTD
 		{
 			int primary = GetPlayerWeaponSlot(attacker, TFWeaponSlot_Primary);
 			if(IsValidEntity(primary) && GetEntProp(primary, Prop_Send, "m_iItemDefinitionIndex")==1104)
 			{
 				AirstrikeDamage[attacker] += damage;
-				while(AirstrikeDamage[attacker]>=cvarAirStrike.FloatValue && i<5)
+				while(AirstrikeDamage[attacker]>=ConVars.AirStrike.FloatValue && i<5)
 				{
 					i++;
 					SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-					AirstrikeDamage[attacker] -= cvarAirStrike.FloatValue;
+					AirstrikeDamage[attacker] -= ConVars.AirStrike.FloatValue;
 				}
 			}
 		}
 		i = 0;
-		if(cvarDmg2KStreak.FloatValue > 0)
+		if(ConVars.Dmg2KStreak.FloatValue > 0)
 		{
 			KillstreakDamage[attacker] += damage;
 			int streak = GetEntProp(attacker, Prop_Send, "m_nStreaks");
-			while(KillstreakDamage[attacker]>=cvarDmg2KStreak.FloatValue && i<21)
+			while(KillstreakDamage[attacker]>=ConVars.Dmg2KStreak.FloatValue && i<21)
 			{
 				i++;
-				KillstreakDamage[attacker] -= cvarDmg2KStreak.FloatValue;
+				KillstreakDamage[attacker] -= ConVars.Dmg2KStreak.FloatValue;
 			}
 			SetEntProp(attacker, Prop_Send, "m_nStreaks", streak+i);
 		}
@@ -1524,7 +1515,7 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 
 public void OnUberDeployed(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return;
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -1558,7 +1549,7 @@ public void OnUberDeployed(Event event, const char[] name, bool dontBroadcast)
 
 public Action OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled || event.GetInt("weaponid"))  // 0 means that the client was airblasted, which is what we want
+	if(!FF2Globals.Enabled || event.GetInt("weaponid"))  // 0 means that the client was airblasted, which is what we want
 		return Plugin_Continue;
 
 	int client = GetClientOfUserId(event.GetInt("ownerid"));
@@ -1574,7 +1565,7 @@ public Action OnObjectDeflected(Event event, const char[] name, bool dontBroadca
 
 public void OnDeployBackup(Event event, const char[] name, bool dontBroadcast)
 {
-	if(Enabled && event.GetInt("buff_type")==2)
+	if(FF2Globals.Enabled && event.GetInt("buff_type")==2)
 		FF2flags[GetClientOfUserId(event.GetInt("buff_owner"))] |= FF2FLAG_ISBUFFED;
 }
 
@@ -1588,28 +1579,28 @@ public void OnRPS(Event event, const char[] name, bool dontBroadcast)
 	if(!Utils_IsValidClient(loser))
 		return;
 
-	if(!Utils_IsBoss(winner) && Utils_IsBoss(loser) && cvarRPSLimit.IntValue>0)	// Boss Loses on RPS?
+	if(!Utils_IsBoss(winner) && Utils_IsBoss(loser) && ConVars.RPSLimit.IntValue>0)	// Boss Loses on RPS?
 	{
-		RPSWinner = winner;
-		TF2_AddCondition(RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not during damage
+		FF2Globals.RPSWinner = winner;
+		TF2_AddCondition(FF2Globals.RPSWinner, TFCond_NoHealingDamageBuff, 3.4);	// I'm not bothered checking for mini-crit boost or not during damage
 		CreateTimer(3.1, Timer_RPS, GetClientUserId(loser), TIMER_FLAG_NO_MAPCHANGE);
 		return;
 	}
 
-	int points = cvarRPSPoints.IntValue;	// Teammate or Minion loses?
-	if(ToggleBoss[winner]==Setting_Off || ToggleBoss[loser]==Setting_Off || Utils_IsBoss(winner) || Utils_IsBoss(loser) || QueuePoints[winner]<points || QueuePoints[loser]<points || points<1)
+	int points = ConVars.RPSPoints.IntValue;	// Teammate or Minion loses?
+	if(FF2PlayerCookie[winner].Boss==Setting_Off || FF2PlayerCookie[loser].Boss==Setting_Off || Utils_IsBoss(winner) || Utils_IsBoss(loser) || FF2PlayerCookie[winner].QueuePoints<points || FF2PlayerCookie[loser].QueuePoints<points || points<1)
 		return;
 
 	FPrintToChat(winner, "%t", "rps_won", points, loser);
-	QueuePoints[winner] += points;
+	FF2PlayerCookie[winner].QueuePoints += points;
 
 	FPrintToChat(loser, "%t", "rps_lost", points, winner);
-	QueuePoints[loser] -= points;
+	FF2PlayerCookie[loser].QueuePoints -= points;
 }
 
 public Action OnBroadcast(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled || cvarBroadcast.BoolValue)
+	if(!FF2Globals.Enabled || ConVars.Broadcast.BoolValue)
 		return Plugin_Continue;
 
 	static char sound[PLATFORM_MAX_PATH];
@@ -1622,7 +1613,7 @@ public Action OnBroadcast(Event event, const char[] name, bool dontBroadcast)
 
 public Action OnObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return Plugin_Continue;
 	
 	int attacker = GetClientOfUserId(event.GetInt("attacker"));
@@ -1638,7 +1629,7 @@ public Action OnObjectDestroyed(Event event, const char[] name, bool dontBroadca
 
 public Action OnWinPanel(Event event, const char[] name, bool dontBroadcast)
 {
-	return Enabled ? Plugin_Handled : Plugin_Continue;
+	return FF2Globals.Enabled ? Plugin_Handled : Plugin_Continue;
 }
 
 public Action OnJarate(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)

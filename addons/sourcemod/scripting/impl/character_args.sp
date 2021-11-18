@@ -230,7 +230,7 @@ void ActivateAbilitySlot(int boss, int slot, bool buttonmodeactive=false)
 		KvRewind(BossKV[Special[boss]]);
 		if(KvJumpToKey(BossKV[Special[boss]], ability))
 		{
-			if(KvGetNum(BossKV[Special[boss]], "noversus") && Enabled3)
+			if(KvGetNum(BossKV[Special[boss]], "noversus") && FF2Globals.Enabled3)
 				continue;
 
 			ability_slot = KvGetNum(BossKV[Special[boss]], "slot", -2);

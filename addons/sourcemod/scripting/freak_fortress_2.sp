@@ -53,22 +53,26 @@ last time or to encourage others to do the same.
 #include <tf2_stocks>
 #include <tf2items>
 #undef REQUIRE_EXTENSIONS
-#tryinclude <steamtools>
+#tryinclude <FF2Globals.SteamTools>
 #tryinclude <SteamWorks>
 #define REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #tryinclude <cw3>
 #tryinclude <smac>
 #tryinclude <goomba>
-#tryinclude <tf2attributes>
+#tryinclude <FF2Globals.TF2Attrib>
 #define REQUIRE_PLUGIN
 
 #pragma newdecls required
 
 #include "impl/consts.sp"
 #include "impl/vars.sp"
+#include "impl/logs.sp"
 
+#include "impl/database_vars.sp"
 #include "impl/convars_vars.sp"
+
+#include "impl/huds.sp"
 #include "impl/commands.sp"
 #include "impl/panels.sp"
 
@@ -129,7 +133,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	MarkNativeAsOptional("TF2Attrib_RemoveByDefIndex");
 	#endif
 
-	LateLoaded = late;
+	FF2Globals.Init();
+	FF2Globals.PluginLateLoaded = late;
 	return APLRes_Success;
 }
 
@@ -137,20 +142,9 @@ public void OnPluginStart()
 {
 	LogMessage("Freak Fortress 2 "... PLUGIN_VERSION ..." Loading...");
 
-	// Logs
-	BuildPath(Path_SM, pLog, sizeof(pLog), BossLogPath);
-	if(!DirExists(pLog))
-	{
-		CreateDirectory(pLog, 511);
-		if(!DirExists(pLog))
-			LogError("Failed to create directory at %s", pLog);
-	}
-
-	BuildPath(Path_SM, eLog, sizeof(eLog), "%s/%s", LogPath, ErrorLog);
-	if(!FileExists(eLog))
-		OpenFile(eLog, "a+");
+	FF2LogsPaths.Init();
 		
-	_FF2Save = new FF2Save();
+	FF2SavedAbility = new FF2SavedAbility_t();
 	
 	ConVars_CreateConvars();
 	
@@ -163,28 +157,20 @@ public void OnPluginStart()
 	ConVars_AddChangeHooks();
 	ConVars_CreateCommands();
 	
-	ReloadFF2 = false;
-	ReloadWeapons = false;
-	ReloadConfigs = false;
+	FF2Globals.ReloadFF2 = false;
+	FF2Globals.ReloadWeapons = false;
+	FF2Globals.ReloadConfigs = false;
 
 	AutoExecConfig(true, "FreakFortress2");
 
 	DataBase_CreateCookies();
 	
-	jumpHUD = CreateHudSynchronizer();
-	rageHUD = CreateHudSynchronizer();
-	livesHUD = CreateHudSynchronizer();
-	abilitiesHUD = CreateHudSynchronizer();
-	timeleftHUD = CreateHudSynchronizer();
-	infoHUD = CreateHudSynchronizer();
-	statHUD = CreateHudSynchronizer();
-	healthHUD = CreateHudSynchronizer();
-	rivalHUD = CreateHudSynchronizer();
+	FF2Huds.Init();
 
 	char oldVersion[64];
-	cvarVersion.GetString(oldVersion, 64);
+	ConVars.Version.GetString(oldVersion, 64);
 	if(strcmp(oldVersion, PLUGIN_VERSION, false))
-		LogToFile(eLog, "[Config] Warning: Your config may be outdated. Back up tf/cfg/sourcemod/FreakFortress2.cfg and delete it, and this plugin will generate a new one that you can then modify to your original values.");
+		LogToFile(FF2LogsPaths.Errors, "[Config] Warning: Your config may be outdated. Back up tf/cfg/sourcemod/FreakFortress2.cfg and delete it, and this plugin will generate a new one that you can then modify to your original values.");
 
 	LoadTranslations("freak_fortress_2.phrases");
 	LoadTranslations("freak_fortress_2_prefs.phrases");
@@ -193,42 +179,42 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
 
-	if(LateLoaded)
+	if(FF2Globals.PluginLateLoaded)
 		OnMapStart();
 
 	AddNormalSoundHook(HookSound);
 
 	#if defined _steamtools_included
-	steamtools = LibraryExists("SteamTools");
+	FF2Globals.SteamTools = LibraryExists("SteamTools");
 	#endif
 
 	#if defined _SteamWorks_Included
-	steamworks = LibraryExists("SteamWorks");
+	FF2Globals.SteamWorks = LibraryExists("SteamWorks");
 	#endif
 
 	#if defined _goomba_included
-	goomba = LibraryExists("goomba");
+	FF2Globals.Goomba = LibraryExists("goomba");
 	#endif
 
 	#if defined _tf2attributes_included
-	tf2attributes = LibraryExists("tf2attributes");
+	FF2Globals.TF2Attrib = LibraryExists("tf2attributes");
 	#endif
 
-	TimesTen = LibraryExists("tf2x10");
+	FF2Globals.Isx10 = LibraryExists("tf2x10");
 
 	Handle gameData = LoadGameConfigFile("equipwearable");
 	if(gameData == INVALID_HANDLE)
 	{
-		LogToFile(eLog, "[Gamedata] Failed to find equipwearable.txt");
+		LogToFile(FF2LogsPaths.Errors, "[Gamedata] Failed to find equipwearable.txt");
 		return;
 	}
 
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	SDKEquipWearable = EndPrepSDKCall();
-	if(SDKEquipWearable == null)
-		LogToFile(eLog, "[Gamedata] Failed to create call: CBasePlayer::EquipWearable");
+	FF2ModsInfo.SDK_EquipWearable = EndPrepSDKCall();
+	if(FF2ModsInfo.SDK_EquipWearable == null)
+		LogToFile(FF2LogsPaths.Errors, "[Gamedata] Failed to create call: CBasePlayer::EquipWearable");
 
 	delete gameData;
 }
@@ -237,36 +223,36 @@ public void OnLibraryAdded(const char[] name)
 {
 	if(StrEqual(name, "tf2x10", false))
 	{
-		TimesTen = true;
+		FF2Globals.Isx10 = true;
 	}
 	#if defined _steamtools_included
 	else if(StrEqual(name, "SteamTools", false))
 	{
-		steamtools = true;
+		FF2Globals.SteamTools = true;
 	}
 	#endif
 	#if defined _SteamWorks_Included
 	else if(StrEqual(name, "SteamWorks", false))
 	{
-		steamworks = true;
+		FF2Globals.SteamWorks = true;
 	}
 	#endif
 	#if defined _tf2attributes_included
-	else if(StrEqual(name, "tf2attributes", false))
+	else if(StrEqual(name, "FF2Globals.TF2Attrib", false))
 	{
-		tf2attributes = true;
+		FF2Globals.TF2Attrib = true;
 	}
 	#endif
 	#if defined _goomba_included
 	else if(StrEqual(name, "goomba", false))
 	{
-		goomba = true;
+		FF2Globals.Goomba = true;
 	}
 	#endif
 	#if !defined _smac_included
 	else if(StrEqual(name, "smac", false))
 	{
-		smac = true;
+		FF2Globals.SMAC = true;
 	}
 	#endif
 }
@@ -275,51 +261,51 @@ public void OnLibraryRemoved(const char[] name)
 {
 	if(StrEqual(name, "tf2x10", false))
 	{
-		TimesTen = false;
+		FF2Globals.Isx10 = false;
 	}
 	#if defined _steamtools_included
 	else if(StrEqual(name, "SteamTools", false))
 	{
-		steamtools = false;
+		FF2Globals.SteamTools = false;
 	}
 	#endif
 	#if defined _SteamWorks_Included
 	else if(StrEqual(name, "SteamWorks", false))
 	{
-		steamworks = false;
+		FF2Globals.SteamWorks = false;
 	}
 	#endif
 	#if defined _tf2attributes_included
-	else if(StrEqual(name, "tf2attributes", false))
+	else if(StrEqual(name, "FF2Globals.TF2Attrib", false))
 	{
-		tf2attributes = false;
+		FF2Globals.TF2Attrib = false;
 	}
 	#endif
 	#if defined _goomba_included
 	else if(StrEqual(name, "goomba", false))
 	{
-		goomba = false;
+		FF2Globals.Goomba = false;
 	}
 	#endif
 	#if !defined _smac_included
 	else if(StrEqual(name, "smac", false))
 	{
-		smac = false;
+		FF2Globals.SMAC = false;
 	}
 	#endif
 }
 
 public void OnConfigsExecuted()
 {
-	tf_arena_use_queue = GetConVarInt(FindConVar("tf_arena_use_queue"));
-	mp_teams_unbalance_limit = GetConVarInt(FindConVar("mp_teams_unbalance_limit"));
-	tf_arena_first_blood = GetConVarInt(FindConVar("tf_arena_first_blood"));
-	mp_forcecamera = GetConVarInt(FindConVar("mp_forcecamera"));
-	tf_dropped_weapon_lifetime = GetConVarInt(FindConVar("tf_dropped_weapon_lifetime"));
-	GetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team, sizeof(mp_humans_must_join_team));
-	GetConVarString(hostName=FindConVar("hostname"), oldName, sizeof(oldName));
+	FF2GlobalsCvars.tf_arena_use_queue = GetConVarInt(FindConVar("tf_arena_use_queue"));
+	FF2GlobalsCvars.mp_teams_unbalance_limit = GetConVarInt(FindConVar("mp_teams_unbalance_limit"));
+	FF2GlobalsCvars.tf_arena_first_blood = GetConVarInt(FindConVar("tf_arena_first_blood"));
+	FF2GlobalsCvars.mp_forcecamera = GetConVarInt(FindConVar("mp_forcecamera"));
+	FF2GlobalsCvars.tf_dropped_weapon_lifetime = GetConVarInt(FindConVar("tf_dropped_weapon_lifetime"));
+	GetConVarString(FindConVar("mp_humans_must_join_team"), FF2GlobalsCvars.mp_humans_must_join_team, sizeof(FF2GlobalsCvars.mp_humans_must_join_team));
+	GetConVarString(FF2ModsInfo.cvarHostName=FindConVar("hostname"), FF2ModsInfo.OldHostName, sizeof(FF2ModsInfo.OldHostName));
 
-	if(cvarEnabled.IntValue>1 || (Utils_IsFF2Map(currentmap) && cvarEnabled.IntValue>0))
+	if(ConVars.Enabled.IntValue>1 || (Utils_IsFF2Map(FF2Globals.CurrentMap) && ConVars.Enabled.IntValue>0))
 	{
 		EnableFF2();
 	}
@@ -334,8 +320,8 @@ public void OnConfigsExecuted()
 public void OnPluginEnd()
 {
 	OnMapEnd();
-	hostName.SetString(oldName);
-	if(!ReloadFF2 && Utils_CheckRoundState()==1)
+	FF2ModsInfo.cvarHostName.SetString(FF2ModsInfo.OldHostName);
+	if(!FF2Globals.ReloadFF2 && Utils_CheckRoundState()==1)
 	{
 		Utils_ForceTeamWin(0);
 		FPrintToChatAll("The plugin has been unexpectedly unloaded!");
@@ -344,44 +330,44 @@ public void OnPluginEnd()
 
 void EnableFF2()
 {
-	Enabled = true;
-	Enabled2 = true;
-	Enabled3 = false;
+	FF2Globals.Enabled = true;
+	FF2Globals.Enabled2 = true;
+	FF2Globals.Enabled3 = false;
 
 	//Cache cvars
 	SetConVarString(FindConVar("ff2_version"), PLUGIN_VERSION);
-	Announce = cvarAnnounce.FloatValue;
-	PointType = cvarPointType.IntValue;
-	PointDelay = cvarPointDelay.IntValue;
-	GoombaDamage = cvarGoombaDamage.FloatValue;
-	reboundPower = cvarGoombaRebound.FloatValue;
-	SniperDamage = cvarSniperDamage.FloatValue;
-	SniperMiniDamage = cvarSniperMiniDamage.FloatValue;
-	BowDamage = cvarBowDamage.FloatValue;
-	BowDamageNon = cvarBowDamageNon.FloatValue;
-	BowDamageMini = cvarBowDamageMini.FloatValue;
-	SniperClimbDamage = cvarSniperClimbDamage.FloatValue;
-	SniperClimbDelay = cvarSniperClimbDelay.FloatValue;
-	QualityWep = cvarQualityWep.IntValue;
-	canBossRTD = cvarBossRTD.BoolValue;
-	AliveToEnable = cvarAliveToEnable.FloatValue;
-	PointsInterval = cvarPointsInterval.IntValue;
-	PointsInterval2 = cvarPointsInterval.FloatValue;
-	PointsDamage = cvarPointsDamage.IntValue;
-	PointsMin = cvarPointsMin.IntValue;
-	PointsExtra = cvarPointsExtra.IntValue;
-	arenaRounds = cvarArenaRounds.IntValue;
-	circuitStun = cvarCircuitStun.FloatValue;
-	countdownHealth = cvarCountdownHealth.IntValue;
-	countdownPlayers = cvarCountdownPlayers.FloatValue;
-	countdownTime = cvarCountdownTime.IntValue;
-	countdownOvertime = cvarCountdownOvertime.BoolValue;
-	lastPlayerGlow = cvarLastPlayerGlow.FloatValue;
-	bossTeleportation = cvarBossTeleporter.IntValue;
-	shieldCrits = cvarShieldCrits.IntValue;
-	allowedDetonations = cvarCaberDetonations.IntValue;
-	Annotations = cvarAnnotations.IntValue;
-	TellName = cvarTellName.BoolValue;
+	FF2GlobalsCvars.Announce = ConVars.Announce.FloatValue;
+	FF2GlobalsCvars.PointType = ConVars.PointType.IntValue;
+	FF2GlobalsCvars.PointDelay = ConVars.PointDelay.IntValue;
+	FF2GlobalsCvars.GoombaDmg = ConVars.GoombaDamage.FloatValue;
+	FF2GlobalsCvars.ReboundPower = ConVars.GoombaRebound.FloatValue;
+	FF2GlobalsCvars.SniperDmg = ConVars.SniperDamage.FloatValue;
+	FF2GlobalsCvars.SniperMiniDmg = ConVars.SniperMiniDamage.FloatValue;
+	FF2GlobalsCvars.BowDmg = ConVars.BowDamage.FloatValue;
+	FF2GlobalsCvars.BowDmgNon = ConVars.BowDamageNon.FloatValue;
+	FF2GlobalsCvars.BowDmgMini = ConVars.BowDamageMini.FloatValue;
+	FF2GlobalsCvars.SniperClimpDmg = ConVars.SniperClimbDamage.FloatValue;
+	FF2GlobalsCvars.SniperClimpDelay = ConVars.SniperClimbDelay.FloatValue;
+	FF2GlobalsCvars.WeaponQuality = ConVars.QualityWep.IntValue;
+	FF2GlobalsCvars.CanBossRTD = ConVars.BossRTD.BoolValue;
+	FF2GlobalsCvars.AliveToEnable = ConVars.AliveToEnable.FloatValue;
+	FF2GlobalsCvars.PointsInterval = ConVars.PointsInterval.IntValue;
+	FF2GlobalsCvars.PointsInterval2 = ConVars.PointsInterval.FloatValue;
+	FF2GlobalsCvars.PointsDmg = ConVars.PointsDamage.IntValue;
+	FF2GlobalsCvars.PointsMin = ConVars.PointsMin.IntValue;
+	FF2GlobalsCvars.PointsExtra = ConVars.PointsExtra.IntValue;
+	FF2GlobalsCvars.ArenaRounds = ConVars.ArenaRounds.IntValue;
+	FF2GlobalsCvars.CircuitStun = ConVars.CircuitStun.FloatValue;
+	FF2GlobalsCvars.CountdownHealth = ConVars.CountdownHealth.IntValue;
+	FF2GlobalsCvars.CountdownPlayers = ConVars.CountdownPlayers.FloatValue;
+	FF2GlobalsCvars.CountdownTime = ConVars.CountdownTime.IntValue;
+	FF2GlobalsCvars.CountdownOvertime = ConVars.CountdownOvertime.BoolValue;
+	FF2GlobalsCvars.LastPlayerGlow = ConVars.LastPlayerGlow.FloatValue;
+	FF2GlobalsCvars.BossTeleportation = ConVars.BossTeleporter.IntValue;
+	FF2GlobalsCvars.ShieldCrits = ConVars.ShieldCrits.IntValue;
+	FF2GlobalsCvars.AllowedDetonation = ConVars.CaberDetonations.IntValue;
+	FF2GlobalsCvars.Annotations = ConVars.Annotations.IntValue;
+	FF2GlobalsCvars.TellName = ConVars.TellName.BoolValue;
 
 	//Set some Valve cvars to what we want them to be
 	SetConVarInt(FindConVar("tf_arena_use_queue"), 0);
@@ -389,14 +375,14 @@ void EnableFF2()
 	SetConVarInt(FindConVar("tf_arena_first_blood"), 0);
 	SetConVarInt(FindConVar("mp_forcecamera"), 0);
 	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), 0);
-	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
+	SetConVarString(FindConVar("FF2GlobalsCvars.mp_humans_must_join_team"), "any");
 
-	cvarTags = FindConVar("sv_tags");
+	ConVars.Tags = FindConVar("sv_tags");
 	Utils_AddServerTag("ff2");
 	Utils_AddServerTag("hale");
 	Utils_AddServerTag("vsh");
 
-	float time = Announce;
+	float time = FF2GlobalsCvars.Announce;
 	if(time > 1.0)
 		CreateTimer(time, Timer_Announce, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
@@ -409,17 +395,17 @@ void EnableFF2()
 	FF2CharSetString[0] = 0;
 
 	#if !defined _smac_included
-	if(smac && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE)
+	if(FF2Globals.SMAC && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE)
 	{
 		ServerCommand("smac_removecvar sv_cheats");
 		ServerCommand("smac_removecvar host_timescale");
 	}
 	#endif
 
-	bMedieval = FindEntityByClassname(-1, "tf_logic_medieval")!=-1 || GetConVarBool(FindConVar("tf_medieval"));
+	FF2Globals.IsMedival = FindEntityByClassname(-1, "tf_logic_medieval")!=-1 || GetConVarBool(FindConVar("tf_medieval"));
 	FindHealthBar();
 
-	changeGamemode = 0;
+	FF2ModsInfo.ChangeGamemode = 0;
 
 	for(int client=1; client<=MaxClients; client++)
 	{
@@ -427,11 +413,11 @@ void EnableFF2()
 			OnClientPostAdminCheck(client);
 	}
 
-	EnabledDesc = true;
-	if(cvarSteamTools.BoolValue)
+	FF2Globals.ChangedDescription = true;
+	if(ConVars.SteamTools.BoolValue)
 	{
 		char gameDesc[64];
-		if(TimesTen)
+		if(FF2Globals.Isx10)
 		{
 			FormatEx(gameDesc, sizeof(gameDesc), "Freak Fortress 2 x10 (%s)", PLUGIN_VERSION);
 		}
@@ -441,7 +427,7 @@ void EnableFF2()
 		}
 
 		#if defined _SteamWorks_Included
-		if(steamworks)
+		if(FF2Globals.SteamWorks)
 		{
 			SteamWorks_SetGameDescription(gameDesc);
 			return;
@@ -449,7 +435,7 @@ void EnableFF2()
 		#endif
 
 		#if defined _steamtools_included
-		if(steamtools)
+		if(FF2Globals.SteamTools)
 		{
 			Steam_SetGameDescription(gameDesc);
 		}
@@ -459,19 +445,19 @@ void EnableFF2()
 
 void DisableFF2()
 {
-	Enabled = false;
-	Enabled2 = false;
-	Enabled3 = false;
+	FF2Globals.Enabled = false;
+	FF2Globals.Enabled2 = false;
+	FF2Globals.Enabled3 = false;
 
 	DisableSubPlugins();
 
-	SetConVarInt(FindConVar("tf_arena_use_queue"), tf_arena_use_queue);
-	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), mp_teams_unbalance_limit);
-	SetConVarInt(FindConVar("tf_arena_first_blood"), tf_arena_first_blood);
-	SetConVarInt(FindConVar("mp_forcecamera"), mp_forcecamera);
-	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), tf_dropped_weapon_lifetime);
-	SetConVarString(FindConVar("mp_humans_must_join_team"), mp_humans_must_join_team);
-	hostName.SetString(oldName);
+	SetConVarInt(FindConVar("tf_arena_use_queue"), FF2GlobalsCvars.tf_arena_use_queue);
+	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), FF2GlobalsCvars.mp_teams_unbalance_limit);
+	SetConVarInt(FindConVar("tf_arena_first_blood"), FF2GlobalsCvars.tf_arena_first_blood);
+	SetConVarInt(FindConVar("mp_forcecamera"), FF2GlobalsCvars.mp_forcecamera);
+	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), FF2GlobalsCvars.tf_dropped_weapon_lifetime);
+	SetConVarString(FindConVar("mp_humans_must_join_team"), FF2GlobalsCvars.mp_humans_must_join_team);
+	FF2ModsInfo.cvarHostName.SetString(FF2ModsInfo.OldHostName);
 
 	Utils_RemoveServerTag("ff2");
 	Utils_RemoveServerTag("hale");
@@ -495,38 +481,38 @@ void DisableFF2()
 	}
 
 	#if !defined _smac_included
-	if(smac && FindPluginByFile("smac_cvars.smx") != INVALID_HANDLE)
+	if(FF2Globals.SMAC && FindPluginByFile("smac_cvars.smx") != INVALID_HANDLE)
 	{
 		ServerCommand("smac_addcvar sv_cheats replicated ban 0 0");
 		ServerCommand("smac_addcvar host_timescale replicated ban 1.0 1.0");
 	}
 	#endif
 
-	changeGamemode = 0;
+	FF2ModsInfo.ChangeGamemode = 0;
 
-	if(EnabledDesc && cvarSteamTools.BoolValue)
+	if(FF2Globals.ChangedDescription && ConVars.SteamTools.BoolValue)
 	{
 		#if defined _SteamWorks_Included
-		if(steamworks)
+		if(FF2Globals.SteamWorks)
 		{
 			SteamWorks_SetGameDescription("Team Fortress");
-			EnabledDesc = false;
+			FF2Globals.ChangedDescription = false;
 			return;
 		}
 		#endif
 
 		#if defined _steamtools_included
-		if(steamtools)
+		if(FF2Globals.SteamTools)
 			Steam_SetGameDescription("Team Fortress");
 		#endif
 	}
-	EnabledDesc = false;
+	FF2Globals.ChangedDescription = false;
 }
 
 void CheckArena()
 {
-	float PointTotal = float(PointTime+PointDelay*(playing-1));
-	if(!PointType || PointTotal<0)
+	float PointTotal = float(FF2GlobalsCvars.PointTime+FF2GlobalsCvars.PointDelay*(FF2Globals.TotalPlayers-1));
+	if(!FF2GlobalsCvars.PointType || PointTotal<0)
 	{
 		Utils_SetArenaCapEnableTime(0.0);
 		Utils_SetControlPoint(false);
@@ -540,7 +526,7 @@ void CheckArena()
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
 	int client = Boss[boss];
-	if((!boss || boss==MAXBOSSES) && (IgnoreValid[client] || Utils_CheckValidBoss(client, xIncoming[client], !DuoMin)) && cvarSelectBoss.BoolValue && CheckCommandAccess(client, "ff2_boss", 0, true))
+	if((!boss || boss==MAXBOSSES) && (IgnoreValid[client] || Utils_CheckValidBoss(client, xIncoming[client], !FF2GlobalsCvars.DuoMin)) && ConVars.SelectBoss.BoolValue && CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
 		if(preset)
 		{
@@ -549,7 +535,7 @@ public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialNam
 		else
 		{
 			strcopy(SpecialName, sizeof(xIncoming[]), xIncoming[client]);
-			if(cvarKeepBoss.IntValue<1 || !cvarSelectBoss.BoolValue || IsFakeClient(client))
+			if(ConVars.KeepBoss.IntValue<1 || !ConVars.SelectBoss.BoolValue || IsFakeClient(client))
 			{
 				xIncoming[client][0] = 0;
 				CanBossVs[client] = 0;
@@ -639,14 +625,14 @@ void CheckDuoMin()
 		if(Utils_IsValidClient(client) && GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 		{
 			i++;
-			if(i >= cvarDuoMin.IntValue)
+			if(i >= ConVars.DuoMin.IntValue)
 			{
-				DuoMin = true;
+				FF2GlobalsCvars.DuoMin = true;
 				return;
 			}
 		}
 	}
-	DuoMin = false;
+	FF2GlobalsCvars.DuoMin = false;
 }
 
 #include <freak_fortress_2_vsh_feedback>

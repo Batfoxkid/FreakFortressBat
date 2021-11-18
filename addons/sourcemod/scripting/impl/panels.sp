@@ -48,7 +48,7 @@ int TurnToZeroPanelH(Menu menu, MenuAction action, int client, int position)
 					FPrintToChat(shortname[client], "%t", "to0_done_by_admin", client);  //{olive}{1}{default} reset your queue points to {olive}0{default}
 					LogAction(client, shortname[client], "\"%L\" reset \"%L\"'s queue points to 0", client, shortname[client]);
 				}
-				QueuePoints[shortname[client]] = 0;
+				FF2PlayerCookie[shortname[client]].QueuePoints = 0;
 			}
 		}
 	}
@@ -62,7 +62,7 @@ Action TurnToZeroPanel(int client, int target)
 		return Plugin_Handled;
 	}
 
-	if(QueuePoints[client]<0 && client==target)
+	if(FF2PlayerCookie[client].QueuePoints<0 && client==target)
 	{
 		ReplyToCommand(client, "[SM] %t", "No Access");
 		return Plugin_Continue;
@@ -94,7 +94,7 @@ Action TurnToZeroPanel(int client, int target)
 
 Action SkipBossPanel(int client)
 {
-	if(!Enabled2)
+	if(!FF2Globals.Enabled2)
 		return Plugin_Continue;
 
 	Menu menu = new Menu(SkipBossPanelH);
@@ -126,8 +126,8 @@ int SkipBossPanelH(Menu menu, MenuAction action, int client, int position)
 				if(shortname[client] == client)
 					FPrintToChat(client, "%t", "to0_resetpts");
 
-				if(QueuePoints[client] >= 10)
-					QueuePoints[client] -= 10;
+				if(FF2PlayerCookie[client].QueuePoints >= 10)
+					FF2PlayerCookie[client].QueuePoints -= 10;
 			}
 		}
 	}
@@ -157,22 +157,22 @@ int Command_SetMyBossH(Menu menu, MenuAction action, int param1, int param2)
 			int option[5];
 			for(int choices=1; choices<6; choices++)
 			{
-				if(!option[0] && cvarToggleBoss.BoolValue)
+				if(!option[0] && ConVars.ToggleBoss.BoolValue)
 				{
 					option[0] = choices;
 					continue;
 				}
-				if(!option[1] && cvarDuoBoss.BoolValue)
+				if(!option[1] && ConVars.ToggleBoss.BoolValue)
 				{
 					option[1] = choices;
 					continue;
 				}
-				if(!option[2] && kvDiffMods!=null && CheckCommandAccess(param1, "ff2_difficulty", 0, true))
+				if(!option[2] && FF2ModsInfo.DiffCfg!=null && CheckCommandAccess(param1, "ff2_difficulty", 0, true))
 				{
 					option[2] = choices;
 					continue;
 				}
-				if(!option[3] && cvarSkipBoss.BoolValue)
+				if(!option[3] && ConVars.SkipBoss.BoolValue)
 				{
 					option[3] = choices;
 					continue;
@@ -204,7 +204,7 @@ int Command_SetMyBossH(Menu menu, MenuAction action, int param1, int param2)
 			{
 				PackMenu(param1);
 			}
-			else if(!cvarBossDesc.BoolValue || !ToggleInfo[param1])
+			else if(!ConVars.BossDesc.BoolValue || !FF2PlayerCookie[param1].InfoOn)
 			{
 				static char name[64], bossName[64];
 				menu.GetItem(param2, name, sizeof(name), _, bossName, sizeof(bossName));
@@ -235,12 +235,12 @@ int MenuHandlerCompanion(Menu menu, MenuAction action, int param1, int param2)
 	if(action == MenuAction_Select)
 	{
 		int choice = param2 + 1;
-		ToggleDuo[param1] = view_as<SettingPrefs>(choice);
+		FF2PlayerCookie[param1].Duo = view_as<SettingPrefs>(choice);
 
 		switch(choice)
 		{
 			case 1:
-				FPrintToChat(param1, "%t", "FF2 Companion Enabled");
+				FPrintToChat(param1, "%t", "FF2 Companion FF2Globals.Enabled");
 			case 2:
 				FPrintToChat(param1, "%t", "FF2 Companion Disabled");
 			case 3:
@@ -258,12 +258,12 @@ int MenuHandlerBoss(Menu menu, MenuAction action, int param1, int param2)
 	if(action == MenuAction_Select)
 	{
 		int choice = param2 + 1;
-		ToggleBoss[param1] = view_as<SettingPrefs>(choice);
+		FF2PlayerCookie[param1].Boss = view_as<SettingPrefs>(choice);
 
 		switch(choice)
 		{
 			case 1:
-				FPrintToChat(param1, "%t", "FF2 Toggle Enabled Notification");
+				FPrintToChat(param1, "%t", "FF2 Toggle FF2Globals.Enabled Notification");
 			case 2:
 				FPrintToChat(param1, "%t", "FF2 Toggle Disabled Notification");
 			case 3:
@@ -288,15 +288,15 @@ int Command_HudMenuH(Menu menu, MenuAction action, int param1, int param2)
 		{
 			if(param2 == HUDTYPES-1)
 			{
-				if(++HudSettings[param1][param2] < 3)
-					HudSettings[param1][param2] = 3;
+				if(++FF2PlayerCookie[param1].HudSettings[param2] < 3)
+					FF2PlayerCookie[param1].HudSettings[param2] = 3;
 
-				if(HudSettings[param1][param2] > 9)
-					HudSettings[param1][param2] = 1;
+				if(FF2PlayerCookie[param1].HudSettings[param2] > 9)
+					FF2PlayerCookie[param1].HudSettings[param2] = 1;
 			}
 			else
 			{
-				HudSettings[param1][param2] = HudSettings[param1][param2] ? 0 : 1;
+				FF2PlayerCookie[param1].HudSettings[param2] = FF2PlayerCookie[param1].HudSettings[param2] ? 0 : 1;
 			}
 			Command_HudMenu(param1, 0);
 		}
@@ -315,12 +315,12 @@ int MenuHandlerDifficulty(Menu menu, MenuAction action, int param1, int param2)
 		case MenuAction_Select:
 		{
 			int choice = param2 + 1;
-			ToggleDiff[param1] = view_as<SettingPrefs>(choice);
+			FF2PlayerCookie[param1].Diff = view_as<SettingPrefs>(choice);
 
 			switch(choice)
 			{
 				case 1:
-					FPrintToChat(param1, "%t", "FF2 Special Enabled");
+					FPrintToChat(param1, "%t", "FF2 Special FF2Globals.Enabled");
 				case 2:
 					FPrintToChat(param1, "%t", "FF2 Special Disabled");
 				case 3:
@@ -345,12 +345,12 @@ int DiffMenuH(Menu menu, MenuAction action, int param1, int param2)
 			{
 				dIncoming[param1][0] = 0;
 				DataBase_SaveKeepBossCookie(param1);
-				ToggleDiff[param1] = Setting_Off;
+				FF2PlayerCookie[param1].Diff = Setting_Off;
 				Command_SetMyBoss(param1, 0);
 				return;
 			}
 
-			if(!cvarBossDesc.BoolValue)
+			if(!ConVars.BossDesc.BoolValue)
 			{
 				if(Utils_IsBoss(param1) && Utils_CheckRoundState()!=2)
 				{
@@ -361,7 +361,7 @@ int DiffMenuH(Menu menu, MenuAction action, int param1, int param2)
 
 				menu.GetItem(param2, dIncoming[param1], sizeof(dIncoming[]));
 				DataBase_SaveKeepBossCookie(param1);
-				ToggleDiff[param1] = Setting_On;
+				FF2PlayerCookie[param1].Diff = Setting_On;
 				Command_SetMyBoss(param1, 0);
 				return;
 			}
@@ -385,24 +385,24 @@ Action ConfirmDiff(int client)
 	Format(language, sizeof(language), "description_%s", language);
 	SetGlobalTransTarget(client);
 
-	KvRewind(kvDiffMods);
-	KvGotoFirstSubKey(kvDiffMods);
+	KvRewind(FF2ModsInfo.DiffCfg);
+	KvGotoFirstSubKey(FF2ModsInfo.DiffCfg);
 	do
 	{
-		KvGetSectionName(kvDiffMods, name, sizeof(name));
+		KvGetSectionName(FF2ModsInfo.DiffCfg, name, sizeof(name));
 		if(StrEqual(name, cIncoming[client], false))
 		{
-			KvGetString(kvDiffMods, language, text, sizeof(text));
+			KvGetString(FF2ModsInfo.DiffCfg, language, text, sizeof(text));
 			if(!text[0])
 			{
-				KvGetString(kvDiffMods, "description_en", text, sizeof(text));  //Default to English if their language isn't available
+				KvGetString(FF2ModsInfo.DiffCfg, "description_en", text, sizeof(text));  //Default to English if their language isn't available
 				if(!text[0])
 					FormatEx(text, sizeof(text), "%t", "to0_nodesc");
 			}
 			ReplaceString(text, sizeof(text), "\\n", "\n");
 			break;
 		}
-	} while(KvGotoNextKey(kvDiffMods));
+	} while(KvGotoNextKey(FF2ModsInfo.DiffCfg));
 
 	Menu menu = new Menu(ConfirmDiffH);
 	menu.SetTitle(text);
@@ -441,7 +441,7 @@ int ConfirmDiffH(Menu menu, MenuAction action, int param1, int param2)
 			{
 				strcopy(dIncoming[param1], sizeof(dIncoming[]), cIncoming[param1]);
 				DataBase_SaveKeepBossCookie(param1);
-				ToggleDiff[param1] = Setting_On;
+				FF2PlayerCookie[param1].Diff = Setting_On;
 				Command_SetMyBoss(param1, 0);
 			}
 		}
@@ -465,7 +465,7 @@ void PackMenu(int client)
 	char cookieValues[MAXCHARSETS][64];
 	if(AreClientCookiesCached(client))
 	{
-		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+		FF2DataBase.BossId.Get(client, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 	}
 
@@ -522,7 +522,7 @@ void PackBoss(int client, int pack)
 	{
 		static char cookies[454];
 		char cookieValues[MAXCHARSETS][64];
-		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+		FF2DataBase.BossId.Get(client, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		if(cookieValues[pack][0])
 			strcopy(boss, sizeof(boss), cookieValues[pack]);
@@ -603,7 +603,7 @@ int PackBossH(Menu menu, MenuAction action, int param1, int param2)
 			pack = StringToInt(name[1]);
 			if(pack < MAXCHARSETS)
 			{
-				if(param2 && cvarBossDesc.BoolValue && ToggleInfo[param1])
+				if(param2 && ConVars.BossDesc.BoolValue && FF2PlayerCookie[param1].InfoOn)
 				{
 					strcopy(cIncoming[param1], sizeof(cIncoming[]), cookies);
 					PackConfirmBoss(param1, pack);
@@ -611,7 +611,7 @@ int PackBossH(Menu menu, MenuAction action, int param1, int param2)
 				}
 
 				char cookieValues[MAXCHARSETS][64];
-				GetClientCookie(param1, SelectionCookie, cookies, sizeof(cookies));
+				FF2DataBase.BossId.Get(param1, cookies, sizeof(cookies));
 				ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 				strcopy(cookieValues[pack], 64, name[0]);
 
@@ -620,7 +620,7 @@ int PackBossH(Menu menu, MenuAction action, int param1, int param2)
 				{
 					Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 				}
-				SetClientCookie(param1, SelectionCookie, cookies);
+				FF2DataBase.BossId.Set(param1, cookies);
 			}
 
 			PackMenu(param1);
@@ -783,7 +783,7 @@ int PackConfirmBossH(Menu menu, MenuAction action, int param1, int param2)
 				{
 					static char cookies[454];
 					char cookieValues[MAXCHARSETS][64];
-					GetClientCookie(param1, SelectionCookie, cookies, sizeof(cookies));
+					FF2DataBase.BossId.Get(param1, cookies, sizeof(cookies));
 					ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 					strcopy(cookieValues[pack], 64, name[0]);
 
@@ -792,7 +792,7 @@ int PackConfirmBossH(Menu menu, MenuAction action, int param1, int param2)
 					{
 						Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 					}
-					SetClientCookie(param1, SelectionCookie, cookies);
+					FF2DataBase.BossId.Set(param1, cookies);
 				}
 			}
 			else if(pack < MAXCHARSETS)
@@ -875,11 +875,11 @@ int ClassInfoTogglePanelH(Menu menu, MenuAction action, int client, int selectio
 		{
 			if(selection)
 			{
-				ToggleInfo[client] = false;
+				FF2PlayerCookie[client].InfoOn = false;
 			}
 			else
 			{
-				ToggleInfo[client] = true;
+				FF2PlayerCookie[client].InfoOn = true;
 			}
 			FPrintToChat(client, "%t", "ff2_classinfo", selection ? "off" : "on");	// TODO: Make this more multi-language friendly
 		}
@@ -888,20 +888,20 @@ int ClassInfoTogglePanelH(Menu menu, MenuAction action, int client, int selectio
 
 void ToggleClassInfo(int client)
 {
-	if(ToggleInfo[client])
+	if(FF2PlayerCookie[client].InfoOn)
 	{
-		ToggleInfo[client] = false;
+		FF2PlayerCookie[client].InfoOn = false;
 	}
 	else
 	{
-		ToggleInfo[client] = true;
+		FF2PlayerCookie[client].InfoOn = true;
 	}
-	FPrintToChat(client, "%t", "ff2_classinfo", ToggleInfo[client] ? "on" : "off");	// TODO: Make this more multi-language friendly
+	FPrintToChat(client, "%t", "ff2_classinfo", FF2PlayerCookie[client].InfoOn ? "on" : "off");	// TODO: Make this more multi-language friendly
 }
 
 Action HelpPanelClass(int client)
 {
-	if(!Enabled)
+	if(!FF2Globals.Enabled)
 		return Plugin_Continue;
 
 	int boss = Utils_GetBossIndex(client);
@@ -1116,7 +1116,7 @@ void HelpPanelBoss(int boss)
 
 Action MusicTogglePanel(int client)
 {
-	if(!cvarAdvancedMusic.BoolValue)
+	if(!ConVars.AdvancedMusic.BoolValue)
 	{
 		Menu menu = new Menu(MusicTogglePanelH);
 		menu.SetTitle("Turn the Freak Fortress 2 music...");
@@ -1132,7 +1132,7 @@ Action MusicTogglePanel(int client)
 		SetGlobalTransTarget(client);
 		FormatEx(title, sizeof(title), "%t", "theme_menu");
 		menu.SetTitle(title, title);
-		if(ToggleMusic[client])
+		if(FF2PlayerCookie[client].MusicOn)
 		{
 			FormatEx(title, sizeof(title), "%t", "themes_disable");
 			menu.AddItem(title, title);
@@ -1140,7 +1140,7 @@ Action MusicTogglePanel(int client)
 			menu.AddItem(title, title);
 			FormatEx(title, sizeof(title), "%t", "theme_shuffle");
 			menu.AddItem(title, title);
-			if(cvarSongInfo.IntValue >= 0)
+			if(ConVars.SongInfo.IntValue >= 0)
 			{
 				FormatEx(title, sizeof(title), "%t", "theme_select");
 				menu.AddItem(title, title);
@@ -1167,19 +1167,19 @@ int MusicTogglePanelH(Menu menu, MenuAction action, int client, int selection)
 		}
 		case MenuAction_Select:
 		{
-			if(!cvarAdvancedMusic.BoolValue)
+			if(!ConVars.AdvancedMusic.BoolValue)
 			{
 				if(selection)  //Off
 				{
-					ToggleMusic[client] = false;
+					FF2PlayerCookie[client].MusicOn = false;
 					StopMusic(client, true);
 				}
 				else  //On
 				{
 					//If they already have music enabled don't do anything
-					if(!ToggleMusic[client])
+					if(!FF2PlayerCookie[client].MusicOn)
 					{
-						ToggleMusic[client] = true;
+						FF2PlayerCookie[client].MusicOn = true;
 						StartMusic(client);
 					}
 				}
@@ -1191,8 +1191,8 @@ int MusicTogglePanelH(Menu menu, MenuAction action, int client, int selection)
 				{
 					case 0:
 					{
-						ToggleBGM(client, ToggleMusic[client] ? false : true);
-						FPrintToChat(client, "%t", "ff2_music", ToggleVoice[client] ? "on" : "off");	// And here too
+						ToggleBGM(client, FF2PlayerCookie[client].MusicOn ? false : true);
+						FPrintToChat(client, "%t", "ff2_music", FF2PlayerCookie[client].VoiceOn ? "on" : "off");	// And here too
 					}
 					case 1:
 					{
@@ -1216,12 +1216,12 @@ void ToggleBGM(int client, bool enable)
 {
 	if(enable)
 	{
-		ToggleMusic[client] = true;
+		FF2PlayerCookie[client].MusicOn = true;
 		StartMusic(client);
 	}
 	else
 	{
-		ToggleMusic[client] = false;
+		FF2PlayerCookie[client].MusicOn = false;
 		StopMusic(client, true);
 	}
 }
@@ -1277,7 +1277,7 @@ int Command_TrackListH(Menu menu, MenuAction action, int param1, int param2)
 				{
 					char bossName[64];
 					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
-					LogToFile(eLog, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
+					LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 					if(MusicTimer[param1] != INVALID_HANDLE)
 						KillTimer(MusicTimer[param1]);
 				}
@@ -1309,11 +1309,11 @@ int VoiceTogglePanelH(Menu menu, MenuAction action, int client, int selection)
 		{
 			if(selection)
 			{
-				ToggleVoice[client] = false;
+				FF2PlayerCookie[client].VoiceOn = false;
 			}
 			else
 			{
-				ToggleVoice[client] = true;
+				FF2PlayerCookie[client].VoiceOn = true;
 			}
 
 			FPrintToChat(client, "%t", "ff2_voice", selection ? "off" : "on");	// TODO: Make this more multi-language friendly
@@ -1336,9 +1336,9 @@ int Handler_VoteCharset(Menu menu, MenuAction action, int param1, int param2)
 		{
 			char index[8], nextmap[32];
 			menu.GetItem(param1, index, sizeof(index), _, FF2CharSetString, sizeof(FF2CharSetString));
-			cvarCharset.IntValue = StringToInt(index);
+			ConVars.Charset.IntValue = StringToInt(index);
 
-			cvarNextmap.GetString(nextmap, sizeof(nextmap));
+			ConVars.Nextmap.GetString(nextmap, sizeof(nextmap));
 			FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);	//"The character set for {1} will be {2}."
 			isCharSetSelected = true;
 		}
@@ -1356,8 +1356,8 @@ int Command_LoadCharsetH(Menu menu, MenuAction action, int client, int choice)
 		}
 		case MenuAction_Select:
 		{
-			cvarCharset.IntValue = choice;
-			LoadCharset = true;
+			ConVars.Charset.IntValue = choice;
+			FF2Globals.LoadCharset = true;
 			if(!Utils_CheckRoundState() || Utils_CheckRoundState()==1)
 			{
 				FReplyToCommand(client, "The current character set is set to be switched!");
@@ -1367,7 +1367,7 @@ int Command_LoadCharsetH(Menu menu, MenuAction action, int client, int choice)
 				FReplyToCommand(client, "Character set has been switched");
 				FindCharacters();
 				FF2CharSetString[0] = 0;
-				LoadCharset = false;
+				FF2Globals.LoadCharset = false;
 			}
 		}
 	}

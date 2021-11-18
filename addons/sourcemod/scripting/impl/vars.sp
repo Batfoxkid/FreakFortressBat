@@ -1,45 +1,217 @@
+enum struct FF2GlobalsCvars_t
+{
+	int PointDelay;
+	int PointTime;
 
-bool EnabledDesc = false;
+	float Announce;
+	float AliveToEnable;
+
+	int PointType;
+	int ArenaRounds;
+
+	float CircuitStun;
+	float CountdownPlayers;
+
+	int CountdownTime;
+	int CountdownHealth;
+	bool CountdownOvertime;
+
+	bool SpecForceBoss;
+
+	float LastPlayerGlow;
+	
+	int BossTeleportation;
+
+	int ShieldCrits;
+	int AllowedDetonation;
+
+	float GoombaDmg;
+	float ReboundPower;
+	
+	bool CanBossRTD;
+
+	float SniperDmg;
+	float SniperMiniDmg;
+	float BowDmg;
+	float BowDmgNon;
+	float BowDmgMini;
+
+	float SniperClimpDmg;
+	float SniperClimpDelay;
+
+	int WeaponQuality;
+	
+	int PointsInterval;
+	float PointsInterval2;
+	int PointsMin;
+	int PointsDmg;
+	int PointsExtra;
+
+	bool DuoMin;
+	bool TellName;
+
+	int Annotations;
+	char Attributes[128];
+
+	float ChargeAngle;
+	float StartingUber;
+
+	char HealthFormula[512];
+	char RageDamage[512];
+
+
+	int tf_arena_use_queue;
+	int mp_teams_unbalance_limit;
+	int tf_arena_first_blood;
+	int mp_forcecamera;
+	int tf_dropped_weapon_lifetime;
+	char mp_humans_must_join_team[16];
+
+
+	void Init()
+	{
+		this.PointDelay = 6;
+		this.PointTime = 45;
+
+		this.Announce = 120.0;
+		this.AliveToEnable = 0.2;
+
+		this.CountdownPlayers = 1.0;
+		this.CountdownTime = 120;
+		this.CountdownHealth = 2000;
+
+		this.LastPlayerGlow = 1.0;
+
+		this.GoombaDmg = 0.05;
+		this.ReboundPower = 300.0;
+
+		this.SniperDmg = 2.0;
+		this.SniperMiniDmg = 2.0;
+		this.BowDmg = 1.25;
+
+		this.SniperClimpDmg = 15.0;
+		this.SniperClimpDelay = 1.56;
+
+		this.WeaponQuality = 5;
+
+		this.PointsInterval = 600;
+		this.PointsInterval2 = 600.0;
+		this.PointsMin = 10;
+		this.PointsExtra = 10;
+
+		this.Attributes = "2 ; 3.1 ; 275 ; 1";
+
+		this.ChargeAngle = 30.0;
+		this.StartingUber = 40.0;
+
+		this.HealthFormula = "(((760.8+n)*(n-1))^1.0341)+2046";
+		this.RageDamage = "1900";
+	}
+}
+FF2GlobalsCvars_t FF2GlobalsCvars;
+
+
+enum struct FF2Globals_t
+{
+	bool ChangedDescription;
 #if defined _steamtools_included
-bool steamtools = false;
+	bool SteamTools;
 #endif
+
 #if defined _SteamWorks_Included
-bool steamworks = false;
+	bool SteamWorks;
 #endif
 
 #if defined _tf2attributes_included
-bool tf2attributes = false;
+	bool TF2Attrib;
 #endif
 
 #if defined _goomba_included
-bool goomba = false;
+	bool Goomba;
 #endif
 
 #if !defined _smac_included
-bool smac = false;
+	bool SMAC;
 #endif
 
-bool TimesTen = false;
+	int TotalPlayers;
+	int TotalRealPlayers;
 
-bool isCapping = false;
-int RPSWinner;
-int currentBossTeam;
-bool blueBoss;
-int OtherTeam = 2;
-int BossTeam = 3;
-int playing;
-int playing2;
-int playingmerc;
-int playingboss;
-int bosses;
-int healthcheckused;
-int MercAlivePlayers;
-int BossAlivePlayers;
-int RedAliveBosses;
-int BlueAliveBosses;
-int RoundCount;
-bool LastMan = true;
-bool CheatsUsed;
+	int MercsPlayers;
+	int BossTeamPlayers;
+
+	int Bosses;
+
+	int HealthCheckCounter;
+
+	int AliveMercPlayers;
+	int AliveBossPlayers;
+
+	int AliveRedPlayers;
+	int AliveBluePlayers;
+
+	int RoundCount;
+	bool CheatsUsed;
+
+	bool Isx10;
+	bool IsCapping;
+
+	int RPSWinner;
+	
+	int CurrentBossTeam;
+	int OtherTeam;
+	int BossTeam;
+
+	bool IsBossBlue;
+	bool IsLastMan;
+
+	bool HasSwitched;
+	bool LoadCharset;
+	bool ReloadConfigs;
+
+	bool ReloadFF2;
+	bool FF2Executed;
+	bool FF2Executed2;
+
+	bool HasWeaponCfg;
+	bool ReloadWeapons;
+
+	int HealthBar;
+	int EntMonoculus;
+
+	float HPTime;
+	char CurrentMap[99];
+	bool CheckDoors;
+	bool IsMedival;
+	bool FirstBlood;
+
+	bool AreSubpluginEnabled;
+	bool PluginLateLoaded;
+
+	bool Enabled;
+	bool Enabled2;
+	bool Enabled3;
+	int Enabled_Database;
+
+	void Init()
+	{
+		this.OtherTeam = 2;
+		this.BossTeam = 3;
+		
+		this.IsLastMan = true;
+
+		this.HealthBar = -1;
+		this.EntMonoculus = -1;
+
+		this.Enabled = true;
+		this.Enabled2 = true;
+
+		FF2GlobalsCvars.Init();
+	}
+}
+FF2Globals_t FF2Globals;
+
+
 float rageMax[MAXTF2PLAYERS];
 float rageMin[MAXTF2PLAYERS];
 int rageMode[MAXTF2PLAYERS];
@@ -97,86 +269,9 @@ int CritBoosted[MAXTF2PLAYERS][3];
 int timeleft;
 int cursongId[MAXTF2PLAYERS] = 1;
 
-Handle FF2Cookies;
-Handle StatCookies;
-Handle StatDatabase;
-Handle HudCookies;
-
-Handle jumpHUD;
-Handle rageHUD;
-Handle livesHUD;
-Handle timeleftHUD;
-Handle abilitiesHUD;
-Handle infoHUD;
-Handle statHUD;
-Handle healthHUD;
-Handle rivalHUD;
-
-bool Enabled = true;
-bool Enabled2 = true;
-bool Enabled3 = false;
-int EnabledD = 0;
-int PointDelay = 6;
-int PointTime = 45;
-float Announce = 120.0;
-float AliveToEnable = 0.2;
-int PointType;
-int arenaRounds;
-float circuitStun;
-float countdownPlayers = 1.0;
-int countdownTime = 120;
-int countdownHealth = 2000;
-bool countdownOvertime = false;
-bool SpecForceBoss;
-float lastPlayerGlow = 1.0;
-int bossTeleportation = 0;
-int shieldCrits;
-int allowedDetonations;
-float GoombaDamage = 0.05;
-float reboundPower = 300.0;
-bool canBossRTD;
-float SniperDamage = 2.0;
-float SniperMiniDamage = 2.0;
-float BowDamage = 1.25;
-float BowDamageNon = 0.0;
-float BowDamageMini = 0.0;
-float SniperClimbDamage = 15.0;
-float SniperClimbDelay = 1.56;
-int QualityWep = 5;
-int PointsInterval = 600;
-float PointsInterval2 = 600.0;
-int PointsMin = 10;
-int PointsDamage = 0;
-int PointsExtra = 10;
-bool DuoMin = false;
-bool TellName = false;
-int Annotations = 0;
-float ChargeAngle = 30.0;
-char Attributes[128] = "2 ; 3.1 ; 275 ; 1";
-float StartingUber = 40.0;
-char HealthFormula[1024] = "(((760.8+n)*(n-1))^1.0341)+2046";
-char RageDamage[1024] = "1900";
-
 Handle MusicTimer[MAXTF2PLAYERS];
 Handle DrawGameTimer;
 Handle doorCheckTimer;
-
-float HPTime;
-char currentmap[99];
-bool checkDoors = false;
-bool bMedieval;
-bool firstBlood;
-
-int tf_arena_use_queue;
-int mp_teams_unbalance_limit;
-int tf_arena_first_blood;
-int mp_forcecamera;
-int tf_dropped_weapon_lifetime;
-char mp_humans_must_join_team[16];
-ConVar cvarTags;
-
-ConVar cvarNextmap;
-bool areSubPluginsEnabled;
 
 int CurrentCharSet;
 char CharSetString[MAXCHARSETS][42];
@@ -184,25 +279,6 @@ char FF2CharSetString[42];
 bool isCharSetSelected = false;
 bool HasCharSets;
 bool CharSetOldPath = false;
-
-int healthBar = -1;
-int g_Monoculus = -1;
-
-bool LoadCharset = false;
-bool ReloadFF2 = false;
-bool FF2Executed = false;
-bool FF2Executed2 = false;
-bool ReloadWeapons = false;
-bool ConfigWeapons = false;
-bool ReloadConfigs = false;
-bool HasSwitched = false;
-
-ConVar hostName;
-char oldName[256];
-int changeGamemode;
-Handle kvWeaponMods = INVALID_HANDLE;
-Handle kvDiffMods = INVALID_HANDLE;
-Handle SDKEquipWearable = null;
 
 bool dmgTriple[MAXTF2PLAYERS];
 bool randomCrits[MAXTF2PLAYERS];
@@ -217,15 +293,6 @@ int GoombaMode;
 int CapMode;
 bool TimerMode;
 
-enum CookieStats
-{
-	Cookie_BossWins = 0,	// Boss Wins
-	Cookie_BossLosses,	// Boss Losses
-	Cookie_BossKills,	// Boss Kills
-	Cookie_BossDeaths,	// Boss Deaths
-	Cookie_PlayerKills,	// Player Boss Kills
-	Cookie_PlayerMvps	// Player MVPs
-};
 
 #define HUDTYPES 6
 char HudTypes[][] =	// Names used in translation files
@@ -273,7 +340,20 @@ char ChancesString[512];
 int chances[MAXSPECIALS*2];  //This is multiplied by two because it has to hold both the boss indices and chances
 int chancesIndex;
 
-bool LateLoaded;
+
+enum struct FF2ModsInfo_t
+{
+	ConVar cvarHostName;
+	char OldHostName[256];
+
+	int ChangeGamemode;
+
+	KeyValues WeaponCfg;
+	KeyValues DiffCfg;
+
+	Handle SDK_EquipWearable;
+}
+FF2ModsInfo_t FF2ModsInfo;
 
 
 /*< Boss precached data >*/
@@ -295,11 +375,11 @@ enum struct FF2QueryData
 	}
 }
 
-methodmap FF2Save < StringMap
+methodmap FF2SavedAbility_t < StringMap
 {
-	public FF2Save()
+	public FF2SavedAbility_t()
 	{
-		return view_as<FF2Save>(new StringMap());
+		return view_as<FF2SavedAbility_t>(new StringMap());
 	}
 
 	public bool GetInfos(const char[] name, FF2QueryData data)
@@ -345,7 +425,7 @@ methodmap FF2Save < StringMap
 		this.Clear();
 	}
 }
-FF2Save _FF2Save;
+FF2SavedAbility_t FF2SavedAbility;
 
 methodmap FF2Cache < StringMap
 {
@@ -366,7 +446,7 @@ methodmap FF2Cache < StringMap
 		KeyValues kv = BossKV[Special[boss]];
 
 		if (kv == last_kv)
-			return _FF2Save.GetInfos(name, data);
+			return FF2SavedAbility.GetInfos(name, data);
 
 		kv.Rewind();
 		kv.GetString("filename", name, sizeof(name), NULL_STRING);
@@ -376,12 +456,12 @@ methodmap FF2Cache < StringMap
 		}
 
 		last_kv = kv;
-		return _FF2Save.GetInfos(name, data);
+		return FF2SavedAbility.GetInfos(name, data);
 	}
 
 	public static void Update(const FF2QueryData data)
 	{
-		_FF2Save.SetInfos(data.key_name, data);
+		FF2SavedAbility.SetInfos(data.key_name, data);
 	}
 	
 	//sizeof(plugin_name)<64> + '.'<1> + sizeof(ability_name)<64> + '\0'<1> = 130
@@ -539,47 +619,3 @@ char dIncoming[MAXTF2PLAYERS][700];
 int CanBossVs[MAXTF2PLAYERS];
 int CanBossTeam[MAXTF2PLAYERS];
 bool IgnoreValid[MAXTF2PLAYERS];
-
-// Boss Toggle
-enum SettingPrefs
-{
-	Setting_Undef = 0,
-	Setting_On,
-	Setting_Off,
-	Setting_Temp
-};
-
-Handle LastPlayedCookie = INVALID_HANDLE;
-Handle SelectionCookie = INVALID_HANDLE;
-Handle DiffCookie = INVALID_HANDLE;
-
-int ClientPoint[MAXTF2PLAYERS];
-int ClientID[MAXTF2PLAYERS];
-int ClientQueue[MAXTF2PLAYERS][2];
-bool InfiniteRageActive[MAXTF2PLAYERS] = false;
-
-// Boss Log
-char bLog[PLATFORM_MAX_PATH];
-char eLog[PLATFORM_MAX_PATH];
-char pLog[PLATFORM_MAX_PATH];
-
-// Preferences
-int QueuePoints[MAXTF2PLAYERS];
-bool ToggleMusic[MAXTF2PLAYERS];	// TODO: Disable temp for round?
-bool ToggleVoice[MAXTF2PLAYERS];
-bool ToggleInfo[MAXTF2PLAYERS];
-SettingPrefs ToggleDuo[MAXTF2PLAYERS];
-SettingPrefs ToggleBoss[MAXTF2PLAYERS];
-SettingPrefs ToggleDiff[MAXTF2PLAYERS];
-
-// Stat Tracker
-int BossWins[MAXTF2PLAYERS];
-int BossLosses[MAXTF2PLAYERS];
-int BossKills[MAXTF2PLAYERS];
-int BossKillsF[MAXTF2PLAYERS];
-int BossDeaths[MAXTF2PLAYERS];
-int PlayerKills[MAXTF2PLAYERS];
-int PlayerMVPs[MAXTF2PLAYERS];
-
-// HUD Toggle
-int HudSettings[MAXTF2PLAYERS][HUDTYPES];

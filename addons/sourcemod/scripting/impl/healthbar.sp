@@ -16,26 +16,26 @@ Action Timer_HealthBarMode(Handle timer, bool set)
 
 void FindHealthBar()
 {
-	healthBar = Utils_FindEntityByClassname2(-1, HEALTHBAR_CLASS);
-	if(!IsValidEntity(healthBar))
-		healthBar = CreateEntityByName(HEALTHBAR_CLASS);
+	FF2Globals.HealthBar = Utils_FindEntityByClassname2(-1, HEALTHBAR_CLASS);
+	if(!IsValidEntity(FF2Globals.HealthBar))
+		FF2Globals.HealthBar = CreateEntityByName(HEALTHBAR_CLASS);
 }
 
 public void HealthbarEnableChanged(Handle convar, const char[] oldValue, const char[] newValue)
 {
-	if(Enabled && cvarHealthBar.IntValue>0 && IsValidEntity(healthBar))
+	if(FF2Globals.Enabled && ConVars.HealthBar.IntValue>0 && IsValidEntity(FF2Globals.HealthBar))
 	{
 		UpdateHealthBar();
 	}
-	else if(!IsValidEntity(g_Monoculus) && IsValidEntity(healthBar))
+	else if(!IsValidEntity(FF2Globals.EntMonoculus) && IsValidEntity(FF2Globals.HealthBar))
 	{
-		SetEntProp(healthBar, Prop_Send, HEALTHBAR_PROPERTY, 0);
+		SetEntProp(FF2Globals.HealthBar, Prop_Send, HEALTHBAR_PROPERTY, 0);
 	}
 }
 
 void UpdateHealthBar()
 {
-	if(!Enabled || cvarHealthBar.IntValue<1 || IsValidEntity(g_Monoculus) || !IsValidEntity(healthBar) || Utils_CheckRoundState()!=1)
+	if(!FF2Globals.Enabled || ConVars.HealthBar.IntValue<1 || IsValidEntity(FF2Globals.EntMonoculus) || !IsValidEntity(FF2Globals.HealthBar) || Utils_CheckRoundState()!=1)
 		return;
 
 	int healthAmount, maxHealthAmount, healthPercent;
@@ -44,7 +44,7 @@ void UpdateHealthBar()
 	{
 		if(Utils_IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
 		{
-			if(Enabled3)
+			if(FF2Globals.Enabled3)
 			{
 				if(TF2_GetClientTeam(Boss[boss]) == TFTeam_Blue)
 				{
@@ -57,7 +57,7 @@ void UpdateHealthBar()
 			}
 			else
 			{
-				if(cvarHealthBar.IntValue > 1)
+				if(ConVars.HealthBar.IntValue > 1)
 				{
 					healthAmount += BossHealth[boss];
 					maxHealthAmount += BossHealthMax[boss]*BossLivesMax[boss];
@@ -75,7 +75,7 @@ void UpdateHealthBar()
 
 	if(maxHealthAmount)
 	{
-		if(Enabled3)
+		if(FF2Globals.Enabled3)
 		{
 			if(maxHealthAmount > healthAmount)
 			{
@@ -100,6 +100,6 @@ void UpdateHealthBar()
 			healthPercent = 1;
 		}
 	}
-	SetEntProp(healthBar, Prop_Send, HEALTHBAR_COLOR, healing);
-	SetEntProp(healthBar, Prop_Send, HEALTHBAR_PROPERTY, healthPercent);
+	SetEntProp(FF2Globals.HealthBar, Prop_Send, HEALTHBAR_COLOR, healing);
+	SetEntProp(FF2Globals.HealthBar, Prop_Send, HEALTHBAR_PROPERTY, healthPercent);
 }

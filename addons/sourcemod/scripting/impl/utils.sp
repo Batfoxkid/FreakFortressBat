@@ -94,7 +94,7 @@ bool Utils_UseAbility(const char[] ability_name, const char[] plugin_name, int b
 		{
 			float angles[3];
 			GetClientEyeAngles(Boss[boss], angles);
-			if(angles[0] < ChargeAngle*-1.0)
+			if(angles[0] < FF2GlobalsCvars.ChargeAngle*-1.0)
 			{
 				Forwards_EndCall_OnAbility(3);
 				DataPack data;
@@ -135,10 +135,11 @@ bool Utils_HasAbility(int boss, const char[] plugin_name, const char[] ability_n
 	if (!FF2Cache.Request(boss, data)) {
 		return false;
 	}
+	return Utils_HasAbilityEx(data, boss, plugin_name, ability_name);
+}
 
-	KeyValues kv;
-
-	char abkey[24];
+bool Utils_HasAbilityEx(const FF2QueryData data, int boss, const char[] plugin_name, const char[] ability_name)
+{
 	const int size_of_lookup = 132;
 	char[] key = new char[size_of_lookup];
 
@@ -150,9 +151,10 @@ bool Utils_HasAbility(int boss, const char[] plugin_name, const char[] ability_n
 	if (actual.GetValue(key, res))
 		return res;
 
-	kv = BossKV[Special[boss]];
+	KeyValues kv = BossKV[Special[boss]];
 	kv.Rewind();
 
+	char abkey[24];
 	for (int ab = 1; ab <= MAXRANDOMS; ab++)
 	{
 		FormatEx(abkey, sizeof(abkey), "ability%i", ab);
@@ -184,38 +186,38 @@ bool Utils_HasAbility(int boss, const char[] plugin_name, const char[] ability_n
 
 void Utils_AddServerTag(const char[] tag)
 {
-	if(cvarTags == view_as<ConVar>(INVALID_HANDLE))
+	if(ConVars.Tags == view_as<ConVar>(INVALID_HANDLE))
 		return;
 
 	static char currtags[128];
-	cvarTags.GetString(currtags, sizeof(currtags));
+	ConVars.Tags.GetString(currtags, sizeof(currtags));
 	if(StrContains(currtags, tag) > -1)
 		return;
 
 	char newtags[128];
 	FormatEx(newtags, sizeof(newtags), "%s%s%s", currtags, currtags[0] ? "," : "", tag);
-	int flags = GetConVarFlags(cvarTags);
-	SetConVarFlags(cvarTags, flags & ~FCVAR_NOTIFY);
-	cvarTags.SetString(newtags);
-	SetConVarFlags(cvarTags, flags);
+	int flags = GetConVarFlags(ConVars.Tags);
+	SetConVarFlags(ConVars.Tags, flags & ~FCVAR_NOTIFY);
+	ConVars.Tags.SetString(newtags);
+	SetConVarFlags(ConVars.Tags, flags);
 }
 
 void Utils_RemoveServerTag(const char[] tag)
 {
-	if(cvarTags == view_as<ConVar>(INVALID_HANDLE))
+	if(ConVars.Tags == view_as<ConVar>(INVALID_HANDLE))
 		return;
 
 	static char newtags[128];
-	cvarTags.GetString(newtags, sizeof(newtags));
+	ConVars.Tags.GetString(newtags, sizeof(newtags));
 	if(StrContains(newtags, tag) == -1)
 		return;
 
 	ReplaceString(newtags, sizeof(newtags), tag, "");
 	ReplaceString(newtags, sizeof(newtags), ",,", "");
-	int flags = GetConVarFlags(cvarTags);
-	SetConVarFlags(cvarTags, flags & ~FCVAR_NOTIFY);
-	cvarTags.SetString(newtags);
-	SetConVarFlags(cvarTags, flags);
+	int flags = GetConVarFlags(ConVars.Tags);
+	SetConVarFlags(ConVars.Tags, flags & ~FCVAR_NOTIFY);
+	ConVars.Tags.SetString(newtags);
+	SetConVarFlags(ConVars.Tags, flags);
 }
 
 
@@ -252,7 +254,7 @@ void Utils_ModelOverrides_Clear(int client)
 
 void Utils_VisionFlags_Update(int client)
 {
-	if(!tf2attributes || !cvarDisguise.BoolValue)
+	if(!FF2Globals.TF2Attrib || !ConVars.Disguise.BoolValue)
 		return;
 
 	// RED will see index 4 (rome vision)
@@ -413,12 +415,12 @@ int Utils_GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 	int winner;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(Utils_IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam) || !ignorePrefs) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
+		if(Utils_IsValidClient(client) && (!FF2Globals.Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam) || !ignorePrefs) && FF2PlayerCookie[client].QueuePoints>=FF2PlayerCookie[winner].QueuePoints && !omit[client])
 		{
-			if(cvarToggleBoss.BoolValue && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
+			if(ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Boss)>1)	// Skip clients who have disabled being able to be a boss
 				continue;
 
-			if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+			if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				winner=client;
 		}
 	}
@@ -430,9 +432,9 @@ int Utils_GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(Utils_IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam)) && !omit[client])
+			if(Utils_IsValidClient(client) && (!FF2Globals.Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (CanBossVs[client]<2 && CanBossTeam[client]!=enemyTeam)) && !omit[client])
 			{
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					winner=client;
 			}
 		}
@@ -444,10 +446,10 @@ int Utils_GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 		{
 			if(Utils_IsValidClient(client) && !omit[client])
 			{
-				if(cvarToggleBoss.BoolValue && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
+				if(ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Boss)>1)	// Skip clients who have disabled being able to be a boss
 					continue;
 
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = 0;
@@ -466,7 +468,7 @@ int Utils_GetClientWithMostQueuePoints(bool[] omit, int enemyTeam=4, bool ignore
 		{
 			if(Utils_IsValidClient(client) && !omit[client])
 			{
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = 0;
@@ -486,12 +488,12 @@ int Utils_GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 	int winner;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(Utils_IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && QueuePoints[client]>=QueuePoints[winner] && !omit[client])
+		if(Utils_IsValidClient(client) && (!FF2Globals.Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && FF2PlayerCookie[client].QueuePoints>=FF2PlayerCookie[winner].QueuePoints && !omit[client])
 		{
-			if(cvarToggleBoss.BoolValue && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
+			if(ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Boss)>1)	// Skip clients who have disabled being able to be a boss
 				continue;
 
-			if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+			if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				winner=client;
 		}
 	}
@@ -500,9 +502,9 @@ int Utils_GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(Utils_IsValidClient(client) && (!Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && !omit[client])
+			if(Utils_IsValidClient(client) && (!FF2Globals.Enabled3 || !CheckCommandAccess(client, "ff2_boss", 0, true) || (!CanBossVs[client] && CanBossTeam[client]!=enemyTeam)) && !omit[client])
 			{
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					winner=client;
 			}
 		}
@@ -514,10 +516,10 @@ int Utils_GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 		{
 			if(Utils_IsValidClient(client) && !omit[client])
 			{
-				if(cvarToggleBoss.BoolValue && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
+				if(ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Boss)>1)	// Skip clients who have disabled being able to be a boss
 					continue;
 
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = 0;
@@ -536,7 +538,7 @@ int Utils_GetClientWithoutBlacklist(bool[] omit, int enemyTeam=4)
 		{
 			if(Utils_IsValidClient(client) && !omit[client])
 			{
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				{
 					FPrintToChat(client, "%t", "boss_selection_reset");
 					xIncoming[client][0] = 0;
@@ -556,15 +558,15 @@ int Utils_GetRandomValidClient(bool[] omit)
 	int companion;
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(Utils_IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
+		if(Utils_IsValidClient(client) && !omit[client] && (FF2PlayerCookie[client].QueuePoints>=FF2PlayerCookie[companion].QueuePoints || (ConVars.DuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
 		{
-			if(cvarDuoBoss.BoolValue && view_as<int>(ToggleDuo[client])>1)	// Skip clients who have disabled being able to be selected as a companion
+			if(ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Duo)>1)	// Skip clients who have disabled being able to be selected as a companion
 				continue;
 
-			if(cvarToggleBoss.BoolValue && view_as<int>(ToggleBoss[client])>1)	// Skip clients who have disabled being able to be a boss
+			if(ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Boss)>1)	// Skip clients who have disabled being able to be a boss
 				continue;
 
-			if((SpecForceBoss && !cvarDuoRandom.BoolValue) || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+			if((FF2GlobalsCvars.SpecForceBoss && !ConVars.DuoRandom.BoolValue) || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 				companion=client;
 		}
 	}
@@ -573,12 +575,12 @@ int Utils_GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(Utils_IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
+			if(Utils_IsValidClient(client) && !omit[client] && (FF2PlayerCookie[client].QueuePoints>=FF2PlayerCookie[companion].QueuePoints || (ConVars.DuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
 			{
-				if(cvarToggleBoss.BoolValue && view_as<int>(ToggleBoss[client])>1) // Skip clients who have disabled being able to be a boss
+				if(ConVars.ToggleBoss.BoolValue && view_as<int>(FF2PlayerCookie[client].Boss)>1) // Skip clients who have disabled being able to be a boss
 					continue;
 
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					companion=client;
 			}
 		}
@@ -588,9 +590,9 @@ int Utils_GetRandomValidClient(bool[] omit)
 	{
 		for(int client=1; client<MaxClients; client++)
 		{
-			if(Utils_IsValidClient(client) && !omit[client] && (QueuePoints[client]>=QueuePoints[companion] || (cvarDuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
+			if(Utils_IsValidClient(client) && !omit[client] && (FF2PlayerCookie[client].QueuePoints>=FF2PlayerCookie[companion].QueuePoints || (ConVars.DuoRandom.BoolValue && !GetRandomInt(0, RoundToCeil(MaxClients/5.0)))))
 			{
-				if(SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
+				if(FF2GlobalsCvars.SpecForceBoss || GetClientTeam(client)>view_as<int>(TFTeam_Spectator))
 					companion=client;
 			}
 		}
@@ -634,7 +636,7 @@ bool Utils_IsFF2Map(const char[] mapName)
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, MapCFG);
 		if(!FileExists(config))
 		{
-			LogToFile(eLog, "[Maps] Unable to find '%s'", MapCFG);
+			LogToFile(FF2LogsPaths.Errors, "[Maps] Unable to find '%s'", MapCFG);
 			return true;
 		}
 	}
@@ -642,7 +644,7 @@ bool Utils_IsFF2Map(const char[] mapName)
 	File file = OpenFile(config, "r");
 	if(file == INVALID_HANDLE)
 	{
-		LogToFile(eLog, "[Maps] Error reading from '%s'", config);
+		LogToFile(FF2LogsPaths.Errors, "[Maps] Error reading from '%s'", config);
 		return true;
 	}
 
@@ -652,7 +654,7 @@ bool Utils_IsFF2Map(const char[] mapName)
 		tries++;
 		if(tries >= 100)
 		{
-			LogToFile(eLog, "[Maps] An infinite loop occurred while trying to check the map");
+			LogToFile(FF2LogsPaths.Errors, "[Maps] An infinite loop occurred while trying to check the map");
 			delete file;
 			return true;
 		}
@@ -702,18 +704,18 @@ bool Utils_MapHasMusic(bool forceRecalc=false)  //SAAAAAARGE
 
 void Utils_CheckToChangeMapDoors()
 {
-	if(!Enabled || !Enabled2)
+	if(!FF2Globals.Enabled || !FF2Globals.Enabled2)
 		return;
 
 	char config[PLATFORM_MAX_PATH];
-	checkDoors = false;
+	FF2Globals.CheckDoors = false;
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, DoorCFG);
 	if(!FileExists(config))
 	{
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, DoorCFG);
 		if(!FileExists(config))
 		{
-			LogToFile(eLog, "[Doors] Unable to find '%s'", DoorCFG);
+			LogToFile(FF2LogsPaths.Errors, "[Doors] Unable to find '%s'", DoorCFG);
 			return;
 		}
 	}
@@ -721,7 +723,7 @@ void Utils_CheckToChangeMapDoors()
 	File file = OpenFile(config, "r");
 	if(file == INVALID_HANDLE)
 	{
-		LogToFile(eLog, "[Doors] Error reading from '%s'", config);
+		LogToFile(FF2LogsPaths.Errors, "[Doors] Error reading from '%s'", config);
 		return;
 	}
 
@@ -731,10 +733,10 @@ void Utils_CheckToChangeMapDoors()
 		if(!strncmp(config, "//", 2, false))
 			continue;
 
-		if(StrContains(currentmap, config, false)!=-1 || !StrContains(config, "all", false))
+		if(StrContains(FF2Globals.CurrentMap, config, false)!=-1 || !StrContains(config, "all", false))
 		{
 			delete file;
-			checkDoors = true;
+			FF2Globals.CheckDoors = true;
 			return;
 		}
 	}
@@ -744,7 +746,7 @@ void Utils_CheckToChangeMapDoors()
 void Utils_CheckToTeleportToSpawn()
 {
 	char config[PLATFORM_MAX_PATH];
-	GetCurrentMap(currentmap, sizeof(currentmap));
+	GetCurrentMap(FF2Globals.CurrentMap, sizeof(FF2Globals.CurrentMap));
 	SpawnTeleOnTriggerHurt = false;
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportCFG);
 
@@ -753,7 +755,7 @@ void Utils_CheckToTeleportToSpawn()
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, SpawnTeleportCFG);
 		if(!FileExists(config))
 		{
-			LogToFile(eLog, "[TTS] Unable to find '%s'", SpawnTeleportCFG);
+			LogToFile(FF2LogsPaths.Errors, "[TTS] Unable to find '%s'", SpawnTeleportCFG);
 			return;
 		}
 	}
@@ -761,7 +763,7 @@ void Utils_CheckToTeleportToSpawn()
 	File file = OpenFile(config, "r");
 	if(file == INVALID_HANDLE)
 	{
-		LogToFile(eLog, "[TTS] Error reading from '%s'", SpawnTeleportCFG);
+		LogToFile(FF2LogsPaths.Errors, "[TTS] Error reading from '%s'", SpawnTeleportCFG);
 		return;
 	}
 
@@ -771,7 +773,7 @@ void Utils_CheckToTeleportToSpawn()
 		if(!strncmp(config, "//", 2, false))
 			continue;
 
-		if(StrContains(currentmap, config, false)>=0 || !StrContains(config, "all", false))
+		if(StrContains(FF2Globals.CurrentMap, config, false)>=0 || !StrContains(config, "all", false))
 		{
 			SpawnTeleOnTriggerHurt = true;
 			delete file;
@@ -786,7 +788,7 @@ void Utils_CheckToTeleportToSpawn()
 		BuildPath(Path_SM, config, sizeof(config), "%s/%s", ConfigPath, SpawnTeleportBlacklistCFG);
 		if(!FileExists(config))
 		{
-			LogToFile(eLog, "[TTS] Unable to find '%s'", SpawnTeleportBlacklistCFG);
+			LogToFile(FF2LogsPaths.Errors, "[TTS] Unable to find '%s'", SpawnTeleportBlacklistCFG);
 			return;
 		}
 	}
@@ -794,7 +796,7 @@ void Utils_CheckToTeleportToSpawn()
 	file = OpenFile(config, "r");
 	if(file == INVALID_HANDLE)
 	{
-		LogToFile(eLog, "[TTS] Error reading from '%s'", SpawnTeleportBlacklistCFG);
+		LogToFile(FF2LogsPaths.Errors, "[TTS] Error reading from '%s'", SpawnTeleportBlacklistCFG);
 		return;
 	}
 
@@ -804,7 +806,7 @@ void Utils_CheckToTeleportToSpawn()
 		if(!strncmp(config, "//", 2, false))
 			continue;
 
-		if(StrContains(currentmap, config, false)>=0 || !StrContains(config, "all", false))
+		if(StrContains(FF2Globals.CurrentMap, config, false)>=0 || !StrContains(config, "all", false))
 		{
 			SpawnTeleOnTriggerHurt = false;
 			break;
@@ -872,7 +874,7 @@ void Utils_CheckToTeleportToSpawn()
 
 bool Utils_IsBoss(int client)
 {
-	if(Utils_IsValidClient(client) && Enabled)
+	if(Utils_IsValidClient(client) && FF2Globals.Enabled)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
@@ -1031,7 +1033,7 @@ void Utils_EquipBoss(int boss)
 				default:
 				{
 					strangekills = GetRandomInt(0, 9999);
-					if(!cvarStrangeWep.BoolValue || weaponlevel!=-1 || overridewep)
+					if(!ConVars.StrangeWep.BoolValue || weaponlevel!=-1 || overridewep)
 						strangewep = false;
 				}
 			}
@@ -1040,7 +1042,7 @@ void Utils_EquipBoss(int boss)
 				weaponlevel = 101;
 
 			#if defined _tf2attributes_included
-			if(!tf2attributes && strangewep)
+			if(!FF2Globals.TF2Attrib && strangewep)
 			#else
 			if(strangewep)
 			#endif
@@ -1053,7 +1055,7 @@ void Utils_EquipBoss(int boss)
 					}
 					else
 					{
-						Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d ; %s", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
+						Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d ; %s", FF2GlobalsCvars.Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills, attributes);
 					}
 				}
 				else
@@ -1064,7 +1066,7 @@ void Utils_EquipBoss(int boss)
 					}
 					else
 					{
-						FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
+						FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i ; 214 ; %d", FF2GlobalsCvars.Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, strangekills);
 					}
 				}
 			}
@@ -1072,20 +1074,20 @@ void Utils_EquipBoss(int boss)
 			{
 				if(attributes[0])
 				{
-					Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; %s", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
+					Format(attributes, sizeof(attributes), "%s ; 68 ; %i ; %s", FF2GlobalsCvars.Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2, attributes);
 				}
 				else
 				{
-					FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i", Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
+					FormatEx(attributes, sizeof(attributes), "%s ; 68 ; %i", FF2GlobalsCvars.Attributes, TF2_GetPlayerClass(client)==TFClass_Scout ? 1 : 2);
 				}
 			}
 
-			weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+			weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", FF2GlobalsCvars.WeaponQuality), attributes);
 			if(weapon == -1)
 				continue;
 
 			#if defined _tf2attributes_included
-			if(tf2attributes && strangewep)
+			if(FF2Globals.TF2Attrib && strangewep)
 				TF2Attrib_SetByDefIndex(weapon, 214, view_as<float>(strangekills));
 			#endif
 
@@ -1134,7 +1136,7 @@ void Utils_EquipBoss(int boss)
 		}
 	}
 
-	if(SDKEquipWearable != null)
+	if(FF2ModsInfo.SDK_EquipWearable != null)
 	{
 		for(int i=1; ; i++)
 		{
@@ -1473,7 +1475,7 @@ void Utils_EquipBoss(int boss)
 							strangekills = GetRandomInt(0, 19999);
 						}
 
-						if(!cvarStrangeWep.BoolValue || weaponlevel!=-1)
+						if(!ConVars.StrangeWep.BoolValue || weaponlevel!=-1)
 							strangewep = false;
 					}
 				}
@@ -1482,7 +1484,7 @@ void Utils_EquipBoss(int boss)
 					weaponlevel = 101;
 
 				#if defined _tf2attributes_included
-				if(!tf2attributes && strangewep)
+				if(!FF2Globals.TF2Attrib && strangewep)
 				#else
 				if(strangewep)
 				#endif
@@ -1497,12 +1499,12 @@ void Utils_EquipBoss(int boss)
 					}
 				}
 
-				weapon = TF2_CreateAndEquipWearable(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", QualityWep), attributes);
+				weapon = TF2_CreateAndEquipWearable(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", FF2GlobalsCvars.WeaponQuality), attributes);
 				if(!IsValidEntity(weapon))
 					continue;
 
 				#if defined _tf2attributes_included
-				if(tf2attributes && strangewep)
+				if(FF2Globals.TF2Attrib && strangewep)
 					TF2Attrib_SetByDefIndex(weapon, 214, view_as<float>(strangekills));
 				#endif
 
@@ -1581,7 +1583,7 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int ind
 	SetEntProp(wearable, Prop_Send, "m_iEntityLevel", level);
 
 	#if defined _tf2attributes_included
-	if(attributes[0] && tf2attributes)
+	if(attributes[0] && FF2Globals.TF2Attrib)
 	{
 		char atts[32][32];
 		int count = ExplodeString(attributes, " ; ", atts, 32, 32);
@@ -1602,8 +1604,8 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname, int ind
 
 void SDK_EquipWearable(int client, int wearable)
 {
-	if(SDKEquipWearable != null)
-		SDKCall(SDKEquipWearable, client, wearable);
+	if(FF2ModsInfo.SDK_EquipWearable != null)
+		SDKCall(FF2ModsInfo.SDK_EquipWearable, client, wearable);
 }
 
 /*
@@ -1846,10 +1848,10 @@ void Utils_SwitchTeams(int bossteam, int otherteam, bool respawn)
 {
 	SetTeamScore(bossteam, GetTeamScore(bossteam));
 	SetTeamScore(otherteam, GetTeamScore(otherteam));
-	OtherTeam = otherteam;
-	BossTeam = bossteam;
+	FF2Globals.OtherTeam = otherteam;
+	FF2Globals.BossTeam = bossteam;
 
-	if(Enabled)
+	if(FF2Globals.Enabled)
 	{
 		if(bossteam==view_as<int>(TFTeam_Red) && otherteam==view_as<int>(TFTeam_Blue))
 		{
@@ -1880,7 +1882,7 @@ void Utils_RemoveShield(int client, int attacker)
 		TF2_RemoveWearable(client, shield[client]);
 		EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, _, _, false);
 		EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, _, _, false);
-		if(cvarShieldType.IntValue == 3)
+		if(ConVars.ShieldType.IntValue == 3)
 		{
 			TF2_AddCondition(client, TFCond_SpeedBuffAlly, 1.0);
 		}
@@ -1957,7 +1959,7 @@ void Utils_ForceTeamWin(int team)
 
 void Utils_EndBossRound()
 {
-	if(!cvarCountdownResult.BoolValue)
+	if(!ConVars.CountdownResult.BoolValue)
 	{
 		for(int client=1; client<=MaxClients; client++)  //Thx MasterOfTheXP
 		{
@@ -2049,7 +2051,7 @@ void Utils_RandomlyDisguise(int client)	//Original code was mecha's, but the ori
 
 int Utils_SickleClimbWalls(int client, int weapon)	 //Credit to Mecha the Slag
 {
-	if(!Utils_IsValidClient(client) || (GetClientHealth(client)<=SniperClimbDamage))
+	if(!Utils_IsValidClient(client) || (GetClientHealth(client)<=FF2GlobalsCvars.SniperClimpDmg))
 		return;
 
 	static char classname[64];
@@ -2092,7 +2094,7 @@ int Utils_SickleClimbWalls(int client, int weapon)	 //Credit to Mecha the Slag
 
 	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, fVelocity);
 
-	SDKHooks_TakeDamage(client, client, client, SniperClimbDamage, DMG_CLUB, 0);
+	SDKHooks_TakeDamage(client, client, client, FF2GlobalsCvars.SniperClimpDmg, DMG_CLUB, 0);
 
 	if(!Utils_IsBoss(client))
 		ClientCommand(client, "playgamesound \"%s\"", "player\\taunt_clip_spin.wav");
@@ -2140,7 +2142,7 @@ void EmitSoundToAllExcept(
 	{
 		if(Utils_IsValidClient(client))
 		{
-			if(ToggleVoice[client])
+			if(FF2PlayerCookie[client].VoiceOn)
 				clients[total++] = client;
 		}
 	}
@@ -2173,7 +2175,7 @@ void EmitMusicToAllExcept(
 	{
 		if(Utils_IsValidClient(client))
 		{
-			if(ToggleMusic[client])
+			if(FF2PlayerCookie[client].MusicOn)
 				clients[total++] = client;
 		}
 	}
@@ -2267,7 +2269,7 @@ void Utils_RemovePlayerTarge(int client)
 
 bool Utils_CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=false)
 {
-	if(!Enabled2)
+	if(!FF2Globals.Enabled2)
 		return false;
 
 	static char boss[64], companionName[64];
@@ -2295,7 +2297,7 @@ bool Utils_CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=
 					return false;
 			}
 
-			if(KvGetNum(BossKV[config], "nofirst") && (RoundCount<arenaRounds || (RoundCount==arenaRounds && Utils_CheckRoundState()!=1)))
+			if(KvGetNum(BossKV[config], "nofirst") && (FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
 				return false;
 
 			if(client)
@@ -2317,7 +2319,7 @@ bool Utils_BossTheme(int config)
 	if(theme < 1)
 		return false;
 
-	return !(cvarTheme.IntValue & theme);
+	return !(ConVars.Theme.IntValue & theme);
 }
 
 

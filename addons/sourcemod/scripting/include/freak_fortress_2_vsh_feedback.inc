@@ -14,12 +14,12 @@ void AskPluginLoad_VSH()
 
 int Native_VSHIsVSHMap(Handle plugin, int numParams)
 {
-	return Utils_IsFF2Map(currentmap);
+	return Utils_IsFF2Map(FF2Globals.CurrentMap);
 }
 
 int Native_VSHIsEnabled(Handle plugin, int numParams)
 {
-	return (Enabled ? 2 : 0);
+	return (FF2Globals.Enabled ? 2 : 0);
 }
 
 int Native_VSHGetHale(Handle plugin, int numParams)
@@ -29,7 +29,7 @@ int Native_VSHGetHale(Handle plugin, int numParams)
 
 int Native_VSHGetTeam(Handle plugin, int numParams)
 {
-	return BossTeam;
+	return FF2Globals.BossTeam;
 }
 
 int Native_VSHGetSpecial(Handle plugin, int numParams)

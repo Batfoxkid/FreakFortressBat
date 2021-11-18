@@ -1,36 +1,36 @@
 void DataBase_CreateCookies()
 {
-    FF2Cookies = RegClientCookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
-    StatCookies = RegClientCookie("ff2_cookies_stats", "Player's Statistics", CookieAccess_Protected);
-    HudCookies = RegClientCookie("ff2_cookies_huds", "Player's HUD Settings", CookieAccess_Protected);
-    LastPlayedCookie = RegClientCookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
-    SelectionCookie = RegClientCookie("ff2_boss_selection", "Player's Boss Selection", CookieAccess_Protected);
-    DiffCookie = RegClientCookie("ff2_boss_difficulty", "Player's Difficulty Selection", CookieAccess_Protected);
+    FF2DataBase.PlayerPref 	= new Cookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
+    FF2DataBase.Stat_c 		= new Cookie("ff2_cookies_stats", "Player's Statistics", CookieAccess_Protected);
+    FF2DataBase.Hud 		= new Cookie("ff2_cookies_huds", "Player's HUD Settings", CookieAccess_Protected);
+    FF2DataBase.LastPlayer 	= new Cookie("ff2_boss_previous", "Player's Last Boss", CookieAccess_Protected);
+    FF2DataBase.BossId 		= new Cookie("ff2_boss_selection", "Player's Boss Selection", CookieAccess_Protected);
+    FF2DataBase.DiffType 	= new Cookie("ff2_boss_difficulty", "Player's Difficulty Selection", CookieAccess_Protected);
 }
 
 void DataBase_SetupDatabase()
 {
 	char query[256];
-	StatDatabase = SQL_Connect(DATATABLE, true, query, sizeof(query));
-	if(StatDatabase == INVALID_HANDLE)
+	FF2DataBase.Stat_d = SQL_Connect(DATATABLE, true, query, sizeof(query));
+	if(FF2DataBase.Stat_d == INVALID_HANDLE)
 	{
-		LogToFile(eLog, "[Database] %s", query);
-		EnabledD = 0;
+		LogToFile(FF2LogsPaths.Errors, "[Database] %s", query);
+		FF2Globals.Enabled_Database = 0;
 		return;
 	}
 
 	FormatEx(query, sizeof(query), "CREATE TABLE IF NOT EXISTS %s (steamid INT, win INT, lose INT, kill INT, death INT, slain INT, mvp INT)", DATATABLE);
-	SQL_LockDatabase(StatDatabase);
-	if(!SQL_FastQuery(StatDatabase, query))
+	SQL_LockDatabase(FF2DataBase.Stat_d);
+	if(!SQL_FastQuery(FF2DataBase.Stat_d, query))
 	{
-		SQL_GetError(StatDatabase, query, sizeof(query));
-		LogToFile(eLog, "[Database] %s", query);
-		SQL_UnlockDatabase(StatDatabase);
-		EnabledD = 0;
+		SQL_GetError(FF2DataBase.Stat_d, query, sizeof(query));
+		LogToFile(FF2LogsPaths.Errors, "[Database] %s", query);
+		SQL_UnlockDatabase(FF2DataBase.Stat_d);
+		FF2Globals.Enabled_Database = 0;
 		return;
 	}
-	SQL_UnlockDatabase(StatDatabase);
-	EnabledD = 2;
+	SQL_UnlockDatabase(FF2DataBase.Stat_d);
+	FF2Globals.Enabled_Database = 2;
 }
 
 void DataBase_SetupClientCookies(int client)
@@ -40,27 +40,27 @@ void DataBase_SetupClientCookies(int client)
 
 	if(IsFakeClient(client))
 	{
-		QueuePoints[client] = 0;
-		ToggleMusic[client] = false;
-		ToggleVoice[client] = false;
-		ToggleInfo[client] = false;
-		ToggleDuo[client] = Setting_On;
-		ToggleBoss[client] = Setting_On;
-		ToggleDiff[client] = Setting_On;
+		FF2PlayerCookie[client].QueuePoints = 0;
+		FF2PlayerCookie[client].MusicOn = false;
+		FF2PlayerCookie[client].VoiceOn = false;
+		FF2PlayerCookie[client].InfoOn = false;
+		FF2PlayerCookie[client].Duo = Setting_On;
+		FF2PlayerCookie[client].Boss = Setting_On;
+		FF2PlayerCookie[client].Diff = Setting_On;
 
-		BossWins[client] = 0;
-		BossLosses[client] = 0;
-		BossKills[client] = 0;
-		BossKillsF[client] = 0;
-		BossDeaths[client] = 0;
-		PlayerKills[client] = 0;
-		PlayerMVPs[client] =  0;
+		FF2PlayerCookie[client].BossWins = 0;
+		FF2PlayerCookie[client].BossLosses = 0;
+		FF2PlayerCookie[client].BossKills = 0;
+		FF2PlayerCookie[client].BossKillsF = 0;
+		FF2PlayerCookie[client].BossDeaths = 0;
+		FF2PlayerCookie[client].PlayerKills = 0;
+		FF2PlayerCookie[client].PlayerMVPs =  0;
 
 		for(int i=0; i<(HUDTYPES-1); i++)
 		{
-			HudSettings[client][i] = 1;
+			FF2PlayerCookie[client].HudSettings[i] = 1;
 		}
-		HudSettings[client][HUDTYPES-1] = 0;
+		FF2PlayerCookie[client].HudSettings[HUDTYPES-1] = 0;
 		return;
 	}
 
@@ -68,80 +68,80 @@ void DataBase_SetupClientCookies(int client)
 	{
 		static char cookies[454];
 		char cookieValues[MAXCHARSETS][64];
-		GetClientCookie(client, FF2Cookies, cookies, 48);
+		GetClientCookie(client, FF2DataBase.PlayerPref, cookies, 48);
 		ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 
-		QueuePoints[client] = StringToInt(cookieValues[0][0]);
-		ToggleMusic[client] = view_as<bool>(StringToInt(cookieValues[1][0]));
-		ToggleVoice[client] = view_as<bool>(StringToInt(cookieValues[2][0]));
-		ToggleInfo[client] = view_as<bool>(StringToInt(cookieValues[3][0]));
-		ToggleDuo[client] = view_as<SettingPrefs>(StringToInt(cookieValues[4][0]));
-		ToggleBoss[client] = view_as<SettingPrefs>(StringToInt(cookieValues[5][0]));
-		ToggleDiff[client] = view_as<SettingPrefs>(StringToInt(cookieValues[6][0]));
+		FF2PlayerCookie[client].QueuePoints = StringToInt(cookieValues[0][0]);
+		FF2PlayerCookie[client].MusicOn = view_as<bool>(StringToInt(cookieValues[1][0]));
+		FF2PlayerCookie[client].VoiceOn = view_as<bool>(StringToInt(cookieValues[2][0]));
+		FF2PlayerCookie[client].InfoOn = view_as<bool>(StringToInt(cookieValues[3][0]));
+		FF2PlayerCookie[client].Duo = view_as<SettingPrefs>(StringToInt(cookieValues[4][0]));
+		FF2PlayerCookie[client].Boss = view_as<SettingPrefs>(StringToInt(cookieValues[5][0]));
+		FF2PlayerCookie[client].Diff = view_as<SettingPrefs>(StringToInt(cookieValues[6][0]));
 
-		if(ToggleDuo[client] == Setting_Temp)
-			ToggleDuo[client] = Setting_On;
+		if(FF2PlayerCookie[client].Duo == Setting_Temp)
+			FF2PlayerCookie[client].Duo = Setting_On;
 
-		if(ToggleBoss[client] == Setting_Temp)
-			ToggleBoss[client] = Setting_Undef;
+		if(FF2PlayerCookie[client].Boss == Setting_Temp)
+			FF2PlayerCookie[client].Boss = Setting_Undef;
 
-		if(ToggleDiff[client] == Setting_Temp)
-			ToggleDiff[client] = Setting_On;
+		if(FF2PlayerCookie[client].Diff == Setting_Temp)
+			FF2PlayerCookie[client].Diff = Setting_On;
 
-		if(cvarDatabase.IntValue < 2)
+		if(ConVars.Database.IntValue < 2)
 		{
-			GetClientCookie(client, StatCookies, cookies, 48);
+			GetClientCookie(client, FF2DataBase.Stat_c, cookies, 48);
 			ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 
-			BossWins[client] = StringToInt(cookieValues[0][0]);
-			BossLosses[client] = StringToInt(cookieValues[1][0]);
-			BossKills[client] = StringToInt(cookieValues[2][0]);
-			BossKillsF[client] = StringToInt(cookieValues[2][0]);
-			BossDeaths[client] = StringToInt(cookieValues[3][0]);
-			PlayerKills[client] = StringToInt(cookieValues[4][0]);
-			PlayerMVPs[client] =  StringToInt(cookieValues[5][0]);
+			FF2PlayerCookie[client].BossWins = StringToInt(cookieValues[0][0]);
+			FF2PlayerCookie[client].BossLosses = StringToInt(cookieValues[1][0]);
+			FF2PlayerCookie[client].BossKills = StringToInt(cookieValues[2][0]);
+			FF2PlayerCookie[client].BossKillsF = StringToInt(cookieValues[2][0]);
+			FF2PlayerCookie[client].BossDeaths = StringToInt(cookieValues[3][0]);
+			FF2PlayerCookie[client].PlayerKills = StringToInt(cookieValues[4][0]);
+			FF2PlayerCookie[client].PlayerMVPs =  StringToInt(cookieValues[5][0]);
 		}
 
-		GetClientCookie(client, HudCookies, cookies, 48);
+		GetClientCookie(client, FF2DataBase.Hud, cookies, 48);
 		ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 		for(int i=0; i<HUDTYPES; i++)
 		{
-			HudSettings[client][i] = StringToInt(cookieValues[i]);
+			FF2PlayerCookie[client].HudSettings[i] = StringToInt(cookieValues[i]);
 		}
 
-		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+		GetClientCookie(client, FF2DataBase.BossId, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
-		Utils_CheckValidBoss(client, xIncoming[client], !DuoMin);
+		Utils_CheckValidBoss(client, xIncoming[client], !FF2GlobalsCvars.DuoMin);
 
-		GetClientCookie(client, DiffCookie, dIncoming[client], sizeof(dIncoming[]));
+		GetClientCookie(client, FF2DataBase.DiffType, dIncoming[client], sizeof(dIncoming[]));
 	}
 	else
 	{
-		QueuePoints[client] = 0;
-		ToggleMusic[client] = true;
-		ToggleVoice[client] = true;
-		ToggleInfo[client] = true;
-		ToggleDuo[client] = Setting_Undef;
-		ToggleBoss[client] = Setting_Undef;
-		ToggleDiff[client] = Setting_Undef;
+		FF2PlayerCookie[client].QueuePoints = 0;
+		FF2PlayerCookie[client].MusicOn = true;
+		FF2PlayerCookie[client].VoiceOn = true;
+		FF2PlayerCookie[client].InfoOn = true;
+		FF2PlayerCookie[client].Duo = Setting_Undef;
+		FF2PlayerCookie[client].Boss = Setting_Undef;
+		FF2PlayerCookie[client].Diff = Setting_Undef;
 
-		BossWins[client] = 0;
-		BossLosses[client] = 0;
-		BossKills[client] = 0;
-		BossKillsF[client] = 0;
-		BossDeaths[client] = 0;
-		PlayerKills[client] = 0;
-		PlayerMVPs[client] =  0;
+		FF2PlayerCookie[client].BossWins = 0;
+		FF2PlayerCookie[client].BossLosses = 0;
+		FF2PlayerCookie[client].BossKills = 0;
+		FF2PlayerCookie[client].BossKillsF = 0;
+		FF2PlayerCookie[client].BossDeaths = 0;
+		FF2PlayerCookie[client].PlayerKills = 0;
+		FF2PlayerCookie[client].PlayerMVPs =  0;
 
 		for(int i=0; i<(HUDTYPES-1); i++)
 		{
-			HudSettings[client][i] = 0;
+			FF2PlayerCookie[client].HudSettings[i] = 0;
 		}
-		HudSettings[client][HUDTYPES-1] = 1;
+		FF2PlayerCookie[client].HudSettings[HUDTYPES-1] = 1;
 	}
 
-	if(EnabledD != 2)
+	if(FF2Globals.Enabled_Database != 2)
 		return;
 
 	int steamid = GetSteamAccountID(client);
@@ -151,11 +151,11 @@ void DataBase_SetupClientCookies(int client)
 	static char query[256];
 	FormatEx(query, sizeof(query), "SELECT win, lose, kill, death, slain, mvp FROM %s WHERE steamid=%d;", DATATABLE, steamid);
 
-	SQL_LockDatabase(StatDatabase);
+	SQL_LockDatabase(FF2DataBase.Stat_d);
 	DBResultSet result;
-	if((result = SQL_Query(StatDatabase, query)) == null)
+	if((result = SQL_Query(FF2DataBase.Stat_d, query)) == null)
 	{
-		SQL_UnlockDatabase(StatDatabase);
+		SQL_UnlockDatabase(FF2DataBase.Stat_d);
 		return;
 	}
 
@@ -168,28 +168,28 @@ void DataBase_SetupClientCookies(int client)
 	}
 
 	delete result;
-	SQL_UnlockDatabase(StatDatabase);
+	SQL_UnlockDatabase(FF2DataBase.Stat_d);
 
-	if(stat[0] > BossWins[client])
-		BossWins[client] = stat[0];
+	if(stat[0] > FF2PlayerCookie[client].BossWins)
+		FF2PlayerCookie[client].BossWins = stat[0];
 
-	if(stat[1] > BossLosses[client])
-		BossLosses[client] = stat[1];
+	if(stat[1] > FF2PlayerCookie[client].BossLosses)
+		FF2PlayerCookie[client].BossLosses = stat[1];
 
-	if(stat[2] > BossKills[client])
+	if(stat[2] > FF2PlayerCookie[client].BossKills)
 	{
-		BossKills[client] = stat[2];
-		BossKillsF[client] = stat[2];
+		FF2PlayerCookie[client].BossKills = stat[2];
+		FF2PlayerCookie[client].BossKillsF = stat[2];
 	}
 
-	if(stat[3] > BossDeaths[client])
-		BossDeaths[client] = stat[3];
+	if(stat[3] > FF2PlayerCookie[client].BossDeaths)
+		FF2PlayerCookie[client].BossDeaths = stat[3];
 
-	if(stat[4] > PlayerKills[client])
-		PlayerKills[client] = stat[4];
+	if(stat[4] > FF2PlayerCookie[client].PlayerKills)
+		FF2PlayerCookie[client].PlayerKills = stat[4];
 
-	if(stat[5] > PlayerKills[client])
-		PlayerKills[client] = stat[5];
+	if(stat[5] > FF2PlayerCookie[client].PlayerKills)
+		FF2PlayerCookie[client].PlayerKills = stat[5];
 }
 
 void DataBase_SaveClientPreferences(int client)
@@ -199,48 +199,48 @@ void DataBase_SaveClientPreferences(int client)
 
 	char cookies[24];
 	char cookieValues[8][5];
-	GetClientCookie(client, FF2Cookies, cookies, sizeof(cookies));
+	GetClientCookie(client, FF2DataBase.PlayerPref, cookies, sizeof(cookies));
 	ExplodeString(cookies, " ", cookieValues, 8, 5);
 
-	FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i %i 3", QueuePoints[client], ToggleMusic[client] ? 1 : 0, ToggleVoice[client] ? 1 : 0, ToggleInfo[client] ? 1 : 0, view_as<int>(ToggleDuo[client]), view_as<int>(ToggleBoss[client]), view_as<int>(ToggleDiff[client]));
-	SetClientCookie(client, FF2Cookies, cookies);
+	FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i %i 3", FF2PlayerCookie[client].QueuePoints, FF2PlayerCookie[client].MusicOn ? 1 : 0, FF2PlayerCookie[client].VoiceOn ? 1 : 0, FF2PlayerCookie[client].InfoOn ? 1 : 0, view_as<int>(FF2PlayerCookie[client].Duo), view_as<int>(FF2PlayerCookie[client].Boss), view_as<int>(FF2PlayerCookie[client].Diff));
+	SetClientCookie(client, FF2DataBase.PlayerPref, cookies);
 
-	IntToString(HudSettings[client][0], cookies, sizeof(cookies));
+	IntToString(FF2PlayerCookie[client].HudSettings[0], cookies, sizeof(cookies));
 	for(int i=1; i<HUDTYPES; i++)
 	{
-		Format(cookies, sizeof(cookies), "%s %i", cookies, HudSettings[client][i]);
+		Format(cookies, sizeof(cookies), "%s %i", cookies, FF2PlayerCookie[client].HudSettings[i]);
 	}
-	SetClientCookie(client, HudCookies, cookies);
+	SetClientCookie(client, FF2DataBase.Hud, cookies);
 }
 
 void DataBase_SaveClientStats(int client)
 {
-	if(SpecialRound || !Utils_IsValidClient(client) || IsFakeClient(client) || cvarStatPlayers.IntValue<1 || (!cvarBvBStat.BoolValue && Enabled3))
+	if(SpecialRound || !Utils_IsValidClient(client) || IsFakeClient(client) || ConVars.StatPlayers.IntValue<1 || (!ConVars.BvBStat.BoolValue && FF2Globals.Enabled3))
 		return;
 
-	if(cvarStatWin2Lose.IntValue > 2)
+	if(ConVars.StatWin2Lose.IntValue > 2)
 	{
-		if(CheatsUsed)
+		if(FF2Globals.CheatsUsed)
 		{
 			PrintToConsole(client, "%t", "Cheats Used");
 			return;
 		}
 
-		if(cvarStatPlayers.IntValue > playing2)
+		if(ConVars.StatPlayers.IntValue > FF2Globals.TotalRealPlayers)
 		{
 			PrintToConsole(client, "%t", "Low Players");
 			return;
 		}
 	}
-	else if(cvarStatWin2Lose.IntValue>0 || cvarStatHud.IntValue>0)
+	else if(ConVars.StatWin2Lose.IntValue>0 || ConVars.StatHud.IntValue>0)
 	{
-		if(CheatsUsed)
+		if(FF2Globals.CheatsUsed)
 		{
 			FPrintToChat(client, "%t", "Cheats Used");
 			return;
 		}
 
-		if(cvarStatPlayers.IntValue > playing2)
+		if(ConVars.StatPlayers.IntValue > FF2Globals.TotalRealPlayers)
 		{
 			FPrintToChat(client, "%t", "Low Players");
 			return;
@@ -248,18 +248,18 @@ void DataBase_SaveClientStats(int client)
 	}
 	else
 	{
-		if(CheatsUsed || cvarStatPlayers.IntValue>playing2)
+		if(FF2Globals.CheatsUsed || ConVars.StatPlayers.IntValue>FF2Globals.TotalRealPlayers)
 			return;
 	}
 
-	if(AreClientCookiesCached(client) && cvarDatabase.IntValue<2)
+	if(AreClientCookiesCached(client) && ConVars.Database.IntValue<2)
 	{
 		char cookies[48];
-		FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i 0 0", BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], PlayerKills[client], PlayerMVPs[client]);
-		SetClientCookie(client, StatCookies, cookies);
+		FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i 0 0", FF2PlayerCookie[client].BossWins, FF2PlayerCookie[client].BossLosses, FF2PlayerCookie[client].BossKills, FF2PlayerCookie[client].BossDeaths, FF2PlayerCookie[client].PlayerKills, FF2PlayerCookie[client].PlayerMVPs);
+		SetClientCookie(client, FF2DataBase.Stat_c, cookies);
 	}
 
-	if(EnabledD != 2)
+	if(FF2Globals.Enabled_Database != 2)
 		return;
 
 	int steamid = GetSteamAccountID(client);
@@ -267,50 +267,50 @@ void DataBase_SaveClientStats(int client)
 		return;
 
 	char query[256];
-	FormatEx(query, sizeof(query), "UPDATE %s SET win=%d, lose=%d, kill=%d, death=%d, slain=%d, mvp=%d WHERE steamid=%d);", DATATABLE, BossWins[client], BossLosses[client], BossKills[client], BossDeaths[client], PlayerKills[client], PlayerMVPs[client], steamid);
+	FormatEx(query, sizeof(query), "UPDATE %s SET win=%d, lose=%d, kill=%d, death=%d, slain=%d, mvp=%d WHERE steamid=%d);", DATATABLE, FF2PlayerCookie[client].BossWins, FF2PlayerCookie[client].BossLosses, FF2PlayerCookie[client].BossKills, FF2PlayerCookie[client].BossDeaths, FF2PlayerCookie[client].PlayerKills, FF2PlayerCookie[client].PlayerMVPs, steamid);
 
-	SQL_LockDatabase(StatDatabase);
-	if(!SQL_FastQuery(StatDatabase, query))
+	SQL_LockDatabase(FF2DataBase.Stat_d);
+	if(!SQL_FastQuery(FF2DataBase.Stat_d, query))
 	{
-		SQL_GetError(StatDatabase, query, sizeof(query));
-		LogToFile(eLog, "[Database] %s", query);
+		SQL_GetError(FF2DataBase.Stat_d, query, sizeof(query));
+		LogToFile(FF2LogsPaths.Errors, "[Database] %s", query);
 	}
-	SQL_UnlockDatabase(StatDatabase);
+	SQL_UnlockDatabase(FF2DataBase.Stat_d);
 }
 
 void DataBase_AddClientStats(int client, CookieStats cookie, int num)
 {
-	if(SpecialRound || !Utils_IsValidClient(client) || cvarStatPlayers.IntValue<1)
+	if(SpecialRound || !Utils_IsValidClient(client) || ConVars.StatPlayers.IntValue<1)
 		return;
 
-	if(!IsFakeClient(client) && (CheatsUsed || cvarStatPlayers.IntValue>playing2 || (!cvarBvBStat.BoolValue && Enabled3)))
+	if(!IsFakeClient(client) && (FF2Globals.CheatsUsed || ConVars.StatPlayers.IntValue>FF2Globals.TotalRealPlayers || (!ConVars.BvBStat.BoolValue && FF2Globals.Enabled3)))
 		return;
 
 	switch(cookie)
 	{
 		case Cookie_BossWins:
 		{
-			BossWins[client] += num;
+			FF2PlayerCookie[client].BossWins += num;
 		}
 		case Cookie_BossLosses:
 		{
-			BossLosses[client] += num;
+			FF2PlayerCookie[client].BossLosses += num;
 		}
 		case Cookie_BossKills:
 		{
-			BossKills[client] += num;
+			FF2PlayerCookie[client].BossKills += num;
 		}
 		case Cookie_BossDeaths:
 		{
-			BossDeaths[client] += num;
+			FF2PlayerCookie[client].BossDeaths += num;
 		}
 		case Cookie_PlayerKills:
 		{
-			PlayerKills[client] += num;
+			FF2PlayerCookie[client].PlayerKills += num;
 		}
 		case Cookie_PlayerMvps:
 		{
-			PlayerMVPs[client] += num;
+			FF2PlayerCookie[client].PlayerMVPs += num;
 		}
 	}
 }
@@ -321,10 +321,10 @@ void DataBase_SaveKeepBossCookie(int client)
 		return;
 
 	static char cookies[454];
-	if(!IgnoreValid[client] && CurrentCharSet>=0 && CurrentCharSet<MAXCHARSETS && cvarSelectBoss.BoolValue)
+	if(!IgnoreValid[client] && CurrentCharSet>=0 && CurrentCharSet<MAXCHARSETS && ConVars.SelectBoss.BoolValue)
 	{
 		char cookieValues[MAXCHARSETS][64];
-		GetClientCookie(client, SelectionCookie, cookies, sizeof(cookies));
+		GetClientCookie(client, FF2DataBase.BossId, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
 
@@ -333,9 +333,9 @@ void DataBase_SaveKeepBossCookie(int client)
 		{
 			Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 		}
-		SetClientCookie(client, SelectionCookie, cookies);
+		SetClientCookie(client, FF2DataBase.BossId, cookies);
 	}
 
-	if(!cvarDifficulty.BoolValue)
-		SetClientCookie(client, DiffCookie, dIncoming[client]);
+	if(!ConVars.Difficulty.BoolValue)
+		SetClientCookie(client, FF2DataBase.DiffType, dIncoming[client]);
 }

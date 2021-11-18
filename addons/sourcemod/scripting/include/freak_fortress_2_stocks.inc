@@ -1,13 +1,13 @@
 #include <sdktools>
 #include <tf2_stocks>
-#include <tf2attributes>
+#include <FF2Globals.TF2Attrib>
 #include <freak_fortress_2>
 
 #if !defined MAXTF2PLAYERS
 	#define MAXTF2PLAYERS 36
 #endif
 
-Handle SDKEquipWearable = null;
+Handle FF2ModsInfo.SDK_EquiWearable = null;
 
 #if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>=10
 enum struct FF2Ability
@@ -518,18 +518,18 @@ stock int TF2_CreateAndEquipWearable(int client, const char[] classname="tf_wear
 	}
 		
 	DispatchSpawn(wearable);
-	SDKCall(SDKEquipWearable, client, wearable);
+	SDKCall(FF2ModsInfo.SDK_EquiWearable, client, wearable);
 	return wearable;
 }
 
 /**
- * Setups SDKEquipWearable handle.
+ * Setups FF2ModsInfo.SDK_EquiWearable handle.
  *
  * @return		True on success or already setup, false on failure.
  */
 stock bool SetupWearableSDK()
 {
-	if(SDKEquipWearable != null)
+	if(FF2ModsInfo.SDK_EquiWearable != null)
 		return true;
 
 	Handle gameData = LoadGameConfigFile("equipwearable");
@@ -542,8 +542,8 @@ stock bool SetupWearableSDK()
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CBasePlayer::EquipWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	SDKEquipWearable = EndPrepSDKCall();
-	if(SDKEquipWearable == null)
+	FF2ModsInfo.SDK_EquiWearable = EndPrepSDKCall();
+	if(FF2ModsInfo.SDK_EquiWearable == null)
 	{
 		LogError("Failed to create call: CBasePlayer::EquipWearable");
 		return false;

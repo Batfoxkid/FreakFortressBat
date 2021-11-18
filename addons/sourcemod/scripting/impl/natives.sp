@@ -76,13 +76,13 @@ void Natives_Create()
 	CreateNative("FF2Data.GetArgB", FF2Data_GetArgB);
 	CreateNative("FF2Data.GetArgS", FF2Data_GetArgS);
 	CreateNative("FF2Data.HasAbility", FF2Data_HasAbility);
-	CreateNative("FF2Data.BossTeam", Native_GetTeam);
+	CreateNative("FF2Data.FF2Globals.BossTeam", Native_GetTeam);
 }
 
 
 int Native_IsEnabled(Handle plugin, int numParams)
 {
-	return Enabled;
+	return FF2Globals.Enabled;
 }
 
 int Native_FF2Version(Handle plugin, int numParams)
@@ -101,7 +101,7 @@ int Native_FF2Version(Handle plugin, int numParams)
 
 int Native_IsVersus(Handle plugin, int numParams)
 {
-	return Enabled3;
+	return FF2Globals.Enabled3;
 }
 
 int Native_ForkVersion(Handle plugin, int numParams)
@@ -134,7 +134,7 @@ int Native_GetIndex(Handle plugin, int numParams)
 
 int Native_GetTeam(Handle plugin, int numParams)
 {
-	return BossTeam;
+	return FF2Globals.BossTeam;
 }
 
 int Native_GetSpecial(Handle plugin, int numParams)
@@ -464,12 +464,12 @@ int Native_SetFF2flags(Handle plugin, int numParams)
 
 int Native_GetQueuePoints(Handle plugin, int numParams)
 {
-	return QueuePoints[GetNativeCell(1)];
+	return FF2PlayerCookie[GetNativeCell(1)].QueuePoints;
 }
 
 int Native_SetQueuePoints(Handle plugin, int numParams)
 {
-	QueuePoints[GetNativeCell(1)] = GetNativeCell(2);
+	FF2PlayerCookie[GetNativeCell(1)].QueuePoints = GetNativeCell(2);
 }
 
 int Native_GetSpecialKV(Handle plugin, int numParams)
@@ -576,9 +576,9 @@ int Native_GetClientShield(Handle plugin, int numParams)
 	{
 		if(shield[client])
 		{
-			if(cvarShieldType.IntValue > 2)
+			if(ConVars.ShieldType.IntValue > 2)
 			{
-				return RoundToFloor(shieldHP[client]/cvarShieldHealth.FloatValue*100.0);
+				return RoundToFloor(shieldHP[client]/ConVars.ShieldHealth.FloatValue*100.0);
 			}
 			else
 			{
@@ -599,7 +599,7 @@ int Native_SetClientShield(Handle plugin, int numParams)
 			shield[client] = GetNativeCell(2);
 
 		if(GetNativeCell(3) >= 0)
-			shieldHP[client] = GetNativeCell(3)*cvarShieldHealth.FloatValue/100.0;
+			shieldHP[client] = GetNativeCell(3)*ConVars.ShieldHealth.FloatValue/100.0;
 
 		if(GetNativeCell(4) > 0)
 		{
@@ -607,7 +607,7 @@ int Native_SetClientShield(Handle plugin, int numParams)
 		}
 		else if(GetNativeCell(3) > 0)
 		{
-			shDmgReduction[client] = shieldHP[client]/cvarShieldHealth.FloatValue*(1.0-cvarShieldResist.FloatValue);
+			shDmgReduction[client] = shieldHP[client]/ConVars.ShieldHealth.FloatValue*(1.0-ConVars.ShieldResist.FloatValue);
 		}
 	}
 }
@@ -632,22 +632,22 @@ int Native_LogError(Handle plugin, int numParams)
 		ThrowNativeError(error, "Failed to format");
 		return;
 	}
-	LogToFile(eLog, buffer);
+	LogToFile(FF2LogsPaths.Errors, buffer);
 }
 
 int Native_Debug(Handle plugin, int numParams)
 {
-	return cvarDebug.BoolValue;
+	return ConVars.Debug.BoolValue;
 }
 
 int Native_SetCheats(Handle plugin, int numParams)
 {
-	CheatsUsed = GetNativeCell(1);
+	FF2Globals.CheatsUsed = GetNativeCell(1);
 }
 
 int Native_GetCheats(Handle plugin, int numParams)
 {
-	return (CheatsUsed || SpecialRound);
+	return (FF2Globals.CheatsUsed || SpecialRound);
 }
 
 int Native_MakeBoss(Handle plugin, int numParams)
@@ -709,7 +709,7 @@ int Native_ReportError(Handle plugin, int params)
 		BossKV[Special[boss]].GetString("name", name, sizeof(name), "Unknown");
 	}
 	
-	LogToFile(eLog, "[FF2] Exception reported: Boss: %i - Name: %s", boss, name);
+	LogToFile(FF2LogsPaths.Errors, "[FF2] Exception reported: Boss: %i - Name: %s", boss, name);
 	char actual[PLATFORM_MAX_PATH];
 	
 	int error;
@@ -718,7 +718,7 @@ int Native_ReportError(Handle plugin, int params)
 		return ThrowNativeError(error, "Failed to format");
 	}
 	Format(actual, sizeof(actual), "[FF2] %s", actual);
-	LogToFile(eLog, actual);
+	LogToFile(FF2LogsPaths.Errors, actual);
 	
 	return 1;
 }
@@ -827,5 +827,5 @@ any FF2Data_HasAbility(Handle plugin, int params)
 	FF2QueryData cd;
 	FF2Cache.Request(data.boss, cd);
 	
-	return Utils_HasAbility(data.boss, cd.current_plugin_name, cd.current_ability_name);
+	return Utils_HasAbilityEx(cd, data.boss, cd.current_plugin_name, cd.current_ability_name);
 }
