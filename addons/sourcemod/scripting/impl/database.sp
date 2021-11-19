@@ -111,7 +111,7 @@ void DataBase_SetupClientCookies(int client)
 
 		GetClientCookie(client, FF2DataBase.BossId, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
-		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[CurrentCharSet]);
+		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[FF2CharSetInfo.CurrentCharSetIdx]);
 		Utils_CheckValidBoss(client, xIncoming[client], !FF2GlobalsCvars.DuoMin);
 
 		GetClientCookie(client, FF2DataBase.DiffType, dIncoming[client], sizeof(dIncoming[]));
@@ -215,7 +215,7 @@ void DataBase_SaveClientPreferences(int client)
 
 void DataBase_SaveClientStats(int client)
 {
-	if(SpecialRound || !Utils_IsValidClient(client) || IsFakeClient(client) || ConVars.StatPlayers.IntValue<1 || (!ConVars.BvBStat.BoolValue && FF2Globals.Enabled3))
+	if(FF2Globals.IsSpecialRound || !Utils_IsValidClient(client) || IsFakeClient(client) || ConVars.StatPlayers.IntValue<1 || (!ConVars.BvBStat.BoolValue && FF2Globals.Enabled3))
 		return;
 
 	if(ConVars.StatWin2Lose.IntValue > 2)
@@ -280,7 +280,7 @@ void DataBase_SaveClientStats(int client)
 
 void DataBase_AddClientStats(int client, CookieStats cookie, int num)
 {
-	if(SpecialRound || !Utils_IsValidClient(client) || ConVars.StatPlayers.IntValue<1)
+	if(FF2Globals.IsSpecialRound || !Utils_IsValidClient(client) || ConVars.StatPlayers.IntValue<1)
 		return;
 
 	if(!IsFakeClient(client) && (FF2Globals.CheatsUsed || ConVars.StatPlayers.IntValue>FF2Globals.TotalRealPlayers || (!ConVars.BvBStat.BoolValue && FF2Globals.Enabled3)))
@@ -321,12 +321,12 @@ void DataBase_SaveKeepBossCookie(int client)
 		return;
 
 	static char cookies[454];
-	if(!IgnoreValid[client] && CurrentCharSet>=0 && CurrentCharSet<MAXCHARSETS && ConVars.SelectBoss.BoolValue)
+	if(!IgnoreValid[client] && FF2CharSetInfo.CurrentCharSetIdx>=0 && FF2CharSetInfo.CurrentCharSetIdx<MAXCHARSETS && ConVars.SelectBoss.BoolValue)
 	{
 		char cookieValues[MAXCHARSETS][64];
 		GetClientCookie(client, FF2DataBase.BossId, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
-		strcopy(cookieValues[CurrentCharSet], 64, xIncoming[client]);
+		strcopy(cookieValues[FF2CharSetInfo.CurrentCharSetIdx], 64, xIncoming[client]);
 
 		strcopy(cookies, sizeof(cookies), cookieValues[0]);
 		for(int i=1; i<MAXCHARSETS; i++)

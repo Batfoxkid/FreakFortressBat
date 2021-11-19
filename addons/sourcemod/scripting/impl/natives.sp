@@ -121,8 +121,8 @@ int Native_ForkVersion(Handle plugin, int numParams)
 int Native_GetBoss(Handle plugin, int numParams)
 {
 	int boss = GetNativeCell(1);
-	if(boss>=0 && boss<=MaxClients && Utils_IsValidClient(Boss[boss]))
-		return GetClientUserId(Boss[boss]);
+	if(boss>=0 && boss<=MaxClients && Utils_IsValidClient(FF2BossInfo[boss].Boss))
+		return GetClientUserId(FF2BossInfo[boss].Boss);
 
 	return -1;
 }
@@ -146,25 +146,25 @@ int Native_GetSpecial(Handle plugin, int numParams)
 		if(index<0)
 			return false;
 
-		if(!BossKV[index])
+		if(!FF2CharSetInfo.BossKV[index])
 			return false;
 
-		KvRewind(BossKV[index]);
-		KvGetString(BossKV[index], "name", s, dstrlen);
+		KvRewind(FF2CharSetInfo.BossKV[index]);
+		KvGetString(FF2CharSetInfo.BossKV[index], "name", s, dstrlen);
 	}
 	else
 	{
 		if(index<0)
 			return false;
 
-		if(Special[index]<0)
+		if(FF2BossInfo[index].Special<0)
 			return false;
 
-		if(!BossKV[Special[index]])
+		if(!FF2CharSetInfo.BossKV[FF2BossInfo[index].Special])
 			return false;
 
-		KvRewind(BossKV[Special[index]]);
-		KvGetString(BossKV[Special[index]], "name", s, dstrlen);
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special]);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], "name", s, dstrlen);
 	}
 	SetNativeString(2, s, dstrlen);
 	return true;
@@ -184,22 +184,22 @@ int Native_GetName(Handle plugin, int numParams)
 		if(index < 0)
 			return false;
 
-		if(!BossKV[index])
+		if(!FF2CharSetInfo.BossKV[index])
 			return false;
 
-		KvRewind(BossKV[index]);
-		KvGetString(BossKV[index], language, s, dstrlen);
+		KvRewind(FF2CharSetInfo.BossKV[index]);
+		KvGetString(FF2CharSetInfo.BossKV[index], language, s, dstrlen);
 		if(!s[0])
 		{
 			if(client)
 			{
 				GetLanguageInfo(GetServerLanguage(), language, sizeof(language), s, dstrlen);
 				Format(language, sizeof(language), "name_%s", language);
-				KvGetString(BossKV[index], language, s, dstrlen);
+				KvGetString(FF2CharSetInfo.BossKV[index], language, s, dstrlen);
 			}
 
 			if(!s[0])
-				KvGetString(BossKV[index], "name", s, dstrlen);
+				KvGetString(FF2CharSetInfo.BossKV[index], "name", s, dstrlen);
 		}
 	}
 	else
@@ -207,25 +207,25 @@ int Native_GetName(Handle plugin, int numParams)
 		if(index < 0)
 			return false;
 
-		if(Special[index]<0)
+		if(FF2BossInfo[index].Special<0)
 			return false;
 
-		if(!BossKV[Special[index]])
+		if(!FF2CharSetInfo.BossKV[FF2BossInfo[index].Special])
 			return false;
 
-		KvRewind(BossKV[Special[index]]);
-		KvGetString(BossKV[Special[index]], language, s, dstrlen);
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special]);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], language, s, dstrlen);
 		if(!s[0])
 		{
 			if(client)
 			{
 				GetLanguageInfo(GetServerLanguage(), language, sizeof(language), s, dstrlen);
 				Format(language, sizeof(language), "name_%s", language);
-				KvGetString(BossKV[Special[index]], language, s, dstrlen);
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], language, s, dstrlen);
 			}
 
 			if(!s[0])
-				KvGetString(BossKV[Special[index]], "name", s, dstrlen);
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], "name", s, dstrlen);
 		}
 	}
 
@@ -238,64 +238,64 @@ int Native_GetName(Handle plugin, int numParams)
 
 int Native_GetBossHealth(Handle plugin, int numParams)
 {
-	return BossHealth[GetNativeCell(1)];
+	return FF2BossInfo[GetNativeCell(1)].Health;
 }
 
 int Native_SetBossHealth(Handle plugin, int numParams)
 {
-	BossHealth[GetNativeCell(1)] = GetNativeCell(2);
+	FF2BossInfo[GetNativeCell(1)].Health = GetNativeCell(2);
 	UpdateHealthBar();
 }
 
 int Native_GetBossMaxHealth(Handle plugin, int numParams)
 {
-	return BossHealthMax[GetNativeCell(1)];
+	return FF2BossInfo[GetNativeCell(1)].HealthMax;
 }
 
 int Native_SetBossMaxHealth(Handle plugin, int numParams)
 {
-	BossHealthMax[GetNativeCell(1)] = GetNativeCell(2);
+	FF2BossInfo[GetNativeCell(1)].HealthMax = GetNativeCell(2);
 	UpdateHealthBar();
 }
 
 int Native_GetBossLives(Handle plugin, int numParams)
 {
-	return BossLives[GetNativeCell(1)];
+	return FF2BossInfo[GetNativeCell(1)].Lives;
 }
 
 int Native_SetBossLives(Handle plugin, int numParams)
 {
-	BossLives[GetNativeCell(1)] = GetNativeCell(2);
+	FF2BossInfo[GetNativeCell(1)].Lives = GetNativeCell(2);
 }
 
 int Native_GetBossMaxLives(Handle plugin, int numParams)
 {
-	return BossLivesMax[GetNativeCell(1)];
+	return FF2BossInfo[GetNativeCell(1)].LivesMax;
 }
 
 int Native_SetBossMaxLives(Handle plugin, int numParams)
 {
-	BossLivesMax[GetNativeCell(1)] = GetNativeCell(2);
+	FF2BossInfo[GetNativeCell(1)].LivesMax = GetNativeCell(2);
 }
 
 int Native_GetBossCharge(Handle plugin, int numParams)
 {
-	return view_as<int>(BossCharge[GetNativeCell(1)][GetNativeCell(2)]);
+	return view_as<int>(FF2BossInfo[GetNativeCell(1)].Charge[GetNativeCell(2)]);
 }
 
 int Native_SetBossCharge(Handle plugin, int numParams)  //TODO: This duplicates logic found in Timer_UseBossCharge
 {
-	BossCharge[GetNativeCell(1)][GetNativeCell(2)] = GetNativeCell(3);
+	FF2BossInfo[GetNativeCell(1)].Charge[GetNativeCell(2)] = GetNativeCell(3);
 }
 
 int Native_GetBossRageDamage(Handle plugin, int numParams)
 {
-	return BossRageDamage[GetNativeCell(1)];
+	return FF2BossInfo[GetNativeCell(1)].RageDamage;
 }
 
 int Native_SetBossRageDamage(Handle plugin, int numParams)
 {
-	BossRageDamage[GetNativeCell(1)] = GetNativeCell(2);
+	FF2BossInfo[GetNativeCell(1)].RageDamage = GetNativeCell(2);
 }
 
 int Native_GetRoundState(Handle plugin, int numParams)
@@ -312,32 +312,32 @@ int Native_GetRageDist(Handle plugin, int numParams)
 	static char ability_name[64];
 	GetNativeString(3, ability_name, 64);
 
-	if(!BossKV[Special[index]])
+	if(!FF2CharSetInfo.BossKV[FF2BossInfo[index].Special])
 		return view_as<int>(0.0);
 
-	KvRewind(BossKV[Special[index]]);
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special]);
 	float see;
 	if(!ability_name[0])
-		return view_as<int>(KvGetFloat(BossKV[Special[index]], "ragedist", 400.0));
+		return view_as<int>(KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], "ragedist", 400.0));
 
 	char s[10];
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
 		FormatEx(s, sizeof(s), "ability%i", i);
-		if(KvJumpToKey(BossKV[Special[index]], s))
+		if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], s))
 		{
 			static char ability_name2[64];
-			KvGetString(BossKV[Special[index]], "name", ability_name2, 64);
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], "name", ability_name2, 64);
 			if(strcmp(ability_name, ability_name2))
 			{
-				KvGoBack(BossKV[Special[index]]);
+				KvGoBack(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special]);
 				continue;
 			}
 	
-			if((see=KvGetFloat(BossKV[Special[index]], "dist", -1.0)) < 0)
+			if((see=KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], "dist", -1.0)) < 0)
 			{
-				KvRewind(BossKV[Special[index]]);
-				see = KvGetFloat(BossKV[Special[index]], "ragedist", 400.0);
+				KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special]);
+				see = KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special], "ragedist", 400.0);
 			}
 			return view_as<int>(see);
 		}
@@ -349,7 +349,7 @@ int Native_GetRageDist(Handle plugin, int numParams)
 int Native_HasAbility(Handle plugin, int numParams)
 {
 	int boss = GetNativeCell(1);
-	if(boss==-1 || boss>=MAXTF2PLAYERS || Special[boss]==-1 || !BossKV[Special[boss]])
+	if(boss==-1 || boss>=MAXTF2PLAYERS || FF2BossInfo[boss].Special==-1 || !FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special])
 		return false;
 	
 	char pluginName[64], abilityName[64];
@@ -449,17 +449,17 @@ int Native_GetDamage(Handle plugin, int numParams)
 	if(!Utils_IsValidClient(client))
 		return 0;
 
-	return Damage[client];
+	return FF2PlayerInfo[client].Damage;
 }
 
 int Native_GetFF2flags(Handle plugin, int numParams)
 {
-	return FF2flags[GetNativeCell(1)];
+	return FF2PlayerInfo[GetNativeCell(1)].FF2Flags;
 }
 
 int Native_SetFF2flags(Handle plugin, int numParams)
 {
-	FF2flags[GetNativeCell(1)] = GetNativeCell(2);
+	FF2PlayerInfo[GetNativeCell(1)].FF2Flags = GetNativeCell(2);
 }
 
 int Native_GetQueuePoints(Handle plugin, int numParams)
@@ -478,22 +478,22 @@ int Native_GetSpecialKV(Handle plugin, int numParams)
 	bool isNumOfSpecial = view_as<bool>(GetNativeCell(2));
 	if(isNumOfSpecial)
 	{
-		if(index!=-1 && index<Specials)
+		if(index!=-1 && index<FF2CharSetInfo.SizeOfSpecials)
 		{
-			if(BossKV[index] != INVALID_HANDLE)
-				KvRewind(BossKV[index]);
+			if(FF2CharSetInfo.BossKV[index] != INVALID_HANDLE)
+				KvRewind(FF2CharSetInfo.BossKV[index]);
 
-			return view_as<int>(BossKV[index]);
+			return view_as<int>(FF2CharSetInfo.BossKV[index]);
 		}
 	}
 	else
 	{
-		if(index!=-1 && index<=MaxClients && Special[index]!=-1 && Special[index]<MAXSPECIALS)
+		if(index!=-1 && index<=MaxClients && FF2BossInfo[index].Special!=-1 && FF2BossInfo[index].Special<MAXSPECIALS)
 		{
-			if(BossKV[Special[index]] != INVALID_HANDLE)
-				KvRewind(BossKV[Special[index]]);
+			if(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special] != INVALID_HANDLE)
+				KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special]);
 
-			return view_as<int>(BossKV[Special[index]]);
+			return view_as<int>(FF2CharSetInfo.BossKV[FF2BossInfo[index].Special]);
 		}
 	}
 	return view_as<int>(INVALID_HANDLE);
@@ -556,7 +556,7 @@ int Native_GetClientGlow(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	if(Utils_IsValidClient(client))
 	{
-		return view_as<int>(GlowTimer[client]);
+		return view_as<int>(FF2PlayerInfo[client].GlowTimer);
 	}
 	else
 	{
@@ -572,13 +572,13 @@ int Native_SetClientGlow(Handle plugin, int numParams)
 int Native_GetClientShield(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
-	if(Utils_IsValidClient(client) && hadshield[client])
+	if(Utils_IsValidClient(client) && FF2PlayerInfo[client].HasShield)
 	{
-		if(shield[client])
+		if(FF2PlayerInfo[client].EntShield)
 		{
 			if(ConVars.ShieldType.IntValue > 2)
 			{
-				return RoundToFloor(shieldHP[client]/ConVars.ShieldHealth.FloatValue*100.0);
+				return RoundToFloor(FF2PlayerInfo[client].ShieldHP/ConVars.ShieldHealth.FloatValue*100.0);
 			}
 			else
 			{
@@ -596,18 +596,18 @@ int Native_SetClientShield(Handle plugin, int numParams)
 	if(Utils_IsValidClient(client))
 	{
 		if(GetNativeCell(2) > 0)
-			shield[client] = GetNativeCell(2);
+			FF2PlayerInfo[client].EntShield = GetNativeCell(2);
 
 		if(GetNativeCell(3) >= 0)
-			shieldHP[client] = GetNativeCell(3)*ConVars.ShieldHealth.FloatValue/100.0;
+			FF2PlayerInfo[client].ShieldHP = GetNativeCell(3)*ConVars.ShieldHealth.FloatValue/100.0;
 
 		if(GetNativeCell(4) > 0)
 		{
-			shDmgReduction[client] = (1.0-GetNativeCell(4));
+			FF2PlayerInfo[client].ShieldDmgReduction = (1.0-GetNativeCell(4));
 		}
 		else if(GetNativeCell(3) > 0)
 		{
-			shDmgReduction[client] = shieldHP[client]/ConVars.ShieldHealth.FloatValue*(1.0-ConVars.ShieldResist.FloatValue);
+			FF2PlayerInfo[client].ShieldDmgReduction = FF2PlayerInfo[client].ShieldHP/ConVars.ShieldHealth.FloatValue*(1.0-ConVars.ShieldResist.FloatValue);
 		}
 	}
 }
@@ -617,9 +617,9 @@ int Native_RemoveClientShield(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	if(Utils_IsValidClient(client))
 	{
-		TF2_RemoveWearable(client, shield[client]);
-		shieldHP[client] = 0.0;
-		shield[client] = 0;
+		TF2_RemoveWearable(client, FF2PlayerInfo[client].EntShield);
+		FF2PlayerInfo[client].ShieldHP = 0.0;
+		FF2PlayerInfo[client].EntShield = 0;
 	}
 }
 
@@ -647,7 +647,7 @@ int Native_SetCheats(Handle plugin, int numParams)
 
 int Native_GetCheats(Handle plugin, int numParams)
 {
-	return (FF2Globals.CheatsUsed || SpecialRound);
+	return (FF2Globals.CheatsUsed || FF2Globals.IsSpecialRound);
 }
 
 int Native_MakeBoss(Handle plugin, int numParams)
@@ -663,19 +663,19 @@ int Native_MakeBoss(Handle plugin, int numParams)
 		if(boss < 0)
 			return;
 
-		Boss[boss] = 0;
-		BossSwitched[boss] = false;
+		FF2BossInfo[boss].Boss = 0;
+		FF2BossInfo[boss].HasSwitched = false;
 		CreateTimer(0.1, Timer_MakeNotBoss, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		return;
 	}
 
 	int special = GetNativeCell(3);
 	if(special >= 0)
-		Incoming[boss] = special;
+		FF2BossInfo[boss].Incoming = special;
 
-	Boss[boss] = client;
-	HasEquipped[boss] = false;
-	BossSwitched[boss] = GetNativeCell(4);
+	FF2BossInfo[boss].Boss = client;
+	FF2BossInfo[boss].HasEquipped = false;
+	FF2BossInfo[boss].HasSwitched = GetNativeCell(4);
 	PickCharacter(boss, boss);
 	CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 }
@@ -703,10 +703,10 @@ int Native_ReportError(Handle plugin, int params)
 {
 	int boss = GetNativeCell(1);
 	char name[48] = "Unknown";
-	if(boss >= 0 && BossKV[Special[boss]])
+	if(boss >= 0 && FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special])
 	{
-		BossKV[Special[boss]].Rewind();
-		BossKV[Special[boss]].GetString("name", name, sizeof(name), "Unknown");
+		FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special].Rewind();
+		FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special].GetString("name", name, sizeof(name), "Unknown");
 	}
 	
 	LogToFile(FF2LogsPaths.Errors, "[FF2] Exception reported: Boss: %i - Name: %s", boss, name);
@@ -766,7 +766,7 @@ any FF2Data_GetConfig(Handle plugin, int params)
 	if(boss.Invalid)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid boss index: %i", boss);
 	
-	return BossKV[boss.boss];
+	return FF2CharSetInfo.BossKV[boss.boss];
 }
 
 any FF2Data_Change(Handle plugin, int params)

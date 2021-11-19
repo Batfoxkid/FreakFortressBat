@@ -74,4 +74,45 @@
 #define FF2FLAG_ALLOW_AMMO_PICKUPS		(1<<14)		//Used to prevent FF2Globals.Bosses from picking up ammo
 #define FF2FLAG_ROCKET_JUMPING			(1<<15)		//Used when a soldier is rocket jumping
 #define FF2FLAG_ALLOW_BOSS_WEARABLES		(1<<16)		//Used to allow boss having wearables (only for Official FF2)
-#define FF2FLAGS_SPAWN				~FF2FLAG_UBERREADY & ~FF2FLAG_ISBUFFED & ~FF2FLAG_TALKING & ~FF2FLAG_ALLOWSPAWNINBOSSTEAM & ~FF2FLAG_CHANGECVAR & ~FF2FLAG_ROCKET_JUMPING & FF2FLAG_USEBOSSTIMER & FF2FLAG_USINGABILITY
+#define FF2FLAGS_SPAWN		~FF2FLAG_UBERREADY &            \
+                            ~FF2FLAG_ISBUFFED &             \
+                            ~FF2FLAG_TALKING &              \
+                            ~FF2FLAG_ALLOWSPAWNINBOSSTEAM & \
+                            ~FF2FLAG_CHANGECVAR &           \
+                            ~FF2FLAG_ROCKET_JUMPING &       \
+                            FF2FLAG_USEBOSSTIMER &          \
+                            FF2FLAG_USINGABILITY
+
+
+#define HUDTYPES 6
+char HudTypes[][] =	// Names used in translation files
+{
+	"Hud Damage",
+	"Hud Extra",
+	"Hud Message",
+	"Hud Countdown",
+	"Hud Health",
+	"Hud Ranking"
+};
+
+enum
+{
+	GOOMBA_NONE = 0,
+	GOOMBA_ALL,
+	GOOMBA_BOSSTEAM,
+	GOOMBA_OTHERTEAM,
+	GOOMBA_NOTBOSS,
+	GOOMBA_NOMINION,
+	GOOMBA_BOSS
+};
+
+enum
+{
+	CAP_ALL = 0,
+	CAP_NONE,
+	CAP_BOSS_ONLY,
+	CAP_BOSS_TEAM,
+	CAP_NOT_BOSS,
+	CAP_MERC_TEAM,
+	CAP_NO_MINIONS
+};

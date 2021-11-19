@@ -30,7 +30,7 @@ Action Command_SetNextBoss(int client, int args)
 			return Plugin_Handled;
 		}
 
-		Utils_GetBossSpecial(Incoming[0], boss, sizeof(boss), client);
+		Utils_GetBossSpecial(FF2BossInfo[0].Incoming, boss, sizeof(boss), client);
 
 		Menu menu = new Menu(Command_SetNextBossH);
 		menu.SetTitle("Override Next Boss\n  Current Selection: %s", boss);
@@ -38,7 +38,7 @@ Action Command_SetNextBoss(int client, int args)
 		strcopy(boss, sizeof(boss), "No Override");
 		menu.AddItem(boss, boss);
 
-		for(int config; config<Specials; config++)
+		for(int config; config<FF2CharSetInfo.SizeOfSpecials; config++)
 		{
 			Utils_GetBossSpecial(config, boss, sizeof(boss), client);
 			menu.AddItem(boss, boss);
@@ -52,30 +52,30 @@ Action Command_SetNextBoss(int client, int args)
 	static char name[64];
 	GetCmdArgString(name, sizeof(name));
 
-	for(int config; config<Specials; config++)
+	for(int config; config<FF2CharSetInfo.SizeOfSpecials; config++)
 	{
 		Utils_GetBossSpecial(config, boss, sizeof(boss), client);
 		if(StrContains(boss, name, false) != -1)
 		{
-			Incoming[0] = config;
+			FF2BossInfo[0].Incoming = config;
 			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
 		}
 
-		KvRewind(BossKV[config]);
-		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		KvRewind(FF2CharSetInfo.BossKV[config]);
+		KvGetString(FF2CharSetInfo.BossKV[config], "name", boss, sizeof(boss));
 		if(StrContains(boss, name, false) != -1)
 		{
-			Incoming[0] = config;
+			FF2BossInfo[0].Incoming = config;
 			Utils_GetBossSpecial(config, boss, sizeof(boss), client);
 			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
 		}
 
-		KvGetString(BossKV[config], "filename", boss, sizeof(boss));
+		KvGetString(FF2CharSetInfo.BossKV[config], "filename", boss, sizeof(boss));
 		if(StrContains(boss, name, false) != -1)
 		{
-			Incoming[0] = config;
+			FF2BossInfo[0].Incoming = config;
 			Utils_GetBossSpecial(config, boss, sizeof(boss), client);
 			FReplyToCommand(client, "Set the next boss to %s", boss);
 			return Plugin_Handled;
@@ -99,13 +99,13 @@ int Command_SetNextBossH(Menu menu, MenuAction action, int client, int choice)
 			{
 				case 0:
 				{
-					Incoming[0] = 0;
+					FF2BossInfo[0].Incoming = 0;
 					FReplyToCommand(client, "No override to the next boss");
 				}
 				default:
 				{
 					int choice2 = choice-1;
-					Incoming[0] = choice2;
+					FF2BossInfo[0].Incoming = choice2;
 					static char boss[64];
 					Utils_GetBossSpecial(choice2, boss, sizeof(boss), client);
 					FReplyToCommand(client, "Set the next boss to %s", boss);
@@ -255,7 +255,7 @@ Action Command_Charset(int client, int args)
 		menu.SetTitle("Charset");
 
 		static char config[PLATFORM_MAX_PATH], charset[64];
-		BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", FF2CharSetInfo.UseOldCharSetPath ? ConfigPath : DataPath, CharsetCFG);
 
 		Handle Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
@@ -284,7 +284,7 @@ Action Command_Charset(int client, int args)
 	ImplodeStrings(rawText, amount, " ", charset, sizeof(charset));
 
 	static char config[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", FF2CharSetInfo.UseOldCharSetPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
@@ -294,7 +294,7 @@ Action Command_Charset(int client, int args)
 		if(StrContains(config, charset, false) >= 0)
 		{
 			FReplyToCommand(client, "Charset for nextmap is %s", config);
-			isCharSetSelected = true;
+			FF2CharSetInfo.IsCharSetSelected = true;
 			ConVars.Charset.IntValue = i;
 			break;
 		}
@@ -323,9 +323,9 @@ int Command_CharsetH(Menu menu, MenuAction action, int client, int choice)
 
 			static char nextmap[32];
 			ConVars.Nextmap.GetString(nextmap, sizeof(nextmap));
-			menu.GetItem(choice, FF2CharSetString, sizeof(FF2CharSetString));
-			FPrintToChat(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
-			isCharSetSelected = true;
+			menu.GetItem(choice, FF2CharSetInfo.CurrentCharSet, sizeof(FF2CharSetInfo.CurrentCharSet));
+			FPrintToChat(client, "%t", "nextmap_charset", nextmap, FF2CharSetInfo.CurrentCharSet);
+			FF2CharSetInfo.IsCharSetSelected = true;
 		}
 	}
 }
@@ -349,7 +349,7 @@ Action Command_LoadCharset(int client, int args)
 		menu.SetTitle("Charset");
 
 		static char config[PLATFORM_MAX_PATH], charset[64];
-		BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", FF2CharSetInfo.UseOldCharSetPath ? ConfigPath : DataPath, CharsetCFG);
 
 		Handle Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
@@ -378,7 +378,7 @@ Action Command_LoadCharset(int client, int args)
 	ImplodeStrings(rawText, amount, " ", charset, sizeof(charset));
 
 	static char config[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", FF2CharSetInfo.UseOldCharSetPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
@@ -397,7 +397,7 @@ Action Command_LoadCharset(int client, int args)
 
 			FReplyToCommand(client, "Character set has been switched to %s", config);
 			FindCharacters();
-			FF2CharSetString[0] = 0;
+			FF2CharSetInfo.CurrentCharSet[0] = 0;
 			FF2Globals.LoadCharset = false;
 			break;
 		}
@@ -448,7 +448,7 @@ Action Command_ReloadCharset(int client, int args)
 	}
 	FReplyToCommand(client, "Current character set has been reloaded!");
 	FindCharacters();
-	FF2CharSetString[0] = 0;
+	FF2CharSetInfo.CurrentCharSet[0] = 0;
 	FF2Globals.LoadCharset = false;
 	return Plugin_Handled;
 }
@@ -492,7 +492,7 @@ Action Command_ReloadFF2Configs(int client, int args)
 	Utils_CheckToChangeMapDoors();
 	Utils_CheckToTeleportToSpawn();
 	FindCharacters();
-	FF2CharSetString[0] = 0;
+	FF2CharSetInfo.CurrentCharSet[0] = 0;
 	FF2Globals.ReloadConfigs = false;
 	return Plugin_Handled;
 }
@@ -579,27 +579,27 @@ Action Command_GetHP(int client)  //TODO: This can rarely show a very large nega
 		bool multi;
 		for(int boss; boss<=MaxClients; boss++)
 		{
-			if(Utils_IsValidClient(Boss[boss]))
+			if(Utils_IsValidClient(FF2BossInfo[boss].Boss))
 			{
 				char lives[8];
-				if(BossLives[boss] > 1)
-					FormatEx(lives, sizeof(lives), "x%i", BossLives[boss]);
+				if(FF2BossInfo[boss].Lives > 1)
+					FormatEx(lives, sizeof(lives), "x%i", FF2BossInfo[boss].Lives);
 
 				for(int target; target<=MaxClients; target++)
 				{
 					if(Utils_IsValidClient(target))
 					{
-						Utils_GetBossSpecial(Special[boss], name, sizeof(name), target);
-						Format(text[target], 512, "%s\n%t", multi ? text[target] : "", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
-						FPrintToChat(target, "%t", "ff2_hp", name, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1), BossHealthMax[boss], lives);
+						Utils_GetBossSpecial(FF2BossInfo[boss].Special, name, sizeof(name), target);
+						Format(text[target], 512, "%s\n%t", multi ? text[target] : "", "ff2_hp", name, FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1), FF2BossInfo[boss].HealthMax, lives);
+						FPrintToChat(target, "%t", "ff2_hp", name, FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1), FF2BossInfo[boss].HealthMax, lives);
 					}
 				}
 				multi = true;
-				BossHealthLast[boss] = BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
+				FF2BossInfo[boss].HealthLast = FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1);
 			}
 		}
 
-		if((IsPlayerAlive(client) || IsClientObserver(client)) && !FF2PlayerCookie[client].HudSettings[4] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+		if((IsPlayerAlive(client) || IsClientObserver(client)) && !FF2PlayerCookie[client].HudSettings[4] && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_HUDDISABLED))
 		{
 			for(int target; target<=MaxClients; target++)
 			{
@@ -607,9 +607,9 @@ Action Command_GetHP(int client)  //TODO: This can rarely show a very large nega
 				{
 					if(FF2Globals.Bosses<2 && ConVars.GameText.IntValue>0)
 					{
-						if(BossIcon[0])
+						if(FF2Globals.BossIcon[0])
 						{
-							Utils_ShowGameText(target, BossIcon, _, text[client]);
+							Utils_ShowGameText(target, FF2Globals.BossIcon, _, text[client]);
 						}
 						else
 						{
@@ -636,7 +636,7 @@ Action Command_GetHP(int client)  //TODO: This can rarely show a very large nega
 	for(int target; target<=MaxClients; target++)
 	{
 		if(Utils_IsBoss(target))
-			Format(waitTime, sizeof(waitTime), "%s %i,", waitTime, BossHealthLast[Boss[target]]);
+			Format(waitTime, sizeof(waitTime), "%s %i,", waitTime, FF2BossInfo[FF2BossInfo[target].Boss].HealthLast);
 	}
 	FPrintToChat(client, "%t", "wait_hp", RoundFloat(FF2Globals.HPTime-GetGameTime()), waitTime);
 	return Plugin_Continue;
@@ -875,7 +875,7 @@ Action Command_SkipSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
+	if(StrEqual(FF2PlayerInfo[client].CurrentBGM, "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
 	{
 		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -891,8 +891,8 @@ Action Command_SkipSong(int client, int args)
 
 	StopMusic(client, true);
 
-	KvRewind(BossKV[Special[0]]);
-	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special]);
+	if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "sound_bgm"))
 	{
 		char music[PLATFORM_MAX_PATH], id3[6][256];
 		int index;
@@ -901,7 +901,7 @@ Action Command_SkipSong(int client, int args)
 			index++;
 			FormatEx(music, 10, "time%i", index);
 		}
-		while(KvGetFloat(BossKV[Special[0]], music) > 1);
+		while(KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music) > 1);
 
 		if(!index)
 		{
@@ -909,22 +909,22 @@ Action Command_SkipSong(int client, int args)
 			return Plugin_Handled;
 		}
 
-		cursongId[client]++;
-		if(cursongId[client] >= index)
-			cursongId[client] = 1;
+		FF2PlayerInfo[client].SongIdx++;
+		if(FF2PlayerInfo[client].SongIdx >= index)
+			FF2PlayerInfo[client].SongIdx = 1;
 
 		char lives[256];
-		FormatEx(lives, sizeof(lives), "life%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+		FormatEx(lives, sizeof(lives), "life%i", FF2PlayerInfo[client].SongIdx);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], lives, lives, sizeof(lives));
 		if(lives[0])
 		{
-			if(StringToInt(lives) != BossLives[0])
+			if(StringToInt(lives) != FF2BossInfo[0].Lives)
 			{
 				for(int i; i<index-1; i++)
 				{
-					if(StringToInt(lives) != BossLives[0])
+					if(StringToInt(lives) != FF2BossInfo[0].Lives)
 					{
-						cursongId[client] = i;
+						FF2PlayerInfo[client].SongIdx = i;
 						continue;
 					}
 					break;
@@ -932,15 +932,15 @@ Action Command_SkipSong(int client, int args)
 			}
 		}
 
-		FormatEx(music, 10, "time%i", cursongId[client]);
-		float time = KvGetFloat(BossKV[Special[0]], music);
-		FormatEx(music, 10, "path%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+		FormatEx(music, 10, "time%i", FF2PlayerInfo[client].SongIdx);
+		float time = KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music);
+		FormatEx(music, 10, "path%i", FF2PlayerInfo[client].SongIdx);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music, music, sizeof(music));
 
-		FormatEx(id3[0], sizeof(id3[]), "name%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
-		FormatEx(id3[1], sizeof(id3[]), "artist%i", cursongId[client]);
-		KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+		FormatEx(id3[0], sizeof(id3[]), "name%i", FF2PlayerInfo[client].SongIdx);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[0], id3[2], sizeof(id3[]));
+		FormatEx(id3[1], sizeof(id3[]), "artist%i", FF2PlayerInfo[client].SongIdx);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[1], id3[3], sizeof(id3[]));
 
 		char temp[PLATFORM_MAX_PATH];
 		FormatEx(temp, sizeof(temp), "sound/%s", music);
@@ -950,10 +950,10 @@ Action Command_SkipSong(int client, int args)
 		}
 		else
 		{
-			KvGetString(BossKV[Special[0]], "filename", lives, sizeof(lives));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "filename", lives, sizeof(lives));
 			LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", lives, temp);
-			if(MusicTimer[client] != null) {
-				delete MusicTimer[client];
+			if(FF2PlayerInfo[client].MusicTimer != null) {
+				delete FF2PlayerInfo[client].MusicTimer;
 			}
 		}
 	}
@@ -977,7 +977,7 @@ Action Command_ShuffleSong(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
+	if(StrEqual(FF2PlayerInfo[client].CurrentBGM, "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
 	{
 		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -1011,7 +1011,7 @@ Action Command_Tracklist(int client, int args)
 		return Plugin_Handled;
 	}
 
-	if(StrEqual(currentBGM[client], "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
+	if(StrEqual(FF2PlayerInfo[client].CurrentBGM, "ff2_stop_music", true) || !FF2PlayerCookie[client].MusicOn)
 	{
 		FReplyToCommand(client, "%t", "ff2_music_disabled");
 		return Plugin_Handled;
@@ -1026,8 +1026,8 @@ Action Command_Tracklist(int client, int args)
 	Menu menu = new Menu(Command_TrackListH);
 	SetGlobalTransTarget(client);
 	menu.SetTitle("%t", "track_select");
-	KvRewind(BossKV[Special[0]]);
-	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special]);
+	if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "sound_bgm"))
 	{
 		char music[PLATFORM_MAX_PATH], id3[6][256];
 		int index;
@@ -1036,7 +1036,7 @@ Action Command_Tracklist(int client, int args)
 			index++;
 			FormatEx(music, 10, "time%i", index);
 		}
-		while(KvGetFloat(BossKV[Special[0]], music) > 1);
+		while(KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music) > 1);
 
 		if(!index)
 		{
@@ -1048,16 +1048,16 @@ Action Command_Tracklist(int client, int args)
 		for(int trackIdx=1; trackIdx<=index-1; trackIdx++)
 		{
 			FormatEx(lives, sizeof(lives), "life%i", trackIdx);
-			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], lives, lives, sizeof(lives));
 			if(lives[0])
 			{
-				if(StringToInt(lives) != BossLives[0])
+				if(StringToInt(lives) != FF2BossInfo[0].Lives)
 					continue;
 			}
 			FormatEx(id3[0], sizeof(id3[]), "name%i", trackIdx);
-			KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[0], id3[2], sizeof(id3[]));
 			FormatEx(id3[1], sizeof(id3[]), "artist%i", trackIdx);
-			KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[1], id3[3], sizeof(id3[]));
 			Utils_GetSongTime(trackIdx, id3[5], sizeof(id3[]));
 			if(!id3[3])
 				FormatEx(id3[3], sizeof(id3[]), "%t", "unknown_artist");
@@ -1106,11 +1106,11 @@ Action VoiceTogglePanelCmd(int client, int args)
 
 Action Command_Nextmap(int client, int args)
 {
-	if(FF2CharSetString[0])
+	if(FF2CharSetInfo.CurrentCharSet[0])
 	{
 		static char nextmap[42];
 		ConVars.Nextmap.GetString(nextmap, sizeof(nextmap));
-		FReplyToCommand(client, "%t", "nextmap_charset", nextmap, FF2CharSetString);
+		FReplyToCommand(client, "%t", "nextmap_charset", nextmap, FF2CharSetInfo.CurrentCharSet);
 	}
 	return Plugin_Handled;
 }
@@ -1121,7 +1121,7 @@ public Action Command_Say(int client, int args)
 	if(GetCmdArgString(chat, sizeof(chat))<1 || !client)
 		return Plugin_Continue;
 
-	if(FF2CharSetString[0] && StrEqual(chat, "\"nextmap\""))
+	if(FF2CharSetInfo.CurrentCharSet[0] && StrEqual(chat, "\"nextmap\""))
 	{
 		Command_Nextmap(client, 0);
 		return Plugin_Handled;
@@ -1155,8 +1155,8 @@ Action Command_SetRage(int client, int args)
 			GetCmdArg(1, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 
-			BossCharge[Utils_GetBossIndex(client)][0] = rageMeter;
-			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(BossCharge[client][0]));
+			FF2BossInfo[Utils_GetBossIndex(client)].Charge[0] = rageMeter;
+			FReplyToCommand(client, "You now have %i percent RAGE", RoundFloat(FF2BossInfo[client].Charge[0]));
 			LogAction(client, client, "\"%L\" gave themselves %i RAGE", client, RoundFloat(rageMeter));
 			FF2Globals.CheatsUsed = true;
 		}
@@ -1190,7 +1190,7 @@ Action Command_SetRage(int client, int args)
 			return Plugin_Handled;
 		}
 
-		BossCharge[Utils_GetBossIndex(target_list[target])][0] = rageMeter;
+		FF2BossInfo[Utils_GetBossIndex(target_list[target])].Charge[0] = rageMeter;
 		LogAction(client, target_list[target], "\"%L\" set %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Set %d rage to %s", RoundFloat(rageMeter), target_name);
 		FF2Globals.CheatsUsed = true;
@@ -1224,8 +1224,8 @@ Action Command_AddRage(int client, int args)
 			GetCmdArg(1, ragePCT, sizeof(ragePCT));
 			float rageMeter = StringToFloat(ragePCT);
 
-			BossCharge[Utils_GetBossIndex(client)][0] += rageMeter;
-			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(BossCharge[client][0]), RoundFloat(rageMeter));
+			FF2BossInfo[Utils_GetBossIndex(client)].Charge[0] += rageMeter;
+			FReplyToCommand(client, "You now have %i percent RAGE (%i percent added)", RoundFloat(FF2BossInfo[client].Charge[0]), RoundFloat(rageMeter));
 			LogAction(client, client, "\"%L\" gave themselves %i more RAGE", client, RoundFloat(rageMeter));
 			FF2Globals.CheatsUsed = true;
 		}
@@ -1259,7 +1259,7 @@ Action Command_AddRage(int client, int args)
 			return Plugin_Handled;
 		}
 
-		BossCharge[Utils_GetBossIndex(target_list[target])][0] += rageMeter;
+		FF2BossInfo[Utils_GetBossIndex(target_list[target])].Charge[0] += rageMeter;
 		LogAction(client, target_list[target], "\"%L\" added %d RAGE to \"%L\"", client, RoundFloat(rageMeter), target_list[target]);
 		FReplyToCommand(client, "Added %d rage to %s", RoundFloat(rageMeter), target_name);
 		FF2Globals.CheatsUsed = true;
@@ -1297,8 +1297,8 @@ Action Command_AddCharge(int client, int args)
 
 			if(abilitySlot>=0 && abilitySlot<4)
 			{
-				BossCharge[Utils_GetBossIndex(client)][abilitySlot] += rageMeter;
-				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(client)][abilitySlot]), RoundFloat(rageMeter));
+				FF2BossInfo[Utils_GetBossIndex(client)].Charge[abilitySlot] += rageMeter;
+				FReplyToCommand(client, "Slot %i's charge: %i percent (added %i percent)!", abilitySlot, RoundFloat(FF2BossInfo[Utils_GetBossIndex(client)].Charge[abilitySlot]), RoundFloat(rageMeter));
 				LogAction(client, client, "\"%L\" gave themselves %i more charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
 				FF2Globals.CheatsUsed = true;
 			}
@@ -1341,8 +1341,8 @@ Action Command_AddCharge(int client, int args)
 
 		if(abilitySlot>=0 || abilitySlot<4)
 		{
-			BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot] += rageMeter;
-			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot]), RoundFloat(rageMeter));
+			FF2BossInfo[Utils_GetBossIndex(target_list[target])].Charge[abilitySlot] += rageMeter;
+			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent (added %i percent)!", target_name, abilitySlot, RoundFloat(FF2BossInfo[Utils_GetBossIndex(target_list[target])].Charge[abilitySlot]), RoundFloat(rageMeter));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i more charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			FF2Globals.CheatsUsed = true;
 		}
@@ -1384,8 +1384,8 @@ Action Command_SetCharge(int client, int args)
 
 			if(abilitySlot>=0 || abilitySlot<4)
 			{
-				BossCharge[Utils_GetBossIndex(client)][abilitySlot] = rageMeter;
-				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(client)][abilitySlot]));
+				FF2BossInfo[Utils_GetBossIndex(client)].Charge[abilitySlot] = rageMeter;
+				FReplyToCommand(client, "Slot %i's charge: %i percent!", abilitySlot, RoundFloat(FF2BossInfo[Utils_GetBossIndex(client)].Charge[abilitySlot]));
 				LogAction(client, client, "\"%L\" gave themselves %i charge to slot %i", client, RoundFloat(rageMeter), abilitySlot);
 				FF2Globals.CheatsUsed = true;
 			}
@@ -1428,8 +1428,8 @@ Action Command_SetCharge(int client, int args)
 
 		if(abilitySlot>=0 || abilitySlot<4)
 		{
-			BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot] = rageMeter;
-			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(BossCharge[Utils_GetBossIndex(target_list[target])][abilitySlot]));
+			FF2BossInfo[Utils_GetBossIndex(target_list[target])].Charge[abilitySlot] = rageMeter;
+			FReplyToCommand(client, "%s's ability slot %i's charge: %i percent!", target_name, abilitySlot, RoundFloat(FF2BossInfo[Utils_GetBossIndex(target_list[target])].Charge[abilitySlot]));
 			LogAction(client, target_list[target], "\"%L\" gave \"%L\" %i charge to slot %i", client, target_list[target], RoundFloat(rageMeter), abilitySlot);
 			FF2Globals.CheatsUsed = true;
 		}
@@ -1500,9 +1500,9 @@ Action Command_MakeBoss(int client, int args)
 		{
 			if(index >= 0)
 			{
-				Boss[boss] = 0;
+				FF2BossInfo[boss].Boss = 0;
 				boss = index;
-				Boss[boss] = target_list[target];
+				FF2BossInfo[boss].Boss = target_list[target];
 			}
 			else
 			{
@@ -1511,17 +1511,17 @@ Action Command_MakeBoss(int client, int args)
 
 			if(team > 1)
 			{
-				BossSwitched[boss] = team==FF2Globals.OtherTeam ? true : false;
+				FF2BossInfo[boss].HasSwitched = team==FF2Globals.OtherTeam ? true : false;
 			}
 			else if(team > 0)
 			{
-				BossSwitched[boss] = GetRandomInt(0, 1) ? true : false;
+				FF2BossInfo[boss].HasSwitched = GetRandomInt(0, 1) ? true : false;
 			}
 
 			if(special >= 0)
-				Incoming[boss] = special;
+				FF2BossInfo[boss].Incoming = special;
 
-			HasEquipped[boss] = false;
+			FF2BossInfo[boss].HasEquipped = false;
 			PickCharacter(boss, boss);
 			CreateTimer(0.3, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
 		}
@@ -1529,20 +1529,20 @@ Action Command_MakeBoss(int client, int args)
 		{
 			if(index >= 0)
 			{
-				Boss[index] = target_list[target];
+				FF2BossInfo[index].Boss = target_list[target];
 				if(team > 1)
 				{
-					BossSwitched[index] = team==FF2Globals.OtherTeam ? true : false;
+					FF2BossInfo[index].HasSwitched = team==FF2Globals.OtherTeam ? true : false;
 				}
 				else if(team > 0)
 				{
-					BossSwitched[index] = GetRandomInt(0, 1) ? true : false;
+					FF2BossInfo[index].HasSwitched = GetRandomInt(0, 1) ? true : false;
 				}
 
 				if(special >= 0)
-					Incoming[index] = special;
+					FF2BossInfo[index].Incoming = special;
 
-				HasEquipped[boss] = false;
+				FF2BossInfo[boss].HasEquipped = false;
 				PickCharacter(index, index);
 				CreateTimer(0.3, Timer_MakeBoss, index, TIMER_FLAG_NO_MAPCHANGE);
 			}
@@ -1550,22 +1550,22 @@ Action Command_MakeBoss(int client, int args)
 			{
 				while(boss2 <= MaxClients)
 				{
-					if(!Utils_IsValidClient(Boss[boss2]))
+					if(!Utils_IsValidClient(FF2BossInfo[boss2].Boss))
 					{
-						Boss[boss2] = target_list[target];
+						FF2BossInfo[boss2].Boss = target_list[target];
 						if(team > 1)
 						{
-							BossSwitched[boss] = team==FF2Globals.OtherTeam;
+							FF2BossInfo[boss].HasSwitched = team==FF2Globals.OtherTeam;
 						}
 						else if(team > 0)
 						{
-							BossSwitched[boss] = GetRandomInt(0, 1)==1;
+							FF2BossInfo[boss].HasSwitched = GetRandomInt(0, 1)==1;
 						}
 
 						if(special >= 0)
-							Incoming[boss] = special;
+							FF2BossInfo[boss].Incoming = special;
 
-						HasEquipped[boss] = false;
+						FF2BossInfo[boss].HasEquipped = false;
 						PickCharacter(boss2, boss2);
 						CreateTimer(0.3, Timer_MakeBoss, boss2, TIMER_FLAG_NO_MAPCHANGE);
 						boss2++;
@@ -1609,7 +1609,7 @@ Action Command_SetInfiniteRage(int client, int args)
 			if(!InfiniteRageActive[client])
 			{
 				InfiniteRageActive[client] = true;
-				BossCharge[Utils_GetBossIndex(client)][0] = rageMax[client];
+				FF2BossInfo[Utils_GetBossIndex(client)].Charge[0] = FF2BossVar[client].RageMax;
 				FReplyToCommand(client, "Infinite RAGE activated");
 				LogAction(client, client, "\"%L\" activated infinite RAGE on themselves", client);
 				CreateTimer(0.2, Timer_InfiniteRage, GetClientUserId(client), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
@@ -1653,7 +1653,7 @@ Action Command_SetInfiniteRage(int client, int args)
 		if(!InfiniteRageActive[target_list[target]])
 		{
 			InfiniteRageActive[target_list[target]] = true;
-			BossCharge[Utils_GetBossIndex(target_list[target])][0] = rageMax[target_list[target]];
+			FF2BossInfo[Utils_GetBossIndex(target_list[target])].Charge[0] = FF2BossVar[target_list[target]].RageMax;
 			FReplyToCommand(client, "Infinite RAGE activated for %s", target_name);
 			LogAction(client, target_list[target], "\"%L\" activated infinite RAGE on \"%L\"", client, target_list[target]);
 			CreateTimer(0.2, Timer_InfiniteRage, GetClientUserId(target_list[target]), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
@@ -1851,12 +1851,12 @@ Action Command_SetMyBoss(int client, int args)
 		static char name[64], boss[64], bossName[64], fileName[64], companionName[64];
 		GetCmdArgString(name, sizeof(name));
 
-		for(int config; config<Specials; config++)
+		for(int config; config<FF2CharSetInfo.SizeOfSpecials; config++)
 		{
-			KvRewind(BossKV[config]);
-			if(KvGetNum(BossKV[config], "blocked"))
+			KvRewind(FF2CharSetInfo.BossKV[config]);
+			if(KvGetNum(FF2CharSetInfo.BossKV[config], "blocked"))
 			{
-				if(config == Specials-1)
+				if(config == FF2CharSetInfo.SizeOfSpecials-1)
 				{
 					FReplyToCommand(client, "%t", "deny_unknown");
 					return Plugin_Handled;
@@ -1865,15 +1865,15 @@ Action Command_SetMyBoss(int client, int args)
 			}
 
 			Utils_GetBossSpecial(config, bossName, sizeof(bossName), client);
-			KvGetString(BossKV[config], "name", boss, sizeof(boss));
+			KvGetString(FF2CharSetInfo.BossKV[config], "name", boss, sizeof(boss));
 			if(StrContains(bossName, name, false))
 			{
 				if(StrContains(boss, name, false))
 				{
-					KvGetString(BossKV[config], "filename", fileName, sizeof(fileName));
+					KvGetString(FF2CharSetInfo.BossKV[config], "filename", fileName, sizeof(fileName));
 					if(StrContains(fileName, name, false))
 					{
-						if(config == Specials-1)
+						if(config == FF2CharSetInfo.SizeOfSpecials-1)
 						{
 							FReplyToCommand(client, "%t", "deny_unknown");
 							return Plugin_Handled;
@@ -1883,11 +1883,11 @@ Action Command_SetMyBoss(int client, int args)
 				}
 			}
 
-			if((KvGetNum(BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-			   (KvGetNum(BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+			if((KvGetNum(FF2CharSetInfo.BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+			   (KvGetNum(FF2CharSetInfo.BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
 			   (Utils_BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true)))
 			{
-				if(KvGetNum(BossKV[config], "hidden"))
+				if(KvGetNum(FF2CharSetInfo.BossKV[config], "hidden"))
 				{
 					FReplyToCommand(client, "%t", "deny_unknown");
 					return Plugin_Handled;
@@ -1898,9 +1898,9 @@ Action Command_SetMyBoss(int client, int args)
 					return Plugin_Handled;
 				}
 			}
-			else if(KvGetNum(BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+			else if(KvGetNum(FF2CharSetInfo.BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 			{
-				if(KvGetNum(BossKV[config], "hidden", 1))
+				if(KvGetNum(FF2CharSetInfo.BossKV[config], "hidden", 1))
 				{
 					FReplyToCommand(client, "%t", "deny_unknown");
 					return Plugin_Handled;
@@ -1911,17 +1911,17 @@ Action Command_SetMyBoss(int client, int args)
 					return Plugin_Handled;
 				}
 			}
-			else if(KvGetNum(BossKV[config], "hidden") &&
-			      !(KvGetNum(BossKV[config], "donator") ||
-			        KvGetNum(BossKV[config], "theme") ||
-				KvGetNum(BossKV[config], "admin") ||
-				KvGetNum(BossKV[config], "owner")))
+			else if(KvGetNum(FF2CharSetInfo.BossKV[config], "hidden") &&
+			      !(KvGetNum(FF2CharSetInfo.BossKV[config], "donator") ||
+			        KvGetNum(FF2CharSetInfo.BossKV[config], "theme") ||
+				KvGetNum(FF2CharSetInfo.BossKV[config], "admin") ||
+				KvGetNum(FF2CharSetInfo.BossKV[config], "owner")))
 			{
 				FReplyToCommand(client, "%t", "deny_unknown");
 				return Plugin_Handled;
 			}
 
-			if(MapBlocked[config])
+			if(FF2CharSetInfo.MapBlocked[config])
 			{
 				if(!ConVars.ShowBossBlocked.BoolValue)
 				{
@@ -1934,13 +1934,13 @@ Action Command_SetMyBoss(int client, int args)
 				return Plugin_Handled;
 			}
 
-			if(KvGetNum(BossKV[config], "nofirst") && (FF2Globals.RoundCount < FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
+			if(KvGetNum(FF2CharSetInfo.BossKV[config], "nofirst") && (FF2Globals.RoundCount < FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
 			{
 				FReplyToCommand(client, "%t", "deny_nofirst");
 				return Plugin_Handled;
 			}
 
-			KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
+			KvGetString(FF2CharSetInfo.BossKV[config], "companion", companionName, sizeof(companionName));
 			if(companionName[0] && !FF2GlobalsCvars.DuoMin)
 			{
 				FReplyToCommand(client, "%t", "deny_duo_short");
@@ -1956,7 +1956,7 @@ Action Command_SetMyBoss(int client, int args)
 			if(AreClientCookiesCached(client) && ConVars.KeepBoss.IntValue<0)
 			{
 				static char cookie1[64], cookie2[64];
-				KvGetString(BossKV[config], "name", cookie1, sizeof(cookie1));
+				KvGetString(FF2CharSetInfo.BossKV[config], "name", cookie1, sizeof(cookie1));
 				GetClientCookie(client, FF2DataBase.LastPlayer, cookie2, sizeof(cookie2));
 				if(StrEqual(cookie1, cookie2, false))
 				{
@@ -1965,8 +1965,8 @@ Action Command_SetMyBoss(int client, int args)
 				}
 			}
 			strcopy(xIncoming[client], sizeof(xIncoming[]), boss);
-			CanBossVs[client] = KvGetNum(BossKV[config], "noversus");
-			CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam");
+			CanBossVs[client] = KvGetNum(FF2CharSetInfo.BossKV[config], "noversus");
+			CanBossTeam[client] = KvGetNum(FF2CharSetInfo.BossKV[config], "bossteam");
 			IgnoreValid[client] = false;
 			DataBase_SaveKeepBossCookie(client);
 			FReplyToCommand(client, "%t", "to0_boss_selected", bossName);
@@ -1980,19 +1980,19 @@ Action Command_SetMyBoss(int client, int args)
 	SetGlobalTransTarget(client);
 	if(FF2PlayerCookie[client].Boss == Setting_On)
 	{
-		for(int config; config<=Specials; config++)
+		for(int config; config<=FF2CharSetInfo.SizeOfSpecials; config++)
 		{
-			if(config == Specials)
+			if(config == FF2CharSetInfo.SizeOfSpecials)
 			{
 				FormatEx(boss, sizeof(boss), "%t", "to0_random");
 				break;
 			}
 
-			KvRewind(BossKV[config]);
-			if(KvGetNum(BossKV[config], "blocked"))
+			KvRewind(FF2CharSetInfo.BossKV[config]);
+			if(KvGetNum(FF2CharSetInfo.BossKV[config], "blocked"))
 				continue;
 
-			KvGetString(BossKV[config], "name", bossName, sizeof(bossName));
+			KvGetString(FF2CharSetInfo.BossKV[config], "name", bossName, sizeof(bossName));
 			if(StrEqual(bossName, xIncoming[client], false))
 			{
 				if(IgnoreValid[client] || Utils_CheckValidBoss(client, xIncoming[client], !FF2GlobalsCvars.DuoMin))
@@ -2003,15 +2003,15 @@ Action Command_SetMyBoss(int client, int args)
 		}
 	}
 
-	if(FF2Globals.Enabled2 && HasCharSets && CurrentCharSet<MAXCHARSETS)
+	if(FF2Globals.Enabled2 && FF2CharSetInfo.HasMultiCharSets && FF2CharSetInfo.CurrentCharSetIdx<MAXCHARSETS)
 	{
 		if(FF2ModsInfo.DiffCfg!=null && !ConVars.Difficulty.BoolValue && CheckCommandAccess(client, "ff2_difficulty", 0, true))
 		{
-			menu.SetTitle("%t%t", "ff2_boss_selection_pack", CharSetString[CurrentCharSet], boss, "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
+			menu.SetTitle("%t%t", "ff2_boss_selection_pack", FF2Packs_Names[FF2CharSetInfo.CurrentCharSetIdx], boss, "ff2_boss_selection_diff", dIncoming[client][0] ? dIncoming[client] : "-");
 		}
 		else
 		{
-			menu.SetTitle("%t", "ff2_boss_selection_pack", CharSetString[CurrentCharSet], boss);
+			menu.SetTitle("%t", "ff2_boss_selection_pack", FF2Packs_Names[FF2CharSetInfo.CurrentCharSetIdx], boss);
 		}
 	}
 	else
@@ -2095,7 +2095,7 @@ Action Command_SetMyBoss(int client, int args)
 		}
 	}
 
-	if(HasCharSets)
+	if(FF2CharSetInfo.HasMultiCharSets)
 	{
 		FormatEx(boss, sizeof(boss), "%t", "to0_viewall");
 		menu.AddItem(boss, boss);
@@ -2109,43 +2109,43 @@ Action Command_SetMyBoss(int client, int args)
 	}
 
 	static char companionName[64];
-	for(int config; config<Specials; config++)
+	for(int config; config<FF2CharSetInfo.SizeOfSpecials; config++)
 	{
-		KvRewind(BossKV[config]);
-		if(KvGetNum(BossKV[config], "blocked"))
+		KvRewind(FF2CharSetInfo.BossKV[config]);
+		if(KvGetNum(FF2CharSetInfo.BossKV[config], "blocked"))
 			continue;
 
-		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		KvGetString(FF2CharSetInfo.BossKV[config], "name", boss, sizeof(boss));
 		Utils_GetBossSpecial(config, bossName, sizeof(bossName), client);
-		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-		if((KvGetNum(BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-		   (KvGetNum(BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+		KvGetString(FF2CharSetInfo.BossKV[config], "companion", companionName, sizeof(companionName));
+		if((KvGetNum(FF2CharSetInfo.BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(FF2CharSetInfo.BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
 		   (Utils_BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true)))
 		{
-			if(!KvGetNum(BossKV[config], "hidden"))
+			if(!KvGetNum(FF2CharSetInfo.BossKV[config], "hidden"))
 				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+		else if(KvGetNum(FF2CharSetInfo.BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 		{
-			if(!KvGetNum(BossKV[config], "hidden", 1))
+			if(!KvGetNum(FF2CharSetInfo.BossKV[config], "hidden", 1))
 				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(BossKV[config], "hidden") &&
-		      !(KvGetNum(BossKV[config], "donator") ||
-		        KvGetNum(BossKV[config], "theme") ||
-			KvGetNum(BossKV[config], "admin") ||
-			KvGetNum(BossKV[config], "owner")))
+		else if(KvGetNum(FF2CharSetInfo.BossKV[config], "hidden") &&
+		      !(KvGetNum(FF2CharSetInfo.BossKV[config], "donator") ||
+		        KvGetNum(FF2CharSetInfo.BossKV[config], "theme") ||
+			KvGetNum(FF2CharSetInfo.BossKV[config], "admin") ||
+			KvGetNum(FF2CharSetInfo.BossKV[config], "owner")))
 		{
 			// Don't show
 		}
-		else if(MapBlocked[config])
+		else if(FF2CharSetInfo.MapBlocked[config])
 		{
 			if(ConVars.ShowBossBlocked.BoolValue)
 			{
 				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 			}
 		}
-		else if(KvGetNum(BossKV[config], "nofirst") && (FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
+		else if(KvGetNum(FF2CharSetInfo.BossKV[config], "nofirst") && (FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
 		{
 			menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 		}
@@ -2179,7 +2179,7 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 		return Plugin_Continue;
 
 	int boss = Utils_GetBossIndex(client);
-	if(boss==-1 || !Boss[boss] || !IsValidEntity(Boss[boss]) || BossRageDamage[0]>99998 || rageMode[client]==2)
+	if(boss==-1 || !FF2BossInfo[boss].Boss || !IsValidEntity(FF2BossInfo[boss].Boss) || FF2BossInfo[0].RageDamage>99998 || FF2BossVar[client].RageMode==2)
 		return Plugin_Continue;
 
 	static char arg1[4], arg2[4];
@@ -2188,7 +2188,7 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 	if(StringToInt(arg1) || StringToInt(arg2))  //We only want "voicemenu 0 0"-thanks friagram for pointing out edge cases
 		return Plugin_Continue;
 
-	if(RoundFloat(BossCharge[boss][0]) >= rageMin[client])
+	if(RoundFloat(FF2BossInfo[boss].Charge[0]) >= FF2BossVar[client].RageMin)
 	{
 		ActivateAbilitySlot(boss, 0);
 
@@ -2201,20 +2201,20 @@ public Action OnCallForMedic(int client, const char[] command, int args)
 
 		if(RandomSoundAbility("sound_ability", sound, sizeof(sound), boss))
 		{
-			FF2flags[Boss[boss]] |= FF2FLAG_TALKING;
+			FF2PlayerInfo[FF2BossInfo[boss].Boss].FF2Flags |= FF2FLAG_TALKING;
 			EmitSoundToAllExcept(sound);
 
 			for(int target=1; target<=MaxClients; target++)
 			{
-				if(IsClientInGame(target) && target!=Boss[boss] && FF2PlayerCookie[target].VoiceOn)
+				if(IsClientInGame(target) && target!=FF2BossInfo[boss].Boss && FF2PlayerCookie[target].VoiceOn)
 				{
 					EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
 					EmitSoundToClient(target, sound, client, _, _, _, _, _, client, position);
 				}
 			}
-			FF2flags[Boss[boss]] &= ~FF2FLAG_TALKING;
+			FF2PlayerInfo[FF2BossInfo[boss].Boss].FF2Flags &= ~FF2FLAG_TALKING;
 		}
-		emitRageSound[boss]=true;
+		FF2BossInfo[boss].EmitRageSound=true;
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -2246,7 +2246,7 @@ Action OnJoinTeam(int client, const char[] command, int args)
 
 		int team = view_as<int>(TFTeam_Unassigned);
 		int oldTeam = GetClientTeam(client);
-		if(Utils_IsBoss(client) && !BossSwitched[boss])
+		if(Utils_IsBoss(client) && !FF2BossInfo[boss].HasSwitched)
 		{
 			team = FF2Globals.BossTeam;
 		}
@@ -2286,11 +2286,11 @@ Action OnJoinTeam(int client, const char[] command, int args)
 		team = view_as<int>(TFTeam_Spectator);
 	}
 
-	if(team==FF2Globals.BossTeam && (!Utils_IsBoss(client) || BossSwitched[boss]))
+	if(team==FF2Globals.BossTeam && (!Utils_IsBoss(client) || FF2BossInfo[boss].HasSwitched))
 	{
 		team = FF2Globals.OtherTeam;
 	}
-	else if(team==FF2Globals.OtherTeam && (Utils_IsBoss(client) && !BossSwitched[boss]))
+	else if(team==FF2Globals.OtherTeam && (Utils_IsBoss(client) && !FF2BossInfo[boss].HasSwitched))
 	{
 		team = FF2Globals.BossTeam;
 	}

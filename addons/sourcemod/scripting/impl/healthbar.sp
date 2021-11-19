@@ -1,14 +1,14 @@
 
 Action Timer_HealthBarMode(Handle timer, bool set)
 {
-	if(set && !HealthBarMode)
+	if(set && !FF2Globals.HealthBarMode)
 	{
-		HealthBarMode = true;
+		FF2Globals.HealthBarMode = true;
 		UpdateHealthBar();
 	}
-	else if(!set && HealthBarMode)
+	else if(!set && FF2Globals.HealthBarMode)
 	{
-		HealthBarMode = false;
+		FF2Globals.HealthBarMode = false;
 		UpdateHealthBar();
 	}
 	return Plugin_Continue;
@@ -39,36 +39,36 @@ void UpdateHealthBar()
 		return;
 
 	int healthAmount, maxHealthAmount, healthPercent;
-	int healing = HealthBarMode ? 1 : 0;
+	int healing = FF2Globals.HealthBarMode ? 1 : 0;
 	for(int boss; boss<=MaxClients; boss++)
 	{
-		if(Utils_IsValidClient(Boss[boss]) && IsPlayerAlive(Boss[boss]))
+		if(Utils_IsValidClient(FF2BossInfo[boss].Boss) && IsPlayerAlive(FF2BossInfo[boss].Boss))
 		{
 			if(FF2Globals.Enabled3)
 			{
-				if(TF2_GetClientTeam(Boss[boss]) == TFTeam_Blue)
+				if(TF2_GetClientTeam(FF2BossInfo[boss].Boss) == TFTeam_Blue)
 				{
-					healthAmount += BossHealth[boss];
+					healthAmount += FF2BossInfo[boss].Health;
 				}
 				else
 				{
-					maxHealthAmount += BossHealth[boss];
+					maxHealthAmount += FF2BossInfo[boss].Health;
 				}
 			}
 			else
 			{
 				if(ConVars.HealthBar.IntValue > 1)
 				{
-					healthAmount += BossHealth[boss];
-					maxHealthAmount += BossHealthMax[boss]*BossLivesMax[boss];
+					healthAmount += FF2BossInfo[boss].Health;
+					maxHealthAmount += FF2BossInfo[boss].HealthMax*FF2BossInfo[boss].LivesMax;
 				}
 				else
 				{
-					healthAmount += BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1);
-					maxHealthAmount += BossHealthMax[boss];
+					healthAmount += FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1);
+					maxHealthAmount += FF2BossInfo[boss].HealthMax;
 				}
 			}
-			if(HealthBarModeC[boss])
+			if(FF2BossVar[boss].IsHealthbarIncreasing)
 				healing = 1;
 		}
 	}

@@ -1,11 +1,11 @@
 void FindCharacters()
 {
 	char filepath[PLATFORM_MAX_PATH], config[PLATFORM_MAX_PATH], key[4], charset[42];
-	Specials = 0;
+	FF2CharSetInfo.SizeOfSpecials = 0;
 	int i;
 	for(; i<MAXCHARSETS; i++)
 	{
-		PackSpecials[i] = 0;
+		FF2Packs_NumBosses[i] = 0;
 	}
 	BuildPath(Path_SM, filepath, PLATFORM_MAX_PATH, "%s/%s", DataPath, CharsetCFG);
 
@@ -18,11 +18,11 @@ void FindCharacters()
 			FF2Globals.Enabled2 = false;
 			return;
 		}
-		CharSetOldPath = true;
+		FF2CharSetInfo.UseOldCharSetPath = true;
 	}
 	else
 	{
-		CharSetOldPath = false;
+		FF2CharSetInfo.UseOldCharSetPath = false;
 	}
 
 	Handle Kv = CreateKeyValues("");
@@ -33,11 +33,11 @@ void FindCharacters()
 		int amount;
 		do
 		{
-			KvGetSectionName(Kv, CharSetString[amount], sizeof(CharSetString[]));
+			KvGetSectionName(Kv, FF2Packs_Names[amount], sizeof(FF2Packs_Names[]));
 			KvGetString(Kv, "1", config, PLATFORM_MAX_PATH);
 			if(config[0])
 			{
-				for(i=1; PackSpecials[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
+				for(i=1; FF2Packs_NumBosses[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
 				{
 					IntToString(i, key, sizeof(key));
 					KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
@@ -69,19 +69,19 @@ void FindCharacters()
 						continue;
 					}
 					LoadSideCharacter(config, amount);
-				} while(KvGotoNextKey(Kv) && PackSpecials[amount]<MAXSPECIALS);
+				} while(KvGotoNextKey(Kv) && FF2Packs_NumBosses[amount]<MAXSPECIALS);
 				KvGoBack(Kv);
 			}
 			amount++;
 		} while(amount<MAXCHARSETS && KvGotoNextKey(Kv));
 
 		delete Kv;
-		CurrentCharSet = -1;
+		FF2CharSetInfo.CurrentCharSetIdx = -1;
 		return;
 	}
 
 	int NumOfCharSet = FF2CharSet;
-	strcopy(charset, sizeof(charset), FF2CharSetString);
+	strcopy(charset, sizeof(charset), FF2CharSetInfo.CurrentCharSet);
 	Action action = Forwards_Call_OnLoadCharSet(NumOfCharSet, charset, sizeof(charset));
 	if(action == Plugin_Changed)
 	{
@@ -95,7 +95,7 @@ void FindCharacters()
 				if(StrEqual(config, charset, false))
 				{
 					FF2CharSet = i;
-					strcopy(FF2CharSetString, PLATFORM_MAX_PATH, charset);
+					strcopy(FF2CharSetInfo.CurrentCharSet, PLATFORM_MAX_PATH, charset);
 					KvGotoFirstSubKey(Kv);
 					break;
 				}
@@ -116,7 +116,7 @@ void FindCharacters()
 				KvGotoNextKey(Kv);
 			}
 			KvGotoFirstSubKey(Kv);
-			KvGetSectionName(Kv, FF2CharSetString, sizeof(FF2CharSetString));
+			KvGetSectionName(Kv, FF2CharSetInfo.CurrentCharSet, sizeof(FF2CharSetInfo.CurrentCharSet));
 		}
 	}
 
@@ -127,14 +127,14 @@ void FindCharacters()
 			break;
 	}
 
-	CurrentCharSet = i;
-	KvGetSectionName(Kv, CharSetString[CurrentCharSet], sizeof(CharSetString[]));
+	FF2CharSetInfo.CurrentCharSetIdx = i;
+	KvGetSectionName(Kv, FF2Packs_Names[FF2CharSetInfo.CurrentCharSetIdx], sizeof(FF2Packs_Names[]));
 
 	BuildPath(Path_SM, filepath, PLATFORM_MAX_PATH, ConfigPath);
 	KvGetString(Kv, "1", config, PLATFORM_MAX_PATH);
 	if(config[0])
 	{
-		for(i=1; Specials<MAXSPECIALS && i<=MAXSPECIALS; i++)
+		for(i=1; FF2CharSetInfo.SizeOfSpecials<MAXSPECIALS && i<=MAXSPECIALS; i++)
 		{
 			IntToString(i, key, sizeof(key));
 			KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
@@ -166,47 +166,47 @@ void FindCharacters()
 				continue;
 			}
 			LoadCharacter(config);
-		} while(KvGotoNextKey(Kv) && Specials<MAXSPECIALS);
+		} while(KvGotoNextKey(Kv) && FF2CharSetInfo.SizeOfSpecials<MAXSPECIALS);
 		KvGoBack(Kv);
 	}
 
-	KvGetString(Kv, "chances", ChancesString, sizeof(ChancesString));
+	KvGetString(Kv, "FF2Packs_iChances", FF2Packs_sChances, sizeof(FF2Packs_sChances));
 
 	// Check if the current charset is not the first
 	// one or if there's a charset after this one
-	HasCharSets = CurrentCharSet>0;
-	if(!HasCharSets)
-		HasCharSets = KvGotoNextKey(Kv);
+	FF2CharSetInfo.HasMultiCharSets = FF2CharSetInfo.CurrentCharSetIdx>0;
+	if(!FF2CharSetInfo.HasMultiCharSets)
+		FF2CharSetInfo.HasMultiCharSets = KvGotoNextKey(Kv);
 
 	delete Kv;
 
 	int amount;
-	if(HasCharSets)
+	if(FF2CharSetInfo.HasMultiCharSets)
 	{
 		if(ConVars.NameChange.IntValue == 2)
 		{
 			char newName[256];
-			FormatEx(newName, 256, "%s | %s", FF2ModsInfo.OldHostName, CharSetString[CurrentCharSet]);
+			FormatEx(newName, 256, "%s | %s", FF2ModsInfo.OldHostName, FF2Packs_Names[FF2CharSetInfo.CurrentCharSetIdx]);
 			FF2ModsInfo.cvarHostName.SetString(newName);
 		}
 
 		// KvRewind, you son of a-
-		BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+		BuildPath(Path_SM, config, sizeof(config), "%s/%s", FF2CharSetInfo.UseOldCharSetPath ? ConfigPath : DataPath, CharsetCFG);
 		Kv = CreateKeyValues("");
 		FileToKeyValues(Kv, config);
 		do
 		{
-			if(amount == CurrentCharSet)	// Skip the current pack
+			if(amount == FF2CharSetInfo.CurrentCharSetIdx)	// Skip the current pack
 			{
 				amount++;
 				continue;
 			}
 
-			KvGetSectionName(Kv, CharSetString[amount], sizeof(CharSetString[]));
+			KvGetSectionName(Kv, FF2Packs_Names[amount], sizeof(FF2Packs_Names[]));
 			KvGetString(Kv, "1", config, PLATFORM_MAX_PATH);
 			if(config[0])
 			{
-				for(i=1; PackSpecials[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
+				for(i=1; FF2Packs_NumBosses[amount]<MAXSPECIALS && i<=MAXSPECIALS; i++)
 				{
 					IntToString(i, key, sizeof(key));
 					KvGetString(Kv, key, config, PLATFORM_MAX_PATH);
@@ -238,7 +238,7 @@ void FindCharacters()
 						continue;
 					}
 					LoadSideCharacter(config, amount);
-				} while(KvGotoNextKey(Kv) && PackSpecials[amount]<MAXSPECIALS);
+				} while(KvGotoNextKey(Kv) && FF2Packs_NumBosses[amount]<MAXSPECIALS);
 				KvGoBack(Kv);
 			}
 			amount++;
@@ -247,34 +247,34 @@ void FindCharacters()
 		delete Kv;
 	}
 
-	if(ChancesString[0])
+	if(FF2Packs_sChances[0])
 	{
 		char stringChances[MAXSPECIALS*2][8];
-		amount = ExplodeString(ChancesString, ";", stringChances, MAXSPECIALS*2, 8);
+		amount = ExplodeString(FF2Packs_sChances, ";", stringChances, MAXSPECIALS*2, 8);
 		if(amount % 2)
 		{
-			LogToFile(FF2LogsPaths.Errors, "[Characters] Invalid chances string, disregarding chances");
-			ChancesString[0] = 0;
+			LogToFile(FF2LogsPaths.Errors, "[Characters] Invalid FF2Packs_iChances string, disregarding FF2Packs_iChances");
+			FF2Packs_sChances[0] = 0;
 			amount = 0;
 		}
 
-		chances[0] = StringToInt(stringChances[0]);
-		chances[1] = StringToInt(stringChances[1]);
-		for(chancesIndex=2; chancesIndex<amount; chancesIndex++)
+		FF2Packs_iChances[0] = StringToInt(stringChances[0]);
+		FF2Packs_iChances[1] = StringToInt(stringChances[1]);
+		for(FF2Packs_ChanceIdx=2; FF2Packs_ChanceIdx<amount; FF2Packs_ChanceIdx++)
 		{
-			if(chancesIndex % 2)
+			if(FF2Packs_ChanceIdx % 2)
 			{
-				if(StringToInt(stringChances[chancesIndex]) < 1)
+				if(StringToInt(stringChances[FF2Packs_ChanceIdx]) < 1)
 				{
-					LogToFile(FF2LogsPaths.Errors, "[Characters] Character %i cannot have a zero or negative chance, disregarding chances", chancesIndex-1);
-					strcopy(ChancesString, sizeof(ChancesString), "");
+					LogToFile(FF2LogsPaths.Errors, "[Characters] Character %i cannot have a zero or negative chance, disregarding FF2Packs_iChances", FF2Packs_ChanceIdx-1);
+					strcopy(FF2Packs_sChances, sizeof(FF2Packs_sChances), "");
 					break;
 				}
-				chances[chancesIndex] = StringToInt(stringChances[chancesIndex])+chances[chancesIndex-2];
+				FF2Packs_iChances[FF2Packs_ChanceIdx] = StringToInt(stringChances[FF2Packs_ChanceIdx])+FF2Packs_iChances[FF2Packs_ChanceIdx-2];
 			}
 			else
 			{
-				chances[chancesIndex] = StringToInt(stringChances[chancesIndex]);
+				FF2Packs_iChances[FF2Packs_ChanceIdx] = StringToInt(stringChances[FF2Packs_ChanceIdx]);
 			}
 		}
 	}
@@ -295,7 +295,7 @@ void FindCharacters()
 	PrecacheSound("player/doubledonk.wav", true);
 	PrecacheSound("ambient/lightson.wav", true);
 	PrecacheSound("ambient/lightsoff.wav", true);
-	isCharSetSelected = false;
+	FF2CharSetInfo.IsCharSetSelected = false;
 }
 
 
@@ -305,14 +305,14 @@ bool PickCharacter(int boss, int companion)
 	static char newName[64];
 	if(boss == companion)
 	{
-		Special[boss] = Incoming[boss];
-		Incoming[boss] = -1;
-		if(Special[boss] != -1)  //We've already picked a boss through Command_SetNextBoss
+		FF2BossInfo[boss].Special = FF2BossInfo[boss].Incoming;
+		FF2BossInfo[boss].Incoming = -1;
+		if(FF2BossInfo[boss].Special != -1)  //We've already picked a boss through Command_SetNextBoss
 		{
-			KvRewind(BossKV[Special[boss]]);
-			KvGetString(BossKV[Special[boss]], "name", newName, sizeof(newName));
+			KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "name", newName, sizeof(newName));
 			
-			int characterIndex = Special[boss];
+			int characterIndex = FF2BossInfo[boss].Special;
 			Action action = Forwards_Call_OnCharSelected(boss, characterIndex, newName, sizeof(newName), true);
 			if(action == Plugin_Changed)
 			{
@@ -320,10 +320,10 @@ bool PickCharacter(int boss, int companion)
 				{
 					int foundExactMatch = -1;
 					int foundPartialMatch = -1;
-					for(int character; BossKV[character] && character<MAXSPECIALS; character++)
+					for(int character; FF2CharSetInfo.BossKV[character] && character<MAXSPECIALS; character++)
 					{
-						KvRewind(BossKV[character]);
-						KvGetString(BossKV[character], "name", characterName, sizeof(characterName));
+						KvRewind(FF2CharSetInfo.BossKV[character]);
+						KvGetString(FF2CharSetInfo.BossKV[character], "name", characterName, sizeof(characterName));
 						if(StrEqual(newName, characterName, false))
 						{
 							foundExactMatch = character;
@@ -335,7 +335,7 @@ bool PickCharacter(int boss, int companion)
 						}
 
 						//Do the same thing as above here, but look at the filename instead of the boss name
-						KvGetString(BossKV[character], "filename", characterName, sizeof(characterName));
+						KvGetString(FF2CharSetInfo.BossKV[character], "filename", characterName, sizeof(characterName));
 						if(StrEqual(newName, characterName, false))
 						{
 							foundExactMatch = character;
@@ -349,37 +349,37 @@ bool PickCharacter(int boss, int companion)
 
 					if(foundExactMatch != -1)
 					{
-						Special[boss] = foundExactMatch;
+						FF2BossInfo[boss].Special = foundExactMatch;
 					}
 					else if(foundPartialMatch != -1)
 					{
-						Special[boss] = foundPartialMatch;
+						FF2BossInfo[boss].Special = foundPartialMatch;
 					}
 					else
 					{
 						return false;
 					}
 					FF2SavedAbility.RegisterCharacter(characterName, boss);
-					PrecacheCharacter(Special[boss]);
+					PrecacheCharacter(FF2BossInfo[boss].Special);
 					return true;
 				}
-				Special[boss] = characterIndex;
-				KvGetString(BossKV[Special[boss]], "filename", characterName, sizeof(characterName));
+				FF2BossInfo[boss].Special = characterIndex;
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "filename", characterName, sizeof(characterName));
 				FF2SavedAbility.RegisterCharacter(characterName, boss);
-				PrecacheCharacter(Special[boss]);
+				PrecacheCharacter(FF2BossInfo[boss].Special);
 				return true;
 			}
 			/*else
 			{
-				int client = Boss[boss];
+				int client = FF2BossInfo[boss].Boss;
 				if(xIncoming[client][0])
 				{
 					static char characterName[64];
 					int foundExactMatch = -1, foundPartialMatch = -1;
-					for(int character; BossKV[character] && character<MAXSPECIALS; character++)
+					for(int character; FF2CharSetInfo.BossKV[character] && character<MAXSPECIALS; character++)
 					{
-						KvRewind(BossKV[character]);
-						KvGetString(BossKV[character], "name", characterName, sizeof(characterName));
+						KvRewind(FF2CharSetInfo.BossKV[character]);
+						KvGetString(FF2CharSetInfo.BossKV[character], "name", characterName, sizeof(characterName));
 						if(StrEqual(xIncoming[client], characterName, false))
 						{
 							foundExactMatch = character;
@@ -391,7 +391,7 @@ bool PickCharacter(int boss, int companion)
 						}
 
 						//Do the same thing as above here, but look at the filename instead of the boss name
-						KvGetString(BossKV[character], "filename", characterName, sizeof(characterName));
+						KvGetString(FF2CharSetInfo.BossKV[character], "filename", characterName, sizeof(characterName));
 						if(StrEqual(xIncoming[client], characterName, false))
 						{
 							foundExactMatch = character;
@@ -405,65 +405,65 @@ bool PickCharacter(int boss, int companion)
 
 					if(foundExactMatch != -1)
 					{
-						Special[boss] = foundExactMatch;
+						FF2BossInfo[boss].Special = foundExactMatch;
 					}
 					else if(foundPartialMatch != -1)
 					{
-						Special[boss] = foundPartialMatch;
+						FF2BossInfo[boss].Special = foundPartialMatch;
 					}
 					else
 					{
 						return false;
 					}
-					PrecacheCharacter(Special[boss]);
+					PrecacheCharacter(FF2BossInfo[boss].Special);
 					return true;
 				}
-				Special[boss] = characterIndex;
-				PrecacheCharacter(Special[boss]);
+				FF2BossInfo[boss].Special = characterIndex;
+				PrecacheCharacter(FF2BossInfo[boss].Special);
 				return true;
 			}*/
 			
-			KvGetString(BossKV[Special[boss]], "filename", characterName, sizeof(characterName));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "filename", characterName, sizeof(characterName));
 			FF2SavedAbility.RegisterCharacter(characterName, boss);
-			PrecacheCharacter(Special[boss]);
+			PrecacheCharacter(FF2BossInfo[boss].Special);
 			return true;
 		}
 
 		for(int tries; tries<100; tries++)
 		{
-			if(ChancesString[0])
+			if(FF2Packs_sChances[0])
 			{
-				int characterIndex = chancesIndex;  //Don't touch chancesIndex since it doesn't get reset
-				int i = GetRandomInt(0, chances[characterIndex-1]);
+				int characterIndex = FF2Packs_ChanceIdx;  //Don't touch FF2Packs_ChanceIdx since it doesn't get reset
+				int i = GetRandomInt(0, FF2Packs_iChances[characterIndex-1]);
 
-				while(characterIndex>=2 && i<chances[characterIndex-1])
+				while(characterIndex>=2 && i<FF2Packs_iChances[characterIndex-1])
 				{
-					Special[boss] = chances[characterIndex-2]-1;
+					FF2BossInfo[boss].Special = FF2Packs_iChances[characterIndex-2]-1;
 					characterIndex -= 2;
 				}
 			}
 			else
 			{
-				Special[boss] = GetRandomInt(0, Specials-1);
+				FF2BossInfo[boss].Special = GetRandomInt(0, FF2CharSetInfo.SizeOfSpecials-1);
 			}
 
 			static char companionName[64];
-			KvRewind(BossKV[Special[boss]]);
-			KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
-			if(MapBlocked[Special[boss]] ||
-			   KvGetNum(BossKV[Special[boss]], "blocked") ||
-			   KvGetNum(BossKV[Special[boss]], "donator") ||
-			   KvGetNum(BossKV[Special[boss]], "admin") ||
-			   KvGetNum(BossKV[Special[boss]], "owner") ||
-			   KvGetNum(BossKV[Special[boss]], "theme") ||
-			  (KvGetNum(BossKV[Special[boss]], "nofirst") && FF2Globals.RoundCount<=FF2GlobalsCvars.ArenaRounds) ||
+			KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "companion", companionName, sizeof(companionName));
+			if(FF2CharSetInfo.MapBlocked[FF2BossInfo[boss].Special] ||
+			   KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "blocked") ||
+			   KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "donator") ||
+			   KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "admin") ||
+			   KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "owner") ||
+			   KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "theme") ||
+			  (KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "nofirst") && FF2Globals.RoundCount<=FF2GlobalsCvars.ArenaRounds) ||
 			  (companionName[0] && !FF2GlobalsCvars.DuoMin) ||
-			  (FF2Globals.Enabled3 && (KvGetNum(BossKV[Special[boss]], "noversus")==2 ||
-			  (KvGetNum(BossKV[Special[boss]], "noversus")==1 && BossSwitched[boss]) ||
-			  (KvGetNum(BossKV[Special[boss]], "bossteam")==FF2Globals.BossTeam && BossSwitched[boss]) ||
-			  (KvGetNum(BossKV[Special[boss]], "bossteam")==FF2Globals.OtherTeam && !BossSwitched[boss]))))
+			  (FF2Globals.Enabled3 && (KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "noversus")==2 ||
+			  (KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "noversus")==1 && FF2BossInfo[boss].HasSwitched) ||
+			  (KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "bossteam")==FF2Globals.BossTeam && FF2BossInfo[boss].HasSwitched) ||
+			  (KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "bossteam")==FF2Globals.OtherTeam && !FF2BossInfo[boss].HasSwitched))))
 			{
-				Special[boss] = -1;
+				FF2BossInfo[boss].Special = -1;
 				continue;
 			}
 			break;
@@ -472,48 +472,48 @@ bool PickCharacter(int boss, int companion)
 	else
 	{
 		static char bossName[64], companionName[64];
-		KvRewind(BossKV[Special[boss]]);
-		KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName), "=Failed companion name=");
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "companion", companionName, sizeof(companionName), "=Failed companion name=");
 
 		int character;
-		while(character < Specials)  //Loop through all the FF2Globals.Bosses to find the companion we're looking for
+		while(character < FF2CharSetInfo.SizeOfSpecials)  //Loop through all the FF2Globals.Bosses to find the companion we're looking for
 		{
-			KvRewind(BossKV[character]);
-			KvGetString(BossKV[character], "name", bossName, sizeof(bossName), "=Failed name=");
+			KvRewind(FF2CharSetInfo.BossKV[character]);
+			KvGetString(FF2CharSetInfo.BossKV[character], "name", bossName, sizeof(bossName), "=Failed name=");
 			if(StrEqual(bossName, companionName, false))
 			{
-				Special[companion] = character;
+				FF2BossInfo[companion].Special = character;
 				break;
 			}
 
-			KvGetString(BossKV[character], "filename", bossName, sizeof(bossName), "=Failed name=");
+			KvGetString(FF2CharSetInfo.BossKV[character], "filename", bossName, sizeof(bossName), "=Failed name=");
 			if(StrEqual(bossName, companionName, false))
 			{
-				Special[companion] = character;
+				FF2BossInfo[companion].Special = character;
 				break;
 			}
 			character++;
 		}
 
-		if(character == Specials)  //Companion not found
+		if(character == FF2CharSetInfo.SizeOfSpecials)  //Companion not found
 			return false;
 	}
 
 	//All of the following uses `companion` because it will always be the boss index we want
-	int characterIndex = Special[companion];
+	int characterIndex = FF2BossInfo[companion].Special;
 	Action action = Forwards_Call_OnCharSelected(companion, characterIndex, newName, sizeof(newName), false);
-	KvRewind(BossKV[Special[companion]]);
-	KvGetString(BossKV[Special[companion]], "name", newName, sizeof(newName));
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[companion].Special]);
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[companion].Special], "name", newName, sizeof(newName));
 	if(action == Plugin_Changed)
 	{
 		if(newName[0])
 		{
 			int foundExactMatch = -1;
 			int foundPartialMatch = -1;
-			for(int character; BossKV[character] && character<MAXSPECIALS; character++)
+			for(int character; FF2CharSetInfo.BossKV[character] && character<MAXSPECIALS; character++)
 			{
-				KvRewind(BossKV[character]);
-				KvGetString(BossKV[character], "name", characterName, sizeof(characterName));
+				KvRewind(FF2CharSetInfo.BossKV[character]);
+				KvGetString(FF2CharSetInfo.BossKV[character], "name", characterName, sizeof(characterName));
 				if(StrEqual(newName, characterName, false))
 				{
 					foundExactMatch = character;
@@ -525,7 +525,7 @@ bool PickCharacter(int boss, int companion)
 				}
 
 				//Do the same thing as above here, but look at the filename instead of the boss name
-				KvGetString(BossKV[character], "filename", characterName, sizeof(characterName));
+				KvGetString(FF2CharSetInfo.BossKV[character], "filename", characterName, sizeof(characterName));
 				if(StrEqual(newName, characterName, false))
 				{
 					foundExactMatch = character;
@@ -539,30 +539,30 @@ bool PickCharacter(int boss, int companion)
 
 			if(foundExactMatch != -1)
 			{
-				Special[companion] = foundExactMatch;
+				FF2BossInfo[companion].Special = foundExactMatch;
 			}
 			else if(foundPartialMatch != -1)
 			{
-				Special[companion] = foundPartialMatch;
+				FF2BossInfo[companion].Special = foundPartialMatch;
 			}
 			else
 			{
 				return false;
 			}
-			KvGetString(BossKV[Special[companion]], "filename", characterName, sizeof(characterName));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[companion].Special], "filename", characterName, sizeof(characterName));
 			FF2SavedAbility.RegisterCharacter(characterName, companion);
-			PrecacheCharacter(Special[companion]);
+			PrecacheCharacter(FF2BossInfo[companion].Special);
 			return true;
 		}
-		Special[companion] = characterIndex;
-		KvGetString(BossKV[Special[companion]], "filename", characterName, sizeof(characterName));
+		FF2BossInfo[companion].Special = characterIndex;
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[companion].Special], "filename", characterName, sizeof(characterName));
 		FF2SavedAbility.RegisterCharacter(characterName, companion);
-		PrecacheCharacter(Special[companion]);
+		PrecacheCharacter(FF2BossInfo[companion].Special);
 		return true;
 	}
-	KvGetString(BossKV[Special[companion]], "filename", characterName, sizeof(characterName));
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[companion].Special], "filename", characterName, sizeof(characterName));
 	FF2SavedAbility.RegisterCharacter(characterName, companion);
-	PrecacheCharacter(Special[companion]);
+	PrecacheCharacter(FF2BossInfo[companion].Special);
 	return true;
 }
 
@@ -578,11 +578,11 @@ void LoadCharacter(const char[] character)
 		LogToFile(FF2LogsPaths.Errors, "[Characters] Character %s does not exist!", character);
 		return;
 	}
-	BossKV[Specials] = CreateKeyValues("character");
-	FileToKeyValues(BossKV[Specials], config);
+	FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials] = CreateKeyValues("character");
+	FileToKeyValues(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], config);
 
-	MapBlocked[Specials] = false;
-	if(KvJumpToKey(BossKV[Specials], "map_only"))
+	FF2CharSetInfo.MapBlocked[FF2CharSetInfo.SizeOfSpecials] = false;
+	if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "map_only"))
 	{
 		char item[6];
 		static char buffer[34];
@@ -590,7 +590,7 @@ void LoadCharacter(const char[] character)
 		for(int size=1; ; size++)
 		{
 			FormatEx(item, sizeof(item), "map%d", size);
-			KvGetString(BossKV[Specials], item, buffer, sizeof(buffer));
+			KvGetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], item, buffer, sizeof(buffer));
 			if(!buffer[0])
 			{
 				if(size==1)
@@ -606,53 +606,53 @@ void LoadCharacter(const char[] character)
 				break;
 			}
 		}
-		MapBlocked[Specials] = shouldBlock;
+		FF2CharSetInfo.MapBlocked[FF2CharSetInfo.SizeOfSpecials] = shouldBlock;
 	}
-	KvRewind(BossKV[Specials]);
-	if(KvJumpToKey(BossKV[Specials], "map_exclude"))
+	KvRewind(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials]);
+	if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "map_exclude"))
 	{
 		char item[6];
 		static char buffer[34];
 		for(int size=1; ; size++)
 		{
 			FormatEx(item, sizeof(item), "map%d", size);
-			KvGetString(BossKV[Specials], item, buffer, sizeof(buffer));
+			KvGetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], item, buffer, sizeof(buffer));
 			if(!buffer[0])
 				break;
 
 			if(!StrContains(FF2Globals.CurrentMap, buffer))
 			{
-				MapBlocked[Specials] = true;
+				FF2CharSetInfo.MapBlocked[FF2CharSetInfo.SizeOfSpecials] = true;
 				break;
 			}
 		}
 	}
-	KvRewind(BossKV[Specials]);
+	KvRewind(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials]);
 
-	int version = KvGetNum(BossKV[Specials], "version", StringToInt(MAJOR_REVISION));
+	int version = KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "version", StringToInt(MAJOR_REVISION));
 	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for FF2Globals.Bosses made ONLY for this fork
 	{
 		LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is only compatible with FF2 v%i!", character, version);
 		return;
 	}
 
-	version = KvGetNum(BossKV[Specials], "version_minor", StringToInt(MINOR_REVISION));
-	int version2 = KvGetNum(BossKV[Specials], "version_stable", StringToInt(STABLE_REVISION));
+	version = KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "version_minor", StringToInt(MINOR_REVISION));
+	int version2 = KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "version_stable", StringToInt(STABLE_REVISION));
 	if(version>StringToInt(MINOR_REVISION) || (version2>StringToInt(STABLE_REVISION) && version==StringToInt(MINOR_REVISION)))
 	{
 		LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s requires newer version of FF2 (at least %s.%i.%i)!", character, MAJOR_REVISION, version, version2);
 		return;
 	}
 
-	version = KvGetNum(BossKV[Specials], "fversion", StringToInt(FORK_MAJOR_REVISION));
+	version = KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "fversion", StringToInt(FORK_MAJOR_REVISION));
 	if(version != StringToInt(FORK_MAJOR_REVISION))
 	{
 		LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is only compatible with %s FF2 v%i!", character, FORK_SUB_REVISION, version);
 		return;
 	}
 
-	version = KvGetNum(BossKV[Specials], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
-	version2 = KvGetNum(BossKV[Specials], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
+	version = KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
+	version2 = KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
 	if(version>StringToInt(FORK_MINOR_REVISION) || (version2>StringToInt(FORK_STABLE_REVISION) && version==StringToInt(FORK_MINOR_REVISION)))
 	{
 		LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s requires newer version of %s FF2 (at least %s.%i.%i)!", character, FORK_SUB_REVISION, FORK_MAJOR_REVISION, version, version2);
@@ -662,17 +662,17 @@ void LoadCharacter(const char[] character)
 	for(int i=1; ; i++)
 	{
 		Format(config, sizeof(config), "ability%i", i);
-		if(KvJumpToKey(BossKV[Specials], config))
+		if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], config))
 		{
 			static char plugin_name[64];
-			KvGetString(BossKV[Specials], "plugin_name", plugin_name, 64);
+			KvGetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "plugin_name", plugin_name, 64);
 			BuildPath(Path_SM, config, sizeof(config), "plugins/freaks/%s.smx", plugin_name);
 			if(!FileExists(config))
 			{
 				LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s needs plugin %s!", character, plugin_name);
 				return;
 			}
-			KvRewind(BossKV[Specials]);
+			KvRewind(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials]);
 		}
 		else
 		{
@@ -683,21 +683,21 @@ void LoadCharacter(const char[] character)
 
 	char key[PLATFORM_MAX_PATH];
 	static char section[64];
-	KvSetString(BossKV[Specials], "filename", character);
-	KvGetString(BossKV[Specials], "name", config, sizeof(config));
-	bBlockVoice[Specials] = view_as<bool>(KvGetNum(BossKV[Specials], "sound_block_vo"));
-	BossSpeed[Specials] = KvGetFloat(BossKV[Specials], "maxspeed", 340.0);
-	KvGotoFirstSubKey(BossKV[Specials]);
+	KvSetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "filename", character);
+	KvGetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "name", config, sizeof(config));
+	FF2CharSetInfo.VoiceBlocked[FF2CharSetInfo.SizeOfSpecials] = view_as<bool>(KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "sound_block_vo"));
+	FF2CharSetInfo.BossSpeed[FF2CharSetInfo.SizeOfSpecials] = KvGetFloat(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "maxspeed", 340.0);
+	KvGotoFirstSubKey(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials]);
 
-	while(KvGotoNextKey(BossKV[Specials]))
+	while(KvGotoNextKey(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials]))
 	{
-		KvGetSectionName(BossKV[Specials], section, sizeof(section));
+		KvGetSectionName(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], section, sizeof(section));
 		if(StrEqual(section, "download"))
 		{
 			for(int i=1; ; i++)
 			{
 				IntToString(i, key, sizeof(key));
-				KvGetString(BossKV[Specials], key, config, sizeof(config));
+				KvGetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], key, config, sizeof(config));
 				if(!config[0])
 					break;
 
@@ -716,7 +716,7 @@ void LoadCharacter(const char[] character)
 			for(int i=1; ; i++)
 			{
 				IntToString(i, key, sizeof(key));
-				KvGetString(BossKV[Specials], key, config, sizeof(config));
+				KvGetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], key, config, sizeof(config));
 				if(!config[0])
 					break;
 
@@ -739,7 +739,7 @@ void LoadCharacter(const char[] character)
 			for(int i=1; ; i++)
 			{
 				IntToString(i, key, sizeof(key));
-				KvGetString(BossKV[Specials], key, config, sizeof(config));
+				KvGetString(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], key, config, sizeof(config));
 				if(!config[0])
 					break;
 
@@ -765,7 +765,7 @@ void LoadCharacter(const char[] character)
 			}
 		}
 	}
-	Specials++;
+	FF2CharSetInfo.SizeOfSpecials++;
 }
 
 void LoadSideCharacter(const char[] character, int pack)
@@ -775,53 +775,53 @@ void LoadSideCharacter(const char[] character, int pack)
 	if(!FileExists(config))
 		return;
 
-	PackKV[PackSpecials[pack]][pack] = CreateKeyValues("character");
-	FileToKeyValues(PackKV[PackSpecials[pack]][pack], config);
-	KvSetString(PackKV[PackSpecials[pack]][pack], "filename", character);
+	FF2BossPacks[FF2Packs_NumBosses[pack]][pack] = CreateKeyValues("character");
+	FileToKeyValues(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], config);
+	KvSetString(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "filename", character);
 
-	int version = KvGetNum(PackKV[PackSpecials[pack]][pack], "version", StringToInt(MAJOR_REVISION));
+	int version = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "version", StringToInt(MAJOR_REVISION));
 	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for FF2Globals.Bosses made ONLY for this fork
 		return;
 
-	version = KvGetNum(PackKV[PackSpecials[pack]][pack], "version_minor", StringToInt(MINOR_REVISION));
+	version = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "version_minor", StringToInt(MINOR_REVISION));
 	if(version > StringToInt(MINOR_REVISION))
 		return;
 
-	int version2 = KvGetNum(PackKV[PackSpecials[pack]][pack], "version_stable", StringToInt(STABLE_REVISION));
+	int version2 = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "version_stable", StringToInt(STABLE_REVISION));
 	if(version2>StringToInt(STABLE_REVISION) && version==StringToInt(MINOR_REVISION))
 		return;
 
-	version = KvGetNum(PackKV[PackSpecials[pack]][pack], "fversion", StringToInt(FORK_MAJOR_REVISION));
+	version = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "fversion", StringToInt(FORK_MAJOR_REVISION));
 	if(version != StringToInt(FORK_MAJOR_REVISION))
 		return;
 
-	version = KvGetNum(PackKV[PackSpecials[pack]][pack], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
+	version = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "fversion_minor", StringToInt(FORK_MINOR_REVISION));
 	if(version > StringToInt(FORK_MINOR_REVISION))
 		return;
 
-	version2 = KvGetNum(PackKV[PackSpecials[pack]][pack], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
+	version2 = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "fversion_stable", StringToInt(FORK_STABLE_REVISION));
 	if(version2>StringToInt(FORK_STABLE_REVISION) && version==StringToInt(FORK_MINOR_REVISION))
 		return;
 
-	PackSpecials[pack]++;
+	FF2Packs_NumBosses[pack]++;
 }
 
 void PrecacheCharacter(int characterIndex)
 {
 	char filePath[PLATFORM_MAX_PATH], key[8];
 	static char file[PLATFORM_MAX_PATH], section[16], bossName[64];
-	KvRewind(BossKV[characterIndex]);
-	KvGetString(BossKV[characterIndex], "filename", bossName, sizeof(bossName));
-	KvGotoFirstSubKey(BossKV[characterIndex]);
-	while(KvGotoNextKey(BossKV[characterIndex]))
+	KvRewind(FF2CharSetInfo.BossKV[characterIndex]);
+	KvGetString(FF2CharSetInfo.BossKV[characterIndex], "filename", bossName, sizeof(bossName));
+	KvGotoFirstSubKey(FF2CharSetInfo.BossKV[characterIndex]);
+	while(KvGotoNextKey(FF2CharSetInfo.BossKV[characterIndex]))
 	{
-		KvGetSectionName(BossKV[characterIndex], section, sizeof(section));
+		KvGetSectionName(FF2CharSetInfo.BossKV[characterIndex], section, sizeof(section));
 		if(StrEqual(section, "sound_bgm"))
 		{
 			for(int i=1; ; i++)
 			{
 				FormatEx(key, sizeof(key), "path%d", i);
-				KvGetString(BossKV[characterIndex], key, file, sizeof(file));
+				KvGetString(FF2CharSetInfo.BossKV[characterIndex], key, file, sizeof(file));
 				if(!file[0])
 					break;
 
@@ -841,7 +841,7 @@ void PrecacheCharacter(int characterIndex)
 			for(int i=1; ; i++)
 			{
 				IntToString(i, key, sizeof(key));
-				KvGetString(BossKV[characterIndex], key, file, sizeof(file));
+				KvGetString(FF2CharSetInfo.BossKV[characterIndex], key, file, sizeof(file));
 				if(!file[0])
 					break;
 
@@ -878,36 +878,36 @@ void FindCompanion(int boss, int players, bool[] omit)
 {
 	static int playersNeeded = 2;
 	static char companionName[64];
-	KvRewind(BossKV[Special[boss]]);
-	KvGetString(BossKV[Special[boss]], "companion", companionName, sizeof(companionName));
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "companion", companionName, sizeof(companionName));
 	if(playersNeeded<players && companionName[0])  //Only continue if we have enough players and if the boss has a companion
 	{
 		int companion = Utils_GetRandomValidClient(omit);
-		Boss[companion] = companion;
-		BossSwitched[companion] = BossSwitched[boss];
+		FF2BossInfo[companion].Boss = companion;
+		FF2BossInfo[companion].HasSwitched = FF2BossInfo[boss].HasSwitched;
 		omit[companion] = true;
-		int client = Boss[boss];
+		int client = FF2BossInfo[boss].Boss;
 		if(PickCharacter(boss, companion))  //TODO: This is a bit misleading
 		{
-			if(BossRageDamage[companion] == 1)	// If 1, toggle infinite rage
+			if(FF2BossInfo[companion].RageDamage == 1)	// If 1, toggle infinite rage
 			{
 				InfiniteRageActive[client] = true;
 				CreateTimer(0.2, Timer_InfiniteRage, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-				BossRageDamage[companion] = 1;
+				FF2BossInfo[companion].RageDamage = 1;
 			}
-			else if(BossRageDamage[companion] == -1)	// If -1, never rage
+			else if(FF2BossInfo[companion].RageDamage == -1)	// If -1, never rage
 			{
-				BossRageDamage[companion] = 99999;
+				FF2BossInfo[companion].RageDamage = 99999;
 			}
 			else	// Use formula or straight value
 			{
-				BossRageDamage[companion] = ParseFormula(companion, "ragedamage", FF2GlobalsCvars.RageDamage, 1900);
+				FF2BossInfo[companion].RageDamage = ParseFormula(companion, "ragedamage", FF2GlobalsCvars.RageDamage, 1900);
 			}
-			BossLivesMax[companion] = KvGetNum(BossKV[Special[companion]], "lives", 1);
-			if(BossLivesMax[companion] < 1)
+			FF2BossInfo[companion].LivesMax = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[companion].Special], "lives", 1);
+			if(FF2BossInfo[companion].LivesMax < 1)
 			{
 				LogToFile(FF2LogsPaths.Errors, "[Boss] Boss %s has an invalid amount of lives, setting to 1", companionName);
-				BossLivesMax[companion] = 1;
+				FF2BossInfo[companion].LivesMax = 1;
 			}
 			playersNeeded++;
 			FindCompanion(companion, players, omit);  //Make sure this companion doesn't have a companion of their own
@@ -1029,16 +1029,16 @@ void LoadDifficulty(int boss)
 	{
 		static char section[64];
 		KvGetSectionName(FF2ModsInfo.DiffCfg, section, sizeof(section));
-		if(!StrEqual(section, dIncoming[Boss[boss]]))
+		if(!StrEqual(section, dIncoming[FF2BossInfo[boss].Boss]))
 			continue;
 
 		static char plugin[80];
-		KvRewind(BossKV[Special[boss]]);
-		KvGetString(BossKV[Special[boss]], "filename", plugin, sizeof(plugin));
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "filename", plugin, sizeof(plugin));
 		if(!KvGetNum(FF2ModsInfo.DiffCfg, plugin, KvGetNum(FF2ModsInfo.DiffCfg, "default", 1)))
 			break;
 
-		SpecialRound = true;
+		FF2Globals.IsSpecialRound = true;
 		KvGotoFirstSubKey(FF2ModsInfo.DiffCfg);
 		do
 		{

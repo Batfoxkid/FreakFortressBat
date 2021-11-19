@@ -6,7 +6,7 @@ int HintPanelH(Menu menu, MenuAction action, int client, int selection)
 	}
 	else if(action==MenuAction_Select || (action==MenuAction_Cancel && selection==MenuCancel_Exit))
 	{
-		FF2flags[client] |= FF2FLAG_CLASSHELPED;
+		FF2PlayerInfo[client].FF2Flags |= FF2FLAG_CLASSHELPED;
 	}
 }
 
@@ -38,17 +38,17 @@ int TurnToZeroPanelH(Menu menu, MenuAction action, int client, int position)
 		{	
 			if(!position)
 			{
-				if(shortname[client] == client)
+				if(FF2PlayerInfo[client].ResetQueueTarget == client)
 				{
 					FPrintToChat(client, "%t", "to0_done");  //Your queue points have been reset to {olive}0{default}
 				}
 				else
 				{
-					FPrintToChat(client, "%t", "to0_done_admin", shortname[client]);  //{olive}{1}{default}'s queue points have been reset to {olive}0{default}
-					FPrintToChat(shortname[client], "%t", "to0_done_by_admin", client);  //{olive}{1}{default} reset your queue points to {olive}0{default}
-					LogAction(client, shortname[client], "\"%L\" reset \"%L\"'s queue points to 0", client, shortname[client]);
+					FPrintToChat(client, "%t", "to0_done_admin", FF2PlayerInfo[client].ResetQueueTarget);  //{olive}{1}{default}'s queue points have been reset to {olive}0{default}
+					FPrintToChat(FF2PlayerInfo[client].ResetQueueTarget, "%t", "to0_done_by_admin", client);  //{olive}{1}{default} reset your queue points to {olive}0{default}
+					LogAction(client, FF2PlayerInfo[client].ResetQueueTarget, "\"%L\" reset \"%L\"'s queue points to 0", client, FF2PlayerInfo[client].ResetQueueTarget);
 				}
-				FF2PlayerCookie[shortname[client]].QueuePoints = 0;
+				FF2PlayerCookie[FF2PlayerInfo[client].ResetQueueTarget].QueuePoints = 0;
 			}
 		}
 	}
@@ -85,7 +85,7 @@ Action TurnToZeroPanel(int client, int target)
 	menu.AddItem(text, text);
 	FormatEx(text, sizeof(text), "%T", "No", client);
 	menu.AddItem(text, text);
-	shortname[client] = target;
+	FF2PlayerInfo[client].ResetQueueTarget = target;
 	menu.ExitButton = false;
 	menu.Display(client, MENU_TIME_FOREVER);
 	return Plugin_Handled;
@@ -123,7 +123,7 @@ int SkipBossPanelH(Menu menu, MenuAction action, int client, int position)
 		{
 			if(!position)
 			{
-				if(shortname[client] == client)
+				if(FF2PlayerInfo[client].ResetQueueTarget == client)
 					FPrintToChat(client, "%t", "to0_resetpts");
 
 				if(FF2PlayerCookie[client].QueuePoints >= 10)
@@ -177,7 +177,7 @@ int Command_SetMyBossH(Menu menu, MenuAction action, int param1, int param2)
 					option[3] = choices;
 					continue;
 				}
-				if(!option[4] && HasCharSets && !CharSetOldPath)
+				if(!option[4] && FF2CharSetInfo.HasMultiCharSets && !FF2CharSetInfo.UseOldCharSetPath)
 				{
 					option[4] = choices;
 					continue;
@@ -456,7 +456,7 @@ void PackMenu(int client)
 	SetGlobalTransTarget(client);
 	menu.SetTitle("%t", "to0_packmenu");
 
-	BuildPath(Path_SM, config, sizeof(config), "%s/%s", CharSetOldPath ? ConfigPath : DataPath, CharsetCFG);
+	BuildPath(Path_SM, config, sizeof(config), "%s/%s", FF2CharSetInfo.UseOldCharSetPath ? ConfigPath : DataPath, CharsetCFG);
 
 	Handle Kv = CreateKeyValues("");
 	FileToKeyValues(Kv, config);
@@ -480,7 +480,7 @@ void PackMenu(int client)
 		if(total < (MAXCHARSETS+1))
 			Format(pack, sizeof(pack), "%s: %s", pack, cookieValues[total-1]);
 
-		menu.AddItem(num, pack, (CurrentCharSet==total-1 || total>MAXCHARSETS) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+		menu.AddItem(num, pack, (FF2CharSetInfo.CurrentCharSetIdx==total-1 || total>MAXCHARSETS) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 	}
 	while(KvGotoNextKey(Kv));
 	delete Kv;
@@ -528,36 +528,36 @@ void PackBoss(int client, int pack)
 			strcopy(boss, sizeof(boss), cookieValues[pack]);
 	}
 
-	menu.SetTitle("%t", "to0_viewpack", CharSetString[pack], boss);
+	menu.SetTitle("%t", "to0_viewpack", FF2Packs_Names[pack], boss);
 
 	FormatEx(boss, sizeof(boss), ";%i", pack);
 	FormatEx(bossName, sizeof(bossName), "%t", "to0_random");
 	menu.AddItem(boss, bossName);
 
-	for(int config; config<PackSpecials[pack]; config++)
+	for(int config; config<FF2Packs_NumBosses[pack]; config++)
 	{
-		KvRewind(PackKV[config][pack]);
-		if(KvGetNum(PackKV[config][pack], "blocked"))
+		KvRewind(FF2BossPacks[config][pack]);
+		if(KvGetNum(FF2BossPacks[config][pack], "blocked"))
 			continue;
 
-		KvGetString(PackKV[config][pack], "name", boss, sizeof(boss));
+		KvGetString(FF2BossPacks[config][pack], "name", boss, sizeof(boss));
 		Utils_GetBossSpecial(config, bossName, sizeof(bossName), client, pack);
-		if((KvGetNum(PackKV[config][pack], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-		   (KvGetNum(PackKV[config][pack], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
+		if((KvGetNum(FF2BossPacks[config][pack], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+		   (KvGetNum(FF2BossPacks[config][pack], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)))
 		{
-			if(!KvGetNum(PackKV[config][pack], "hidden"))
+			if(!KvGetNum(FF2BossPacks[config][pack], "hidden"))
 				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(PackKV[config][pack], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
+		else if(KvGetNum(FF2BossPacks[config][pack], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true))
 		{
-			if(!KvGetNum(PackKV[config][pack], "hidden", 1))
+			if(!KvGetNum(FF2BossPacks[config][pack], "hidden", 1))
 				menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);
 		}
-		else if(KvGetNum(PackKV[config][pack], "hidden") &&
-		      !(KvGetNum(PackKV[config][pack], "donator") ||
-		        KvGetNum(PackKV[config][pack], "theme") ||
-			KvGetNum(PackKV[config][pack], "admin") ||
-			KvGetNum(PackKV[config][pack], "owner")))
+		else if(KvGetNum(FF2BossPacks[config][pack], "hidden") &&
+		      !(KvGetNum(FF2BossPacks[config][pack], "donator") ||
+		        KvGetNum(FF2BossPacks[config][pack], "theme") ||
+			KvGetNum(FF2BossPacks[config][pack], "admin") ||
+			KvGetNum(FF2BossPacks[config][pack], "owner")))
 		{
 			// Don't show
 		}
@@ -642,17 +642,17 @@ Action ConfirmBoss(int client)
 	Format(language, sizeof(language), "description_%s", language);
 	SetGlobalTransTarget(client);
 
-	for(int config; config<Specials; config++)
+	for(int config; config<FF2CharSetInfo.SizeOfSpecials; config++)
 	{
-		KvRewind(BossKV[config]);
-		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		KvRewind(FF2CharSetInfo.BossKV[config]);
+		KvGetString(FF2CharSetInfo.BossKV[config], "name", boss, sizeof(boss));
 		if(StrEqual(boss, cIncoming[client], false))
 		{
-			KvRewind(BossKV[config]);
-			KvGetString(BossKV[config], language, text, sizeof(text));
+			KvRewind(FF2CharSetInfo.BossKV[config]);
+			KvGetString(FF2CharSetInfo.BossKV[config], language, text, sizeof(text));
 			if(!text[0])
 			{
-				KvGetString(BossKV[config], "description_en", text, sizeof(text));  //Default to English if their language isn't available
+				KvGetString(FF2CharSetInfo.BossKV[config], "description_en", text, sizeof(text));  //Default to English if their language isn't available
 				if(!text[0])
 					FormatEx(text, sizeof(text), "%t", "to0_nodesc");
 			}
@@ -718,17 +718,17 @@ void PackConfirmBoss(int client, int pack)
 	Format(language, sizeof(language), "description_%s", language);
 	SetGlobalTransTarget(client);
 
-	for(int config; config<PackSpecials[pack]; config++)
+	for(int config; config<FF2Packs_NumBosses[pack]; config++)
 	{
-		KvRewind(PackKV[config][pack]);
-		KvGetString(PackKV[config][pack], "name", boss, sizeof(boss));
+		KvRewind(FF2BossPacks[config][pack]);
+		KvGetString(FF2BossPacks[config][pack], "name", boss, sizeof(boss));
 		if(StrEqual(boss, name[0], false))
 		{
-			KvRewind(PackKV[config][pack]);
-			KvGetString(PackKV[config][pack], language, text, sizeof(text));
+			KvRewind(FF2BossPacks[config][pack]);
+			KvGetString(FF2BossPacks[config][pack], language, text, sizeof(text));
 			if(!text[0])
 			{
-				KvGetString(PackKV[config][pack], "description_en", text, sizeof(text));  //Default to English if their language isn't available
+				KvGetString(FF2BossPacks[config][pack], "description_en", text, sizeof(text));  //Default to English if their language isn't available
 				if(!text[0])
 					FormatEx(text, sizeof(text), "%t", "to0_nodesc");
 			}
@@ -741,7 +741,7 @@ void PackConfirmBoss(int client, int pack)
 	Menu menu = new Menu(PackConfirmBossH);
 	menu.SetTitle(text);
 
-	FormatEx(text, sizeof(text), "%t", "to0_confirmpack", boss, CharSetString[pack]);
+	FormatEx(text, sizeof(text), "%t", "to0_confirmpack", boss, FF2Packs_Names[pack]);
 	menu.AddItem(boss, text);
 
 	FormatEx(text, sizeof(text), "%t", "to0_cancel");
@@ -1087,18 +1087,18 @@ Action HelpPanelClass(int client)
 
 void HelpPanelBoss(int boss)
 {
-	if(!Utils_IsValidClient(Boss[boss]))
+	if(!Utils_IsValidClient(FF2BossInfo[boss].Boss))
 		return;
 
 	char text[512], language[20];
-	GetLanguageInfo(GetClientLanguage(Boss[boss]), language, 8, text, 8);
+	GetLanguageInfo(GetClientLanguage(FF2BossInfo[boss].Boss), language, 8, text, 8);
 	FormatEx(language, sizeof(language), "description_%s", language);
 
-	KvRewind(BossKV[Special[boss]]);
-	KvGetString(BossKV[Special[boss]], language, text, sizeof(text));
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], language, text, sizeof(text));
 	if(!text[0])
 	{
-		KvGetString(BossKV[Special[boss]], "description_en", text, sizeof(text));  //Default to English if their language isn't available
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "description_en", text, sizeof(text));  //Default to English if their language isn't available
 		if(!text[0])
 			return;
 	}
@@ -1106,11 +1106,11 @@ void HelpPanelBoss(int boss)
 
 	Menu menu = new Menu(HintPanelH);
 	menu.SetTitle(text);
-	FormatEx(text, sizeof(text), "%T", "Exit", Boss[boss]);
+	FormatEx(text, sizeof(text), "%T", "Exit", FF2BossInfo[boss].Boss);
 	menu.AddItem(text, text);
 	menu.ExitButton = false;
 	menu.OptionFlags |= MENUFLAG_NO_SOUND;
-	menu.Display(Boss[boss], 25);
+	menu.Display(FF2BossInfo[boss].Boss, 25);
 }
 
 
@@ -1238,8 +1238,8 @@ int Command_TrackListH(Menu menu, MenuAction action, int param1, int param2)
 		case MenuAction_Select:
 		{
 			StopMusic(param1, true);
-			KvRewind(BossKV[Special[0]]);
-			if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+			KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special]);
+			if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "sound_bgm"))
 			{
 				char music[PLATFORM_MAX_PATH];
 				int track = param2+1;
@@ -1247,26 +1247,26 @@ int Command_TrackListH(Menu menu, MenuAction action, int param1, int param2)
 
 				float time = Utils_GetSongLength(music);
 				FormatEx(music, 10, "path%i", track);
-				KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music, music, sizeof(music));
 
 				char id3[4][256];
 				FormatEx(id3[0], sizeof(id3[]), "name%i", track);
-				KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[0], id3[2], sizeof(id3[]));
 				FormatEx(id3[1], sizeof(id3[]), "artist%i", track);
-				KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[1], id3[3], sizeof(id3[]));
 
 				char temp[PLATFORM_MAX_PATH], lives[256];
 				FormatEx(temp, sizeof(temp), "sound/%s", music);
 				if(FileExists(temp, true))
 				{
 					FormatEx(lives, sizeof(lives), "life%i", track);
-					KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+					KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], lives, lives, sizeof(lives));
 					if(lives[0])
 					{
-						if(StringToInt(lives) != BossLives[0])
+						if(StringToInt(lives) != FF2BossInfo[0].Lives)
 						{
-							if(MusicTimer[param1] != INVALID_HANDLE)
-								KillTimer(MusicTimer[param1]);
+							if(FF2PlayerInfo[param1].MusicTimer != INVALID_HANDLE)
+								KillTimer(FF2PlayerInfo[param1].MusicTimer);
 
 							return;
 						}
@@ -1276,10 +1276,10 @@ int Command_TrackListH(Menu menu, MenuAction action, int param1, int param2)
 				else
 				{
 					char bossName[64];
-					KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+					KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "filename", bossName, sizeof(bossName));
 					LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
-					if(MusicTimer[param1] != INVALID_HANDLE)
-						KillTimer(MusicTimer[param1]);
+					if(FF2PlayerInfo[param1].MusicTimer != INVALID_HANDLE)
+						KillTimer(FF2PlayerInfo[param1].MusicTimer);
 				}
 			}
 		}
@@ -1335,12 +1335,12 @@ int Handler_VoteCharset(Menu menu, MenuAction action, int param1, int param2)
 		case MenuAction_VoteEnd:
 		{
 			char index[8], nextmap[32];
-			menu.GetItem(param1, index, sizeof(index), _, FF2CharSetString, sizeof(FF2CharSetString));
+			menu.GetItem(param1, index, sizeof(index), _, FF2CharSetInfo.CurrentCharSet, sizeof(FF2CharSetInfo.CurrentCharSet));
 			ConVars.Charset.IntValue = StringToInt(index);
 
 			ConVars.Nextmap.GetString(nextmap, sizeof(nextmap));
-			FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetString);	//"The character set for {1} will be {2}."
-			isCharSetSelected = true;
+			FPrintToChatAll("%t", "nextmap_charset", nextmap, FF2CharSetInfo.CurrentCharSet);	//"The character set for {1} will be {2}."
+			FF2CharSetInfo.IsCharSetSelected = true;
 		}
 	}
 }
@@ -1366,7 +1366,7 @@ int Command_LoadCharsetH(Menu menu, MenuAction action, int client, int choice)
 			{
 				FReplyToCommand(client, "Character set has been switched");
 				FindCharacters();
-				FF2CharSetString[0] = 0;
+				FF2CharSetInfo.CurrentCharSet[0] = 0;
 				FF2Globals.LoadCharset = false;
 			}
 		}

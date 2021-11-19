@@ -1,36 +1,36 @@
 public void OnMapStart()
 {
 	FF2Globals.HPTime = 0.0;
-	doorCheckTimer = INVALID_HANDLE;
+	FF2Globals.DoorCheckTimer = INVALID_HANDLE;
 	FF2Globals.RoundCount = 0;
 	GetCurrentMap(FF2Globals.CurrentMap, sizeof(FF2Globals.CurrentMap));
 
 	for(int client; client<=MaxClients; client++)
 	{
-		KSpreeTimer[client] = 0.0;
-		FF2flags[client] = 0;
-		Incoming[client] = -1;
-		delete MusicTimer[client];
-		RPSHealth[client] = -1;
-		RPSLosses[client] = 0;
-		RPSHealth[client] = 0;
-		RPSLoser[client] = -1.0;
+		FF2BossInfo[client].KSpreeTimer = 0.0;
+		FF2PlayerInfo[client].FF2Flags = 0;
+		FF2BossInfo[client].Incoming = -1;
+		delete FF2PlayerInfo[client].MusicTimer;
+		FF2PlayerInfo[client].RPSHealth = -1;
+		FF2PlayerInfo[client].RPSLosses = 0;
+		FF2PlayerInfo[client].RPSHealth = 0;
+		FF2PlayerInfo[client].RPSLoser = -1.0;
 	}
 
 	for(int specials; specials<MAXSPECIALS; specials++)
 	{
 		for(int i; i<MAXCHARSETS; i++)
 		{
-			if(PackKV[specials][i] == null)
+			if(!FF2BossPacks[specials][i])
 				continue;
 
-			delete PackKV[specials][i];
+			delete FF2BossPacks[specials][i];
 		}
 
-		if(BossKV[specials] == null)
+		if(!FF2CharSetInfo.BossKV[specials])
 			continue;
 
-		delete BossKV[specials];
+		delete FF2CharSetInfo.BossKV[specials];
 	}
 }
 
@@ -48,7 +48,7 @@ public Action SMAC_OnCheatDetected(int client, const char[] module, DetectionTyp
 	if(type == Detection_CvarViolation)
 	{
 		//PrintToConsoleAll("SMAC: Cheat was a cvar violation!");
-		if((FF2flags[client] & FF2FLAG_CHANGECVAR))
+		if((FF2PlayerInfo[client].FF2Flags & FF2FLAG_CHANGECVAR))
 		{
 			//PrintToConsoleAll("SMAC: Ignoring violation");
 			return Plugin_Stop;
@@ -71,9 +71,9 @@ public void OnClientPostAdminCheck(int client)
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 
-	FF2flags[client] = 0;
-	Damage[client] = 0;
-	uberTarget[client] = -1;
+	FF2PlayerInfo[client].FF2Flags = 0;
+	FF2PlayerInfo[client].Damage = 0;
+	FF2PlayerInfo[client].UberTarget = -1;
 	xIncoming[client][0] = 0;
 	dIncoming[client][0] = 0;
 	CanBossVs[client] = 0;
@@ -103,15 +103,15 @@ public void OnClientPostAdminCheck(int client)
 
 	//We use the 0th index here because client indices can change.
 	//If this is false that means music is disabled for all clients, so don't play it for new clients either.
-	if(playBGM[0])
+	if(FF2PlayerInfo[0].PlayBGM)
 	{
-		playBGM[client] = true;
+		FF2PlayerInfo[client].PlayBGM = true;
 		if(FF2Globals.Enabled)
 			CreateTimer(0.1, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 	else
 	{
-		playBGM[client] = false;
+		FF2PlayerInfo[client].PlayBGM = false;
 	}
 }
 
@@ -122,17 +122,17 @@ public void OnClientDisconnect(int client)
 		int boss = Utils_GetBossIndex(client);
 		bool[] omit = new bool[MaxClients+1];
 		omit[client] = true;
-		Boss[boss] = Utils_GetClientWithoutBlacklist(omit, BossSwitched[boss] ? FF2Globals.BossTeam : FF2Globals.OtherTeam);
-		HasEquipped[boss] = false;
+		FF2BossInfo[boss].Boss = Utils_GetClientWithoutBlacklist(omit, FF2BossInfo[boss].HasSwitched ? FF2Globals.BossTeam : FF2Globals.OtherTeam);
+		FF2BossInfo[boss].HasEquipped = false;
 		PickCharacter(boss, boss);
-		if((Special[boss]<0) || !BossKV[Special[boss]])
+		if((FF2BossInfo[boss].Special<0) || !FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special])
 			LogToFile(FF2LogsPaths.Errors, "[!!!] Couldn't find a boss for index %i!", boss);
 
-		if(Boss[boss])
+		if(FF2BossInfo[boss].Boss)
 		{
 			CreateTimer(0.1, Timer_MakeBoss, boss, TIMER_FLAG_NO_MAPCHANGE);
-			FPrintToChat(Boss[boss], "%t", "Replace Disconnected Boss");
-			FPrintToChatAll("%t", "Boss Disconnected", client, Boss[boss]);
+			FPrintToChat(FF2BossInfo[boss].Boss, "%t", "Replace Disconnected Boss");
+			FPrintToChatAll("%t", "Boss Disconnected", client, FF2BossInfo[boss].Boss);
 		}
 	}
 
@@ -142,9 +142,9 @@ public void OnClientDisconnect(int client)
 	if(FF2Globals.Enabled && IsClientInGame(client) && IsPlayerAlive(client) && Utils_CheckRoundState()==1)
 		CreateTimer(0.1, Timer_CheckAlivePlayers, _, TIMER_FLAG_NO_MAPCHANGE);
 
-	FF2flags[client] = 0;
-	Damage[client] = 0;
-	uberTarget[client] = -1;
+	FF2PlayerInfo[client].FF2Flags = 0;
+	FF2PlayerInfo[client].Damage = 0;
+	FF2PlayerInfo[client].UberTarget = -1;
 	xIncoming[client][0] = 0;
 	dIncoming[client][0] = 0;
 	CanBossVs[client] = 0;
@@ -153,9 +153,9 @@ public void OnClientDisconnect(int client)
 
 	CheckDuoMin();
 
-	if(MusicTimer[client] != null)
+	if(FF2PlayerInfo[client].MusicTimer != null)
 	{
-		delete MusicTimer[client];
+		delete FF2PlayerInfo[client].MusicTimer;
 	}
 }
 
@@ -169,13 +169,13 @@ public void TF2_OnConditionAdded(int client, TFCond condition)
 	{
 		TF2_RemoveCondition(client, condition);
 	}
-	else if(Utils_IsBoss(client) && SelfHealing[client]>0 && (condition==TFCond_Healing || condition==TFCond_RadiusHealOnDamage || condition==TFCond_HalloweenQuickHeal)) //|| condition==TFCond_KingAura))
+	else if(Utils_IsBoss(client) && FF2BossVar[client].SelfHealing>0 && (condition==TFCond_Healing || condition==TFCond_RadiusHealOnDamage || condition==TFCond_HalloweenQuickHeal)) //|| condition==TFCond_KingAura))
 	{
-		HealthBarModeC[client] = true;
+		FF2BossVar[client].IsHealthbarIncreasing = true;
 	}
 	else if(!Utils_IsBoss(client) && condition==TFCond_BlastJumping)
 	{
-		FF2flags[client] |= FF2FLAG_ROCKET_JUMPING;
+		FF2PlayerInfo[client].FF2Flags |= FF2FLAG_ROCKET_JUMPING;
 	}
 }
 
@@ -190,17 +190,17 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 	}
 	else if(Utils_IsBoss(client) && (condition==TFCond_Healing || condition== TFCond_RadiusHealOnDamage || condition==TFCond_HalloweenQuickHeal)) //|| condition==TFCond_KingAura))
 	{
-		HealthBarModeC[client] = false;
+		FF2BossVar[client].IsHealthbarIncreasing = false;
 	}
 	else if(!Utils_IsBoss(client) && condition==TFCond_BlastJumping)
 	{
-		FF2flags[client] &= ~FF2FLAG_ROCKET_JUMPING;
+		FF2PlayerInfo[client].FF2Flags &= ~FF2FLAG_ROCKET_JUMPING;
 	}
 }
 
 public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname, bool &result)
 {
-	if(Utils_IsBoss(client) && Utils_CheckRoundState()==1 && !Utils_IsPlayerCritBuffed(client) && !randomCrits[client])
+	if(Utils_IsBoss(client) && Utils_CheckRoundState()==1 && !Utils_IsPlayerCritBuffed(client) && !FF2BossVar[client].HasRandomCrits)
 	{
 		result = false;
 		return Plugin_Changed;
@@ -222,7 +222,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 	int index = -1;
 	int entity = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	if(IsValidEntity(entity) && IsValidEdict(entity) && (GetClientTeam(client)==FF2Globals.OtherTeam || FF2Globals.Enabled3) && SapperCooldown[client]<=0)
+	if(IsValidEntity(entity) && IsValidEdict(entity) && (GetClientTeam(client)==FF2Globals.OtherTeam || FF2Globals.Enabled3) && FF2PlayerInfo[client].SapperCooldown<=0)
 	{
 		index = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
 
@@ -246,7 +246,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					  !TF2_IsPlayerInCondition(target, TFCond_Bonked) &&
 					  !TF2_IsPlayerInCondition(target, TFCond_MegaHeal))
 					{
-						if(boss>=0 && SapperBoss[target])
+						if(boss>=0 && FF2BossVar[target].HasSapper)
 						{
 							if(index==810 || index==831)
 							{
@@ -259,13 +259,13 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_AddCondition(target, TFCond_Sapped, 3.0);
 							}
 
-							SapperCooldown[client] = ConVars.SapperCooldown.FloatValue;
+							FF2PlayerInfo[client].SapperCooldown = ConVars.SapperCooldown.FloatValue;
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
 							SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
 							return Plugin_Handled;
 						}
-						else if(boss<0 && SapperMinion)
+						else if(boss<0 && FF2Globals.IsSapperEnabled)
 						{
 							if(index==810 || index==831)
 							{
@@ -278,7 +278,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								TF2_AddCondition(target, TFCond_Sapped, 4.0);
 							}
 
-							SapperCooldown[client] = ConVars.SapperCooldown.FloatValue;
+							FF2PlayerInfo[client].SapperCooldown = ConVars.SapperCooldown.FloatValue;
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", GetPlayerWeaponSlot(client, TFWeaponSlot_Melee));
 							SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime()+1.0);
 							SetEntPropFloat(client, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
@@ -299,8 +299,8 @@ public Action OnGetMaxHealth(int client, int &maxHealth)
 	if(Utils_IsBoss(client))
 	{
 		int boss = Utils_GetBossIndex(client);
-		SetEntityHealth(client, BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1));
-		maxHealth = BossHealthMax[boss];
+		SetEntityHealth(client, FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1));
+		maxHealth = FF2BossInfo[boss].HealthMax;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -315,7 +315,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 	{
 		return Plugin_Handled;
 	}
-	else if((attacker<1 || client==attacker) && Utils_IsBoss(client) && !SelfKnockback[client])
+	else if((attacker<1 || client==attacker) && Utils_IsBoss(client) && !FF2BossVar[client].SelfKnockback)
 	{
 		return Plugin_Handled;
 	}
@@ -331,7 +331,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		int boss = Utils_GetBossIndex(client);
 		if(boss==-1 && !TF2_IsPlayerInCondition(client, TFCond_Bonked))
 		{
-			if(shield[client] && ConVars.ShieldType.IntValue==1)
+			if(FF2PlayerInfo[client].EntShield && ConVars.ShieldType.IntValue==1)
 			{
 				Utils_RemoveShield(client, attacker);
 				return Plugin_Handled;
@@ -377,7 +377,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				}
 			}
 
-			if(damage<=160.0 && dmgTriple[attacker])
+			if(damage<=160.0 && FF2BossVar[attacker].HasTripleDamage)
 			{
 				damage *= 3;
 				return Plugin_Changed;
@@ -409,15 +409,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			{
 				if(FF2Globals.Isx10)
 				{
-					damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(ConVars.TimesTen.FloatValue*3);
+					damage = FF2BossInfo[boss].HealthMax*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.1-FF2BossInfo[boss].Stabbed/90)/(ConVars.TimesTen.FloatValue*3);
 				}
 				else if(ConVars.LowStab.BoolValue)
 				{
-					damage = (BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(750/float(FF2Globals.TotalPlayers)))/5;
+					damage = (FF2BossInfo[boss].HealthMax*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.11-FF2BossInfo[boss].Stabbed/90)+(750/float(FF2Globals.TotalPlayers)))/5;
 				}
 				else
 				{
-					damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/5;
+					damage = FF2BossInfo[boss].HealthMax*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.12-FF2BossInfo[boss].Stabbed/90)/5;
 				}
 				damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 				damagecustom = 0;
@@ -451,12 +451,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
 				}
 
-				if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+				if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 				{
 					if(FF2GlobalsCvars.TellName)
 					{
 						char spcl[64];
-						Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+						Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
@@ -510,8 +510,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								}
 								case 217:
 								{
-									if(aValues[i]>0 && (SelfHealing[attacker]==1 || SelfHealing[attacker]>2))
-										BossHealth[Utils_GetBossIndex(attacker)] += RoundToFloor(damage*3.0*aValues[i]);
+									if(aValues[i]>0 && (FF2BossVar[attacker].SelfHealing==1 || FF2BossVar[attacker].SelfHealing>2))
+										FF2BossInfo[Utils_GetBossIndex(attacker)].Health += RoundToFloor(damage*3.0*aValues[i]);
 								}
 							}
 						}
@@ -522,12 +522,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 					EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 
-					if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_HUDDISABLED))
 					{
 						if(FF2GlobalsCvars.TellName)
 						{
 							char spcl[64];
-							Utils_GetBossSpecial(Special[Utils_GetBossIndex(attacker)], spcl, sizeof(spcl), attacker);
+							Utils_GetBossSpecial(FF2BossInfo[Utils_GetBossIndex(attacker)].Special, spcl, sizeof(spcl), attacker);
 							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
@@ -556,27 +556,27 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 					}
 
-					if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
+					if(FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1) > damage*3)
 					{
 						static char sound[PLATFORM_MAX_PATH];
 						if(RandomSound("sound_stabbed_boss", sound, sizeof(sound), boss))
 						{
-							EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+							EmitSoundToAllExcept(sound, _, _, _, _, _, _, FF2BossInfo[boss].Boss, _, _, false);
 						}
 						else if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
 						{
-							EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss], _, _, false);
+							EmitSoundToAllExcept(sound, _, _, _, _, _, _, FF2BossInfo[boss].Boss, _, _, false);
 						}
 					}
 
-					HealthBarMode = true;
+					FF2Globals.HealthBarMode = true;
 					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 				}
 
 				ActivateAbilitySlot(boss, 6);
 
-				if(Stabbed[boss] < 3)
-					Stabbed[boss]++;
+				if(FF2BossInfo[boss].Stabbed < 3)
+					FF2BossInfo[boss].Stabbed++;
 
 				if(action == Plugin_Handled)
 				{
@@ -593,14 +593,14 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					damage = 1.0;
 					return Plugin_Changed;
 				}
-				damage = BossHealth[boss]*1.005;
+				damage = FF2BossInfo[boss].Health*1.005;
 				damagecustom = 0;
 
 				for(int all=1; all<=MaxClients; all++)
 				{
 					if(Utils_IsValidClient(all) && IsPlayerAlive(all))
 					{
-						if(!FF2PlayerCookie[all].HudSettings[2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
+						if(!FF2PlayerCookie[all].HudSettings[2] && !(FF2PlayerInfo[all].FF2Flags & FF2FLAG_HUDDISABLED))
 						{
 							switch(FF2GlobalsCvars.Annotations)
 							{
@@ -621,9 +621,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				if(Utils_IsValidClient(teleowner) && teleowner!=attacker)
 				{
 					if(GetClientTeam(teleowner) == GetClientTeam(attacker))
-						Damage[teleowner] += BossHealth[boss]*3/5;
+						FF2PlayerInfo[teleowner].Damage += FF2BossInfo[boss].Health*3/5;
 
-					if(!FF2PlayerCookie[teleowner].HudSettings[2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[teleowner].HudSettings[2] && !(FF2PlayerInfo[teleowner].FF2Flags & FF2FLAG_HUDDISABLED))
 					{
 						switch(FF2GlobalsCvars.Annotations)
 						{
@@ -640,11 +640,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				}
 
 				static char spcl[64];
-				if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+				if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 				{
 					if(FF2GlobalsCvars.TellName)
 					{
-						Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+						Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
@@ -673,11 +673,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 				}
 
-				if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+				if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_HUDDISABLED))
 				{
 					if(FF2GlobalsCvars.TellName)
 					{
-						Utils_GetBossSpecial(Special[Utils_GetBossIndex(attacker)], spcl, sizeof(spcl), client);
+						Utils_GetBossSpecial(FF2BossInfo[Utils_GetBossIndex(attacker)].Special, spcl, sizeof(spcl), client);
 						switch(FF2GlobalsCvars.Annotations)
 						{
 							case 1:
@@ -710,13 +710,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				if(RandomSound("sound_telefraged", sound, sizeof(sound)))
 					EmitSoundToAllExcept(sound);
 
-				HealthBarMode = true;
+				FF2Globals.HealthBarMode = true;
 				CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 				return Plugin_Changed;
 			}
 
 			bool changed;
-			if(damage<=160.0 && dmgTriple[attacker])
+			if(damage<=160.0 && FF2BossVar[attacker].HasTripleDamage)
 			{
 				damage *= 3;
 				changed = true;
@@ -813,11 +813,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 						else if(index!=230 && index!=402 && index!=526 && index!=30665)  //Sydney Sleeper, Bazaar Bargain, Machina, Shooting Star
 						{
-							float time = (GlowTimer[boss]>10 ? 1.0 : 2.0);
-							time += (GlowTimer[boss]>10 ? (GlowTimer[boss]>20 ? 1.0 : 2.0) : 4.0)*(charge/100.0);
-							Utils_SetClientGlow(Boss[boss], time);
-							if(GlowTimer[boss] > 25.0)
-								GlowTimer[boss] = 25.0;
+							float time = (FF2PlayerInfo[boss].GlowTimer>10 ? 1.0 : 2.0);
+							time += (FF2PlayerInfo[boss].GlowTimer>10 ? (FF2PlayerInfo[boss].GlowTimer>20 ? 1.0 : 2.0) : 4.0)*(charge/100.0);
+							Utils_SetClientGlow(FF2BossInfo[boss].Boss, time);
+							if(FF2PlayerInfo[boss].GlowTimer > 25.0)
+								FF2PlayerInfo[boss].GlowTimer = 25.0;
 						}
 
 						if(!(damagetype & DMG_CRIT))
@@ -826,7 +826,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							{
 								damage *= FF2GlobalsCvars.SniperMiniDmg;
 							}
-							else if(index!=230 || BossCharge[boss][0]>90.0)  //Sydney Sleeper
+							else if(index!=230 || FF2BossInfo[boss].Charge[0]>90.0)  //Sydney Sleeper
 							{
 								damage *= FF2GlobalsCvars.SniperDmg;
 							}
@@ -896,29 +896,29 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						{
 							if(FF2Globals.Isx10)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(ConVars.TimesTen.FloatValue*FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
+								damage = ((Pow(float(FF2BossInfo[boss].HealthMax), 0.74074)-(FF2PlayerInfo[client].Cabered/128.0*float(FF2BossInfo[boss].HealthMax)))/(3+(ConVars.TimesTen.FloatValue*FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
 							}
 							else if(ConVars.LowStab.BoolValue)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(2000.0/float(FF2Globals.TotalPlayers))+206.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
+								damage = ((Pow(float(FF2BossInfo[boss].HealthMax), 0.74074)+(2000.0/float(FF2Globals.TotalPlayers))+206.0-(FF2PlayerInfo[client].Cabered/128.0*float(FF2BossInfo[boss].HealthMax)))/(3+(FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
 							}
 							else
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Cabered[client]/128.0*float(BossHealthMax[boss])))/(3+(FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
+								damage = ((Pow(float(FF2BossInfo[boss].HealthMax), 0.74074)+512.0-(FF2PlayerInfo[client].Cabered/128.0*float(FF2BossInfo[boss].HealthMax)))/(3+(FF2GlobalsCvars.AllowedDetonation*3)))*FF2Globals.Bosses;
 							}
 							damagetype |= DMG_CRIT;
 
-							if(Cabered[client] < 5)
-								Cabered[client]++;
+							if(FF2PlayerInfo[client].Cabered < 5)
+								FF2PlayerInfo[client].Cabered++;
 
 							if(FF2GlobalsCvars.AllowedDetonation < 3)
 							{
-								if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+								if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 								{
 									if(FF2GlobalsCvars.TellName)
 									{
 										static char spcl[64];
-										Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+										Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 										switch(FF2GlobalsCvars.Annotations)
 										{
 											case 1:
@@ -946,7 +946,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 										}
 									}
 								}
-								if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+								if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_HUDDISABLED))
 								{
 									if(FF2GlobalsCvars.TellName)
 									{
@@ -981,14 +981,14 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								EmitSoundToClient(attacker, "ambient/lightsoff.wav", _, _, _, _, 0.6, _, _, position, _, false);
 								EmitSoundToClient(client, "ambient/lightson.wav", _, _, _, _, 0.6, _, _, position, _, false);
 
-								if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
+								if(FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1) > damage*3)
 								{
 									static char sound[PLATFORM_MAX_PATH];
 									if(RandomSound("sound_cabered", sound, sizeof(sound)))
 										EmitSoundToAllExcept(sound);
 								}
 
-								HealthBarMode = true;
+								FF2Globals.HealthBarMode = true;
 								CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 							}
 							return Plugin_Changed;
@@ -1076,34 +1076,34 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					case 416:  //Market Gardener (courtesy of Chdata)
 					{
 						if(Utils_RemoveCond(attacker, TFCond_BlastJumping) && ConVars.Market.FloatValue)	// New way to check explosive jumping status
-						//if((FF2flags[attacker] & FF2FLAG_ROCKET_JUMPING) && ConVars.Market.FloatValue)
+						//if((FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_ROCKET_JUMPING) && ConVars.Market.FloatValue)
 						{
 							if(FF2Globals.Isx10)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)-(Marketed[client]/128.0*float(BossHealthMax[boss])))/(ConVars.TimesTen.FloatValue*3))*FF2Globals.Bosses*ConVars.Market.FloatValue;
+								damage = ((Pow(float(FF2BossInfo[boss].HealthMax), 0.74074)-(FF2PlayerInfo[client].Marketed/128.0*float(FF2BossInfo[boss].HealthMax)))/(ConVars.TimesTen.FloatValue*3))*FF2Globals.Bosses*ConVars.Market.FloatValue;
 							}
 							else if(ConVars.LowStab.BoolValue)
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+(1750.0/float(FF2Globals.TotalPlayers))+206.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*FF2Globals.Bosses*ConVars.Market.FloatValue;
+								damage = ((Pow(float(FF2BossInfo[boss].HealthMax), 0.74074)+(1750.0/float(FF2Globals.TotalPlayers))+206.0-(FF2PlayerInfo[client].Marketed/128.0*float(FF2BossInfo[boss].HealthMax)))/3)*FF2Globals.Bosses*ConVars.Market.FloatValue;
 							}
 							else
 							{
-								damage = ((Pow(float(BossHealthMax[boss]), 0.74074)+512.0-(Marketed[client]/128.0*float(BossHealthMax[boss])))/3)*FF2Globals.Bosses*ConVars.Market.FloatValue;
+								damage = ((Pow(float(FF2BossInfo[boss].HealthMax), 0.74074)+512.0-(FF2PlayerInfo[client].Marketed/128.0*float(FF2BossInfo[boss].HealthMax)))/3)*FF2Globals.Bosses*ConVars.Market.FloatValue;
 							}
 							damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 
 							if(Utils_RemoveCond(attacker, TFCond_Parachute))	// If you parachuted to do this, remove your parachute.
 								damage *= 0.8;	// And nerf your damage
 
-							if(Marketed[client] < 5)
-								Marketed[client]++;
+							if(FF2PlayerInfo[client].Marketed < 5)
+								FF2PlayerInfo[client].Marketed++;
 
-							if(!(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+							if(!(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 							{
 								if(FF2GlobalsCvars.TellName)
 								{
 									static char spcl[64];
-									Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+									Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 									switch(FF2GlobalsCvars.Annotations)
 									{
 										case 1:
@@ -1132,7 +1132,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 								}
 							}
 
-							if(!(FF2flags[client] & FF2FLAG_HUDDISABLED))
+							if(!(FF2PlayerInfo[client].FF2Flags & FF2FLAG_HUDDISABLED))
 							{
 								if(FF2GlobalsCvars.TellName)
 								{
@@ -1167,7 +1167,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							EmitSoundToClient(attacker, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
 							EmitSoundToClient(client, "player/doubledonk.wav", _, _, _, _, 0.6, _, _, position, _, false);
 
-							if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
+							if(FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1) > damage*3)
 							{
 								static char sound[PLATFORM_MAX_PATH];
 								if(RandomSound("sound_marketed", sound, sizeof(sound)))
@@ -1175,7 +1175,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							}
 
 							ActivateAbilitySlot(boss, 7);
-							HealthBarMode = true;
+							FF2Globals.HealthBarMode = true;
 							CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 							return Plugin_Changed;
 						}
@@ -1299,28 +1299,28 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(FF2Globals.Isx10)
 						{
-							damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(ConVars.TimesTen.FloatValue*3);
+							damage = FF2BossInfo[boss].HealthMax*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.1-FF2BossInfo[boss].Stabbed/90)/(ConVars.TimesTen.FloatValue*3);
 						}
 						else if(ConVars.LowStab.BoolValue)
 						{
-							damage = (BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(FF2Globals.TotalPlayers)))/3;
+							damage = (FF2BossInfo[boss].HealthMax*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.11-FF2BossInfo[boss].Stabbed/90)+(1500/float(FF2Globals.TotalPlayers)))/3;
 						}
 						else
 						{
-							damage = BossHealthMax[boss]*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
+							damage = FF2BossInfo[boss].HealthMax*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.12-FF2BossInfo[boss].Stabbed/90)/3;
 						}
 					}
 					else if(FF2Globals.Isx10)
 					{
-						damage = BossHealthMax[boss]*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.1-Stabbed[boss]/90)/(ConVars.TimesTen.FloatValue*3);
+						damage = FF2BossInfo[boss].HealthMax*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.1-FF2BossInfo[boss].Stabbed/90)/(ConVars.TimesTen.FloatValue*3);
 					}
 					else if(ConVars.LowStab.BoolValue)
 					{
-						damage = (BossHealthMax[boss]*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.11-Stabbed[boss]/90)+(1500/float(FF2Globals.TotalPlayers)))/3;
+						damage = (FF2BossInfo[boss].HealthMax*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.11-FF2BossInfo[boss].Stabbed/90)+(1500/float(FF2Globals.TotalPlayers)))/3;
 					}
 					else
 					{
-						damage = BossHealthMax[boss]*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*BossLivesMax[boss]*(0.12-Stabbed[boss]/90)/3;
+						damage = FF2BossInfo[boss].HealthMax*FF2Globals.Bosses*(Utils_LastBossIndex()+1)*FF2BossInfo[boss].LivesMax*(0.12-FF2BossInfo[boss].Stabbed/90)/3;
 					}
 					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 					damagecustom = 0;
@@ -1354,12 +1354,12 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						SetEntProp(viewmodel, Prop_Send, "m_nSequence", animation);
 					}
 
-					if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 					{
 						if(FF2GlobalsCvars.TellName)
 						{
 							static char spcl[64];
-							Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+							Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
@@ -1393,7 +1393,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, position, _, false);
 
-						if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+						if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_HUDDISABLED))
 						{
 							if(FF2GlobalsCvars.TellName)
 							{
@@ -1427,14 +1427,14 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 							}
 						}
 
-						if(BossHealth[boss]-BossHealthMax[boss]*(BossLives[boss]-1) > damage*3)
+						if(FF2BossInfo[boss].Health-FF2BossInfo[boss].HealthMax*(FF2BossInfo[boss].Lives-1) > damage*3)
 						{
 							static char sound[PLATFORM_MAX_PATH];
 							if(RandomSound("sound_stabbed", sound, sizeof(sound), boss))
-								EmitSoundToAllExcept(sound, _, _, _, _, _, _, Boss[boss]);
+								EmitSoundToAllExcept(sound, _, _, _, _, _, _, FF2BossInfo[boss].Boss);
 						}
 
-						HealthBarMode = true;
+						FF2Globals.HealthBarMode = true;
 						CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					}
 
@@ -1465,8 +1465,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 					ActivateAbilitySlot(boss, 6);
 
-					if(Stabbed[boss] < 3)
-						Stabbed[boss]++;
+					if(FF2BossInfo[boss].Stabbed < 3)
+						FF2BossInfo[boss].Stabbed++;
 
 					if(action == Plugin_Handled)
 					{
@@ -1490,7 +1490,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(Utils_IsValidClient(all) && IsPlayerAlive(all))
 						{
-							if(!FF2PlayerCookie[all].HudSettings[2] && !(FF2flags[all] & FF2FLAG_HUDDISABLED))
+							if(!FF2PlayerCookie[all].HudSettings[2] && !(FF2PlayerInfo[all].FF2Flags & FF2FLAG_HUDDISABLED))
 							{
 								switch(FF2GlobalsCvars.Annotations)
 								{
@@ -1512,9 +1512,9 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					{
 						if(GetClientTeam(teleowner) == GetClientTeam(attacker))
 						{
-							Damage[teleowner] += RoundFloat(FF2Globals.Isx10 ? 3000.0*ConVars.TimesTen.FloatValue : 5401.0);
+							FF2PlayerInfo[teleowner].Damage += RoundFloat(FF2Globals.Isx10 ? 3000.0*ConVars.TimesTen.FloatValue : 5401.0);
 
-							if(!FF2PlayerCookie[teleowner].HudSettings[2] && !(FF2flags[teleowner] & FF2FLAG_HUDDISABLED))
+							if(!FF2PlayerCookie[teleowner].HudSettings[2] && !(FF2PlayerInfo[teleowner].FF2Flags & FF2FLAG_HUDDISABLED))
 							{
 								switch(FF2GlobalsCvars.Annotations)
 								{
@@ -1532,11 +1532,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					}
 
 					static char spcl[64];
-					if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 					{
 						if(FF2GlobalsCvars.TellName)
 						{
-							Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+							Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 							switch(FF2GlobalsCvars.Annotations)
 							{
 								case 1:
@@ -1565,7 +1565,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						}
 					}
 
-					if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2flags[client] & FF2FLAG_HUDDISABLED))
+					if(!FF2PlayerCookie[client].HudSettings[2] && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_HUDDISABLED))
 					{
 						if(FF2GlobalsCvars.TellName)
 						{
@@ -1602,15 +1602,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 					if(RandomSound("sound_telefraged", sound, sizeof(sound)))
 						EmitSoundToAllExcept(sound);
 
-					HealthBarMode = true;
+					FF2Globals.HealthBarMode = true;
 					CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 					return Plugin_Changed;
 				}
 
-				if((damagetype & DMG_CLUB) && CritBoosted[client][2]!=0 && CritBoosted[client][2]!=1 && (TF2_GetPlayerClass(attacker)!=TFClass_Spy || CritBoosted[client][2]>1))
+				if((damagetype & DMG_CLUB) && FF2PlayerInfo[client].CritBoosted[2]!=0 && FF2PlayerInfo[client].CritBoosted[2]!=1 && (TF2_GetPlayerClass(attacker)!=TFClass_Spy || FF2PlayerInfo[client].CritBoosted[2]>1))
 				{
 					int melee = Utils_GetIndexOfWeaponSlot(attacker, TFWeaponSlot_Melee);
-					if(CritBoosted[client][2]>1 || (melee!=416 && melee!=307 && melee!=44))
+					if(FF2PlayerInfo[client].CritBoosted[2]>1 || (melee!=416 && melee!=307 && melee!=44))
 					{
 						damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 						return Plugin_Changed;
@@ -1622,13 +1622,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				char classname[64];
 				if(GetEntityClassname(attacker, classname, sizeof(classname)) && StrEqual(classname, "trigger_hurt", false))
 				{
-					if(SpawnTeleOnTriggerHurt && Utils_IsBoss(client) && Utils_CheckRoundState()==1)
+					if(FF2Globals.SpawnTeleOnTriggerHurt && Utils_IsBoss(client) && Utils_CheckRoundState()==1)
 					{
-						HazardDamage[client] += damage;
-						if(HazardDamage[client] >= ConVars.DamageToTele.FloatValue)
+						FF2PlayerInfo[client].HazardDamage += damage;
+						if(FF2PlayerInfo[client].HazardDamage >= ConVars.DamageToTele.FloatValue)
 						{
 							TeleportToMultiMapSpawn(client);
-							HazardDamage[client] = 0.0;
+							FF2PlayerInfo[client].HazardDamage = 0.0;
 						}
 					}
 
@@ -1642,13 +1642,13 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 						if(damage > 600.0)
 							damage = 600.0;
 
-						BossHealth[boss] -= RoundFloat(damage);
-						BossCharge[boss][0] += damage*100.0/BossRageDamage[boss];
-						if(BossHealth[boss] < 1)
+						FF2BossInfo[boss].Health -= RoundFloat(damage);
+						FF2BossInfo[boss].Charge[0] += damage*100.0/FF2BossInfo[boss].RageDamage;
+						if(FF2BossInfo[boss].Health < 1)
 							damage *= 5;
 
-						if(BossCharge[boss][0] > rageMax[client])
-							BossCharge[boss][0] = rageMax[client];
+						if(FF2BossInfo[boss].Charge[0] > FF2BossVar[client].RageMax)
+							FF2BossInfo[boss].Charge[0] = FF2BossVar[client].RageMax;
 
 						return Plugin_Changed;
 					}
@@ -1659,8 +1659,8 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				}
 			}
 
-			if(BossCharge[boss][0] > rageMax[client])
-				BossCharge[boss][0] = rageMax[client];
+			if(FF2BossInfo[boss].Charge[0] > FF2BossVar[client].RageMax)
+				FF2BossInfo[boss].Charge[0] = FF2BossVar[client].RageMax;
 		}
 		else
 		{
@@ -1669,11 +1669,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 				int index = (IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") && attacker<=MaxClients) ? GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") : -1;
 				if(index == 307)  //Ullapool Caber
 				{
-					if(FF2GlobalsCvars.AllowedDetonation<1 || FF2GlobalsCvars.AllowedDetonation-detonations[attacker]>1)
+					if(FF2GlobalsCvars.AllowedDetonation<1 || FF2GlobalsCvars.AllowedDetonation-FF2PlayerInfo[attacker].Detonations>1)
 					{
-						detonations[attacker]++;
+						FF2PlayerInfo[attacker].Detonations++;
 						if(FF2GlobalsCvars.AllowedDetonation > 1)
-							PrintHintText(attacker, "%t", "Detonations Left", FF2GlobalsCvars.AllowedDetonation-detonations[attacker]);
+							PrintHintText(attacker, "%t", "Detonations Left", FF2GlobalsCvars.AllowedDetonation-FF2PlayerInfo[attacker].Detonations);
 	
 						SetEntProp(weapon, Prop_Send, "m_bBroken", 0);
 						SetEntProp(weapon, Prop_Send, "m_iDetonated", 0);
@@ -2504,11 +2504,11 @@ public Action OnPickup(int entity, int client)  //Thanks friagram!
 	{
 		static char classname[32];
 		GetEntityClassname(entity, classname, sizeof(classname));
-		if(!StrContains(classname, "item_healthkit") && !(FF2flags[client] & FF2FLAG_ALLOW_HEALTH_PICKUPS))
+		if(!StrContains(classname, "item_healthkit") && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_ALLOW_HEALTH_PICKUPS))
 		{
 			return Plugin_Handled;
 		}
-		else if((!StrContains(classname, "item_ammopack") || StrEqual(classname, "tf_ammo_pack")) && !(FF2flags[client] & FF2FLAG_ALLOW_AMMO_PICKUPS))
+		else if((!StrContains(classname, "item_ammopack") || StrEqual(classname, "tf_ammo_pack")) && !(FF2PlayerInfo[client].FF2Flags & FF2FLAG_ALLOW_AMMO_PICKUPS))
 		{
 			return Plugin_Handled;
 		}
@@ -2522,7 +2522,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	if(!FF2Globals.Enabled || !Utils_IsValidClient(attacker) || !Utils_IsValidClient(victim) || attacker==victim)
 		return Plugin_Continue;
 
-	switch(GoombaMode)
+	switch(FF2Globals.GoombaMode)
 	{
 		case GOOMBA_NONE:					// none allowed
 		{
@@ -2568,7 +2568,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	}
 	else if(Utils_IsBoss(attacker))
 	{
-		if(shield[victim])
+		if(FF2PlayerInfo[victim].EntShield)
 		{
 			float position[3];
 			GetEntPropVector(attacker, Prop_Send, "m_vecOrigin", position);
@@ -2591,12 +2591,12 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 	static char spcl[64];
 	if(Utils_IsBoss(victim))
 	{
-		if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 		{
 			if(FF2GlobalsCvars.TellName)
 			{
 				boss = Utils_GetBossIndex(victim);
-				Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+				Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
@@ -2625,14 +2625,14 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 		}
 
-		if(!FF2PlayerCookie[victim].HudSettings[2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[victim].HudSettings[2] && !(FF2PlayerInfo[victim].FF2Flags & FF2FLAG_HUDDISABLED))
 		{
 			if(FF2GlobalsCvars.TellName)
 			{
 				if(Utils_IsBoss(attacker))
 				{
 					boss = Utils_GetBossIndex(attacker);
-					Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), victim);
+					Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), victim);
 				}
 				else
 				{
@@ -2665,20 +2665,20 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 				}
 			}
 		}
-		HealthBarMode = true;
+		FF2Globals.HealthBarMode = true;
 		CreateTimer(1.5, Timer_HealthBarMode, false, TIMER_FLAG_NO_MAPCHANGE);
 		UpdateHealthBar();
 	}
 	else if(Utils_IsBoss(attacker))
 	{
-		if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2flags[attacker] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[attacker].HudSettings[2] && !(FF2PlayerInfo[attacker].FF2Flags & FF2FLAG_HUDDISABLED))
 		{
 			if(FF2GlobalsCvars.TellName)
 			{
 				if(Utils_IsBoss(victim))
 				{
 					boss = Utils_GetBossIndex(victim);
-					Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), attacker);
+					Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), attacker);
 				}
 				else
 				{
@@ -2712,12 +2712,12 @@ public int OnStompPost(int attacker, int victim, float damageMultiplier, float d
 			}
 		}
 
-		if(!FF2PlayerCookie[victim].HudSettings[2] && !(FF2flags[victim] & FF2FLAG_HUDDISABLED))
+		if(!FF2PlayerCookie[victim].HudSettings[2] && !(FF2PlayerInfo[victim].FF2Flags & FF2FLAG_HUDDISABLED))
 		{
 			if(FF2GlobalsCvars.TellName)
 			{
 				boss = Utils_GetBossIndex(attacker);
-				Utils_GetBossSpecial(Special[boss], spcl, sizeof(spcl), victim);
+				Utils_GetBossSpecial(FF2BossInfo[boss].Special, spcl, sizeof(spcl), victim);
 				switch(FF2GlobalsCvars.Annotations)
 				{
 					case 1:
@@ -2753,7 +2753,7 @@ public Action OnCPTouch(int entity, int client)
 {
 	if(Utils_IsValidClient(client))
 	{
-		switch(CapMode)
+		switch(FF2Globals.CapMode)
 		{
 			case CAP_NONE:
 			{
@@ -2812,7 +2812,7 @@ public void CW3_OnWeaponSpawned(int weapon, int slot, int client)
 
 	TF2_RemoveWeaponSlot(client, slot);
 	int boss = Utils_GetBossIndex(client);
-	if(HasEquipped[boss])
+	if(FF2BossInfo[boss].HasEquipped)
 		Utils_EquipBoss(boss);
 }
 
@@ -2833,7 +2833,7 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 
 		if(channel==SNDCHAN_VOICE || (channel==SNDCHAN_STATIC && !StrContains(sound, "vo")))
 		{
-			if(FF2flags[Boss[disguiseboss]] & FF2FLAG_TALKING)
+			if(FF2PlayerInfo[FF2BossInfo[disguiseboss].Boss].FF2Flags & FF2FLAG_TALKING)
 				return Plugin_Continue;
 	
 			static char newSound[PLATFORM_MAX_PATH];
@@ -2849,7 +2849,7 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 				return Plugin_Changed;
 			}
 
-			if(bBlockVoice[Special[disguiseboss]])
+			if(FF2CharSetInfo.VoiceBlocked[FF2BossInfo[disguiseboss].Special])
 				return Plugin_Stop;
 		}
 	}
@@ -2860,7 +2860,7 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 
 	if(channel==SNDCHAN_VOICE || (channel==SNDCHAN_STATIC && !StrContains(sound, "vo")))
 	{
-		if(FF2flags[Boss[boss]] & FF2FLAG_TALKING)
+		if(FF2PlayerInfo[FF2BossInfo[boss].Boss].FF2Flags & FF2FLAG_TALKING)
 			return Plugin_Continue;
 
 		static char newSound[PLATFORM_MAX_PATH];
@@ -2876,7 +2876,7 @@ public Action HookSound(int clients[64], int &numClients, char sound[PLATFORM_MA
 			return Plugin_Changed;
 		}
 
-		if(bBlockVoice[Special[boss]])
+		if(FF2CharSetInfo.VoiceBlocked[FF2BossInfo[boss].Special])
 			return Plugin_Stop;
 	}
 	return Plugin_Continue;

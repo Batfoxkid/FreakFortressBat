@@ -21,9 +21,9 @@ public Action VSH_OnGetSaxtonHaleTeam(int &result)
 
 public Action VSH_OnGetSaxtonHaleUserId(int &result)
 {
-	if(FF2Globals.Enabled && IsClientConnected(Boss[0]))
+	if(FF2Globals.Enabled && IsClientConnected(FF2BossInfo[0].Boss))
 	{
-		result = GetClientUserId(Boss[0]);
+		result = GetClientUserId(FF2BossInfo[0].Boss);
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -33,7 +33,7 @@ public Action VSH_OnGetSpecialRoundIndex(int &result)
 {
 	if(FF2Globals.Enabled)
 	{
-		result = Special[0];
+		result = FF2BossInfo[0].Special;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -43,7 +43,7 @@ public Action VSH_OnGetSaxtonHaleHealth(int &result)
 {
 	if(FF2Globals.Enabled)
 	{
-		result = BossHealth[0];
+		result = FF2BossInfo[0].Health;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -53,7 +53,7 @@ public Action VSH_OnGetSaxtonHaleHealthMax(int &result)
 {
 	if(FF2Globals.Enabled)
 	{
-		result = BossHealthMax[0];
+		result = FF2BossInfo[0].HealthMax;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
@@ -63,7 +63,7 @@ public Action VSH_OnGetClientDamage(int client, int &result)
 {
 	if(FF2Globals.Enabled)
 	{
-		result = Damage[client];
+		result = FF2PlayerInfo[client].Damage;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;

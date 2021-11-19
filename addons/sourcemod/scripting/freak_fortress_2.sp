@@ -101,7 +101,7 @@ public Plugin myinfo =
 	author		=	"Many many people",
 	description	=	"RUUUUNN!! COWAAAARRDSS!",
 	version		=	PLUGIN_VERSION,
-	url		=	"https://forums.alliedmods.net/forumdisplay.php?f=154",
+	url		=	"https://forums.alliedmods.net/forumdisplay.php?f=154"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -134,7 +134,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	#endif
 
 	FF2Globals.Init();
+	FF2PlayerInfo[0].Init();
+
 	FF2Globals.PluginLateLoaded = late;
+
 	return APLRes_Success;
 }
 
@@ -392,7 +395,7 @@ void EnableFF2()
 	Utils_CheckToTeleportToSpawn();
 	Utils_MapHasMusic(true);
 	FindCharacters();
-	FF2CharSetString[0] = 0;
+	FF2CharSetInfo.CurrentCharSet[0] = 0;
 
 	#if !defined _smac_included
 	if(FF2Globals.SMAC && FindPluginByFile("smac_cvars.smx")!=INVALID_HANDLE)
@@ -463,10 +466,10 @@ void DisableFF2()
 	Utils_RemoveServerTag("hale");
 	Utils_RemoveServerTag("vsh");
 
-	if(doorCheckTimer != INVALID_HANDLE)
+	if(FF2Globals.DoorCheckTimer != INVALID_HANDLE)
 	{
-		KillTimer(doorCheckTimer);
-		doorCheckTimer = INVALID_HANDLE;
+		KillTimer(FF2Globals.DoorCheckTimer);
+		FF2Globals.DoorCheckTimer = INVALID_HANDLE;
 	}
 
 	for(int client=1; client<=MaxClients; client++)
@@ -474,9 +477,9 @@ void DisableFF2()
 		if(Utils_IsValidClient(client))
 			DataBase_SaveClientPreferences(client);
 
-		if(MusicTimer[client] != null)
+		if(FF2PlayerInfo[client].MusicTimer != null)
 		{
-			delete MusicTimer[client];
+			delete FF2PlayerInfo[client].MusicTimer;
 		}
 	}
 
@@ -525,7 +528,7 @@ void CheckArena()
 
 public Action FF2_OnSpecialSelected(int boss, int &SpecialNum, char[] SpecialName, bool preset)
 {
-	int client = Boss[boss];
+	int client = FF2BossInfo[boss].Boss;
 	if((!boss || boss==MAXBOSSES) && (IgnoreValid[client] || Utils_CheckValidBoss(client, xIncoming[client], !FF2GlobalsCvars.DuoMin)) && ConVars.SelectBoss.BoolValue && CheckCommandAccess(client, "ff2_boss", 0, true))
 	{
 		if(preset)

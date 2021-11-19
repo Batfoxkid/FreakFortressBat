@@ -179,11 +179,18 @@ enum struct FF2Globals_t
 	int HealthBar;
 	int EntMonoculus;
 
-	float HPTime;
-	char CurrentMap[99];
+	int TimeLeft;
+	char CurrentMap[100];
+
+	Handle DrawGameTimer;
+	Handle DoorCheckTimer;
+	int CapMode;
 	bool CheckDoors;
 	bool IsMedival;
 	bool FirstBlood;
+	bool IsSpecialRound;
+	bool IsSapperEnabled;
+	bool TimerMode;
 
 	bool AreSubpluginEnabled;
 	bool PluginLateLoaded;
@@ -192,6 +199,16 @@ enum struct FF2Globals_t
 	bool Enabled2;
 	bool Enabled3;
 	int Enabled_Database;
+
+	bool SpawnTeleOnTriggerHurt;
+
+	float HPTime;
+	bool ShowHealthText;
+	bool HealthBarMode;
+
+	char BossIcon[64];
+
+	int GoombaMode;
 
 	void Init()
 	{
@@ -211,134 +228,147 @@ enum struct FF2Globals_t
 }
 FF2Globals_t FF2Globals;
 
-
-float rageMax[MAXTF2PLAYERS];
-float rageMin[MAXTF2PLAYERS];
-int rageMode[MAXTF2PLAYERS];
-int Special[MAXTF2PLAYERS];
-int Incoming[MAXTF2PLAYERS];
-
-TFClassType LastAliveClass[MAXTF2PLAYERS];
-int Damage[MAXTF2PLAYERS];
-int uberTarget[MAXTF2PLAYERS];
-bool hadshield[MAXTF2PLAYERS];
-int shield[MAXTF2PLAYERS];
-float shieldHP[MAXTF2PLAYERS];
-float shDmgReduction[MAXTF2PLAYERS];
-int detonations[MAXTF2PLAYERS];
-bool playBGM[MAXTF2PLAYERS] = true;
-int Healing[MAXTF2PLAYERS];
-float SapperCooldown[MAXTF2PLAYERS];
-
-char currentBGM[MAXTF2PLAYERS][PLATFORM_MAX_PATH];
-
-int FF2flags[MAXTF2PLAYERS];
-
-int Boss[MAXTF2PLAYERS];
-int BossHealthMax[MAXTF2PLAYERS];
-int BossHealth[MAXTF2PLAYERS];
-int BossHealthLast[MAXTF2PLAYERS];
-int BossLives[MAXTF2PLAYERS];
-int BossLivesMax[MAXTF2PLAYERS];
-int BossRageDamage[MAXTF2PLAYERS];
-bool BossSwitched[MAXTF2PLAYERS];
-float BossCharge[MAXTF2PLAYERS][4];
-float Stabbed[MAXTF2PLAYERS];
-float Marketed[MAXTF2PLAYERS];
-float Cabered[MAXTF2PLAYERS];
-float KSpreeTimer[MAXTF2PLAYERS];
-int KSpreeCount[MAXTF2PLAYERS];
-float GlowTimer[MAXTF2PLAYERS];
-bool IsGlowing[MAXTF2PLAYERS];
-bool HasEquipped[MAXTF2PLAYERS];
-int shortname[MAXTF2PLAYERS];
-float RPSLoser[MAXTF2PLAYERS];
-int RPSLosses[MAXTF2PLAYERS];
-int RPSHealth[MAXTF2PLAYERS];
-float AirstrikeDamage[MAXTF2PLAYERS];
-float KillstreakDamage[MAXTF2PLAYERS];
-float HazardDamage[MAXTF2PLAYERS];
-bool emitRageSound[MAXTF2PLAYERS];
-bool SpawnTeleOnTriggerHurt = false;
-bool HealthBarMode;
-bool HealthBarModeC[MAXTF2PLAYERS];
-bool ShowHealthText;
-bool SpecialRound;
-int CritBoosted[MAXTF2PLAYERS][3];
-
-int timeleft;
-int cursongId[MAXTF2PLAYERS] = 1;
-
-Handle MusicTimer[MAXTF2PLAYERS];
-Handle DrawGameTimer;
-Handle doorCheckTimer;
-
-int CurrentCharSet;
-char CharSetString[MAXCHARSETS][42];
-char FF2CharSetString[42];
-bool isCharSetSelected = false;
-bool HasCharSets;
-bool CharSetOldPath = false;
-
-bool dmgTriple[MAXTF2PLAYERS];
-bool randomCrits[MAXTF2PLAYERS];
-int SelfKnockback[MAXTF2PLAYERS];
-bool SapperBoss[MAXTF2PLAYERS];
-bool SapperMinion;
-char BossIcon[64];
-int SelfHealing[MAXTF2PLAYERS];
-float LifeHealing[MAXTF2PLAYERS];
-float OverHealing[MAXTF2PLAYERS];
-int GoombaMode;
-int CapMode;
-bool TimerMode;
-
-
-#define HUDTYPES 6
-char HudTypes[][] =	// Names used in translation files
+enum struct FF2CharSetInfo_t
 {
-	"Hud Damage",
-	"Hud Extra",
-	"Hud Message",
-	"Hud Countdown",
-	"Hud Health",
-	"Hud Ranking"
-};
+	int CurrentCharSetIdx;
+	char CurrentCharSet[42];
 
-enum
+	int SizeOfSpecials;
+
+	KeyValues BossKV[MAXSPECIALS];
+	bool VoiceBlocked[MAXSPECIALS];
+	bool MapBlocked[MAXSPECIALS];
+	float BossSpeed[MAXSPECIALS];
+
+	bool IsCharSetSelected;
+	bool HasMultiCharSets;
+	bool UseOldCharSetPath;
+}
+FF2CharSetInfo_t FF2CharSetInfo;
+
+char FF2Packs_Names[MAXCHARSETS][42];
+int FF2Packs_NumBosses[MAXCHARSETS];
+Handle FF2BossPacks[MAXSPECIALS][MAXCHARSETS];
+char FF2Packs_sChances[512];
+
+int FF2Packs_iChances[MAXSPECIALS*2];  //This is multiplied by two because it has to hold both the boss indices and FF2Packs_iChances
+int FF2Packs_ChanceIdx;
+
+
+// Only Accessible with boss's index
+enum struct FF2BossInfo_t
 {
-	GOOMBA_NONE = 0,
-	GOOMBA_ALL,
-	GOOMBA_BOSSTEAM,
-	GOOMBA_OTHERTEAM,
-	GOOMBA_NOTBOSS,
-	GOOMBA_NOMINION,
-	GOOMBA_BOSS
-};
+	// Incoming boss KV index
+	int Incoming;
+	// Current boss KV index
+	int Special;
+	// Current client's index
+	int Boss;
 
-enum
+	int Health;
+	int HealthMax;
+	int HealthLast;
+
+	int Lives;
+	int LivesMax;
+
+	int RageDamage;
+	bool HasSwitched;
+
+	float Charge[4];
+	float Stabbed;
+
+	float KSpreeTimer;
+	int KSpreeCount;
+
+	bool HasEquipped;
+	bool EmitRageSound;
+}
+FF2BossInfo_t FF2BossInfo[MAXTF2PLAYERS];
+
+
+// Only Accessible with client's index and are boss specific
+enum struct FF2BossVar_t
 {
-	CAP_ALL = 0,
-	CAP_NONE,
-	CAP_BOSS_ONLY,
-	CAP_BOSS_TEAM,
-	CAP_NOT_BOSS,
-	CAP_MERC_TEAM,
-	CAP_NO_MINIONS
-};
+	// cfg: "ragemax"
+	float RageMax;
+	// cfg: "ragemin"
+	float RageMin;
+	// cfg: "ragemode"
+	int RageMode;
 
-int Specials;
-KeyValues BossKV[MAXSPECIALS];
-int PackSpecials[MAXCHARSETS];
-Handle PackKV[MAXSPECIALS][MAXCHARSETS];
+	// cfg: "rocketjump"
+	int SelfKnockback;
 
-bool bBlockVoice[MAXSPECIALS];
-bool MapBlocked[MAXSPECIALS];
-float BossSpeed[MAXSPECIALS];
+	bool IsHealthbarIncreasing;
+	
+	// cfg: "triple"
+	bool HasTripleDamage;
+	// cfg: "crits"
+	bool HasRandomCrits;
+	// cfg: "sapper"
+	bool HasSapper;
 
-char ChancesString[512];
-int chances[MAXSPECIALS*2];  //This is multiplied by two because it has to hold both the boss indices and chances
-int chancesIndex;
+	// cfg: "healing"
+	int SelfHealing;
+	// cfg: "healing_lives"
+	float LifeHealing;
+	// cfg: "healing_over"
+	float OverHealing;
+}
+FF2BossVar_t FF2BossVar[MAXTF2PLAYERS];
+
+
+// Only Accessible with client's index
+enum struct FF2PlayerInfo_t
+{
+	int FF2Flags;
+
+	TFClassType LastAliveClass;
+	int Damage;
+
+	int UberTarget;
+	int HealingAmount;
+	
+	int CritBoosted[3];
+
+	float ShieldHP;
+	float ShieldDmgReduction;
+	int EntShield;
+	bool HasShield;
+
+	float Cabered;
+	int Detonations;
+
+	float SapperCooldown;
+
+	float AirstrikeDamage;
+	float KillstreakDamage;
+
+	float HazardDamage;
+	float Marketed;
+
+	Handle MusicTimer;
+	int SongIdx;
+	char CurrentBGM[PLATFORM_MAX_PATH];
+	bool PlayBGM;
+
+	float RPSLoser;
+	int RPSLosses;
+	int RPSHealth;
+
+	float GlowTimer;
+	bool IsGlowing;
+
+	int ResetQueueTarget;
+	
+	void Init()
+	{
+		this.PlayBGM = true;
+		this.SongIdx = 1;
+	}
+}
+FF2PlayerInfo_t FF2PlayerInfo[MAXTF2PLAYERS];
 
 
 enum struct FF2ModsInfo_t
@@ -399,8 +429,8 @@ methodmap FF2SavedAbility_t < StringMap
 			return;
 
 		data.cache = new StringMap();
-		data.client_serial = GetClientSerial(Boss[boss]);
-		data.char_idx = Special[boss];
+		data.client_serial = GetClientSerial(FF2BossInfo[boss].Boss);
+		data.char_idx = FF2BossInfo[boss].Special;
 		strcopy(data.key_name, sizeof(FF2QueryData::key_name), name);
 
 		this.SetInfos(name, data);
@@ -438,12 +468,12 @@ methodmap FF2Cache < StringMap
 	//retrieve boss' cache by filename
 	public static bool Request(int boss, FF2QueryData data)
 	{
-		if (boss < 0 || Special[boss] < 0 || !BossKV[Special[boss]])
+		if (boss < 0 || FF2BossInfo[boss].Special < 0 || !FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special])
 			return false;
 
 		static char name[48];
 		static KeyValues last_kv;
-		KeyValues kv = BossKV[Special[boss]];
+		KeyValues kv = FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special];
 
 		if (kv == last_kv)
 			return FF2SavedAbility.GetInfos(name, data);

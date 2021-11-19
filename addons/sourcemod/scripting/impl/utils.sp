@@ -1,6 +1,6 @@
 bool Utils_UseAbility(const char[] ability_name, const char[] plugin_name, int boss, int slot, int buttonMode=0)
 {
-	int client = Boss[boss];
+	int client = FF2BossInfo[boss].Boss;
 	bool enabled = true;
 
 	char plugin_name2[64];
@@ -19,18 +19,18 @@ bool Utils_UseAbility(const char[] ability_name, const char[] plugin_name, int b
 	}
 	else if(!slot)
 	{
-		FF2flags[Boss[boss]] &= ~FF2FLAG_BOTRAGE;
+		FF2PlayerInfo[FF2BossInfo[boss].Boss].FF2Flags &= ~FF2FLAG_BOTRAGE;
 		Forwards_EndCall_OnAbility(3);
 
-		if(BossRageDamage[boss] > 1)
+		if(FF2BossInfo[boss].RageDamage > 1)
 		{
-			if(rageMode[client] == 1)
+			if(FF2BossVar[client].RageMode == 1)
 			{
-				BossCharge[boss][slot] -= rageMin[client];
+				FF2BossInfo[boss].Charge[slot] -= FF2BossVar[client].RageMin;
 			}
-			else if(!rageMode[client])
+			else if(!FF2BossVar[client].RageMode)
 			{
-				BossCharge[boss][slot] = 0.0;
+				FF2BossInfo[boss].Charge[slot] = 0.0;
 			}
 		}
 	}
@@ -59,9 +59,9 @@ bool Utils_UseAbility(const char[] ability_name, const char[] plugin_name, int b
 				button = IN_ATTACK2;
 		}
 
-		if(GetClientButtons(Boss[boss]) & button)
+		if(GetClientButtons(FF2BossInfo[boss].Boss) & button)
 		{
-			if(BossCharge[boss][slot] >= 0.0)
+			if(FF2BossInfo[boss].Charge[slot] >= 0.0)
 			{
 				Forwards_EndCall_OnAbility(2);
 				float charge;
@@ -74,26 +74,26 @@ bool Utils_UseAbility(const char[] ability_name, const char[] plugin_name, int b
 					charge = 100.0*0.2/GetAbilityArgumentFloat(boss, plugin_name, ability_name, 1, 1.5);
 				}
 
-				if(BossCharge[boss][slot]+charge < 100.0)
+				if(FF2BossInfo[boss].Charge[slot]+charge < 100.0)
 				{
-					BossCharge[boss][slot] += charge;
+					FF2BossInfo[boss].Charge[slot] += charge;
 				}
 				else
 				{
-					BossCharge[boss][slot] = 100.0;
+					FF2BossInfo[boss].Charge[slot] = 100.0;
 				}
 			}
 			else
 			{
 				//Status
 				Forwards_EndCall_OnAbility(1);
-				BossCharge[boss][slot] += 0.2;
+				FF2BossInfo[boss].Charge[slot] += 0.2;
 			}
 		}
-		else if(BossCharge[boss][slot] > 0.3)
+		else if(FF2BossInfo[boss].Charge[slot] > 0.3)
 		{
 			float angles[3];
-			GetClientEyeAngles(Boss[boss], angles);
+			GetClientEyeAngles(FF2BossInfo[boss].Boss, angles);
 			if(angles[0] < FF2GlobalsCvars.ChargeAngle*-1.0)
 			{
 				Forwards_EndCall_OnAbility(3);
@@ -113,13 +113,13 @@ bool Utils_UseAbility(const char[] ability_name, const char[] plugin_name, int b
 			else
 			{
 				Forwards_EndCall_OnAbility(0);
-				BossCharge[boss][slot] = 0.0;
+				FF2BossInfo[boss].Charge[slot] = 0.0;
 			}
 		}
-		else if(BossCharge[boss][slot] < 0.0)
+		else if(FF2BossInfo[boss].Charge[slot] < 0.0)
 		{
 			Forwards_EndCall_OnAbility(1);
-			BossCharge[boss][slot] += 0.2;
+			FF2BossInfo[boss].Charge[slot] += 0.2;
 		}
 		else
 		{
@@ -151,7 +151,7 @@ bool Utils_HasAbilityEx(const FF2QueryData data, int boss, const char[] plugin_n
 	if (actual.GetValue(key, res))
 		return res;
 
-	KeyValues kv = BossKV[Special[boss]];
+	KeyValues kv = FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special];
 	kv.Rewind();
 
 	char abkey[24];
@@ -305,11 +305,11 @@ void Utils_GetBossSpecial(int boss=0, char[] buffer, int bufferLength, int clien
 	Handle kv;
 	if(pack < 0)
 	{
-		kv = BossKV[boss];
+		kv = FF2CharSetInfo.BossKV[boss];
 	}
 	else
 	{
-		kv = PackKV[boss][pack];
+		kv = FF2BossPacks[boss][pack];
 	}
 
 	if(!kv)
@@ -604,7 +604,7 @@ int Utils_LastBossIndex()
 {
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(!Boss[client])
+		if(!FF2BossInfo[client].Boss)
 			return client-1;
 	}
 	return 0;
@@ -616,7 +616,7 @@ int Utils_GetBossIndex(int client)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
-			if(Boss[boss] == client)
+			if(FF2BossInfo[boss].Boss == client)
 				return boss;
 		}
 	}
@@ -747,7 +747,7 @@ void Utils_CheckToTeleportToSpawn()
 {
 	char config[PLATFORM_MAX_PATH];
 	GetCurrentMap(FF2Globals.CurrentMap, sizeof(FF2Globals.CurrentMap));
-	SpawnTeleOnTriggerHurt = false;
+	FF2Globals.SpawnTeleOnTriggerHurt = false;
 	BuildPath(Path_SM, config, sizeof(config), "%s/%s", DataPath, SpawnTeleportCFG);
 
 	if(!FileExists(config))
@@ -775,7 +775,7 @@ void Utils_CheckToTeleportToSpawn()
 
 		if(StrContains(FF2Globals.CurrentMap, config, false)>=0 || !StrContains(config, "all", false))
 		{
-			SpawnTeleOnTriggerHurt = true;
+			FF2Globals.SpawnTeleOnTriggerHurt = true;
 			delete file;
 			return;
 		}
@@ -808,7 +808,7 @@ void Utils_CheckToTeleportToSpawn()
 
 		if(StrContains(FF2Globals.CurrentMap, config, false)>=0 || !StrContains(config, "all", false))
 		{
-			SpawnTeleOnTriggerHurt = false;
+			FF2Globals.SpawnTeleOnTriggerHurt = false;
 			break;
 		}
 	}
@@ -828,7 +828,7 @@ void Utils_CheckToTeleportToSpawn()
 		return;
 
 	FileType type;
-	while((((pack<0 && Specials<MAXSPECIALS) || (pack>=0 && PackSpecials[pack]<MAXSPECIALS))) && listing.GetNext(file, PLATFORM_MAX_PATH, type))
+	while((((pack<0 && FF2CharSetInfo.SizeOfSpecials<MAXSPECIALS) || (pack>=0 && FF2Packs_NumBosses[pack]<MAXSPECIALS))) && listing.GetNext(file, PLATFORM_MAX_PATH, type))
 	{
 		if(type == FileType_File)
 		{
@@ -878,7 +878,7 @@ bool Utils_IsBoss(int client)
 	{
 		for(int boss; boss<=MaxClients; boss++)
 		{
-			if(Boss[boss] == client)
+			if(FF2BossInfo[boss].Boss == client)
 				return true;
 		}
 	}
@@ -887,7 +887,7 @@ bool Utils_IsBoss(int client)
 
 void Utils_EquipBoss(int boss)
 {
-	int client = Boss[boss];
+	int client = FF2BossInfo[boss].Boss;
 	Utils_DoOverlay(client, "");
 	TF2_RemoveAllWeapons(client);
 	char attributes[256], key[10];
@@ -897,16 +897,16 @@ void Utils_EquipBoss(int boss)
 	static int rgba[4];
 	for(int i=1; ; i++)
 	{
-		KvRewind(BossKV[Special[boss]]);
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
 		FormatEx(key, sizeof(key), "weapon%i", i);
-		if(KvJumpToKey(BossKV[Special[boss]], key))
+		if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key))
 		{
-			KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
-			KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
-			strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
-			weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
-			index = KvGetNum(BossKV[Special[boss]], "index");
-			overridewep = view_as<bool>(KvGetNum(BossKV[Special[boss]], "override"));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "name", classname, sizeof(classname));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "attributes", attributes, sizeof(attributes));
+			strangerank = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "rank", 21);
+			weaponlevel = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "level", -1);
+			index = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "index");
+			overridewep = view_as<bool>(KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "override"));
 			strangekills = -1;
 			strangewep = true;
 			switch(strangerank)
@@ -1082,7 +1082,7 @@ void Utils_EquipBoss(int boss)
 				}
 			}
 
-			weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", FF2GlobalsCvars.WeaponQuality), attributes);
+			weapon = FF2_SpawnWeapon(client, classname, index, weaponlevel, KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "quality", FF2GlobalsCvars.WeaponQuality), attributes);
 			if(weapon == -1)
 				continue;
 
@@ -1091,7 +1091,7 @@ void Utils_EquipBoss(int boss)
 				TF2Attrib_SetByDefIndex(weapon, 214, view_as<float>(strangekills));
 			#endif
 
-			FF2_SetAmmo(client, weapon, KvGetNum(BossKV[Special[boss]], "ammo", -1), KvGetNum(BossKV[Special[boss]], "clip", -1));
+			FF2_SetAmmo(client, weapon, KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "ammo", -1), KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "clip", -1));
 			if(StrEqual(classname, "tf_weapon_builder", false) && index!=735)  //PDA, normal sapper
 			{
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 0);
@@ -1109,16 +1109,16 @@ void Utils_EquipBoss(int boss)
 				SetEntProp(weapon, Prop_Send, "m_aBuildableObjectTypes", 1, _, 3);
 			}
 
-			if(KvGetNum(BossKV[Special[boss]], "show"))
+			if(KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "show"))
 			{
-				KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "worldmodel", wModel, sizeof(wModel));
 				if(wModel[0])
 					Utils_ConfigureWorldModelOverride(weapon, wModel);
 
-				rgba[0] = KvGetNum(BossKV[Special[boss]], "alpha", 255);
-				rgba[1] = KvGetNum(BossKV[Special[boss]], "red", 255);
-				rgba[2] = KvGetNum(BossKV[Special[boss]], "green", 255);
-				rgba[3] = KvGetNum(BossKV[Special[boss]], "blue", 255);
+				rgba[0] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "alpha", 255);
+				rgba[1] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "red", 255);
+				rgba[2] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "green", 255);
+				rgba[3] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "blue", 255);
 
 				SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
 				SetEntityRenderColor(weapon, rgba[1], rgba[2], rgba[3], rgba[0]);
@@ -1140,15 +1140,15 @@ void Utils_EquipBoss(int boss)
 	{
 		for(int i=1; ; i++)
 		{
-			KvRewind(BossKV[Special[boss]]);
+			KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
 			FormatEx(key, sizeof(key), "wearable%i", i);
-			if(KvJumpToKey(BossKV[Special[boss]], key))
+			if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key))
 			{
-				KvGetString(BossKV[Special[boss]], "name", classname, sizeof(classname));
-				KvGetString(BossKV[Special[boss]], "attributes", attributes, sizeof(attributes));
-				strangerank = KvGetNum(BossKV[Special[boss]], "rank", 21);
-				weaponlevel = KvGetNum(BossKV[Special[boss]], "level", -1);
-				index = KvGetNum(BossKV[Special[boss]], "index");
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "name", classname, sizeof(classname));
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "attributes", attributes, sizeof(attributes));
+				strangerank = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "rank", 21);
+				weaponlevel = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "level", -1);
+				index = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "index");
 				strangekills = -1;
 				strangewep = true;
 				switch(strangerank)
@@ -1499,7 +1499,7 @@ void Utils_EquipBoss(int boss)
 					}
 				}
 
-				weapon = TF2_CreateAndEquipWearable(client, classname, index, weaponlevel, KvGetNum(BossKV[Special[boss]], "quality", FF2GlobalsCvars.WeaponQuality), attributes);
+				weapon = TF2_CreateAndEquipWearable(client, classname, index, weaponlevel, KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "quality", FF2GlobalsCvars.WeaponQuality), attributes);
 				if(!IsValidEntity(weapon))
 					continue;
 
@@ -1508,16 +1508,16 @@ void Utils_EquipBoss(int boss)
 					TF2Attrib_SetByDefIndex(weapon, 214, view_as<float>(strangekills));
 				#endif
 
-				if(KvGetNum(BossKV[Special[boss]], "show", 1))
+				if(KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "show", 1))
 				{
-					KvGetString(BossKV[Special[boss]], "worldmodel", wModel, sizeof(wModel));
+					KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "worldmodel", wModel, sizeof(wModel));
 					if(wModel[0])
 						Utils_ConfigureWorldModelOverride(weapon, wModel, true);
 
-					rgba[0] = KvGetNum(BossKV[Special[boss]], "alpha", 255);
-					rgba[1] = KvGetNum(BossKV[Special[boss]], "red", 255);
-					rgba[2] = KvGetNum(BossKV[Special[boss]], "green", 255);
-					rgba[3] = KvGetNum(BossKV[Special[boss]], "blue", 255);
+					rgba[0] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "alpha", 255);
+					rgba[1] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "red", 255);
+					rgba[2] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "green", 255);
+					rgba[3] = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "blue", 255);
 
 					SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
 					SetEntityRenderColor(weapon, rgba[1], rgba[2], rgba[3], rgba[0]);
@@ -1536,9 +1536,9 @@ void Utils_EquipBoss(int boss)
 		}
 	}
 
-	KvGoBack(BossKV[Special[boss]]);
-	TFClassType class = KvGetClass(BossKV[Special[boss]], "class");
-	HasEquipped[boss] = true;
+	KvGoBack(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+	TFClassType class = KvGetClass(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "class");
+	FF2BossInfo[boss].HasEquipped = true;
 	if(TF2_GetPlayerClass(client) != class)
 		TF2_SetPlayerClass(client, class, _, !GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") ? true : false);
 }
@@ -1744,23 +1744,23 @@ void Utils_SetClientGlow(int client, float time1, float time2=-1.0)
 {
 	if(Utils_IsValidClient(client))
 	{
-		GlowTimer[client] += time1;
+		FF2PlayerInfo[client].GlowTimer += time1;
 		if(time2 >= 0)
-			GlowTimer[client] = time2;
+			FF2PlayerInfo[client].GlowTimer = time2;
 
-		if(GlowTimer[client] <= 0.0)
+		if(FF2PlayerInfo[client].GlowTimer <= 0.0)
 		{
-			GlowTimer[client] = 0.0;
-			if(IsGlowing[client])	// Prevent removing outlines from other plugins
+			FF2PlayerInfo[client].GlowTimer = 0.0;
+			if(FF2PlayerInfo[client].IsGlowing)	// Prevent removing outlines from other plugins
 			{
 				SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
-				IsGlowing[client] = false;
+				FF2PlayerInfo[client].IsGlowing = false;
 			}
 		}
 		else if(Utils_CheckRoundState() == 1)
 		{
 			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
-			IsGlowing[client] = true;
+			FF2PlayerInfo[client].IsGlowing = true;
 		}
 	}
 }
@@ -1776,7 +1776,7 @@ bool Utils_FindCharArg(FF2QueryData data, const char[] args, char[] res, int max
 	FF2Cache.FormatToKey(key, data.current_plugin_name, data.current_ability_name);
 	FF2Cache actual = view_as<FF2Cache>(data.cache);
 
-	kv = BossKV[data.char_idx];
+	kv = FF2CharSetInfo.BossKV[data.char_idx];
 	kv.Rewind();
 
 	if (actual.GetString(key, abkey, sizeof(abkey)))
@@ -1877,9 +1877,9 @@ void Utils_SwitchTeams(int bossteam, int otherteam, bool respawn)
 
 void Utils_RemoveShield(int client, int attacker)
 {
-	if(IsValidEntity(shield[client]))
+	if(IsValidEntity(FF2PlayerInfo[client].EntShield))
 	{
-		TF2_RemoveWearable(client, shield[client]);
+		TF2_RemoveWearable(client, FF2PlayerInfo[client].EntShield);
 		EmitSoundToClient(client, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, _, _, false);
 		EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7, _, _, _, _, false);
 		if(ConVars.ShieldType.IntValue == 3)
@@ -1893,8 +1893,8 @@ void Utils_RemoveShield(int client, int attacker)
 		}
 	}
 
-	shieldHP[client] = 0.0;
-	shield[client] = 0;
+	FF2PlayerInfo[client].ShieldHP = 0.0;
+	FF2PlayerInfo[client].EntShield = 0;
 }
 
 int Utils_CheckRoundState()
@@ -1980,7 +1980,7 @@ void Utils_AssignTeam(int client, int team)
 		//PrintToConsoleAll("%N does not have a desired class", client);
 		if(Utils_IsBoss(client))
 		{
-			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(KvGetClass(BossKV[Special[Utils_GetBossIndex(client)]], "class")));  //So we assign one to prevent living spectators
+			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(KvGetClass(FF2CharSetInfo.BossKV[FF2BossInfo[Utils_GetBossIndex(client)].Special], "class")));  //So we assign one to prevent living spectators
 		}
 		/*else
 		{
@@ -1997,7 +1997,7 @@ void Utils_AssignTeam(int client, int team)
 		//PrintToConsoleAll("%N is a living spectator", client);
 		if(Utils_IsBoss(client))
 		{
-			TF2_SetPlayerClass(client, KvGetClass(BossKV[Special[Utils_GetBossIndex(client)]], "class"));
+			TF2_SetPlayerClass(client, KvGetClass(FF2CharSetInfo.BossKV[FF2BossInfo[Utils_GetBossIndex(client)].Special], "class"));
 		}
 		else
 		{
@@ -2273,14 +2273,14 @@ bool Utils_CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=
 		return false;
 
 	static char boss[64], companionName[64];
-	for(int config; config<Specials; config++)
+	for(int config; config<FF2CharSetInfo.SizeOfSpecials; config++)
 	{
-		KvRewind(BossKV[config]);
-		if(KvGetNum(BossKV[config], "blocked"))
+		KvRewind(FF2CharSetInfo.BossKV[config]);
+		if(KvGetNum(FF2CharSetInfo.BossKV[config], "blocked"))
 			continue;
 
-		KvGetString(BossKV[config], "companion", companionName, sizeof(companionName));
-		KvGetString(BossKV[config], "name", boss, sizeof(boss));
+		KvGetString(FF2CharSetInfo.BossKV[config], "companion", companionName, sizeof(companionName));
+		KvGetString(FF2CharSetInfo.BossKV[config], "name", boss, sizeof(boss));
 		if(StrEqual(boss, SpecialName, false))
 		{
 			if(companionName[0] && CompanionCheck)
@@ -2288,22 +2288,22 @@ bool Utils_CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=
 
 			if(client)
 			{
-				if((KvGetNum(BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
-				   (KvGetNum(BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
-				   (KvGetNum(BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
+				if((KvGetNum(FF2CharSetInfo.BossKV[config], "donator") && !CheckCommandAccess(client, "ff2_donator_bosses", ADMFLAG_RESERVATION, true)) ||
+				   (KvGetNum(FF2CharSetInfo.BossKV[config], "admin") && !CheckCommandAccess(client, "ff2_admin_bosses", ADMFLAG_GENERIC, true)) ||
+				   (KvGetNum(FF2CharSetInfo.BossKV[config], "owner") && !CheckCommandAccess(client, "ff2_owner_bosses", ADMFLAG_ROOT, true)))
 					return false;
 
 				if(Utils_BossTheme(config) && !CheckCommandAccess(client, "ff2_theme_bosses", ADMFLAG_CONVARS, true))
 					return false;
 			}
 
-			if(KvGetNum(BossKV[config], "nofirst") && (FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
+			if(KvGetNum(FF2CharSetInfo.BossKV[config], "nofirst") && (FF2Globals.RoundCount<FF2GlobalsCvars.ArenaRounds || (FF2Globals.RoundCount==FF2GlobalsCvars.ArenaRounds && Utils_CheckRoundState()!=1)))
 				return false;
 
 			if(client)
 			{
-				CanBossVs[client] = KvGetNum(BossKV[config], "noversus");
-				CanBossTeam[client] = KvGetNum(BossKV[config], "bossteam");
+				CanBossVs[client] = KvGetNum(FF2CharSetInfo.BossKV[config], "noversus");
+				CanBossTeam[client] = KvGetNum(FF2CharSetInfo.BossKV[config], "bossteam");
 			}
 
 			return true;
@@ -2314,8 +2314,8 @@ bool Utils_CheckValidBoss(int client=0, char[] SpecialName, bool CompanionCheck=
 
 bool Utils_BossTheme(int config)
 {
-	KvRewind(BossKV[config]);
-	int theme = RoundFloat(Pow(KvGetFloat(BossKV[config], "theme"), 2.0));
+	KvRewind(FF2CharSetInfo.BossKV[config]);
+	int theme = RoundFloat(Pow(KvGetFloat(FF2CharSetInfo.BossKV[config], "theme"), 2.0));
 	if(theme < 1)
 		return false;
 
@@ -2364,7 +2364,7 @@ float Utils_GetSongLength(char[] trackIdx)
 {
 	float duration;
 	static char bgmTime[128];
-	KvGetString(BossKV[Special[0]], trackIdx, bgmTime, sizeof(bgmTime));
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], trackIdx, bgmTime, sizeof(bgmTime));
 	if(StrContains(bgmTime, ":", false)!=-1) // new-style MM:SS:MSMS
 	{
 		static char time2[32][32];
@@ -2384,7 +2384,7 @@ float Utils_GetSongLength(char[] trackIdx)
 	}
 	else // old style seconds
 	{
-		duration = KvGetFloat(BossKV[Special[0]], trackIdx);
+		duration = KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], trackIdx);
 	}
 	return duration;
 }

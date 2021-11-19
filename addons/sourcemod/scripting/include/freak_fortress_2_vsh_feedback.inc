@@ -24,7 +24,7 @@ int Native_VSHIsEnabled(Handle plugin, int numParams)
 
 int Native_VSHGetHale(Handle plugin, int numParams)
 {
-	return (Utils_IsValidClient(Boss[0]) ? GetClientUserId(Boss[0]) : -1);
+	return (Utils_IsValidClient(FF2BossInfo[0].Boss) ? GetClientUserId(FF2BossInfo[0].Boss) : -1);
 }
 
 int Native_VSHGetTeam(Handle plugin, int numParams)
@@ -34,17 +34,17 @@ int Native_VSHGetTeam(Handle plugin, int numParams)
 
 int Native_VSHGetSpecial(Handle plugin, int numParams)
 {
-	return Special[0];
+	return FF2BossInfo[0].Special;
 }
 
 int Native_VSHGetHealth(Handle plugin, int numParams)
 {
-	return BossHealth[0];
+	return FF2BossInfo[0].Health;
 }
 
 int Native_VSHGetHealthMax(Handle plugin, int numParams)
 {
-	return BossHealthMax[0];
+	return FF2BossInfo[0].HealthMax;
 }
 
 int Native_VSHGetRoundState(Handle plugin, int numParams)
@@ -55,5 +55,5 @@ int Native_VSHGetRoundState(Handle plugin, int numParams)
 int Native_VSHGetDamage(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
-	return (Utils_IsValidClient(client) ? Damage[client] : 0);
+	return (Utils_IsValidClient(client) ? FF2PlayerInfo[client].Damage : 0);
 }

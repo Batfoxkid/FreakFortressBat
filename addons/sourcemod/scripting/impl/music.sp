@@ -2,14 +2,14 @@
 public Action Timer_PrepareBGM(Handle timer, any userid)
 {
 	int client=GetClientOfUserId(userid);
-	if(!FF2Globals.Enabled || Utils_CheckRoundState()!=1 || !client || Utils_MapHasMusic() || StrEqual(currentBGM[client], "ff2_stop_music", true))
+	if(!FF2Globals.Enabled || Utils_CheckRoundState()!=1 || !client || Utils_MapHasMusic() || StrEqual(FF2PlayerInfo[client].CurrentBGM, "ff2_stop_music", true))
 	{
-		delete MusicTimer[client];
+		delete FF2PlayerInfo[client].MusicTimer;
 		return;
 	}
 
-	KvRewind(BossKV[Special[0]]);
-	if(KvJumpToKey(BossKV[Special[0]], "sound_bgm"))
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special]);
+	if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "sound_bgm"))
 	{
 		char music[PLATFORM_MAX_PATH];
 		int index;
@@ -18,7 +18,7 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 			index++;
 			FormatEx(music, 10, "time%i", index);
 		}
-		while(KvGetFloat(BossKV[Special[0]], music)>1);
+		while(KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music)>1);
 
 		char lives[256];
 		int topIndex = index;
@@ -26,27 +26,27 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		{
 			index = GetRandomInt(1, topIndex-1);
 			FormatEx(lives, sizeof(lives), "life%i", index);
-			KvGetString(BossKV[Special[0]], lives, lives, sizeof(lives));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], lives, lives, sizeof(lives));
 			if(StringToInt(lives))
 			{
-				if(StringToInt(lives) != BossLives[0])
+				if(StringToInt(lives) != FF2BossInfo[0].Lives)
 					continue;
 			}
 			break;
 		}
 		FormatEx(music, 10, "time%i", index);
-		float time = KvGetFloat(BossKV[Special[0]], music);
+		float time = KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music);
 		FormatEx(music, 10, "path%i", index);
-		KvGetString(BossKV[Special[0]], music, music, sizeof(music));
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], music, music, sizeof(music));
 
-		cursongId[client]=index;
+		FF2PlayerInfo[client].SongIdx=index;
 
 		// manual song ID
 		char id3[4][256];
 		FormatEx(id3[0], sizeof(id3[]), "name%i", index);
-		KvGetString(BossKV[Special[0]], id3[0], id3[2], sizeof(id3[]));
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[0], id3[2], sizeof(id3[]));
 		FormatEx(id3[1], sizeof(id3[]), "artist%i", index);
-		KvGetString(BossKV[Special[0]], id3[1], id3[3], sizeof(id3[]));
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], id3[1], id3[3], sizeof(id3[]));
 
 		char temp[PLATFORM_MAX_PATH];
 		FormatEx(temp, sizeof(temp), "sound/%s", music);
@@ -57,12 +57,12 @@ public Action Timer_PrepareBGM(Handle timer, any userid)
 		else
 		{
 			char bossName[64];
-			KvRewind(BossKV[Special[0]]);
-			KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+			KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special]);
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "filename", bossName, sizeof(bossName));
 			LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", bossName, temp);
 			//PrintToConsoleAll("{red}MALFUNCTION! NEED INPUT!");
-			if(MusicTimer[client] != null) {
-				delete MusicTimer[client];
+			if(FF2PlayerInfo[client].MusicTimer != null) {
+				delete FF2PlayerInfo[client].MusicTimer;
 			}
 		}
 	}
@@ -120,7 +120,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 		bool unknown2 = true;
 		if(FF2PlayerCookie[client].MusicOn)
 		{
-			strcopy(currentBGM[client], PLATFORM_MAX_PATH, music);
+			strcopy(FF2PlayerInfo[client].CurrentBGM, PLATFORM_MAX_PATH, music);
 
 			// EmitSoundToClient can sometimes not loop correctly
 			// 'playgamesound' can rarely not stop correctly
@@ -129,7 +129,7 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 
 			ClientCommand(client, "playgamesound \"%s\"", music);
 			if(time > 1)
-				MusicTimer[client] = CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+				FF2PlayerInfo[client].MusicTimer = CreateTimer(time, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		}
 
 		if(!name[0])
@@ -152,8 +152,8 @@ void PlayBGM(int client, char[] music, float time, char[] name="", char[] artist
 	else
 	{
 		char bossName[64];
-		KvRewind(BossKV[Special[0]]);
-		KvGetString(BossKV[Special[0]], "filename", bossName, sizeof(bossName));
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special]);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[0].Special], "filename", bossName, sizeof(bossName));
 		LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is missing BGM file '%s'!", bossName, music);
 	}
 }
@@ -168,7 +168,7 @@ void StartMusic(int client=0)
 		StopMusic();
 		for(int target; target<=MaxClients; target++)
 		{
-			playBGM[target] = true;  //This includes the 0th index
+			FF2PlayerInfo[target].PlayBGM = true;  //This includes the 0th index
 			if(Utils_IsValidClient(target))
 			{
 				CreateTimer(0.2, Timer_PrepareBGM, GetClientUserId(target), TIMER_FLAG_NO_MAPCHANGE);
@@ -178,7 +178,7 @@ void StartMusic(int client=0)
 	else
 	{
 		StopMusic(client);
-		playBGM[client] = true;
+		FF2PlayerInfo[client].PlayBGM = true;
 		CreateTimer(0.1, Timer_PrepareBGM, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
 }
@@ -188,38 +188,38 @@ void StopMusic(int client=0, bool permanent=false)
 	if(client < 1)  //Stop music for all clients
 	{
 		if(permanent)
-			playBGM[0] = false;
+			FF2PlayerInfo[0].PlayBGM = false;
 
 		for(client=1; client<=MaxClients; client++)
 		{
 			if(Utils_IsValidClient(client))
 			{
-				StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
-				if(MusicTimer[client] != null)
+				StopSound(client, SNDCHAN_AUTO, FF2PlayerInfo[client].CurrentBGM);
+				if(FF2PlayerInfo[client].MusicTimer != null)
 				{
 					//PrintToConsoleAll("TERMINATING INPUT!");
-					delete MusicTimer[client];
+					delete FF2PlayerInfo[client].MusicTimer;
 				}
 			}
 
-			//strcopy(currentBGM[client], PLATFORM_MAX_PATH, "");
+			//strcopy(FF2PlayerInfo[client].CurrentBGM, PLATFORM_MAX_PATH, "");
 			if(permanent)
-				playBGM[client]=false;
+				FF2PlayerInfo[client].PlayBGM=false;
 		}
 	}
 	else
 	{
-		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
-		StopSound(client, SNDCHAN_AUTO, currentBGM[client]);
+		StopSound(client, SNDCHAN_AUTO, FF2PlayerInfo[client].CurrentBGM);
+		StopSound(client, SNDCHAN_AUTO, FF2PlayerInfo[client].CurrentBGM);
 
-		if(MusicTimer[client] != null)
+		if(FF2PlayerInfo[client].MusicTimer != null)
 		{
 			//PrintToConsoleAll("END INPUT FOR %N!", client);
-			delete MusicTimer[client];
+			delete FF2PlayerInfo[client].MusicTimer;
 		}
 
-		strcopy(currentBGM[client], PLATFORM_MAX_PATH, "");
+		strcopy(FF2PlayerInfo[client].CurrentBGM, PLATFORM_MAX_PATH, "");
 		if(permanent)
-			playBGM[client] = false;
+			FF2PlayerInfo[client].PlayBGM = false;
 	}
 }

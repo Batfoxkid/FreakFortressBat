@@ -21,7 +21,7 @@ void GetAbilityArgumentString(int index, const char[] plugin_name, const char[] 
 
 int GetArgumentI(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, int defvalue=0)
 {
-	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
+	if(index==-1 || FF2BossInfo[index].Special==-1 || !FF2CharSetInfo.BossKV[FF2BossInfo[index].Special])
 		return defvalue;
 	
 	FF2Data data = FF2Data(index, plugin_name, ability_name);
@@ -30,7 +30,7 @@ int GetArgumentI(int index, const char[] plugin_name, const char[] ability_name,
 
 float GetArgumentF(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, float defvalue=0.0)
 {
-	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
+	if(index==-1 || FF2BossInfo[index].Special==-1 || !FF2CharSetInfo.BossKV[FF2BossInfo[index].Special])
 		return defvalue;
 
 	FF2Data data = FF2Data(index, plugin_name, ability_name);
@@ -40,7 +40,7 @@ float GetArgumentF(int index, const char[] plugin_name, const char[] ability_nam
 void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name, const char[] arg, char[] buffer, int buflen)
 {
 	buffer[0] = '\0';
-	if(index==-1 || Special[index]==-1 || !BossKV[Special[index]])
+	if(index==-1 || FF2BossInfo[index].Special==-1 || !FF2CharSetInfo.BossKV[FF2BossInfo[index].Special])
 		return;
 	
 	FF2Data data = FF2Data(index, plugin_name, ability_name);
@@ -50,13 +50,13 @@ void GetArgumentS(int index, const char[] plugin_name, const char[] ability_name
 
 bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 {
-	if(boss<0 || Special[boss]<0 || !BossKV[Special[boss]])
+	if(boss<0 || FF2BossInfo[boss].Special<0 || !FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special])
 		return false;
 
-	KvRewind(BossKV[Special[boss]]);
-	if(!KvJumpToKey(BossKV[Special[boss]], sound))
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+	if(!KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], sound))
 	{
-		KvRewind(BossKV[Special[boss]]);
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
 		return false;  // Requested sound not implemented for this boss
 	}
 
@@ -65,7 +65,7 @@ bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	while(++sounds)  // Just keep looping until there's no keys left
 	{
 		IntToString(sounds, key, sizeof(key));
-		KvGetString(BossKV[Special[boss]], key, file, length);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, file, length);
 		if(!file[0])
 		{
 			sounds--;  // This sound wasn't valid, so don't include it
@@ -80,10 +80,10 @@ bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	static char temp[6];
 	int choosen = GetRandomInt(1, sounds);
 	FormatEx(key, sizeof(key), "%i_overlay", choosen);	// Don't ask me why this format just go with it
-	KvGetString(BossKV[Special[boss]], key, path, sizeof(path));
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, path, sizeof(path));
 	if(path[0])
 	{
-		TFTeam team = TF2_GetClientTeam(Boss[boss]);
+		TFTeam team = TF2_GetClientTeam(FF2BossInfo[boss].Boss);
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(Utils_IsValidClient(client) && TF2_GetClientTeam(client)!=team)
@@ -91,7 +91,7 @@ bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 		}
 
 		FormatEx(path, sizeof(path), "%i_overlay_time", choosen);
-		float time = KvGetFloat(BossKV[Special[boss]], path);
+		float time = KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], path);
 		if(time > 0)
 			CreateTimer(time, Timer_RemoveOverlay, team, TIMER_FLAG_NO_MAPCHANGE);
 
@@ -99,28 +99,28 @@ bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	}
 
 	FormatEx(key, sizeof(key), "%imusic", choosen);	// And this...
-	KvGetString(BossKV[Special[boss]], key, temp, sizeof(temp));
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, temp, sizeof(temp));
 	if(temp[0])
 	{
-		float time = KvGetFloat(BossKV[Special[boss]], key);
+		float time = KvGetFloat(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key);
 
 		static char name[64], artist[64];
 
 		IntToString(choosen, key, sizeof(key));
-		KvGetString(BossKV[Special[boss]], key, path, sizeof(path));
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, path, sizeof(path));
 
 		FormatEx(key, sizeof(key), "%iname", choosen);
-		KvGetString(BossKV[Special[boss]], key, name, sizeof(name));
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, name, sizeof(name));
 
 		FormatEx(key, sizeof(key), "%iartist", choosen);
-		KvGetString(BossKV[Special[boss]], key, artist, sizeof(artist));
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, artist, sizeof(artist));
 
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(Utils_IsValidClient(client))
 			{
 				StopMusic(client);
-				strcopy(currentBGM[client], sizeof(currentBGM[]), path);
+				strcopy(FF2PlayerInfo[client].CurrentBGM, sizeof(FF2PlayerInfo[].CurrentBGM), path);
 				PlayBGM(client, path, time, name, artist);
 			}
 		}
@@ -128,17 +128,17 @@ bool RandomSound(const char[] sound, char[] file, int length, int boss=0)
 	}
 
 	IntToString(choosen, key, sizeof(key));
-	KvGetString(BossKV[Special[boss]], key, file, length);  // Populate file
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, file, length);  // Populate file
 	return true;
 }
 
 bool RandomSoundAbility(const char[] sound, char[] file, int length, int boss=0, int slot=0)
 {
-	if(boss<0 || Special[boss]<0 || !BossKV[Special[boss]])
+	if(boss<0 || FF2BossInfo[boss].Special<0 || !FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special])
 		return false;
 
-	KvRewind(BossKV[Special[boss]]);
-	if(!KvJumpToKey(BossKV[Special[boss]], sound))
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+	if(!KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], sound))
 		return false;  //Sound doesn't exist
 
 	char key[10];
@@ -146,12 +146,12 @@ bool RandomSoundAbility(const char[] sound, char[] file, int length, int boss=0,
 	while(++sounds)
 	{
 		IntToString(sounds, key, 4);
-		KvGetString(BossKV[Special[boss]], key, file, length);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, file, length);
 		if(!file[0])
 			break;  //Assume that there's no more sounds
 
 		FormatEx(key, sizeof(key), "slot%i", sounds);
-		if(KvGetNum(BossKV[Special[boss]], key)==slot)
+		if(KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key)==slot)
 		{
 			match[matches] = sounds;  //Found a match: let's store it in the array
 			matches++;
@@ -162,17 +162,17 @@ bool RandomSoundAbility(const char[] sound, char[] file, int length, int boss=0,
 		return false;  //Found sound, but no sounds inside of it
 
 	IntToString(match[GetRandomInt(0, matches-1)], key, 4);
-	KvGetString(BossKV[Special[boss]], key, file, length);  //Populate file
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, file, length);  //Populate file
 	return true;
 }
 
 bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0, const char[] oldFile)
 {
-	if(boss<0 || Special[boss]<0 || !BossKV[Special[boss]])
+	if(boss<0 || FF2BossInfo[boss].Special<0 || !FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special])
 		return false;
 
-	KvRewind(BossKV[Special[boss]]);
-	if(!KvJumpToKey(BossKV[Special[boss]], sound))
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+	if(!KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], sound))
 		return false;  //Sound doesn't exist
 
 	char key[10];
@@ -181,12 +181,12 @@ bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0, cons
 	while(++sounds)
 	{
 		IntToString(sounds, key, 4);
-		KvGetString(BossKV[Special[boss]], key, file, length);
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, file, length);
 		if(!file[0])
 			break;  //Assume that there's no more sounds
 
 		FormatEx(key, sizeof(key), "vo%i", sounds);
-		KvGetString(BossKV[Special[boss]], key, replacement, sizeof(replacement));
+		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, replacement, sizeof(replacement));
 		if(!StrContains(replacement, oldFile, false))
 		{
 			match[matches] = sounds;  //Found a match: let's store it in the array
@@ -198,7 +198,7 @@ bool RandomSoundVo(const char[] sound, char[] file, int length, int boss=0, cons
 		return false;  //Found sound, but no sounds inside of it
 
 	IntToString(match[GetRandomInt(0, matches-1)], key, 4);
-	KvGetString(BossKV[Special[boss]], key, file, length);  //Populate file
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, file, length);  //Populate file
 	return true;
 }
 
@@ -227,27 +227,27 @@ void ActivateAbilitySlot(int boss, int slot, bool buttonmodeactive=false)
 	for(int i=1; i<=MAXRANDOMS; i++)
 	{
 		FormatEx(ability, sizeof(ability), "ability%i", i);
-		KvRewind(BossKV[Special[boss]]);
-		if(KvJumpToKey(BossKV[Special[boss]], ability))
+		KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+		if(KvJumpToKey(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], ability))
 		{
-			if(KvGetNum(BossKV[Special[boss]], "noversus") && FF2Globals.Enabled3)
+			if(KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "noversus") && FF2Globals.Enabled3)
 				continue;
 
-			ability_slot = KvGetNum(BossKV[Special[boss]], "slot", -2);
+			ability_slot = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "slot", -2);
 			if(ability_slot == -2)
-				ability_slot = KvGetNum(BossKV[Special[boss]], "arg0");
+				ability_slot = KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "arg0");
 
 			if(ability_slot != slot)
 				continue;
 	
-			buttonmode = (buttonmodeactive) ? (KvGetNum(BossKV[Special[boss]], "buttonmode")) : 0;
+			buttonmode = (buttonmodeactive) ? (KvGetNum(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "buttonmode")) : 0;
 
-			KvGetString(BossKV[Special[boss]], "life", ability, sizeof(ability));
+			KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "life", ability, sizeof(ability));
 			static char abilityName[64], pluginName[64];
 			if(!ability[0])
 			{
-				KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-				KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "plugin_name", pluginName, sizeof(pluginName));
+				KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "name", abilityName, sizeof(abilityName));
 				if(!Utils_UseAbility(abilityName, pluginName, boss, slot, buttonmode))
 					return;
 			}
@@ -256,10 +256,10 @@ void ActivateAbilitySlot(int boss, int slot, bool buttonmodeactive=false)
 				count = ExplodeString(ability, " ", lives, MAXRANDOMS, 3);
 				for(j=0; j<count; j++)
 				{
-					if(StringToInt(lives[j]) == BossLives[boss])
+					if(StringToInt(lives[j]) == FF2BossInfo[boss].Lives)
 					{
-						KvGetString(BossKV[Special[boss]], "plugin_name", pluginName, sizeof(pluginName));
-						KvGetString(BossKV[Special[boss]], "name", abilityName, sizeof(abilityName));
+						KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "plugin_name", pluginName, sizeof(pluginName));
+						KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "name", abilityName, sizeof(abilityName));
 						if(!Utils_UseAbility(abilityName, pluginName, boss, slot, buttonmode))
 							return;
 

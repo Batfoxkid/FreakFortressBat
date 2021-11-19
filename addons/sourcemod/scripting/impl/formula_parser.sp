@@ -59,14 +59,14 @@ stock void OperateString(ArrayList sumArray, int &bracket, char[] value, int siz
 stock int ParseFormula(int boss, const char[] key, const char[] defaultFormula, int defaultValue)
 {
 	static char formula[1024], bossName[64];
-	KvRewind(BossKV[Special[boss]]);
-	KvGetString(BossKV[Special[boss]], "filename", bossName, sizeof(bossName));
-	KvGetString(BossKV[Special[boss]], key, formula, sizeof(formula), defaultFormula);
+	KvRewind(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special]);
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "filename", bossName, sizeof(bossName));
+	KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], key, formula, sizeof(formula), defaultFormula);
 
 	float players = 1.0;
 	if(FF2Globals.Enabled3)
 	{
-		if(BossSwitched[boss])
+		if(FF2BossInfo[boss].HasSwitched)
 		{
 			players += FF2Globals.Bosses + FF2Globals.BossTeamPlayers - FF2Globals.MercsPlayers*0.75;
 		}
