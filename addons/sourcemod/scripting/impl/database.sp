@@ -68,7 +68,7 @@ void DataBase_SetupClientCookies(int client)
 	{
 		static char cookies[454];
 		char cookieValues[MAXCHARSETS][64];
-		GetClientCookie(client, FF2DataBase.PlayerPref, cookies, 48);
+		FF2DataBase.PlayerPref.Get(client, cookies, 48);
 		ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 
 		FF2PlayerCookie[client].QueuePoints = StringToInt(cookieValues[0][0]);
@@ -90,7 +90,7 @@ void DataBase_SetupClientCookies(int client)
 
 		if(ConVars.Database.IntValue < 2)
 		{
-			GetClientCookie(client, FF2DataBase.Stat_c, cookies, 48);
+			FF2DataBase.Stat_c.Get(client, cookies, 48);
 			ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 
 			FF2PlayerCookie[client].BossWins = StringToInt(cookieValues[0][0]);
@@ -102,19 +102,19 @@ void DataBase_SetupClientCookies(int client)
 			FF2PlayerCookie[client].PlayerMVPs =  StringToInt(cookieValues[5][0]);
 		}
 
-		GetClientCookie(client, FF2DataBase.Hud, cookies, 48);
+		FF2DataBase.Hud.Get(client, cookies, 48);
 		ExplodeString(cookies, " ", cookieValues, MAXCHARSETS, 6);
 		for(int i=0; i<HUDTYPES; i++)
 		{
 			FF2PlayerCookie[client].HudSettings[i] = StringToInt(cookieValues[i]);
 		}
 
-		GetClientCookie(client, FF2DataBase.BossId, cookies, sizeof(cookies));
+		FF2DataBase.BossId.Get(client, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		strcopy(xIncoming[client], sizeof(xIncoming[]), cookieValues[FF2CharSetInfo.CurrentCharSetIdx]);
 		Utils_CheckValidBoss(client, xIncoming[client], !FF2GlobalsCvars.DuoMin);
 
-		GetClientCookie(client, FF2DataBase.DiffType, dIncoming[client], sizeof(dIncoming[]));
+		FF2DataBase.DiffType.Get(client, dIncoming[client], sizeof(dIncoming[]));
 	}
 	else
 	{
@@ -199,18 +199,18 @@ void DataBase_SaveClientPreferences(int client)
 
 	char cookies[24];
 	char cookieValues[8][5];
-	GetClientCookie(client, FF2DataBase.PlayerPref, cookies, sizeof(cookies));
+	FF2DataBase.PlayerPref.Get(client, cookies, sizeof(cookies));
 	ExplodeString(cookies, " ", cookieValues, 8, 5);
 
 	FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i %i 3", FF2PlayerCookie[client].QueuePoints, FF2PlayerCookie[client].MusicOn ? 1 : 0, FF2PlayerCookie[client].VoiceOn ? 1 : 0, FF2PlayerCookie[client].InfoOn ? 1 : 0, view_as<int>(FF2PlayerCookie[client].Duo), view_as<int>(FF2PlayerCookie[client].Boss), view_as<int>(FF2PlayerCookie[client].Diff));
-	SetClientCookie(client, FF2DataBase.PlayerPref, cookies);
+	FF2DataBase.PlayerPref.Set(client, cookies);
 
 	IntToString(FF2PlayerCookie[client].HudSettings[0], cookies, sizeof(cookies));
 	for(int i=1; i<HUDTYPES; i++)
 	{
 		Format(cookies, sizeof(cookies), "%s %i", cookies, FF2PlayerCookie[client].HudSettings[i]);
 	}
-	SetClientCookie(client, FF2DataBase.Hud, cookies);
+	FF2DataBase.Hud.Set(client, cookies);
 }
 
 void DataBase_SaveClientStats(int client)
@@ -256,7 +256,7 @@ void DataBase_SaveClientStats(int client)
 	{
 		char cookies[48];
 		FormatEx(cookies, sizeof(cookies), "%i %i %i %i %i %i 0 0", FF2PlayerCookie[client].BossWins, FF2PlayerCookie[client].BossLosses, FF2PlayerCookie[client].BossKills, FF2PlayerCookie[client].BossDeaths, FF2PlayerCookie[client].PlayerKills, FF2PlayerCookie[client].PlayerMVPs);
-		SetClientCookie(client, FF2DataBase.Stat_c, cookies);
+		FF2DataBase.Stat_c.Set(client, cookies);
 	}
 
 	if(FF2Globals.Enabled_Database != 2)
@@ -324,7 +324,7 @@ void DataBase_SaveKeepBossCookie(int client)
 	if(!IgnoreValid[client] && FF2CharSetInfo.CurrentCharSetIdx>=0 && FF2CharSetInfo.CurrentCharSetIdx<MAXCHARSETS && ConVars.SelectBoss.BoolValue)
 	{
 		char cookieValues[MAXCHARSETS][64];
-		GetClientCookie(client, FF2DataBase.BossId, cookies, sizeof(cookies));
+		FF2DataBase.BossId.Get(client, cookies, sizeof(cookies));
 		ExplodeString(cookies, ";", cookieValues, MAXCHARSETS, 64);
 		strcopy(cookieValues[FF2CharSetInfo.CurrentCharSetIdx], 64, xIncoming[client]);
 
@@ -333,9 +333,9 @@ void DataBase_SaveKeepBossCookie(int client)
 		{
 			Format(cookies, sizeof(cookies), "%s;%s", cookies, cookieValues[i]);
 		}
-		SetClientCookie(client, FF2DataBase.BossId, cookies);
+		FF2DataBase.BossId.Set(client, cookies);
 	}
 
 	if(!ConVars.Difficulty.BoolValue)
-		SetClientCookie(client, FF2DataBase.DiffType, dIncoming[client]);
+		FF2DataBase.DiffType.Set(client, dIncoming[client]);
 }

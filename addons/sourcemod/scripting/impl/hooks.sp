@@ -83,19 +83,19 @@ public void OnClientPostAdminCheck(int client)
 	if(AreClientCookiesCached(client))
 	{
 		static char buffer[24];
-		GetClientCookie(client, FF2DataBase.PlayerPref, buffer, sizeof(buffer));
+		FF2DataBase.PlayerPref.Get(client, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, FF2DataBase.PlayerPref, "0 1 1 1 0 0 0 3");
+			FF2DataBase.PlayerPref.Set(client, "0 1 1 1 0 0 0 3");
 			//Queue points | music exception | voice exception | class info | companion toggle | boss toggle | special toggle | UNUSED
 
-		GetClientCookie(client, FF2DataBase.Stat_c, buffer, sizeof(buffer));
+		FF2DataBase.Stat_c.Get(client, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, FF2DataBase.Stat_c, "0 0 0 0 0 0 0 0");
+			FF2DataBase.Stat_c.Set(client, "0 0 0 0 0 0 0 0");
 			//Boss wins | boss losses | boss kills | boss deaths | player kills | player MVPs | UNUSED | UNUSED
 
-		GetClientCookie(client, FF2DataBase.Hud, buffer, sizeof(buffer));
+		FF2DataBase.Hud.Get(client, buffer, sizeof(buffer));
 		if(!buffer[0])
-			SetClientCookie(client, FF2DataBase.Hud, "0 0 0 0 0 0 0 0");
+			FF2DataBase.Hud.Set(client, "0 0 0 0 0 0 0 0");
 			//Damage | extra | messages | countdown | boss health | UNUSED | UNUSED | UNUSED
 
 		DataBase_SetupClientCookies(client);

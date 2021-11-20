@@ -1957,7 +1957,7 @@ Action Command_SetMyBoss(int client, int args)
 			{
 				static char cookie1[64], cookie2[64];
 				KvGetString(FF2CharSetInfo.BossKV[config], "name", cookie1, sizeof(cookie1));
-				GetClientCookie(client, FF2DataBase.LastPlayer, cookie2, sizeof(cookie2));
+				FF2DataBase.LastPlayer.Get(client, cookie2, sizeof(cookie2));
 				if(StrEqual(cookie1, cookie2, false))
 				{
 					FReplyToCommand(client, "%t", "deny_recent");
@@ -2157,7 +2157,7 @@ Action Command_SetMyBoss(int client, int args)
 		{
 			if(AreClientCookiesCached(client) && ConVars.KeepBoss.IntValue<0 && !CheckCommandAccess(client, "ff2_replay_bosses", ADMFLAG_CHEATS, true))
 			{
-				GetClientCookie(client, FF2DataBase.LastPlayer, companionName, sizeof(companionName));
+				FF2DataBase.LastPlayer.Get(client, companionName, sizeof(companionName));
 				if(StrEqual(boss, companionName, false))
 				{
 					menu.AddItem(boss, bossName, ITEMDRAW_DISABLED);

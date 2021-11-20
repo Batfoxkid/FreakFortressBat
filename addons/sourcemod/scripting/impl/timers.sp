@@ -1187,7 +1187,7 @@ Action Timer_MakeBoss(Handle timer, any boss)
 	{
 		static char cookie[64];
 		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "name", cookie, sizeof(cookie));
-		SetClientCookie(client, FF2DataBase.LastPlayer, cookie);
+		FF2DataBase.LastPlayer.Set(client, cookie);
 	}
 	return Plugin_Continue;
 }
