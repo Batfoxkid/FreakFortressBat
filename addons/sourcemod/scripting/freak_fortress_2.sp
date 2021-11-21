@@ -53,14 +53,14 @@ last time or to encourage others to do the same.
 #include <tf2_stocks>
 #include <tf2items>
 #undef REQUIRE_EXTENSIONS
-#tryinclude <FF2Globals.SteamTools>
+#tryinclude <steamtools>
 #tryinclude <SteamWorks>
 #define REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #tryinclude <cw3>
 #tryinclude <smac>
 #tryinclude <goomba>
-#tryinclude <FF2Globals.TF2Attrib>
+#tryinclude <tf2attributes>
 #define REQUIRE_PLUGIN
 
 #pragma newdecls required
