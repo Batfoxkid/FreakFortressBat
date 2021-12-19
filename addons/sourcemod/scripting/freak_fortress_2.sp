@@ -378,7 +378,7 @@ void EnableFF2()
 	SetConVarInt(FindConVar("tf_arena_first_blood"), 0);
 	SetConVarInt(FindConVar("mp_forcecamera"), 0);
 	SetConVarInt(FindConVar("tf_dropped_weapon_lifetime"), 0);
-	SetConVarString(FindConVar("FF2GlobalsCvars.mp_humans_must_join_team"), "any");
+	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
 	ConVars.Tags = FindConVar("sv_tags");
 	Utils_AddServerTag("ff2");
