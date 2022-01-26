@@ -241,7 +241,7 @@ public void OnLibraryAdded(const char[] name)
 	}
 	#endif
 	#if defined _tf2attributes_included
-	else if(StrEqual(name, "FF2Globals.TF2Attrib", false))
+	else if(StrEqual(name, "tf2attributes", false))
 	{
 		FF2Globals.TF2Attrib = true;
 	}
@@ -279,7 +279,7 @@ public void OnLibraryRemoved(const char[] name)
 	}
 	#endif
 	#if defined _tf2attributes_included
-	else if(StrEqual(name, "FF2Globals.TF2Attrib", false))
+	else if(StrEqual(name, "tf2attributes", false))
 	{
 		FF2Globals.TF2Attrib = false;
 	}

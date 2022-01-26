@@ -76,7 +76,7 @@ void Natives_Create()
 	CreateNative("FF2Data.GetArgB", FF2Data_GetArgB);
 	CreateNative("FF2Data.GetArgS", FF2Data_GetArgS);
 	CreateNative("FF2Data.HasAbility", FF2Data_HasAbility);
-	CreateNative("FF2Data.FF2Globals.BossTeam", Native_GetTeam);
+	CreateNative("FF2Data.BossTeam", Native_GetTeam);
 }
 
 

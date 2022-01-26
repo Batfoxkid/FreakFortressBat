@@ -1,6 +1,6 @@
 #include <sdktools>
 #include <tf2_stocks>
-#include <FF2Globals.TF2Attrib>
+#include <tf2attributes>
 #include <freak_fortress_2>
 
 #if !defined MAXTF2PLAYERS

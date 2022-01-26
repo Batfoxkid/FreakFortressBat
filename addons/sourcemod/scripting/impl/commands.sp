@@ -646,7 +646,7 @@ Action QueuePanelCmd(int client, int args)
 {
 	bool[] added = new bool[MaxClients+1];
 	for(int boss; boss<=MaxClients; boss++)
-	{	// Don't want the FF2Globals.Bosses to show up again in the actual queue list
+	{	// Don't want the bosses to show up again in the actual queue list
 		if(Utils_IsBoss(boss))
 			added[boss] = true;
 	}
