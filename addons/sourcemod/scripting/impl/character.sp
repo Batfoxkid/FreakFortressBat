@@ -476,7 +476,7 @@ bool PickCharacter(int boss, int companion)
 		KvGetString(FF2CharSetInfo.BossKV[FF2BossInfo[boss].Special], "companion", companionName, sizeof(companionName), "=Failed companion name=");
 
 		int character;
-		while(character < FF2CharSetInfo.SizeOfSpecials)  //Loop through all the FF2Globals.Bosses to find the companion we're looking for
+		while(character < FF2CharSetInfo.SizeOfSpecials)  //Loop through all the bosses to find the companion we're looking for
 		{
 			KvRewind(FF2CharSetInfo.BossKV[character]);
 			KvGetString(FF2CharSetInfo.BossKV[character], "name", bossName, sizeof(bossName), "=Failed name=");
@@ -630,7 +630,7 @@ void LoadCharacter(const char[] character)
 	KvRewind(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials]);
 
 	int version = KvGetNum(FF2CharSetInfo.BossKV[FF2CharSetInfo.SizeOfSpecials], "version", StringToInt(MAJOR_REVISION));
-	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for FF2Globals.Bosses made ONLY for this fork
+	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 	{
 		LogToFile(FF2LogsPaths.Errors, "[Boss] Character %s is only compatible with FF2 v%i!", character, version);
 		return;
@@ -780,7 +780,7 @@ void LoadSideCharacter(const char[] character, int pack)
 	KvSetString(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "filename", character);
 
 	int version = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "version", StringToInt(MAJOR_REVISION));
-	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for FF2Globals.Bosses made ONLY for this fork
+	if(version!=StringToInt(MAJOR_REVISION) && version!=99) // 99 for bosses made ONLY for this fork
 		return;
 
 	version = KvGetNum(FF2BossPacks[FF2Packs_NumBosses[pack]][pack], "version_minor", StringToInt(MINOR_REVISION));

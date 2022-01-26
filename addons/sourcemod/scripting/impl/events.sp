@@ -383,7 +383,7 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				}
 				else
 				{
-					FPrintToChat(client, "%t", "FF2 Toggle FF2Globals.Enabled Notification");
+					FPrintToChat(client, "%t", "FF2 Toggle Enabled Notification");
 				}
 				continue;
 			}

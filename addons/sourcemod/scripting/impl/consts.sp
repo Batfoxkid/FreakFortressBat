@@ -30,10 +30,10 @@
 #define CHANGELOG_URL "https://batfoxkid.github.io/FreakFortressBat"
 
 #define MAXENTITIES 2048			// Probably shouldn't touch this
-#define MAXSPECIALS 128				// Maximum FF2Globals.Bosses in a pack
+#define MAXSPECIALS 128				// Maximum bosses in a pack
 #define MAXRANDOMS 64				// Maximum abilites in a boss
 #define MAXTF2PLAYERS 36			// Maximum TF2 players + bots
-#define MAXBOSSES RoundToFloor(MaxClients/2.0)	// Maximum number of FF2Globals.Bosses per a team
+#define MAXBOSSES RoundToFloor(MaxClients/2.0)	// Maximum number of bosses per a team
 #define MAXCHARSETS 7				// Maximum number of charsets to save selection/view
 
 #define HEALTHBAR_CLASS "monster_resource"
@@ -53,7 +53,7 @@
 #define WeaponCFG "weapons.cfg"
 
 #define LogPath "logs/freak_fortress_2"
-#define BossLogPath "logs/freak_fortress_2/FF2Globals.Bosses"
+#define BossLogPath "logs/freak_fortress_2/bosses"
 #define DebugLog "ff2_debug.log"
 #define ErrorLog "ff2_errors.log"
 
@@ -69,9 +69,9 @@
 #define FF2FLAG_USINGABILITY			(1<<9)		//Used to prevent Boss's hints about abilities buttons
 #define FF2FLAG_CLASSHELPED			(1<<10)
 #define FF2FLAG_HASONGIVED			(1<<11)
-#define FF2FLAG_CHANGECVAR			(1<<12)		//Used to prevent SMAC from kicking FF2Globals.Bosses who are using certain rages (NYI)
-#define FF2FLAG_ALLOW_HEALTH_PICKUPS		(1<<13)		//Used to prevent FF2Globals.Bosses from picking up health
-#define FF2FLAG_ALLOW_AMMO_PICKUPS		(1<<14)		//Used to prevent FF2Globals.Bosses from picking up ammo
+#define FF2FLAG_CHANGECVAR			(1<<12)		//Used to prevent SMAC from kicking bosses who are using certain rages (NYI)
+#define FF2FLAG_ALLOW_HEALTH_PICKUPS		(1<<13)		//Used to prevent bosses from picking up health
+#define FF2FLAG_ALLOW_AMMO_PICKUPS		(1<<14)		//Used to prevent bosses from picking up ammo
 #define FF2FLAG_ROCKET_JUMPING			(1<<15)		//Used when a soldier is rocket jumping
 #define FF2FLAG_ALLOW_BOSS_WEARABLES		(1<<16)		//Used to allow boss having wearables (only for Official FF2)
 #define FF2FLAGS_SPAWN		~FF2FLAG_UBERREADY &            \

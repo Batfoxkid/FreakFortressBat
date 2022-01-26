@@ -240,7 +240,7 @@ int MenuHandlerCompanion(Menu menu, MenuAction action, int param1, int param2)
 		switch(choice)
 		{
 			case 1:
-				FPrintToChat(param1, "%t", "FF2 Companion FF2Globals.Enabled");
+				FPrintToChat(param1, "%t", "FF2 Companion Enabled");
 			case 2:
 				FPrintToChat(param1, "%t", "FF2 Companion Disabled");
 			case 3:
@@ -263,7 +263,7 @@ int MenuHandlerBoss(Menu menu, MenuAction action, int param1, int param2)
 		switch(choice)
 		{
 			case 1:
-				FPrintToChat(param1, "%t", "FF2 Toggle FF2Globals.Enabled Notification");
+				FPrintToChat(param1, "%t", "FF2 Toggle Enabled Notification");
 			case 2:
 				FPrintToChat(param1, "%t", "FF2 Toggle Disabled Notification");
 			case 3:
@@ -320,7 +320,7 @@ int MenuHandlerDifficulty(Menu menu, MenuAction action, int param1, int param2)
 			switch(choice)
 			{
 				case 1:
-					FPrintToChat(param1, "%t", "FF2 Special FF2Globals.Enabled");
+					FPrintToChat(param1, "%t", "FF2 Special Enabled");
 				case 2:
 					FPrintToChat(param1, "%t", "FF2 Special Disabled");
 				case 3:

@@ -1720,10 +1720,10 @@ public Action TF2_OnPlayerTeleport(int client, int teleporter, bool &result)
 	{
 		switch(FF2GlobalsCvars.BossTeleportation)
 		{
-			case -1:  //No FF2Globals.Bosses are allowed to use teleporters
+			case -1:  //No bosses are allowed to use teleporters
 				result = false;
 
-			case 1:  //All FF2Globals.Bosses are allowed to use teleporters
+			case 1:  //All bosses are allowed to use teleporters
 				result = true;
 		}
 		return Plugin_Changed;
@@ -2761,7 +2761,7 @@ public Action OnCPTouch(int entity, int client)
 			}
 			case CAP_BOSS_ONLY:
 			{
-				if(!Utils_IsBoss(client))			// non FF2Globals.Bosses can't cap
+				if(!Utils_IsBoss(client))			// non bosses can't cap
 					return Plugin_Handled;
 			}
 			case CAP_BOSS_TEAM:
@@ -2771,7 +2771,7 @@ public Action OnCPTouch(int entity, int client)
 			}
 			case CAP_NOT_BOSS:
 			{
-				if(Utils_IsBoss(client))			// FF2Globals.Bosses can't cap
+				if(Utils_IsBoss(client))			// bosses can't cap
 					return Plugin_Handled;
 			}
 			case CAP_MERC_TEAM:

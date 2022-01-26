@@ -361,8 +361,8 @@ Action ClientTimer(Handle timer)
 		for(; client<=MaxClients; client++)
 		{
 			//custom model disguise code sorta taken from stop that tank, let's see how well this goes!
-			//this will actually let spies disguise as the boss, and FF2Globals.Bosses should have the same disguise
-			//model as the players they potentially disguise as if they have a custom model (FF2Globals.TF2Attrib required)
+			//this will actually let spies disguise as the boss, and bosses should have the same disguise
+			//model as the players they potentially disguise as if they have a custom model (tf2attributes required)
 			if(Utils_IsValidClient(client))
 			{
 				iDisguisedTarget = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
