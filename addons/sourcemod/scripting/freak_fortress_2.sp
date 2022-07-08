@@ -590,7 +590,7 @@ void teamplay_round_start_TeleportToMultiMapSpawn()
 				continue;
 
 			iSkip[iInt++] = iClient;
-			int iIndex = s_hSpawnArray.Push(EntIndexToEntRef(iEnt));
+			int iIndex = s_hSpawnArray.Push(iEnt);
 			s_hSpawnArray.Set(iIndex, iTeam, 1);	// Opposite team becomes an invalid ent
 		}
 	}
@@ -606,14 +606,14 @@ int TeleportToMultiMapSpawn(int iClient, TFTeam iTeam=TFTeam_Unassigned)
 	TFTeam iTeleTeam;
 	if(iTeam <= TFTeam_Spectator)
 	{
-		iSpawn = EntRefToEntIndex(GetRandBlockCellEx(s_hSpawnArray));
+		iSpawn = GetRandBlockCellEx(s_hSpawnArray);
 	}
 	else
 	{
 		do
 			iTeleTeam = view_as<TFTeam>(Utils_GetRandBlockCell(s_hSpawnArray, iIndex, 1));
 		while (iTeleTeam != iTeam);
-		iSpawn = EntRefToEntIndex(GetArrayCell(s_hSpawnArray, iIndex, 0));
+		iSpawn = GetArrayCell(s_hSpawnArray, iIndex, 0);
 	}
 	Utils_TeleMeToYou(iClient, iSpawn);
 	return iSpawn;
