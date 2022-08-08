@@ -7,27 +7,27 @@ void GetThisPluginName()
 	ReplaceString(pluginName, sizeof(pluginName), ".ff2", "", false);	// Remove when 1.11 is stable
 	int forwardSlash = -1;
 	int backwardSlash = -1;
-	int finalPluginName = -1;
+	int finalPluginName = 0;
 	for(;;)
 	{
-		forwardSlash = StrContains(pluginName[finalPluginName+1], "/");
-		backwardSlash = StrContains(pluginName[finalPluginName+1], "\\");
+		forwardSlash = StrContains(pluginName[finalPluginName], "/");
+		backwardSlash = StrContains(pluginName[finalPluginName], "\\");
 		if((backwardSlash<forwardSlash && backwardSlash!=-1) || forwardSlash==-1)
 		{
 			if(backwardSlash == -1)
 				break;
 
-			finalPluginName = backwardSlash;
+			finalPluginName += backwardSlash + 1;
 		}
 		else if((forwardSlash<backwardSlash && forwardSlash!=-1) || backwardSlash==-1)
 		{
 			if(forwardSlash == -1)
 				break;
 
-			finalPluginName = forwardSlash;
+			finalPluginName += forwardSlash + 1;
 		}
 	}
-	strcopy(this_plugin_name, sizeof(this_plugin_name), pluginName[finalPluginName+1]);
+	strcopy(this_plugin_name, sizeof(this_plugin_name), pluginName[finalPluginName]);
 }
 
 public void OnPluginStart()
